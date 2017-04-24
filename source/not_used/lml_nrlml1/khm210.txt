@@ -1,0 +1,448 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. KHM210.
+000030*********************************************************
+000040*    PROGRAM         :  工品品名　単価計算　一覧表      *
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :  ------                          *
+000070*    DATA WRITTN     :  57/05/13                        *
+000080*        変更　　　  :  62/03/24                        *
+000090*    COMPILE TYPE    :  COBOL                           *
+000100*********************************************************
+000110 ENVIRONMENT DIVISION.
+000120 CONFIGURATION SECTION.
+000130 SOURCE-COMPUTER. SYSTEM3100.
+000140 OBJECT-COMPUTER. SYSTEM3100.
+000150 INPUT-OUTPUT SECTION.
+000160 FILE-CONTROL.
+000170     COPY LIBCSE.
+000180     SELECT KH-M ASSIGN TO KH-MSD.
+000190     SELECT KJ-M ASSIGN TO KJ-MSD
+000200         ORGANIZATION INDEXED
+000210         ACCESS MODE DYNAMIC
+000220         RECORD KEY KJ-KEY
+000230         FILE STATUS IS ERR-STAT.
+000240     SELECT KHJ-M ASSIGN TO KHJ-MSD                               I.940517
+000250         ORGANIZATION INDEXED                                     I.940517
+000260         ACCESS MODE DYNAMIC                                      I.940517
+000270         RECORD KEY KHJ-KEY                                       I.940517
+000280         FILE STATUS IS ERR-STAT.                                 I.940517
+000290     SELECT SP-F ASSIGN TO P-PRN999.
+000300 I-O-CONTROL.
+000310     APPLY SHARED-MODE ON M-DATE
+000320     APPLY SHARED-MODE ON KJ-M
+000330     APPLY SHARED-MODE ON KHJ-M                                   I.940517
+000340     APPLY SHIFT-CODE  ON SP-F.                                   A 62/03
+000350 DATA DIVISION.
+000360 FILE SECTION.
+000370     COPY LIBFDD.
+000380     COPY LSKHM.
+000390     COPY LIKJM.
+000400     COPY LIKHJM.                                                 I.940517
+000410     COPY LSPF.
+000420 WORKING-STORAGE SECTION.
+000430 77  ERR-STAT           PIC  X(002).
+000440 77  WK0256ID           PIC  X(009) VALUE SPACE.                  I.950829
+000450 01  STN-NO.                                                      I.950829
+000460     02  STN-NO1        PIC  X(003).                              I.950829
+000470     02  STN-NO2        PIC  X(003).                              I.950829
+000480 01  W-FID.                                                       I.950829
+000490     02  W-FID1         PIC  X(006) VALUE "WK0256".               I.950829
+000500     02  W-FID2         PIC  X(003).                              I.950829
+000510 01  HEAD1.
+000520     02  F              PIC  X(005) VALUE ""3FE04FE080"".
+000530     02  F              PIC  X(039) VALUE SPACE.                  C.940517
+000540     02  F              PIC  N(023) VALUE                         C 62/03
+000550          NC"＊＊＊　　工品品名　単価計算　一覧表　　＊＊＊".     C 62/03
+000560     02  F              PIC  X(028) VALUE SPACE.                  C 62/03
+000570     02  F              PIC  X(005) VALUE "DATE ".
+000580     02  H-DATE         PIC 99B99B99.
+000590     02  F              PIC  X(007)  VALUE "     P.".
+000600     02  H-PAGE         PIC Z9.
+000610 01  HEAD2.
+000620     02  F              PIC  X(006) VALUE " ｺｰﾄﾞ ".
+000630     02  F              PIC  N(005) VALUE NC"品　　　名".         C 62/03
+000640     02  F              PIC  X(011) VALUE SPACE.
+000650     02  F              PIC  X(010) VALUE ":   ｺｰﾄﾞ  ".           C.940517
+000660     02  F              PIC  N(004) VALUE NC"練ゴム名".           C 62/03
+000670     02  F              PIC  X(014) VALUE SPACE.
+000680     02  F              PIC  N(003) VALUE NC"所要量".             C 62/03
+000690     02  F              PIC  X(002) VALUE SPACE.
+000700     02  F              PIC  N(004) VALUE NC"練ゴム代".
+000710     02  F              PIC  X(010) VALUE " ｵﾝﾗｲﾝ    ".
+000720     02  F              PIC  N(003) VALUE NC"合　計".
+000730     02  F              PIC  X(011) VALUE " ･   ｺｰﾄﾞ  ".          C.940517
+000740     02  F              PIC  N(005) VALUE NC"金　具　名".
+000750     02  F              PIC  X(009) VALUE SPACE.
+000760     02  F              PIC  N(002) VALUE NC"個数".
+000770     02  F              PIC  X(004) VALUE SPACE.
+000780     02  F              PIC  N(003) VALUE NC"金具代".
+000790 01  W-P.
+000800     02  P-HCD          PIC  X(005).
+000810     02  F              PIC  X(001).
+000820     02  P-HNAME        PIC  X(020).
+000830     02  F              PIC  X(001).
+000840     02  P-X1           PIC  X(001).
+000850     02  F              PIC  X(001).
+000860     02  P-GCD          PIC  X(007).                              C.940517
+000870     02  F              PIC  X(001).
+000880     02  P-GNAME        PIC  X(020).
+000890     02  P-SG           PIC ZZ,ZZ9.9.
+000900     02  P-NGK          PIC ZZZ,ZZ9.99.
+000910     02  P-OLK          PIC ZZ9.99.
+000920     02  P-GOK          PIC ZZZ,ZZ9.99.
+000930     02  F              PIC  X(001).
+000940     02  P-X2           PIC  X(001).
+000950     02  F              PIC  X(001).
+000960     02  P-KCD          PIC  X(007).                              C.940517
+000970     02  F              PIC  X(001).
+000980     02  P-KNAME        PIC  X(020).
+000990     02  P-SS           PIC ZZ9.
+001000     02  P-KNK          PIC ZZZ,ZZ9.99.
+001010 01  W-DATA.
+001020*****02  W-GCD          PIC  X(006).                              D.940517
+001030*****02  W-SGR          PIC  9(004)V9(01).                        D.940517
+001040*****02  W-KCD          PIC  X(006).                              D.940517
+001050*****02  W-SU           PIC  9(001).                              D.940517
+001060     02  W-JRD.                                                   I.940517
+001070       03  W-GJR   OCCURS 18.                                     I.940517
+001080         04  W-GCD      PIC  X(007).                              I.940517
+001090         04  W-SGR      PIC  9(004)V9(01).                        I.940517
+001100       03  W-KJR   OCCURS 18.                                     I.940517
+001110         04  W-KCD      PIC  X(007).                              I.940517
+001120         04  W-SU       PIC  9(001).                              I.940517
+001130     02  W-KC           PIC  9(002).                              I.940517
+001140     02  W-GC           PIC  9(002).                              I.940517
+001150     02  W-C            PIC  9(002).                              I.940517
+001160     02  W-D.
+001170       03  W-NGK        PIC  9(006)V9(02).
+001180       03  W-OLK        PIC  9(003)V9(02).
+001190       03  W-GOK        PIC  9(006)V9(02).
+001200       03  W-KNK        PIC  9(006)V9(02).
+001210     02  W-DD.
+001220       03  W-NGKD       PIC  9(006)V9(05).
+001230       03  W-OLKD       PIC  9(003)V9(05).
+001240       03  W-GOKD       PIC  9(006)V9(05).
+001250     02  W-TD.
+001260       03  WT-NGK       PIC  9(006)V9(02).
+001270       03  WT-OLK       PIC  9(003)V9(02).
+001280       03  WT-GOK       PIC  9(006)V9(02).
+001290       03  WT-KNK       PIC  9(006)V9(02).
+001300     02  W-TDD.
+001310       03  WT-NGKD      PIC  9(006)V9(05).
+001320       03  WT-OLKD      PIC  9(003)V9(05).
+001330       03  WT-GOKD      PIC  9(006)V9(05).
+001340     02  CHK.
+001350       03  W-HCHK       PIC  9(001).
+001360       03  W-GCHK       PIC  9(001).
+001370       03  W-KCHK       PIC  9(001).
+001380       03  W-DCHK       PIC  9(001).
+001390     02  CNT.
+001400       03  W-GCNT       PIC  9(001).
+001410       03  W-KCNT       PIC  9(001).
+001420     02  W-PAGE         PIC  9(002) VALUE ZERO.
+001430 SCREEN SECTION.
+001440 SD  C-CRT
+001450     END STATUS IS ESTAT.
+001460 01  C-CLEAR.
+001470     02  C-CL    LINE   1  CLEAR SCREEN.
+001480 01  C-MID.
+001490     02  LINE   3  COLUMN  10  PIC  N(023) VALUE
+001500          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001510     02  LINE   4  COLUMN  10  PIC  N(023) VALUE
+001520          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001530     02  LINE   5  COLUMN  10  PIC  N(023) VALUE
+001540          NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+001550     02  LINE   6  COLUMN  10  PIC  N(023) VALUE
+001560          NC"＊＊＊　　工品品名　単価計算　一覧表　　＊＊＊".
+001570     02  LINE   7  COLUMN  10  PIC  N(023) VALUE
+001580          NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+001590     02  LINE   8  COLUMN  10  PIC  N(023) VALUE
+001600          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001610     02  LINE   9  COLUMN  10  PIC  N(023) VALUE
+001620          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001630 01  C-ERR.
+001640     02  LINE  24.
+001650       03  E-ME1   COLUMN  15  PIC  X(016) VALUE
+001660            "***  KJM ﾅｼ  ***".
+001670       03  E-ME2   COLUMN  15  PIC  X(017) VALUE
+001680            "***  DATA ﾅｼ  ***".
+001690       03  E-ME3   COLUMN  15  PIC  X(018) VALUE                  I.940517
+001700            "***  ｹﾝｽｳ ｴﾗｰ  ***".                                 I.940517
+001710       03  E-KEY   COLUMN  40  PIC  X(005) FROM  KH-KEY.          I.940517
+001720       03  E-ME98  COLUMN  75  PIC  X(005) VALUE ""27"J"05"".
+001730       03  E-ME99  COLUMN  75  PIC  X(005) VALUE ""27"B"05"".
+001740       03  E-STAT  COLUMN  10  PIC  X(002) FROM  ERR-STAT.
+001750       03  E-CL    COLUMN  10  PIC  X(050) VALUE
+001760            "                                                  ".
+001770     COPY LIBSCR.
+001780 PROCEDURE DIVISION.
+001790 M-05.
+001800     COPY LIBCPR.
+001810     MOVE DATE-03R TO H-DATE.
+001820     DISPLAY C-CLEAR.
+001830     DISPLAY C-MID.
+001840     CALL "CBLSTNNO" USING STN-NO.                                I.950829
+001850     MOVE STN-NO2 TO W-FID2.                                      I.950829
+001860     MOVE W-FID TO WK0256ID.                                      I.950829
+001870     OPEN INPUT KH-M.
+001880     OPEN INPUT KJ-M.
+001890     OPEN INPUT KHJ-M.                                            I.940517
+001900     OPEN OUTPUT SP-F.
+001910     PERFORM S-10 THRU S-15.
+001920 M-10.
+001930     READ KH-M AT END
+001940         GO TO M-95.
+001950     IF KH-YC NOT = 10 AND 11
+001960         GO TO M-10.
+001970     PERFORM S-40 THRU S-55.                                      I.940517
+001980*****MOVE ZERO TO CHK CNT W-D W-DD W-TD W-TDD.                    D.940517
+001990     MOVE ZERO TO CHK CNT W-D W-DD W-TD W-TDD W-C.                I.940517
+002000 M-15.
+002010     ADD 1 TO W-C.                                                I.940517
+002020     IF W-C = 19                                                  I.940517
+002030         MOVE 8 TO W-GCHK W-KCHK.                                 I.940517
+002040     MOVE SPACE TO W-P.
+002050     IF W-HCHK = 0
+002060         MOVE 5 TO W-HCHK W-DCHK
+002070         MOVE KH-KEY TO P-HCD
+002080         MOVE KH-NAME TO P-HNAME.
+002090 M-20.
+002100     IF W-GCHK = 9
+002110         GO TO M-35.
+002120     IF W-GCHK NOT = 8
+002130         GO TO M-25.
+002140     MOVE 9 TO W-GCHK.
+002150     IF W-GCNT > 1
+002160         COMPUTE WT-NGK ROUNDED = WT-NGKD * 1
+002170         COMPUTE WT-OLK ROUNDED = WT-OLKD * 1
+002180         COMPUTE WT-GOK ROUNDED = WT-GOKD * 1
+002190         MOVE "       [  TOTAL  ]  " TO P-GNAME
+002200         MOVE WT-NGK TO P-NGK
+002210         MOVE WT-OLK TO P-OLK
+002220         MOVE WT-GOK TO P-GOK
+002230         MOVE 5 TO W-DCHK.
+002240     GO TO M-20.
+002250 M-25.
+002260*****IF W-GCHK NOT = 1                                            D.940517
+002270*****    GO TO M-30.                                              D.940517
+002280*****MOVE 8 TO W-GCHK.                                            D.940517
+002290*****IF KH-GCD2 = ZERO OR SPACE                                   D.940517
+002300     IF W-GCD(W-C) = SPACE OR ZERO                                I.940517
+002310         MOVE 8 TO W-GCHK                                         I.940517
+002320         GO TO M-20.
+002330*****MOVE KH-GCD2 TO W-GCD.                                       D.940517
+002340*****MOVE KH-SG2 TO W-SGR.                                        D.940517
+002350*****PERFORM S-20 THRU S-25.                                      D.940517
+002360*****GO TO M-35.                                                  D.940517
+002370*M-30.                                                            D.940517
+002380*****MOVE 1 TO W-GCHK.                                            D.940517
+002390*****IF KH-GCD1 = ZERO OR SPACE                                   D.940517
+002400*****    GO TO M-20.                                              D.940517
+002410*****MOVE KH-GCD1 TO W-GCD.                                       D.940517
+002420*****MOVE KH-SG1 TO W-SGR.                                        D.940517
+002430     PERFORM S-20 THRU S-25.
+002440*
+002450 M-35.
+002460     IF W-KCHK = 9
+002470         GO TO M-70.
+002480     IF W-KCHK NOT = 8
+002490         GO TO M-40.
+002500     MOVE 9 TO W-KCHK.
+002510     IF W-KCNT > 1
+002520         MOVE "       [  TOTAL  ]  " TO P-KNAME
+002530         MOVE WT-KNK TO P-KNK
+002540         MOVE 5 TO W-DCHK.
+002550     GO TO M-35.
+002560 M-40.
+002570*****IF W-KCHK NOT = 5                                            D.940517
+002580*****    GO TO M-45.                                              D.940517
+002590*****MOVE 8 TO W-KCHK.                                            D.940517
+002600*****IF KH-KCD6 = ZERO OR SPACE                                   D.940517
+002610     IF W-KCD(W-C) = SPACE OR ZERO                                I.940517
+002620         MOVE 8 TO W-KCHK                                         I.940517
+002630         GO TO M-35.
+002640*****MOVE KH-KCD6 TO W-KCD.                                       D.940517
+002650*****MOVE KH-SS6 TO W-SU.                                         D.940517
+002660     PERFORM S-30 THRU S-35.
+002670*****GO TO M-70.                                                  D.940517
+002680*M-45.                                                            D.940517
+002690*****IF W-KCHK NOT = 4                                            D.940517
+002700*****    GO TO M-50.                                              D.940517
+002710*****MOVE 5 TO W-KCHK.                                            D.940517
+002720*****IF KH-KCD5 = ZERO OR SPACE                                   D.940517
+002730*****    GO TO M-35.                                              D.940517
+002740*****MOVE KH-KCD5 TO W-KCD.                                       D.940517
+002750*****MOVE KH-SS5 TO W-SU.                                         D.940517
+002760*****PERFORM S-30 THRU S-35.                                      D.940517
+002770*****GO TO M-70.                                                  D.940517
+002780*M-50.                                                            D.940517
+002790*****IF W-KCHK NOT = 3                                            D.940517
+002800*****    GO TO M-55.                                              D.940517
+002810*****MOVE 4 TO W-KCHK.                                            D.940517
+002820*****IF KH-KCD4 = ZERO OR SPACE                                   D.940517
+002830*****    GO TO M-35.                                              D.940517
+002840*****MOVE KH-KCD4 TO W-KCD.                                       D.940517
+002850*****MOVE KH-SS4 TO W-SU.                                         D.940517
+002860*****PERFORM S-30 THRU S-35.                                      D.940517
+002870*****GO TO M-70.                                                  D.940517
+002880*M-55.                                                            D.940517
+002890*****IF W-KCHK NOT = 2                                            D.940517
+002900*****    GO TO M-60.                                              D.940517
+002910*****MOVE 3 TO W-KCHK.                                            D.940517
+002920*****IF KH-KCD3 = ZERO OR SPACE                                   D.940517
+002930*****    GO TO M-35.                                              D.940517
+002940*****MOVE KH-KCD3 TO W-KCD.                                       D.940517
+002950*****MOVE KH-SS3 TO W-SU.                                         D.940517
+002960*****PERFORM S-30 THRU S-35.                                      D.940517
+002970*****GO TO M-70.                                                  D.940517
+002980*M-60.                                                            D.940517
+002990*****IF W-KCHK NOT = 1                                            D.940517
+003000*****    GO TO M-65.                                              D.940517
+003010*****MOVE 2 TO W-KCHK.                                            D.940517
+003020*****IF KH-KCD2 = ZERO OR SPACE                                   D.940517
+003030*****    GO TO M-35.                                              D.940517
+003040*****MOVE KH-KCD2 TO W-KCD.                                       D.940517
+003050*****MOVE KH-SS2 TO W-SU.                                         D.940517
+003060*****PERFORM S-30 THRU S-35.                                      D.940517
+003070*****GO TO M-70.                                                  D.940517
+003080*M-65.                                                            D.940517
+003090*****MOVE 1 TO W-KCHK.                                            D.940517
+003100*****IF KH-KCD1 = ZERO OR SPACE                                   D.940517
+003110*****    GO TO M-35.                                              D.940517
+003120*****MOVE KH-KCD1 TO W-KCD.                                       D.940517
+003130*****MOVE KH-SS1 TO W-SU.                                         D.940517
+003140*****PERFORM S-30 THRU S-35.                                      D.940517
+003150*
+003160 M-70.
+003170     IF W-DCHK = 0
+003180         GO TO M-75.
+003190*****MOVE "･" TO P-X1 P-X2.                                       D.940517
+003200     MOVE ":" TO P-X1.                                            I.940517
+003210     MOVE "･" TO P-X2.                                            I.940517
+003220     IF LINAGE-COUNTER > 60
+003230         MOVE KH-KEY TO P-HCD
+003240         MOVE KH-NAME TO P-HNAME
+003250         PERFORM S-05 THRU S-15.
+003260     MOVE SPACE TO SP-R.
+003270     MOVE W-P TO SP-R.
+003280     WRITE SP-R.
+003290     MOVE SPACE TO SP-R.
+003300     MOVE 0 TO W-DCHK.
+003310 M-75.
+003320     IF 9 = W-GCHK AND W-KCHK
+003330         MOVE SPACE TO W-P
+003340         MOVE ":" TO P-X1                                         I.940517
+003350         MOVE "･" TO P-X2                                         I.940517
+003360*****    MOVE "･" TO P-X1 P-X2                                    D.940517
+003370         MOVE SPACE TO SP-R
+003380         MOVE W-P TO SP-R
+003390         WRITE SP-R
+003400         GO TO M-10.
+003410     GO TO M-15.
+003420 M-95.
+003430     CLOSE KH-M.
+003440     CLOSE KJ-M.
+003450     CLOSE KHJ-M.                                                 I.940517
+003460     CLOSE SP-F.
+003470     DISPLAY C-CLEAR.
+003480     STOP RUN.
+003490 S-05.
+003500     MOVE SPACE TO SP-R.
+003510     WRITE SP-R AFTER PAGE.
+003520 S-10.
+003530     ADD 1 TO W-PAGE.
+003540     MOVE W-PAGE TO H-PAGE.
+003550     MOVE SPACE TO SP-R.
+003560     MOVE HEAD1 TO SP-R.
+003570     WRITE SP-R.
+003580     MOVE SPACE TO SP-R.
+003590     MOVE HEAD2 TO SP-R.
+003600     WRITE SP-R AFTER 2.
+003610     MOVE SPACE TO SP-R.
+003620 S-15.
+003630     EXIT.
+003640 S-20.
+003650*****MOVE W-GCD TO KJ-KEY.                                        D.940517
+003660     MOVE W-GCD(W-C) TO KJ-KEY.                                   I.940517
+003670     READ KJ-M WITH UNLOCK INVALID KEY
+003680         MOVE " **  KJM ﾅｼ  **     " TO KJ-NAME
+003690         MOVE ZERO TO KJ-T.
+003700     IF KJ-T NOT = ZERO
+003710*****    IF W-SGR NOT = ZERO                                      D.940517
+003720*****        COMPUTE W-NGK ROUNDED = (W-SGR * KJ-T) / 1000        D.940517
+003730*****        COMPUTE W-NGKD ROUNDED = (W-SGR * KJ-T) / 1000.      D.940517
+003740         IF W-SGR(W-C) NOT = ZERO                                 I.940517
+003750             COMPUTE W-NGK ROUNDED = (W-SGR(W-C) * KJ-T) / 1000   I.940517
+003760             COMPUTE W-NGKD ROUNDED = (W-SGR(W-C) * KJ-T) / 1000. I.940517
+003770     IF KH-MGS = ZERO
+003780*****    COMPUTE W-OLK ROUNDED = W-SGR * 0.0125                   D.940517
+003790*****    COMPUTE W-OLKD ROUNDED = W-SGR * 0.0125.                 D.940517
+003800         COMPUTE W-OLK ROUNDED = W-SGR(W-C) * 0.0125              I.940517
+003810         COMPUTE W-OLKD ROUNDED = W-SGR(W-C) * 0.0125.            I.940517
+003820     COMPUTE W-GOK = W-NGK + W-OLK.
+003830     COMPUTE W-GOKD = W-NGK + W-OLKD.
+003840*****MOVE W-GCD TO P-GCD.                                         D.940517
+003850     MOVE W-GCD(W-C) TO P-GCD.                                    I.940517
+003860     MOVE KJ-NAME TO P-GNAME.
+003870*****MOVE W-SGR TO P-SG.                                          D.940517
+003880     MOVE W-SGR(W-C) TO P-SG.                                     I.940517
+003890     MOVE W-NGK TO P-NGK.
+003900     MOVE W-OLK TO P-OLK.
+003910     MOVE W-GOK TO P-GOK.
+003920     ADD W-NGKD TO WT-NGKD.
+003930     ADD W-OLKD TO WT-OLKD.
+003940     ADD W-GOKD TO WT-GOKD.
+003950     ADD 1 TO W-GCNT.
+003960     MOVE 5 TO W-DCHK.
+003970 S-25.
+003980     EXIT.
+003990 S-30.
+004000*****MOVE W-KCD TO KJ-KEY.                                        D.940517
+004010     MOVE W-KCD(W-C) TO KJ-KEY.                                   I.940517
+004020     READ KJ-M WITH UNLOCK INVALID KEY
+004030         MOVE " **  KJM ﾅｼ  **     " TO KJ-NAME
+004040         MOVE ZERO TO KJ-T.
+004050*****COMPUTE W-KNK ROUNDED = (W-SU * KJ-T) * 1.01.                D.940517
+004060     COMPUTE W-KNK ROUNDED = (W-SU(W-C) * KJ-T) * 1.01.           I.940517
+004070*****MOVE W-KCD TO P-KCD.                                         D.940517
+004080     MOVE W-KCD(W-C) TO P-KCD.                                    I.940517
+004090     MOVE KJ-NAME TO P-KNAME.
+004100*****MOVE W-SU TO P-SS.                                           D.940517
+004110     MOVE W-SU(W-C) TO P-SS.                                      I.940517
+004120     MOVE W-KNK TO P-KNK.
+004130     ADD W-KNK TO WT-KNK.
+004140     ADD 1 TO W-KCNT.
+004150     MOVE 5 TO W-DCHK.
+004160 S-35.
+004170     EXIT.
+004180 S-40.                                                            I.940517
+004190     INITIALIZE W-JRD.                                            I.940517
+004200     MOVE SPACE TO KHJ-KEY.                                       I.940517
+004210     MOVE KH-KEY TO KHJ-HCD.                                      I.940517
+004220     START KHJ-M KEY NOT < KHJ-KEY INVALID KEY                    I.940517
+004230         GO TO S-55.                                              I.940517
+004240     MOVE ZERO TO W-KC W-GC.                                      I.940517
+004250 S-45.                                                            I.940517
+004260     READ KHJ-M NEXT RECORD WITH UNLOCK AT END                    I.940517
+004270         GO TO S-55.                                              I.940517
+004280     IF KHJ-HCD NOT = KH-KEY                                      I.940517
+004290         GO TO S-55.                                              I.940517
+004300     IF KHJ-SGR NOT = ZERO                                        I.940517
+004310         GO TO S-50.                                              I.940517
+004320     ADD 1 TO W-KC.                                               I.940517
+004330     IF W-KC = 19                                                 I.940517
+004340         DISPLAY E-ME3 E-KEY E-ME99                               I.940517
+004350       ELSE                                                       I.940517
+004360         MOVE KHJ-JCD TO W-KCD(W-KC)                              I.940517
+004370         MOVE KHJ-SU TO W-SU(W-KC).                               I.940517
+004380     GO TO S-45.                                                  I.940517
+004390 S-50.                                                            I.940517
+004400     ADD 1 TO W-GC.                                               I.940517
+004410     IF W-GC = 19                                                 I.940517
+004420         DISPLAY E-ME3 E-KEY E-ME99                               I.940517
+004430       ELSE                                                       I.940517
+004440         MOVE KHJ-JCD TO W-GCD(W-GC)                              I.940517
+004450         MOVE KHJ-SGR TO W-SGR(W-GC).                             I.940517
+004460     GO TO S-45.                                                  I.940517
+004470 S-55.                                                            I.940517
+004480     EXIT.                                                        I.940517

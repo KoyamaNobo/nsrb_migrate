@@ -1,0 +1,293 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. JSS51U.
+000030*********************************************************
+000040*    PROGRAM         :  生協荷札生成２                  *
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :                                  *
+000070*    COMPILE TYPE    :  COBOL                           *
+000080*********************************************************
+000090 ENVIRONMENT DIVISION.
+000100 CONFIGURATION SECTION.
+000110 SOURCE-COMPUTER. SYSTEM3100.
+000120 OBJECT-COMPUTER. SYSTEM3100.
+000130 INPUT-OUTPUT SECTION.
+000140 FILE-CONTROL.
+000150     SELECT SNFW1 ASSIGN TO SNFW1-MSD
+000160         ORGANIZATION INDEXED
+000170         ACCESS MODE  DYNAMIC
+000180         RECORD KEY   SNW1-KEY
+000190         FILE STATUS IS ERR-STAT.
+000200     SELECT SNFW2 ASSIGN TO SNFW2-RDB
+000210         ORGANIZATION SEQUENTIAL
+000220         ACCESS MODE  SEQUENTIAL
+000230         FILE STATUS IS ERR-STAT.
+000240     SELECT SOKJW ASSIGN TO SOKJW-MSD
+000250         ORGANIZATION INDEXED
+000260         ACCESS MODE  DYNAMIC
+000270         RECORD KEY   SOW-KEY
+000280         FILE STATUS IS ERR-STAT.
+000290*
+000300 DATA DIVISION.
+000310 FILE SECTION.
+000320     COPY    LSNFW1.
+000330     COPY    LSNFW2.
+000340     COPY    LSOKJW.
+000350*
+000360 WORKING-STORAGE SECTION.
+000370 77  W-FILE             PIC  X(13).
+000380 01  ERR-STAT           PIC  X(02).
+000390 01  W-DATA.
+000400     02  W-FLG          PIC  9(01).
+000410     02  W-DATE         PIC  9(08).
+000420     02  W-SYSYMD       PIC  9(08).
+000430     02  F              REDEFINES  W-SYSYMD.
+000440       03  W-SYSY       PIC  9(04).
+000450       03  W-SYSM       PIC  9(02).
+000460       03  W-SYSD       PIC  9(02).
+000470     02  W-EDA          PIC  9(03).
+000480     02  W-SOKUSU       PIC S9(04).
+000490     02  W-HAKOSU       PIC  9(04).
+000500     02  W-SUM          PIC S9(04).
+000510     02  W-ALL          PIC S9(05).
+000520     02  W-ZENALL       PIC S9(05).
+000530     02  CNT            PIC  9(02).
+000540     02  W-KSU          PIC  9(04).                               I.041027
+000550 01  W-KEY.
+000560     02  W-TYCD         PIC  9(07).
+000570     02  W-KICD         PIC  9(07).
+000580     02  W-IRISU        PIC  9(03).
+000590     02  W-BOXKB        PIC  9(01).
+000600     02  W-SYCD         PIC  9(06).
+000610     COPY    LSTAT.
+000620     COPY    LWMSG.
+000630*
+000640 SCREEN SECTION.
+000650 SD  C-CRT
+000660     END STATUS ESTAT.
+000670 01  C-CLEAR.
+000680     02  LINE   1  CLEAR SCREEN.
+000690 01  DSP-AREA.
+000700     02  D-TITLE    LINE  01    COLUMN  16  PIC  N(20)  VALUE
+000710         NC"＊＊＊　　生協　荷札生成２　　　　＊＊＊".
+000720     COPY    LSSEM.
+000730     COPY    LSMSG.
+000740*
+000750 PROCEDURE DIVISION.
+000760 MAIN-01.
+000770     PERFORM    INIT-RTN  THRU  INIT-EX.
+000780 MAIN-02.
+000790     PERFORM    UPDK-RTN  THRU  UPDK-EX.                          I.041027
+000800     PERFORM    UPDT-RTN  THRU  UPDT-EX.
+000810 MAIN-03.
+000820     PERFORM    END-RTN  THRU  END-EX.
+000830     STOP RUN.
+000840*
+000850*-----初期処理-----*
+000860 INIT-RTN.
+000870     INITIALIZE    W-DATA.
+000880     DISPLAY    C-CLEAR  DSP-AREA.
+000890     ACCEPT     W-SYSYMD  FROM  DATE.
+000900     ADD     2000  TO  W-SYSY.
+000910     OPEN INPUT     SNFW1.
+000920     OPEN OUTPUT    SNFW2.
+000930     OPEN I-O       SOKJW.
+000940 INIT-EX.
+000950     EXIT.
+000960*
+000970*-----終了処理-----*
+000980 END-RTN.
+000990     CLOSE    SNFW1  SNFW2  SOKJW.
+001000     DISPLAY    C-CLEAR.
+001010 END-EX.
+001020     EXIT.
+001030*-----更新処理-----* (ﾀﾝﾋﾟﾝ)
+001040 UPDK-RTN.                                                        I.041027
+001050     MOVE    LOW-VALUE  TO  SNW1-R.                               I.041027
+001060     START    SNFW1    KEY NOT < SNW1-KEY                         I.041027
+001070         INVALID KEY    GO TO    UPDK-EX.                         I.041027
+001080 UPDK-10.                                                         I.041027
+001090     READ     SNFW1    NEXT RECORD  WITH UNLOCK                   I.041027
+001100         AT END    GO TO   UPDK-EX.                               I.041027
+001110     IF  SNW1-08 = 0                                              I.041027
+001120        GO TO   UPDK-10.                                          I.041027
+001130 UPDK-20.                                                         I.041027
+001140     MOVE    SNW1-01  TO  W-TYCD.                                 I.041027
+001150     MOVE    SNW1-02  TO  W-KICD.                                 I.041027
+001160     MOVE    0  TO  W-EDA.                                        I.041027
+001170 UPDK-30.                                                         I.041027
+001180     MOVE    0        TO  W-KSU.                                  I.041027
+001190 UPDK-40.                                                         I.041027
+001200     ADD     1  TO  W-KSU  W-EDA.                                 I.041027
+001210     MOVE    SNW1-03  TO  W-SOKUSU  W-SUM.                        I.041027
+001220     PERFORM    WSNW2-RTN  THRU  WSNW2-EX.                        I.041027
+001230     IF  SNW1-08 > W-KSU                                          I.041027
+001240         GO TO   UPDK-40.                                         I.041027
+001250 UPDK-50.                                                         I.041027
+001260     READ    SNFW1    NEXT RECORD  WITH UNLOCK                    I.041027
+001270             AT END    PERFORM    RSOW-RTN  THRU  RSOW-EX         I.041027
+001280                       GO TO    UPDK-EX.                          I.041027
+001290     IF  SNW1-08 = 0                                              I.041027
+001300        GO TO   UPDK-50.                                          I.041027
+001310     IF  SNW1-01 = W-TYCD AND SNW1-02 = W-KICD                    I.041027
+001320         GO TO    UPDK-30.                                        I.041027
+001330     PERFORM    RSOW-RTN  THRU  RSOW-EX                           I.041027
+001340     GO TO    UPDK-20.                                            I.041027
+001350 UPDK-EX.                                                         I.041027
+001360     EXIT.                                                        I.041027
+001370*
+001380*-----更新処理-----* (ﾊｽｳ)
+001390 UPDT-RTN.
+001400     MOVE    LOW-VALUE  TO  SNW1-R.
+001410     START    SNFW1    KEY NOT < SNW1-KEY
+001420         INVALID KEY    GO TO    UPDT-EX.
+001430 UPDT-05.                                                         I.041027
+001440     READ     SNFW1    NEXT RECORD  WITH UNLOCK
+001450         AT END    GO TO   UPDT-EX.
+001460     IF  SNW1-16   =  0                                           I.041027
+001470         GO  TO  UPDT-05.                                         I.041027
+001480*
+001490     MOVE    SNW1-01  TO  W-TYCD.
+001500     MOVE    SNW1-02  TO  W-KICD.
+001510     MOVE    SNW1-03  TO  W-IRISU.
+001520     MOVE    SNW1-12  TO  W-BOXKB.
+001530     MOVE    SNW1-04  TO  W-SYCD.
+001540     MOVE    0  TO  W-ALL  W-ZENALL  W-EDA.
+001550     MOVE    7  TO  CNT.
+001560*
+001570     MOVE    W-TYCD  TO  SOW-01.                                  I.041027
+001580     MOVE    W-KICD  TO  SOW-02.                                  I.041027
+001590     READ    SOKJW                                                I.041027
+001600             INVALID KEY    GO TO    UPDT-EX.                     I.041027
+001610     MOVE    SOW-08  TO  W-EDA.                                   I.041027
+001620 UPDT-10.
+001630     IF  SNW1-01 = W-TYCD AND SNW1-02 = W-KICD
+001640         IF  SNW1-03 = W-IRISU AND SNW1-12 = W-BOXKB
+001650             IF  SNW1-04 NOT = W-SYCD
+001660                 ADD     1  TO  CNT
+001670                 MOVE    SNW1-04  TO  W-SYCD
+001680                 GO  TO  UPDT-15                                  I.041027
+001690             ELSE                                                 I.041027
+001700                 GO  TO  UPDT-15.                                 I.041027
+001710*****        END-IF                                               D.041027
+001720*****    ELSE                                                     D.041027
+001730     IF  SNW1-01 = W-TYCD AND SNW1-02 = W-KICD                    I.041027
+001740         IF (SNW1-03 NOT = W-IRISU) OR (SNW1-12 NOT = W-BOXKB)    I.041027
+001750             MOVE    SNW1-03  TO  W-IRISU
+001760             MOVE    SNW1-12  TO  W-BOXKB
+001770             MOVE    SNW1-04  TO  W-SYCD
+001780             MOVE    0  TO  W-ALL  W-ZENALL
+001790             MOVE    7  TO  CNT.                                  I.041027
+001800*****        MOVE    7  TO  CNT                                   D.041027
+001810*****ELSE                                                         D.041027
+001820*****    PERFORM    RSOW-RTN  THRU  RSOW-EX                       D.041027
+001830*****    MOVE    SNW1-01  TO  W-TYCD                              D.041027
+001840*****    MOVE    SNW1-02  TO  W-KICD                              D.041027
+001850*****    MOVE    SNW1-03  TO  W-IRISU                             D.041027
+001860*****    MOVE    SNW1-12  TO  W-BOXKB                             D.041027
+001870*****    MOVE    SNW1-04  TO  W-SYCD                              D.041027
+001880*****    MOVE    0  TO  W-ALL  W-ZENALL  W-EDA                    D.041027
+001890*****    MOVE    7  TO  CNT                                       D.041027
+001900     IF  SNW1-01 = W-TYCD AND SNW1-02 = W-KICD                    I.041027
+001910         GO  TO  UPDT-15.                                         I.041027
+001920     PERFORM    RSOW-RTN  THRU  RSOW-EX.                          I.041027
+001930     MOVE    SNW1-01  TO  W-TYCD.                                 I.041027
+001940     MOVE    SNW1-02  TO  W-KICD.                                 I.041027
+001950     MOVE    SNW1-03  TO  W-IRISU.                                I.041027
+001960     MOVE    SNW1-12  TO  W-BOXKB.                                I.041027
+001970     MOVE    SNW1-04  TO  W-SYCD.                                 I.041027
+001980     MOVE    0  TO  W-ALL  W-ZENALL  W-EDA.                       I.041027
+001990     MOVE    7  TO  CNT.                                          I.041027
+002000     MOVE    0  TO  W-FLG.
+002010*
+002020     MOVE    W-TYCD  TO  SOW-01.                                  I.041027
+002030     MOVE    W-KICD  TO  SOW-02.                                  I.041027
+002040     READ    SOKJW                                                I.041027
+002050             INVALID KEY    GO TO    UPDT-EX.                     I.041027
+002060     MOVE    SOW-08  TO  W-EDA.                                   I.041027
+002070 UPDT-15.                                                         I.041027
+002080*****ADD     SNW1-06  TO  W-ALL.                                  D.041027
+002090     ADD     SNW1-16  TO  W-ALL.                                  I.041027
+002100     IF  SNW1-03 = 0
+002110         MOVE    0  TO  W-HAKOSU
+002120     ELSE
+002130         COMPUTE    W-HAKOSU = W-ALL / SNW1-03.
+002140 UPDT-20.
+002150     IF  W-HAKOSU = 0
+002160         IF  W-FLG = 9
+002170             MOVE    0  TO  W-FLG
+002180             MOVE    W-ALL  TO  SNW1-09
+002190         END-IF
+002200         GO TO    UPDT-30.
+002210     MOVE    SNW1-03  TO  W-SUM.
+002220     IF  W-ZENALL = 0
+002230         ADD     1  TO  W-EDA
+002240         MOVE    SNW1-03  TO  W-SOKUSU
+002250     ELSE
+002260         COMPUTE    W-SOKUSU = SNW1-03 - W-ZENALL
+002270         MOVE    9  TO  W-FLG
+002280         MOVE    0  TO  W-ZENALL.
+002290     PERFORM    WSNW2-RTN  THRU  WSNW2-EX.
+002300     MOVE    7  TO  CNT.
+002310     COMPUTE    W-HAKOSU = W-HAKOSU - 1.
+002320     COMPUTE    W-ALL = W-ALL - W-SUM.
+002330     GO TO   UPDT-20.
+002340 UPDT-30.
+002350     IF  SNW1-09 NOT = 0
+002360         IF  CNT > 6
+002370             ADD     1  TO  W-EDA
+002380             MOVE    1  TO  CNT
+002390             MOVE    SNW1-09  TO  W-ALL
+002400         END-IF
+002410         MOVE    W-ALL    TO  W-SUM  W-ZENALL
+002420         MOVE    SNW1-09  TO  W-SOKUSU
+002430         PERFORM    WSNW2-RTN  THRU  WSNW2-EX.
+002440 UPDT-35.                                                         I.041027
+002450     READ    SNFW1    NEXT RECORD  WITH UNLOCK
+002460             AT END    PERFORM    RSOW-RTN  THRU  RSOW-EX
+002470                       GO TO    UPDT-EX.                          I.041027
+002480     IF  SNW1-16   =  0                                           I.041027
+002490         GO  TO  UPDT-35.                                         I.041027
+002500     GO TO    UPDT-10.                                            I.041027
+002510*****    NOT AT END    GO TO    UPDT-10.                          D.041027
+002520 UPDT-EX.
+002530     EXIT.
+002540*
+002550*-----生協送り状ワーク　変更処理-----*
+002560 RSOW-RTN.
+002570     MOVE    W-TYCD  TO  SOW-01.
+002580     MOVE    W-KICD  TO  SOW-02.
+002590     READ    SOKJW
+002600             INVALID KEY    GO TO    RSOW-EX.
+002610     MOVE    W-EDA   TO  SOW-08.
+002620     REWRITE    SOW-R
+002630         INVALID KEY    MOVE    "R"      TO  ERR-M
+002640                        MOVE    "SOKJW"  TO  ERR-F
+002650                        MOVE    SOW-KEY  TO  ERR-K
+002660                        PERFORM    ERR-RTN  THRU  ERR-EX.
+002670 RSOW-EX.
+002680     EXIT.
+002690*
+002700*-----生協荷札ワーク２　追加処理-----*
+002710 WSNW2-RTN.
+002720     MOVE    SNW1-01   TO  SNW2-01.
+002730     MOVE    SNW1-02   TO  SNW2-02.
+002740     MOVE    SNW1-03   TO  SNW2-03.
+002750     MOVE    SNW1-12   TO  SNW2-12.
+002760     MOVE    SNW1-04   TO  SNW2-04.
+002770     MOVE    SNW1-05   TO  SNW2-05.
+002780     MOVE    SNW1-11   TO  SNW2-06.
+002790     MOVE    W-EDA     TO  SNW2-07.
+002800     MOVE    W-SOKUSU  TO  SNW2-08.
+002810     MOVE    W-SUM     TO  SNW2-09.
+002820     MOVE    SNW1-10   TO  SNW2-10.
+002830     WRITE    SNW2-R.
+002840     IF  ERR-STAT NOT = "00"
+002850         MOVE    "W"      TO  ERR-M
+002860         MOVE    "SNFW2"  TO  ERR-F
+002870         MOVE    SNW2-R   TO  ERR-K
+002880         PERFORM    ERR-RTN  THRU  ERR-EX.
+002890 WSNW2-EX.
+002900     EXIT.
+002910*
+002920*****
+002930     COPY    LPMSG.

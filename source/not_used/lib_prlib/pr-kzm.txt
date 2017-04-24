@@ -1,0 +1,153 @@
+000010 IDENTIFICATION  DIVISION.
+000020 PROGRAM-ID.     PR220U.
+000030 ENVIRONMENT         DIVISION.
+000040 CONFIGURATION       SECTION.
+000050 SOURCE-COMPUTER.    NEAC-SYSTEM100.
+000060 OBJECT-COMPUTER.    NEAC-SYSTEM100.
+000070 INPUT-OUTPUT        SECTION.
+000080 FILE-CONTROL.
+000090     SELECT  FCTL-F  ASSIGN  TO  F1-MSD
+000100       ORGANIZATION  IS  INDEXED
+000110       ACCESS  MODE  IS  RANDOM
+000120       RECORD  KEY   IS  FCTL-KEY1.
+000130     SELECT  SDH     ASSIGN  TO  SDH-MSD
+000140       ORGANIZATION  IS  INDEXED
+000150       ACCESS  MODE  IS  DYNAMIC
+000160       RECORD  KEY   IS  SH-KEY3.
+000170     SELECT  KZM-F   ASSIGN  TO  F2-MSD
+000180       ORGANIZATION  IS  INDEXED
+000190       ACCESS  MODE  IS  DYNAMIC
+000200       RECORD  KEY   IS  KZM-KEY
+000210       FILE    STATUS    ERR-STAT.
+000220 DATA            DIVISION.
+000230 FILE            SECTION.
+000240 COPY    FCTL.
+000250 FD  SDH
+000260     LABEL RECORD STANDARD
+000270     BLOCK  3 RECORDS
+000280     VALUE OF IDENTIFICATION "SIWAKE-H3".
+000290     COPY SIWAKH.
+000300     COPY LKAZAN.
+000310 WORKING-STORAGE SECTION.
+000320 77  INV-SW          PIC 9(1).
+000330 77  ERR-STAT        PIC X(02).
+000340 01  I               PIC 9(02).
+000350 01  W-ACT           PIC X(01).
+000360 01  W-FILE          PIC N(11).
+000370 01  W-DATE.                                                      I.971112
+000380     02  F           PIC 9(02).                                   I.971112
+000390     02  W-YMD       PIC 9(06).                                   I.971112
+000400 COPY    LWMSG.
+000410 SCREEN          SECTION.
+000420 SD  SCR-D
+000430     END  STATUS IS  ESTAT.
+000440 01  DSP-CLR.                                                     I.970120
+000450     02  LINE 01  CLEAR  SCREEN.                                  I.970120
+000460 01  DSP-AREA  LINE  24.
+000470     03  DSP-FILE    COLUMN  01  PIC  N(11)  FROM  W-FILE.
+000480     03  COLUMN   24   PIC   N(04) VALUE  NC"伝票日付".
+000490     03  COLUMN   32   PIC   X(01) VALUE  "=".
+000500     03  DSP-TRDATE
+000510         COLUMN   33   PIC   9(06) FROM   W-YMD.                  I.971112
+000520*****    COLUMN   33   PIC   9(06) FROM   TRDATE.                 D.971112
+000530     03  COLUMN   40   PIC   N(04) VALUE  NC"伝票番号".
+000540     03  COLUMN   48   PIC   X(01) VALUE  "=".
+000550     03  DSP-JUNLNO
+000560         COLUMN   49   PIC   9(06) FROM   HJUNLNO.
+000570     03  COLUMN   55   PIC   X(01) VALUE  "-".
+000580     03  DSP-LINENO
+000590         COLUMN   56   PIC   9(02) FROM   HLINENO.
+000600     03  COLUMN   59   PIC   N(04) VALUE  NC"貸借区分".
+000610     03  COLUMN   67   PIC   X(01) VALUE  "=".
+000620     03  DSP-DR-CR
+000630         COLUMN   68   PIC   9(01) FROM   HDR-CR.
+000640     03  COLUMN   71   PIC   N(02) VALUE  NC"確認".
+000650     03  COLUMN   76   PIC   X(03) VALUE  "( )".
+000660 01  ACP-AREA.
+000670     03  ACP-010  LINE  24   COLUMN  77  PIC  X(1)                U901214
+000680                  INTO  W-ACT  CHECK OVERFLOW NO IFC.
+000690 01  DSP-AREA2.                                                   I.970120
+000700     02  LINE 01  COLUMN 25  VALUE                                I.970120
+000710         NC"財務各残高マスタ　２月セット"  REVERSE.               I.970120
+000720 COPY    LSMSG.
+000730 PROCEDURE       DIVISION.
+000740 M-05.
+000750     DISPLAY  DSP-CLR.                                            I.970120
+000760     DISPLAY  DSP-AREA2.                                          I.970120
+000770     OPEN       INPUT        SDH  FCTL-F.
+000780     OPEN       I-O          KZM-F.
+000790     MOVE  "DATE  "         TO      FCTL-KEY1.
+000800     READ  FCTL-F           UNLOCK  INVALID
+000810           CLOSE  SDH  FCTL-F  KZM-F
+000820           MOVE 255         TO      COMPLETION-CODE
+000830           DISPLAY     INV-CON DISP-BUZ-B
+000840           STOP RUN.
+000850     MOVE  FCTL-REC1        TO      Z-R.
+000860     CLOSE FCTL-F.
+000870*
+000880     MOVE      20000201        TO     ZYMD.
+000890     PERFORM    Z-RTN        THRU     Z-EXT.
+000900     MOVE       ZI             TO     I.
+000910     IF  I  >  15
+000920       MOVE SPACE TO ERR-MSGX
+000930       MOVE "ｼｮﾘﾂﾞｷ ｴﾗｰ     " TO ERR-MSGX
+000940       DISPLAY DISP-MSG-01  DISP-BUZ-B
+000950       PERFORM  CLSE-ENT     THRU    CLSE-EXT
+000960       STOP     RUN.
+000970 M-10.
+000980     READ       KZM-F     NEXT RECORD AT END
+000990                GO TO M-55.
+001000     MOVE ZERO TO KZM-TJKR(I) KZM-TJKS(I).
+001010     REWRITE    KZM-R          INVALID
+001020                MOVE  "KZM-F"  TO     ERR-F
+001030                MOVE  "R"      TO     ERR-M
+001040                PERFORM ERR-ENT THRU ERR-EXT.
+001050     GO TO      M-10.
+001060 M-55.
+001070     READ       SDH  NEXT     AT END
+001080       PERFORM  CLSE-ENT     THRU    CLSE-EXT
+001090       STOP     RUN.
+001100     IF  HTRDATE   <  20000200   OR  >  20000299
+001110         GO  TO  M-55.
+001120     MOVE      HTRDATE         TO     ZYMD.
+001130     PERFORM    Z-RTN        THRU     Z-EXT.
+001140     MOVE       ZI             TO     I.
+001150     IF  I  >  15
+001160       MOVE SPACE TO ERR-MSGX
+001170       MOVE "ｼｮﾘﾂﾞｷ ｴﾗｰ     " TO ERR-MSGX
+001180       DISPLAY DISP-MSG-01  DISP-BUZ-B
+001190       PERFORM  CLSE-ENT     THRU    CLSE-EXT
+001200       STOP     RUN.
+001210     MOVE 0     TO INV-SW.                                        *
+001220     MOVE      HACCNTCD        TO    KZM-KEY.
+001230     READ       KZM-F        INVALID KEY
+001240                MOVE 1     TO INV-SW
+001250                INITIALIZE KZM-R
+001260                MOVE HACCNTCD     TO KZM-KEY.
+001270     IF  HDR-CR         =  1
+001280         ADD   HAMOUNT         TO     KZM-TJKR(I)
+001290     ELSE
+001300         ADD   HAMOUNT         TO     KZM-TJKS(I).
+001310     MOVE       KZM-KEY        TO     ERR-K.
+001320     IF INV-SW = 0     GO TO M-60.
+001330     WRITE KZM-R INVALID                                          *
+001340           MOVE  "KZM-F"  TO     ERR-F                            *
+001350           MOVE  "W"      TO     ERR-M                            *
+001360           PERFORM ERR-ENT THRU ERR-EXT.                          *
+001370     CALL "CBLTCLS" USING KZM-F.                                  *
+001380     GO TO M-55.
+001390 M-60.
+001400     REWRITE    KZM-R          INVALID
+001410                MOVE  "KZM-F"  TO     ERR-F
+001420                MOVE  "R"      TO     ERR-M
+001430                PERFORM ERR-ENT THRU ERR-EXT.
+001440     GO TO      M-55.
+001450 ED.
+001460     EXIT.
+001470******
+001480 CLSE-ENT.
+001490     CLOSE    SDH   FCTL-F  KZM-F.
+001500 CLSE-EXT.
+001510     EXIT.
+001520******
+001530 COPY  LPMSG.

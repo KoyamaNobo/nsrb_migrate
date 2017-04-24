@@ -1,0 +1,597 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. JTN33U.
+000030*********************************************************
+000040*    PROGRAM         :  生協事前納品連絡ファイル　作成 (EXCEL)
+000050*********************************************************
+000060 ENVIRONMENT DIVISION.
+000070 CONFIGURATION SECTION.
+000080 SOURCE-COMPUTER. SYSTEM3100.
+000090 OBJECT-COMPUTER. SYSTEM3100.
+000100 INPUT-OUTPUT SECTION.
+000110 FILE-CONTROL.
+000120     SELECT HI-M ASSIGN TO HI1-MSD HI2-MSD
+000130         ORGANIZATION INDEXED
+000140         ACCESS MODE DYNAMIC
+000150         RECORD KEY HI-KEY
+000160         ALTERNATE RECORD KEY HI-KEY2.
+000170     SELECT JCON ASSIGN TO JCON-MSD
+000180         ORGANIZATION INDEXED
+000190         ACCESS MODE DYNAMIC
+000200         RECORD KEY JCON2-KEY.
+000210     SELECT SK-HAT-R ASSIGN TO HAT-RDB.                           I.040407
+000220     SELECT JNIF ASSIGN TO JNI-MSD
+000230         ORGANIZATION INDEXED
+000240         ACCESS MODE DYNAMIC
+000250         RECORD KEY JNIF1-KEY.
+000260     SELECT JNIRF ASSIGN TO JNIR-MSD
+000270         FILE STATUS ERR-STAT.
+000280     SELECT SGNRF ASSIGN TO SGNR-MSD
+000290         FILE STATUS ERR-STAT.
+000300     SELECT SNFWR ASSIGN TO SNFW-MSD                              I.040317
+000310         FILE STATUS ERR-STAT.                                    I.040317
+000320 I-O-CONTROL.
+000330     APPLY SHARED-MODE ON HI-M
+000340     APPLY SHARED-MODE ON JNIF
+000350     APPLY SHARED-MODE ON JCON.
+000360 DATA DIVISION.
+000370 FILE SECTION.
+000380     COPY LIHIM.
+000390     COPY L-JCON.
+000400     COPY LHATR.                                                  I.040407
+000410     COPY L-JNIF.
+000420     COPY LSNFWR.                                                 I.040317
+000430 FD  JNIRF
+000440     BLOCK  3 RECORDS
+000450     LABEL RECORD STANDARD
+000460     VALUE OF IDENTIFICATION "JNIRF".
+000470 01  JNIR-R.
+000480     02  JNIR-RD.
+000490       03  JNIR-DNO     PIC  9(006).
+000500       03  JNIR-GNO     PIC  9(001).
+000510       03  JNIR-HCD     PIC  9(006).
+000520       03  F            PIC  X(013).
+000530       03  JNIR-UNO     PIC  9(001).
+000540       03  F            PIC  X(004).
+000550       03  JNIR-SUD   OCCURS  27.
+000560         04  JNIR-SU    PIC S9(003).
+000570       03  F            PIC  X(009).
+000580       03  JNIR-ONO     PIC  9(006).
+000590       03  F            PIC  X(001).
+000600     02  F              PIC  X(042).
+000610 FD  SGNRF
+000620*****BLOCK  2 RECORDS                                             D.040413
+000630     BLOCK  3 RECORDS                                             I.040413
+000640     LABEL RECORD IS STANDARD
+000650     VALUE OF IDENTIFICATION "SGNRF".
+000660 01  SGNR-R.
+000670     02  SGNR-S1        PIC  N(003).
+000680     02  SGNR-S2        PIC  N(003).
+000690     02  SGNR-NAME      PIC  N(024).
+000700     02  SGNR-SIZ       PIC  X(004).
+000710     02  SGNR-CM        PIC  N(001).
+000720     02  SGNR-KSU       PIC  X(003).
+000730     02  SGNR-NR        PIC  N(004).
+000740     02  SGNR-SU        PIC  9(003).
+000750     02  SGNR-UNA       PIC  N(006).
+000760     02  SGNR-ONO       PIC  9(006).                              I.040406
+000770     02  SGNR-HIN       PIC  X(013).                              I.040407
+000780     02  SGNR-HIN1      PIC  X(009).                              I.040408
+000790     02  SGNR-HIN2      PIC  X(006).                              I.040412
+000800     02  SGNR-HIN3      PIC  X(006).                              I.040412
+000810 WORKING-STORAGE SECTION.
+000820 77  W-FILE             PIC  X(013).
+000830 77  W-END              PIC  9(001) VALUE 0.
+000840 01  W-DATA.
+000850     02  W-L            PIC  9(002).
+000860     02  W-C            PIC  9(002).
+000870     02  W-NO           PIC  9(002).
+000880     02  W-AONO.
+000890       03  W-ONOD  OCCURS  10.
+000900         04  W-ONO      PIC  9(006).
+000910     02  W-DMM          PIC  9(001).
+000920     02  W-FC           PIC  9(001).
+000930     02  W-DNO          PIC  9(006).
+000940     02  W-KSU          PIC  9(003).
+000950     02  W-KSUD         PIC  Z(003).
+000960     02  CHK            PIC  9(001).
+000970     02  CNT            PIC  9(002).
+000980     02  W-ASD1.
+000990       03  F            PIC  X(040) VALUE
+001000            "12.513.013.514.015.016.017.018.019.020.0".
+001010       03  F            PIC  X(040) VALUE
+001020            "21.021.522.022.523.023.524.024.525.025.5".
+001030       03  F            PIC  X(028) VALUE
+001040            "26.026.527.027.528.029.030.0".
+001050     02  W-ASD2.
+001060       03  F            PIC  X(040) VALUE
+001070            "          SS   S   M   L  LL            ".
+001080       03  F            PIC  X(040) VALUE
+001090            "                                        ".
+001100       03  F            PIC  X(028) VALUE
+001110            "                  XL XXL    ".
+001120     02  W-ASD.
+001130       03  W-SD    OCCURS  27.
+001140         04  W-S        PIC  X(004).
+001150     02  W-ASCD1.                                                 I.040407
+001160       03  F            PIC  X(030) VALUE                         I.040407
+001170            "125130135140150160170180190200".                     I.040407
+001180       03  F            PIC  X(030) VALUE                         I.040407
+001190            "210215220225230235240245250255".                     I.040407
+001200       03  F            PIC  X(021) VALUE                         I.040407
+001210            "260265270275280290300".                              I.040407
+001220     02  W-ASCD2.                                                 I.040407
+001230       03  F            PIC  X(030) VALUE                         I.040407
+001240            "      010011012013014         ".                     I.040407
+001250       03  F            PIC  X(030) VALUE                         I.040407
+001260            "                              ".                     I.040407
+001270       03  F            PIC  X(021) VALUE                         I.040407
+001280            "            280290   ".                              I.040407
+001290     02  W-ASCD.                                                  I.040407
+001300       03  W-SCD   OCCURS  27.                                    I.040407
+001310         04  W-SC       PIC  9(003).                              I.040407
+001320     02  W-NGP.                                                   I.040407
+001330       03  W-NEN        PIC  9(004).                              I.040407
+001340       03  W-GET        PIC  9(002).                              I.040407
+001350       03  W-PEY        PIC  9(002).                              I.040407
+001360     02  W-HIN          PIC  X(013).                              I.040407
+001370     02  W-HIN1         PIC  X(009).                              I.040408
+001380     02  W-HIN2         PIC  X(006).                              I.040413
+001390     02  W-HIN3         PIC  X(006).                              I.040413
+001400 01  W-R.
+001410     02  WR-DNO         PIC  9(006).
+001420     02  WR-GNO         PIC  9(001).
+001430     02  WR-HCD         PIC  9(006).
+001440     02  F              PIC  X(013).
+001450     02  WR-UNO         PIC  9(001).
+001460     02  F              PIC  X(004).
+001470     02  WR-SUD   OCCURS  27.
+001480       03  WR-SU        PIC S9(003).
+001490     02  F              PIC  X(009).
+001500     02  WR-ONO         PIC  9(006).
+001510     02  F              PIC  X(001).
+001520 01  ERR-STAT           PIC  X(002).
+001530     COPY LSTAT.
+001540 SCREEN SECTION.
+001550 SD  C-CRT
+001560     END STATUS IS ESTAT.
+001570 01  C-CLEAR.
+001580     02  LINE   1  CLEAR SCREEN.
+001590 01  C-MID.
+001600     02  LINE   3  COLUMN  10  PIC  N(023) VALUE
+001610          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001620     02  LINE   4  COLUMN  10  PIC  N(023) VALUE
+001630          NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+001640     02  LINE   5  COLUMN  10  PIC  N(023) VALUE
+001650          NC"＊＊＊　　事前納品連絡ファイル　作成　　＊＊＊".
+001660     02  LINE   6  COLUMN  10  PIC  N(023) VALUE
+001670          NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+001680     02  LINE   7  COLUMN  10  PIC  N(023) VALUE
+001690          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001700     02  LINE  14  COLUMN  20  PIC  X(027) VALUE
+001710          "送り状№          ･        ".
+001720     02  LINE  15  COLUMN  20  PIC  X(027) VALUE
+001730          "                  ･        ".
+001740     02  LINE  16  COLUMN  20  PIC  X(027) VALUE
+001750          "                  ･        ".
+001760     02  LINE  17  COLUMN  20  PIC  X(027) VALUE
+001770          "                  ･        ".
+001780     02  LINE  18  COLUMN  20  PIC  X(027) VALUE
+001790          "                  ･        ".
+001800     02  LINE  22  COLUMN  23  PIC  X(022) VALUE
+001810          "確認  OK=1 NO=9   ﾘﾀｰﾝ".
+001820 01  C-ACP.
+001830     02  A-ONO   LINE W-L  COLUMN W-C  PIC  9(006)
+001840          USING W-ONO(W-NO) CHECK OVERFLOW NO IFC.
+001850     02  A-DMM   LINE  22  COLUMN  40  PIC  9(001)
+001860          USING W-DMM   CHECK OVERFLOW NO IFC.
+001870 01  C-DSP.
+001880     02  D-ONO   LINE W-L  COLUMN W-C  PIC  X(006) VALUE "      ".
+001890 01  C-ERR.
+001900     02  LINE  24.
+001910       03  E-ME1   COLUMN  15  PIC  X(017) VALUE
+001920            "***  DATA ﾅｼ  ***".
+001930       03  E-ME2   COLUMN  15  PIC  X(017) VALUE
+001940            "***  ﾋﾝﾒｲ ﾅｼ  ***".
+001950       03  E-ME3   COLUMN  15  PIC  X(017) VALUE
+001960            "***  ｳﾝｿｳ ﾅｼ  ***".
+001970       03  E-ONO   COLUMN  35  PIC  9(006) FROM  W-ONO(W-NO).
+001980       03  E-HCD   COLUMN  43  PIC  9(006) FROM  WR-HCD.
+001990       03  E-UNO   COLUMN  51  PIC  9(006) FROM  WR-UNO.
+002000     COPY LSSEM.
+002010 PROCEDURE DIVISION.
+002020 M-05.
+002030     DISPLAY C-CLEAR.
+002040     DISPLAY C-MID.
+002050*
+002060     PERFORM S-05 THRU S-35.
+002070     IF ESTAT = PF9
+002080         MOVE 255 TO COMPLETION-CODE
+002090         GO TO M-95.
+002100*
+002110     OPEN INPUT HI-M JCON.
+002120     OPEN OUTPUT SGNRF.
+002130     MOVE ZERO TO W-NO.
+002140 M-10.
+002150     ADD 1 TO W-NO.
+002160     IF W-NO = 11
+002170         GO TO M-95.
+002180     IF W-ONO(W-NO) = ZERO
+002190         GO TO M-95.
+002200*
+002210     IF W-NO NOT = 1
+002220         INITIALIZE SGNR-R
+002230         MOVE SPACE TO SGNR-S1 SGNR-S2 SGNR-NAME SGNR-CM SGNR-UNA
+002240                           SGNR-HIN SGNR-HIN1 SGNR-HIN2 SGNR-HIN3 I.040413
+002250*****                                          SGNR-HIN SGNR-HIN1 D.040413
+002260*****                                                    SGNR-HIN D.040408
+002270         WRITE SGNR-R
+002280         WRITE SGNR-R.
+002290*
+002300     OPEN INPUT SNFWR.                                            I.040317
+002310 M-15.                                                            I.040317
+002320     READ SNFWR AT END                                            I.040317
+002330         GO TO M-20.                                              I.040317
+002340     IF SNR1-01 NOT = W-ONO(W-NO)                                 I.040317
+002350         GO TO M-15.                                              I.040317
+002360     IF SNR1-03 = 7                                               I.040409
+002370         GO TO M-15.                                              I.040409
+002380     MOVE 2 TO W-FC.                                              I.040317
+002390     PERFORM S-60 THRU S-65.                                      I.040407
+002400*****INITIALIZE W-R.                                              D.040407
+002410*****MOVE SNR1-02 TO WR-DNO.                                      D.040407
+002420*****MOVE SNR1-03 TO WR-GNO.                                      D.040407
+002430*****MOVE SNR1-04 TO WR-HCD.                                      D.040407
+002440*****MOVE SNR1-07 TO WR-UNO.                                      D.040407
+002450*****MOVE SNR1-101(01) TO WR-SU(01).                              D.040407
+002460*****MOVE SNR1-101(02) TO WR-SU(02).                              D.040407
+002470*****MOVE SNR1-101(03) TO WR-SU(03).                              D.040407
+002480*****MOVE SNR1-101(04) TO WR-SU(04).                              D.040407
+002490*****MOVE SNR1-101(05) TO WR-SU(05).                              D.040407
+002500*****MOVE SNR1-101(06) TO WR-SU(06).                              D.040407
+002510*****MOVE SNR1-101(07) TO WR-SU(07).                              D.040407
+002520*****MOVE SNR1-101(08) TO WR-SU(08).                              D.040407
+002530*****MOVE SNR1-101(09) TO WR-SU(09).                              D.040407
+002540*****MOVE SNR1-101(10) TO WR-SU(10).                              D.040407
+002550*****MOVE SNR1-101(11) TO WR-SU(11).                              D.040407
+002560*****MOVE SNR1-101(12) TO WR-SU(12).                              D.040407
+002570*****MOVE SNR1-101(13) TO WR-SU(13).                              D.040407
+002580*****MOVE SNR1-101(14) TO WR-SU(14).                              D.040407
+002590*****MOVE SNR1-101(15) TO WR-SU(15).                              D.040407
+002600*****MOVE SNR1-101(16) TO WR-SU(16).                              D.040407
+002610*****MOVE SNR1-101(17) TO WR-SU(17).                              D.040407
+002620*****MOVE SNR1-101(18) TO WR-SU(18).                              D.040407
+002630*****MOVE SNR1-101(19) TO WR-SU(19).                              D.040407
+002640*****MOVE SNR1-101(20) TO WR-SU(20).                              D.040407
+002650*****MOVE SNR1-101(21) TO WR-SU(21).                              D.040407
+002660*****MOVE SNR1-101(22) TO WR-SU(22).                              D.040407
+002670*****MOVE SNR1-101(23) TO WR-SU(23).                              D.040407
+002680*****MOVE SNR1-101(24) TO WR-SU(24).                              D.040407
+002690*****MOVE SNR1-101(25) TO WR-SU(25).                              D.040407
+002700*****MOVE SNR1-101(26) TO WR-SU(26).                              D.040407
+002710*****MOVE SNR1-101(27) TO WR-SU(27).                              D.040407
+002720*****MOVE SNR1-01 TO WR-ONO.                                      D.040407
+002730     GO TO M-40.                                                  I.040317
+002740 M-20.                                                            I.040317
+002750     CLOSE SNFWR.                                                 I.040317
+002760*
+002770     OPEN INPUT JNIRF.
+002780 M-25.
+002790     READ JNIRF AT END
+002800         GO TO M-30.
+002810     IF JNIR-GNO = 7
+002820         GO TO M-25.
+002830     IF JNIR-ONO NOT = W-ONO(W-NO)
+002840         GO TO M-25.
+002850     IF JNIR-HCD > 999899
+002860         GO TO M-25.
+002870     MOVE 0 TO W-FC.
+002880     MOVE JNIR-RD TO W-R.
+002890     GO TO M-40.
+002900 M-30.
+002910     CLOSE JNIRF.
+002920*
+002930     OPEN INPUT JNIF.
+002940 M-35.
+002950     READ JNIF NEXT RECORD WITH UNLOCK AT END
+002960         MOVE 1 TO W-END
+002970         MOVE 9 TO W-FC                                           I.040407
+002980         DISPLAY E-ME1 E-ONO E-ME99
+002990         GO TO M-85.
+003000     IF JNIF1-02 = 7
+003010         GO TO M-35.
+003020     IF JNIF1-14 NOT = W-ONO(W-NO)
+003030         GO TO M-35.
+003040     IF JNIF1-03 > 999899
+003050         GO TO M-35.
+003060     MOVE 1 TO W-FC.
+003070     MOVE JNIF1-R TO W-R.
+003080 M-40.
+003090     MOVE ZERO TO W-KSU.
+003100 M-45.
+003110     MOVE WR-DNO TO W-DNO.
+003120     ADD 1 TO W-KSU.
+003130     MOVE 0 TO CHK.
+003140     MOVE 2 TO JCON2-01.
+003150     MOVE WR-UNO TO JCON2-02.
+003160     READ JCON WITH UNLOCK INVALID KEY
+003170         MOVE 1 TO W-END
+003180         DISPLAY E-ME3 E-ONO E-UNO E-ME99
+003190         GO TO M-85.
+003200 M-50.
+003210     MOVE WR-HCD TO HI-KEY.
+003220     READ HI-M WITH UNLOCK INVALID KEY
+003230         MOVE 1 TO W-END
+003240         DISPLAY E-ME2 E-ONO E-HCD E-ME99
+003250         GO TO M-85.
+003260     MOVE SPACE TO W-ASD.
+003270     IF (ZERO = HI-SS(2) AND HI-SS(3) AND HI-SS(4)) OR
+003280        ((ZERO = HI-SS(2) AND HI-SS(3)) AND (HI-SS(4) = 1))
+003290             MOVE W-ASCD2 TO W-ASCD                               I.040407
+003300             MOVE W-ASD2 TO W-ASD
+003310           ELSE
+003320             MOVE W-ASCD1 TO W-ASCD                               I.040407
+003330             MOVE W-ASD1 TO W-ASD.
+003340*
+003350     PERFORM S-40 THRU S-55.
+003360*M-53                                                             D.040409
+003370     IF W-FC NOT = 2                                              I.040317
+003380         GO TO M-60.                                              I.040317
+003390 M-55.                                                            I.040409
+003400     READ SNFWR AT END                                            I.040317
+003410         GO TO M-85.                                              I.040317
+003420     IF SNR1-01 NOT = W-ONO(W-NO)                                 I.040317
+003430         GO TO M-85.                                              I.040317
+003440     IF SNR1-03 = 7                                               I.040409
+003450         GO TO M-55.                                              I.040409
+003460     PERFORM S-60 THRU S-65.                                      I.040407
+003470*****INITIALIZE W-R.                                              D.040407
+003480*****MOVE SNR1-02 TO WR-DNO.                                      D.040407
+003490*****MOVE SNR1-03 TO WR-GNO.                                      D.040407
+003500*****MOVE SNR1-04 TO WR-HCD.                                      D.040407
+003510*****MOVE SNR1-07 TO WR-UNO.                                      D.040407
+003520*****MOVE SNR1-101(01) TO WR-SU(01).                              D.040407
+003530*****MOVE SNR1-101(02) TO WR-SU(02).                              D.040407
+003540*****MOVE SNR1-101(03) TO WR-SU(03).                              D.040407
+003550*****MOVE SNR1-101(04) TO WR-SU(04).                              D.040407
+003560*****MOVE SNR1-101(05) TO WR-SU(05).                              D.040407
+003570*****MOVE SNR1-101(06) TO WR-SU(06).                              D.040407
+003580*****MOVE SNR1-101(07) TO WR-SU(07).                              D.040407
+003590*****MOVE SNR1-101(08) TO WR-SU(08).                              D.040407
+003600*****MOVE SNR1-101(09) TO WR-SU(09).                              D.040407
+003610*****MOVE SNR1-101(10) TO WR-SU(10).                              D.040407
+003620*****MOVE SNR1-101(11) TO WR-SU(11).                              D.040407
+003630*****MOVE SNR1-101(12) TO WR-SU(12).                              D.040407
+003640*****MOVE SNR1-101(13) TO WR-SU(13).                              D.040407
+003650*****MOVE SNR1-101(14) TO WR-SU(14).                              D.040407
+003660*****MOVE SNR1-101(15) TO WR-SU(15).                              D.040407
+003670*****MOVE SNR1-101(16) TO WR-SU(16).                              D.040407
+003680*****MOVE SNR1-101(17) TO WR-SU(17).                              D.040407
+003690*****MOVE SNR1-101(18) TO WR-SU(18).                              D.040407
+003700*****MOVE SNR1-101(19) TO WR-SU(19).                              D.040407
+003710*****MOVE SNR1-101(20) TO WR-SU(20).                              D.040407
+003720*****MOVE SNR1-101(21) TO WR-SU(21).                              D.040407
+003730*****MOVE SNR1-101(22) TO WR-SU(22).                              D.040407
+003740*****MOVE SNR1-101(23) TO WR-SU(23).                              D.040407
+003750*****MOVE SNR1-101(24) TO WR-SU(24).                              D.040407
+003760*****MOVE SNR1-101(25) TO WR-SU(25).                              D.040407
+003770*****MOVE SNR1-101(26) TO WR-SU(26).                              D.040407
+003780*****MOVE SNR1-101(27) TO WR-SU(27).                              D.040407
+003790*****MOVE SNR1-01 TO WR-ONO.                                      D.040407
+003800     IF WR-DNO = W-DNO
+003810         GO TO M-50.
+003820     GO TO M-45.                                                  I.040317
+003830 M-60.                                                            I.040409
+003840     IF W-FC = 1
+003850         GO TO M-70.
+003860 M-65.                                                            I.040317
+003870     READ JNIRF AT END
+003880         GO TO M-85.
+003890     IF JNIR-GNO = 7
+003900         GO TO M-65.                                              I.040317
+003910*****    GO TO M-53.                                              D.040317
+003920     IF JNIR-ONO NOT = W-ONO(W-NO)
+003930         GO TO M-85.
+003940     IF JNIR-HCD > 999899
+003950         GO TO M-65.                                              I.040317
+003960*****    GO TO M-53.                                              D.040317
+003970     MOVE JNIR-RD TO W-R.
+003980     IF WR-DNO = W-DNO
+003990         GO TO M-50.
+004000     GO TO M-45.
+004010 M-70.
+004020     READ JNIF NEXT RECORD WITH UNLOCK AT END
+004030         GO TO M-85.
+004040     IF JNIF1-02 = 7
+004050         GO TO M-70.
+004060     IF JNIF1-14 NOT = W-ONO(W-NO)
+004070         GO TO M-85.
+004080     IF JNIF1-03 > 999899
+004090         GO TO M-70.
+004100     MOVE JNIF1-R TO W-R.
+004110     IF WR-DNO = W-DNO
+004120         GO TO M-50.
+004130     GO TO M-45.
+004140 M-85.
+004150     IF W-FC = 2                                                  I.040317
+004160         CLOSE SNFWR                                              I.040317
+004170       ELSE                                                       I.040317
+004180         IF W-FC = 0
+004190             CLOSE JNIRF
+004200           ELSE
+004210             CLOSE JNIF.
+004220     IF W-END = 0
+004230         GO TO M-10.
+004240     MOVE 255 TO COMPLETION-CODE.
+004250     OPEN OUTPUT SGNRF.
+004260 M-90.
+004270     CLOSE HI-M JCON.
+004280     CLOSE SGNRF.
+004290 M-95.
+004300     DISPLAY C-CLEAR.
+004310     STOP RUN.
+004320 S-05.
+004330     MOVE ZERO TO W-AONO W-NO.
+004340     MOVE 13 TO W-L.
+004350     MOVE 30 TO W-C.
+004360 S-10.
+004370     ADD 1 TO W-NO W-L.
+004380     IF W-NO = 11
+004390         GO TO S-30.
+004400     IF W-NO = 6
+004410         MOVE 14 TO W-L
+004420         MOVE 41 TO W-C.
+004430 S-15.
+004440     ACCEPT A-ONO.
+004450     IF W-NO = 1
+004460         IF ESTAT = PF9
+004470             GO TO S-35.
+004480     IF W-NO NOT = 1
+004490         IF ESTAT = BTB
+004500             GO TO S-20.
+004510     IF ESTAT NOT = HTB AND SKP
+004520         GO TO S-15.
+004530     IF W-ONO(W-NO) > 299999
+004540         GO TO S-15.
+004550     IF W-ONO(W-NO) = ZERO
+004560         IF W-NO = 1
+004570             GO TO S-15
+004580           ELSE
+004590             GO TO S-25.
+004600     GO TO S-10.
+004610 S-20.
+004620     SUBTRACT 1 FROM W-NO W-L.
+004630     IF W-NO = 5
+004640         MOVE 18 TO W-L
+004650         MOVE 30 TO W-C.
+004660     GO TO S-15.
+004670 S-25.
+004680     DISPLAY D-ONO.
+004690     ADD 1 TO W-NO W-L.
+004700     IF W-NO = 11
+004710         GO TO S-30.
+004720     IF W-NO = 6
+004730         MOVE 14 TO W-L
+004740         MOVE 41 TO W-C.
+004750     GO TO S-25.
+004760 S-30.
+004770     ACCEPT A-DMM.
+004780     IF ESTAT = BTB
+004790         GO TO S-20.
+004800     IF ESTAT NOT = HTB AND SKP
+004810        GO TO S-30.
+004820     IF W-DMM = 9
+004830         GO TO S-05.
+004840     IF W-DMM NOT = 1
+004850         GO TO S-30.
+004860 S-35.
+004870     EXIT.
+004880 S-40.
+004890     MOVE ZERO TO CNT.
+004900 S-45.
+004910     ADD 1 TO CNT.
+004920     IF CNT = 28
+004930         GO TO S-55.
+004940     IF WR-SU(CNT) = ZERO
+004950         GO TO S-45.
+004960*
+004970*****MOVE SPACE TO W-HIN.                                         D.040408
+004980     MOVE SPACE TO W-HIN W-HIN1.                                  I.040408
+004990     IF W-FC NOT = 2                                              I.040407
+005000         GO TO S-50.                                              I.040407
+005010     MOVE ZERO TO W-NGP.                                          I.040407
+005020     MOVE SNR1-051 TO W-NEN.                                      I.040407
+005030     MOVE SNR1-052 TO W-GET.                                      I.040407
+005040     MOVE SNR1-053 TO W-PEY.                                      I.040407
+005050     ADD 2000 TO W-NEN.                                           I.040407
+005060     OPEN INPUT SK-HAT-R.                                         I.040407
+005070     SELECT SK-HAT-R WHERE SNR1-15 = HATR-18 AND                  I.040407
+005080                         SNR1-06 = HATR-04 AND                    I.040407
+005090                         W-NGP = HATR-25 AND                      I.040407
+005100                         SNR1-04 = HATR-07 AND                    I.040407
+005110                         W-SC(CNT)= HATR-08.                      I.040407
+005120     READ SK-HAT-R AT END                                         I.040407
+005130         SCRATCH SK-HAT-R                                         I.040407
+005140         MOVE SPACE TO HATR-15 HATR-26.                           I.040413
+005150*****    MOVE SPACE TO HATR-15.                                   D.040413
+005160     MOVE SPACE TO W-HIN W-HIN1 W-HIN2 W-HIN3.                    I.040413
+005170     MOVE HATR-15 TO W-HIN.                                       I.040407
+005180     MOVE HATR-26 TO W-HIN1.                                      I.040408
+005190     CLOSE SK-HAT-R.                                              I.040407
+005200     IF SNR1-061 NOT = 3240                                       I.040413
+005210         GO TO S-50.                                              I.040413
+005220     IF SPACE = W-HIN AND W-HIN1                                  I.040413
+005230         GO TO S-50.                                              I.040413
+005240     MOVE W-HIN1(2:2) TO W-HIN2(1:2).                             I.040413
+005250     MOVE "-" TO W-HIN2(3:1).                                     I.040413
+005260     MOVE W-HIN1(4:1) TO W-HIN2(4:1).                             I.040413
+005270     MOVE W-HIN1(6:4) TO W-HIN3(1:4).                             I.040413
+005280     MOVE SPACE TO W-HIN1.                                        I.040413
+005290     MOVE W-HIN(4:6) TO W-HIN1(1:6).                              I.040413
+005300     MOVE SPACE TO W-HIN(4:6).                                    I.040413
+005310 S-50.                                                            I.040407
+005320     INITIALIZE SGNR-R.
+005330     MOVE SPACE TO SGNR-S1 SGNR-S2 SGNR-NAME SGNR-CM SGNR-UNA     I.040408
+005340                          SGNR-HIN SGNR-HIN1 SGNR-HIN2 SGNR-HIN3. I.040413
+005350*****MOVE SPACE TO SGNR-S1 SGNR-S2 SGNR-NAME SGNR-CM SGNR-UNA.    D.040408
+005360*****                                          SGNR-HIN SGNR-HIN1 D.040413
+005370     MOVE HI-NAME TO SGNR-NAME.
+005380     MOVE W-S(CNT) TO SGNR-SIZ.
+005390     IF W-S(27) NOT = SPACE
+005400         MOVE NC"㎝" TO SGNR-CM.
+005410     IF CHK = 0
+005420         MOVE 1 TO CHK
+005430         MOVE W-KSU TO W-KSUD
+005440       ELSE
+005450         MOVE 0 TO W-KSUD.
+005460     MOVE W-KSUD TO SGNR-KSU.
+005470     MOVE NC"日進ゴム" TO SGNR-NR.
+005480     MOVE WR-SU(CNT) TO SGNR-SU.
+005490     MOVE JCON2-03 TO SGNR-UNA.
+005500     MOVE WR-ONO TO SGNR-ONO.                                     I.040406
+005510     IF W-FC = 2                                                  I.040407
+005520         MOVE W-HIN TO SGNR-HIN                                   I.040408
+005530         MOVE W-HIN1 TO SGNR-HIN1                                 I.040413
+005540         MOVE W-HIN2 TO SGNR-HIN2                                 I.040413
+005550         MOVE W-HIN3 TO SGNR-HIN3.                                I.040413
+005560*****    MOVE W-HIN1 TO SGNR-HIN1.                                D.040408
+005570*****    MOVE W-HIN TO SGNR-HIN.                                  D.040408
+005580     WRITE SGNR-R.
+005590     GO TO S-45.
+005600 S-55.
+005610     EXIT.
+005620 S-60.                                                            I.040407
+005630     INITIALIZE W-R.                                              I.040407
+005640     MOVE SNR1-02 TO WR-DNO.                                      I.040407
+005650     MOVE SNR1-03 TO WR-GNO.                                      I.040407
+005660     MOVE SNR1-04 TO WR-HCD.                                      I.040407
+005670     MOVE SNR1-07 TO WR-UNO.                                      I.040407
+005680     MOVE SNR1-101(01) TO WR-SU(01).                              I.040407
+005690     MOVE SNR1-101(02) TO WR-SU(02).                              I.040407
+005700     MOVE SNR1-101(03) TO WR-SU(03).                              I.040407
+005710     MOVE SNR1-101(04) TO WR-SU(04).                              I.040407
+005720     MOVE SNR1-101(05) TO WR-SU(05).                              I.040407
+005730     MOVE SNR1-101(06) TO WR-SU(06).                              I.040407
+005740     MOVE SNR1-101(07) TO WR-SU(07).                              I.040407
+005750     MOVE SNR1-101(08) TO WR-SU(08).                              I.040407
+005760     MOVE SNR1-101(09) TO WR-SU(09).                              I.040407
+005770     MOVE SNR1-101(10) TO WR-SU(10).                              I.040407
+005780     MOVE SNR1-101(11) TO WR-SU(11).                              I.040407
+005790     MOVE SNR1-101(12) TO WR-SU(12).                              I.040407
+005800     MOVE SNR1-101(13) TO WR-SU(13).                              I.040407
+005810     MOVE SNR1-101(14) TO WR-SU(14).                              I.040407
+005820     MOVE SNR1-101(15) TO WR-SU(15).                              I.040407
+005830     MOVE SNR1-101(16) TO WR-SU(16).                              I.040407
+005840     MOVE SNR1-101(17) TO WR-SU(17).                              I.040407
+005850     MOVE SNR1-101(18) TO WR-SU(18).                              I.040407
+005860     MOVE SNR1-101(19) TO WR-SU(19).                              I.040407
+005870     MOVE SNR1-101(20) TO WR-SU(20).                              I.040407
+005880     MOVE SNR1-101(21) TO WR-SU(21).                              I.040407
+005890     MOVE SNR1-101(22) TO WR-SU(22).                              I.040407
+005900     MOVE SNR1-101(23) TO WR-SU(23).                              I.040407
+005910     MOVE SNR1-101(24) TO WR-SU(24).                              I.040407
+005920     MOVE SNR1-101(25) TO WR-SU(25).                              I.040407
+005930     MOVE SNR1-101(26) TO WR-SU(26).                              I.040407
+005940     MOVE SNR1-101(27) TO WR-SU(27).                              I.040407
+005950     MOVE SNR1-01 TO WR-ONO.                                      I.040407
+005960 S-65.                                                            I.040407
+005970     EXIT.                                                        I.040407

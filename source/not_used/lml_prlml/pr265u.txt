@@ -1,0 +1,167 @@
+000010 IDENTIFICATION  DIVISION.
+000020 PROGRAM-ID.     PR265U.
+000030 ENVIRONMENT     DIVISION.
+000040 CONFIGURATION   SECTION.
+000050 SOURCE-COMPUTER.  SYSTEM3100.
+000060 OBJECT-COMPUTER.  SYSTEM3100.
+000070 INPUT-OUTPUT    SECTION.
+000080 FILE-CONTROL.
+000090     SELECT  GYM ASSIGN  TO  GYM-MSD
+000100                 ORGANIZATION    INDEXED
+000110                 RECORD   KEY    GYM-KEY.
+000120     SELECT  AM  ASSIGN  TO  AM-MSD
+000130                 ORGANIZATION    INDEXED
+000140                 ACCESS  MODE    RANDOM
+000150                 RECORD   KEY    AM-KEY.
+000160     SELECT  BM  ASSIGN  TO  BANK-MSD
+000170                 ORGANIZATION    INDEXED
+000180                 ACCESS  MODE    DYNAMIC
+000190                 RECORD  KEY     BM-KEY.
+000200*
+000210 I-O-CONTROL.
+000220     APPLY     SHARED-MODE   ON  GYM  AM.
+000230**
+000240 DATA            DIVISION.
+000250 FILE            SECTION.
+000260 COPY    LGYM.
+000270 COPY    ACCUNT.
+000280 COPY    L-BANK.
+000290 WORKING-STORAGE SECTION.
+000300 77  I                   PIC 9(2)    VALUE 0.
+000310 77  ANZAN               PIC  S9(10).
+000320 77  CHK                 PIC  9(01).
+000330 77  W-OKC               PIC  X(01).
+000340 77  FIL                 PIC  X(40)  VALUE  SPACE.
+000350 SCREEN          SECTION.
+000360 SD  SCR-D
+000370     END STATUS  IS  ESTAT.
+000380 01  DISP-BUZZER             LINE   24.
+000390     02  DISP-BUZ-J    COLUMN  80  PIC X(05) VALUE ""27"J"03"".
+000400 01  DSP-CLR         LINE  01.
+000410     02  CLEAR  SCREEN.
+000420 01  DSP-INI.
+000430     02  LINE  01.
+000440         03  COLUMN  34         PIC X(14)
+000450                     VALUE  " ‹âsŽæˆø“ú•ñ "     REVERSE.
+000460     02  LINE  24.
+000470         03  COLUMN  61         PIC N(02)
+000480                     VALUE  NC"Šm”F".
+000490         03  COLUMN  66         PIC X(13)
+000500                     VALUE  "OK=1,NO=9 ( )".
+000510 01  DSP-AREA.
+000520     02  DSP-010     LINE  24.
+000530         04  DSP-011 COLUMN  1  PIC X(24)
+000540                     VALUE  "·ÞÝº³ Ï½À Ø×²Ä ÌÉ³ KEY= ".
+000550         04  DSP-012 COLUMN  25 PIC 9(04)  FROM  BM-KEY.
+000560     02  DSP-020     LINE  24.
+000570         04  DSP-021 COLUMN  1  PIC X(16)
+000580                     VALUE  "¶Ó¸ Ï½À Å¼ KEY= ".
+000590         04  DSP-022 COLUMN  17 PIC 9(04)  FROM  GYM-011.
+000600     02  DSP-030     LINE  24.
+000610         04  DSP-031 COLUMN  1  PIC X(18)
+000620                     VALUE  "·ÞÝº³ Ï½À Å¼ KEY= ".
+000630         04  DSP-032 COLUMN 19  PIC 9(04)  FROM  GYM-012.
+000640     02  DSP-040     LINE   23  COLUMN  1  PIC X(1) VALUE " ".
+000650     02  DSP-050     LINE   24  COLUMN  1  PIC X(40) FROM FIL.
+000660 01  ACP-AREA.
+000670     02  ACP-010     LINE   23  COLUMN  1  PIC 9(1)
+000680                     INTO   CHK  CHECK OVERFLOW NO IFC.
+000690     02  ACP-020     LINE   24  COLUMN  77 PIC X(1)
+000700                     INTO  W-OKC CHECK OVERFLOW NO IFC.
+000710 PROCEDURE       DIVISION.
+000720 ST.
+000730     DISPLAY    DSP-CLR.
+000740     DISPLAY    DSP-INI.
+000750     OPEN       INPUT        GYM    AM.
+000760     OPEN       I-O          BM.
+000770 ST-00.
+000780     ACCEPT     ACP-020.
+000790     IF         ESTAT        =      "P9"
+000800                MOVE   255   TO     COMPLETION-CODE
+000810                CLOSE  GYM  AM  BM
+000820                STOP   RUN.
+000830     IF         ESTAT        NOT =  "01" AND "06"
+000840                GO  TO  ST-00.
+000850     IF         W-OKC        NOT =  "1" AND "9"
+000860                GO  TO  ST-00.
+000870     IF         W-OKC        =      "9"
+000880                MOVE   255   TO     COMPLETION-CODE
+000890                CLOSE  GYM  AM  BM
+000900                STOP   RUN.
+000910 ST-10.
+000920     READ       BM     NEXT  AT END  CLOSE  BM  OPEN  I-O  BM
+000930                                            GO  TO    ST-40.
+000940*
+000950     MOVE       0            TO     I.
+000960 ST-20.
+000970     ADD        1            TO     I.
+000980     IF         I            >      12      GO  TO    ST-30.
+000990     MOVE       0            TO     DBFOR (I)   DCTERM (I).
+001000     GO TO      ST-20.
+001010 ST-30.
+001020     REWRITE    BM-REC       INVALID
+001030*               DISPCRT  (24,1)  @·ÞÝº³ Ï½À Ø×²Ä ÌÉ³ KEY= @ BM-KEY
+001040*                                @@27@J@03@@
+001050                DISPLAY  DSP-010     DISP-BUZ-J
+001060                PERFORM  CHK-RTN  THRU  CHK-RTNEX
+001070                GO TO    END-99.
+001080     GO TO      ST-10.
+001090 ST-40.
+001100     READ       GYM   AT   END   GO  TO   END-99.
+001110     MOVE       GYM-011      TO     AM-KEY.
+001120     READ       AM           INVALID KEY
+001130*               DISPCRT  (24,1)  @¶Ó¸ Ï½À Å¼ KEY= @ GYM-ACOD
+001140*                                @@27@J@03@@
+001150                DISPLAY  DSP-020    DISP-BUZ-J
+001160                PERFORM  CHK-RTN  THRU  CHK-RTNEX
+001170                GO TO    ST-40.
+001180     IF         TEG-BAN      =      11           GO TO ST-50.
+001190     IF         TEG-BAN      =      12           GO TO ST-50.
+001200     IF         TEG-BAN      >       8           GO TO ST-40.
+001210     IF         TEG-BAN      =       0           GO TO ST-40.
+001220 ST-50.
+001230     MOVE       GYM-012      TO     BM-KEY.
+001240     READ       BM           INVALID KEY
+001250*               DISPCRT  (24,1)  @·ÞÝº³ Ï½À Å¼ KEY= @ GYM-BNKCD
+001260*                                @@27@J@03@@
+001270                DISPLAY  DSP-030  DISP-BUZ-J
+001280                PERFORM  CHK-RTN  THRU  CHK-RTNEX
+001290                GO TO    ST-40.
+001300     IF   DR-CR              =    1
+001310          COMPUTE   ANZAN    =    GYM-041
+001320                             -    GYM-042
+001330     ELSE
+001340          COMPUTE   ANZAN    =    GYM-042
+001350                             -    GYM-041.
+001360     IF         TEG-BAN      =    11
+001370                ADD   ANZAN       TO   DCTERM (9)
+001380                ADD   GYM-03      TO   DBFOR (9)
+001390                GO   TO  ST-60.
+001400     IF         TEG-BAN      =    12
+001410                ADD   ANZAN       TO   DCTERM (10)
+001420                ADD   GYM-03      TO   DBFOR (10)
+001430                GO   TO  ST-60.
+001440     IF         TEG-BAN      <       9
+001450                ADD   ANZAN       TO   DCTERM (TEG-BAN)
+001460                ADD   GYM-03      TO   DBFOR (TEG-BAN).
+001470 ST-60.
+001480     REWRITE    BM-REC       INVALID KEY
+001490*               DISPCRT  (24,1)  @·ÞÝº³ Ï½À Ø×²Ä ÌÉ³ KEY= @ BM-KEY
+001500*                                @@27@J@03@@
+001510                DISPLAY  DSP-010  DISP-BUZ-J
+001520                PERFORM  CHK-RTN  THRU  CHK-RTNEX
+001530                GO TO    END-99.
+001540     GO TO      ST-40.
+001550 END-99.
+001560     CLOSE      GYM   AM    BM.
+001570     STOP       RUN.
+001580*
+001590*
+001600 CHK-RTN.
+001610*    ACEPCRT  (23,1)  CHK  WITH  OV-CHK.
+001620     ACCEPT   ACP-010.
+001630     IF  ESTAT        NOT  = "01" GO  TO   CHK-RTN.
+001640*    DISPCRT  (23,1)  " "  (24,1)    FIL.
+001650     DISPLAY  DSP-040  DSP-050.
+001660 CHK-RTNEX.
+001670     EXIT.

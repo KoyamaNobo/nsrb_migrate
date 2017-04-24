@@ -1,0 +1,232 @@
+000010 IDENTIFICATION                   DIVISION.
+000020 PROGRAM-ID.                      JT039U.
+000030**************************************************
+000040**************************************************
+000050**                                              **
+000060**   　荷札トラン 重量計算　･　送り状Ｆ 更新    **
+000070**                                              **
+000080**        USER  NAME : 日進ゴム.                **
+000090**        DATE       : 1998･08･19               **
+000100**        TYPE       : COBOL                    **
+000110**        PROGRAM-ID : JT039U                   **
+000120**        SCREEN-ID  : ------.                  **
+000130**        AUTHOR     : ______________           **
+000140**************************************************
+000150**************************************************
+000160 ENVIRONMENT                      DIVISION.
+000170 CONFIGURATION                    SECTION.
+000180 SOURCE-COMPUTER.                 SYSTEM150.
+000190 OBJECT-COMPUTER.                 SYSTEM150.
+000200 INPUT-OUTPUT                     SECTION.
+000210 FILE-CONTROL.
+000220     SELECT    JNIF     ASSIGN          F1-MSD                    荷札ﾄﾗﾝ
+000230               ORGANIZATION            INDEXED
+000240               ACCESS  MODE            DYNAMIC
+000250               RECORD                JNIF1-KEY
+000260               FILE  STATUS           ERR-STAT.
+000270     SELECT    OKJF     ASSIGN          F2-MSD
+000280               ORGANIZATION            INDEXED
+000290               ACCESS  MODE            DYNAMIC
+000300               RECORD                OKJF-KEY
+000310               FILE  STATUS           ERR-STAT.
+000320     SELECT    SHM      ASSIGN          F3-MSD
+000330               ORGANIZATION            INDEXED
+000340               ACCESS  MODE            RANDOM
+000350               RECORD                SHM-KEY
+000360               FILE  STATUS           ERR-STAT.
+000370 I-O-CONTROL.
+000380     APPLY     SHARED-MODE   ON   JNIF  OKJF  SHM.
+000390******************************************************************
+000400*                                                                *
+000410*                 DATA              DIVISION                     *
+000420*                                                                *
+000430******************************************************************
+000440 DATA                             DIVISION.
+000450 FILE                             SECTION.
+000460*
+000470     COPY     L-JNIF.
+000480     COPY     LOKJF.
+000490     COPY     L-SHM.
+000500*
+000510******************************************************************
+000520*            WORKING     STORAGE     SECTION                     *
+000530******************************************************************
+000540 WORKING-STORAGE SECTION.
+000550*77  OKC                    PIC  9(01).                           D.960821
+000560 77  ERR-STAT               PIC  X(02).
+000570 77  ENDFLG                 PIC  X(03).
+000580 77  ERR-SW                 PIC  9(01)  VALUE  0.
+000590 01  WORK-AREA.
+000600     03  W-OKNO             PIC  9(06).
+000610     03  W-TGR              PIC  9(05).
+000620     03  W-GR               PIC  9(02).
+000630     03  W-MGR              PIC  9(02).
+000640     03  W-ISU              PIC  9(03).
+000650     03  W-SSU              PIC  9(05).
+000660     03  W-AMR              PIC  9(03).
+000670*
+000680     COPY     LWMSG.                                              COPYLIB
+000690 SCREEN              SECTION.
+000700 SD  CRT-X
+000710     END  STATUS     ESTAT.
+000720*
+000730*************************
+000740*    DISPLAY SECTION    *
+000750*************************
+000760 01  DSIP-AREA.
+000770     03  CRT-CLR LINE  01  CLEAR  SCREEN.
+000780     03  CRT-01  LINE  01.
+000790         05  COLUMN   31    VALUE
+000800                      NC"荷札トラン　重量計算"  REVERSE.
+000810*****03  DSP-INI3   LINE 23.                                      D.960821
+000820*****    05  COLUMN 41       VALUE   "確認（OK=1,NO=9）-->".      D.960821
+000830*****    05  COLUMN 62       VALUE "ﾘﾀｰﾝ".                        D.960821
+000840*01  APT-AREA.                                                    D.960821
+000850*****03  APT-OKC    LINE 23  COLUMN 61  PIC 9(01)  INTO OKC       D.960821
+000860*****                        CHECK  OVERFLOW.                     D.960821
+000870     COPY     LSMSG.                                              COPYLIB
+000880******************************************************************
+000890*                                                                *
+000900*                 PROCEDURE         DIVISION                     *
+000910*                                                                *
+000920******************************************************************
+000930 PROCEDURE        DIVISION.
+000940 PROGRM-START.
+000950     PERFORM  INITIAL-RTN   THRU   INITIAL-EXT.
+000960     PERFORM  MAIN-RTN      THRU   MAIN-EXT
+000970                           UNTIL   ENDFLG  =  "END".
+000980 PROGRAM-ENDING.
+000990     PERFORM  END-RTN       THRU   END-EX.
+001000     STOP     RUN.
+001010**************************************************************************
+001020*    INITIAL            初期処理                                         *
+001030**************************************************************************
+001040 INITIAL-RTN.
+001050*****DISPLAY  CRT-CLR  CRT-01  DSP-INI3.                          D.960821
+001060     DISPLAY  CRT-CLR  CRT-01.                                    I.960821
+001070*
+001080*INI-010.                                                         D.960821
+001090*****ACCEPT   APT-OKC.                                            D.960821
+001100*****IF       ESTAT  NOT  =  "01"        GO  TO  INI-010.         D.960821
+001110*****IF       OKC  =  9                                           D.960821
+001120*****         MOVE   255   TO   COMPLETION-CODE                   D.960821
+001130*****         STOP   RUN.                                         D.960821
+001140*****IF       OKC    NOT =  1   GO  TO  INI-010.                  D.960821
+001150**
+001160     OPEN     I-O    JNIF  OKJF.
+001170     OPEN     INPUT  SHM.
+001180*
+001190     MOVE     SPACE  TO    WORK-AREA.
+001200     INITIALIZE            WORK-AREA.
+001210 INITIAL-EXT.
+001220     EXIT.
+001230**************************************************************************
+001240*    END-RTN            終了処理                                         *
+001250**************************************************************************
+001260 END-RTN.
+001270     CLOSE    SHM      OKJF    JNIF.
+001280 END-EX.
+001290     EXIT.
+001300**************************************************************************
+001310*    MAIN               メイン  処理                                     *
+001320**************************************************************************
+001330 MAIN-RTN.
+001340     READ     JNIF        NEXT     AT    END
+001350                          MOVE  "END"  TO  ENDFLG
+001360                          GO     TO        MAIN-EXT.
+001370     IF  JNIF1-02         =   7            GO  TO  MAIN-RTN.
+001380*****IF  JNIF1-06    NOT  =   1            GO  TO  MAIN-RTN.      D.960903
+001390     IF  JNIF1-15    NOT  =   ZERO         GO  TO  MAIN-RTN.
+001400 MAIN-01.
+001410     MOVE     JNIF1-14    TO       W-OKNO.
+001420     MOVE     ZERO        TO       W-TGR.
+001430 MAIN-02.
+001440     PERFORM  NSET-RTN    THRU     NSET-EX.
+001450 MAIN-03.
+001460     READ     JNIF        NEXT     AT    END
+001470                          MOVE  "END"  TO  ENDFLG
+001480                          GO     TO        MAIN-99.
+001490     IF  JNIF1-02         =   7            GO  TO  MAIN-03.
+001500*****IF  JNIF1-06    NOT  =   1            GO  TO  MAIN-03.       D.960903
+001510     IF  JNIF1-15    NOT  =   ZERO         GO  TO  MAIN-03.
+001520     IF  JNIF1-14         =   W-OKNO       GO  TO  MAIN-02.
+001530*
+001540     PERFORM  OSET-RTN    THRU     OSET-EX.
+001550     GO  TO  MAIN-01.
+001560 MAIN-99.
+001570     PERFORM  OSET-RTN    THRU     OSET-EX.
+001580 MAIN-EXT.
+001590     EXIT.
+001600**************************************************************************
+001610*                     荷札重量セット                                     *
+001620**************************************************************************
+001630 NSET-RTN.
+001640     MOVE      JNIF1-03   TO     SHM-KEY.
+001650     READ     SHM         UNLOCK   INVALID
+001660                          GO  TO  NSET-EX.
+001670     IF   SHM-07          =   ZERO
+001680                              GO  TO  NSET-EX.
+001690     MOVE      SHM-09     TO     W-MGR.
+001700     IF   W-MGR           =   ZERO
+001710                              MOVE   20         TO  W-MGR.
+001720     COMPUTE  W-SSU  =    JNIF1-091(01)  +  JNIF1-091(02)  +
+001730                          JNIF1-091(03)  +  JNIF1-091(04)  +
+001740                          JNIF1-091(05)  +  JNIF1-091(06)  +
+001750                          JNIF1-091(07)  +  JNIF1-091(08)  +
+001760                          JNIF1-091(09)  +  JNIF1-091(10)  +
+001770                          JNIF1-091(11)  +  JNIF1-091(12)  +
+001780                          JNIF1-091(13)  +  JNIF1-091(14)  +
+001790                          JNIF1-091(15)  +  JNIF1-091(16)  +
+001800                          JNIF1-091(17)  +  JNIF1-091(18)  +
+001810                          JNIF1-091(19)  +  JNIF1-091(20)  +
+001820                          JNIF1-091(21)  +  JNIF1-091(22)  +
+001830                          JNIF1-091(23)  +  JNIF1-091(24)  +
+001840                          JNIF1-091(25)  +  JNIF1-091(26)  +
+001850                          JNIF1-091(27).
+001860     COMPUTE  W-SSU  =     W-MGR   *   W-SSU.
+001870     DIVIDE   SHM-07  INTO W-SSU  GIVING W-GR  REMAINDER  W-AMR.
+001880     IF       W-AMR  NOT  =  ZERO
+001890                             ADD   1        TO  W-GR.
+001900     MOVE     W-GR        TO    JNIF1-15.
+001910     REWRITE     JNIF1-R           INVALID  KEY
+001920               MOVE     "JNIF"      TO  ERR-F
+001930               MOVE     "R"         TO  ERR-M
+001940               MOVE     JNIF1-KEY   TO  ERR-K
+001950               PERFORM  ERR-RTN  THRU  ERR-EX.
+001960     COMPUTE  W-TGR  =   (JNIF1-13       *  W-GR)   +   W-TGR.
+001970 NSET-EX.
+001980     EXIT.
+001990**************************************************************************
+002000*                   送り状ファイル重量セット                             *
+002010**************************************************************************
+002020 OSET-RTN.
+002030     MOVE      W-OKNO     TO     OKJF-KEY.
+002040     READ     OKJF                 INVALID
+002050               MOVE     "OKJF"      TO  ERR-F
+002060               MOVE     "A"         TO  ERR-M
+002070               MOVE     OKJF-KEY    TO  ERR-K
+002080               PERFORM  ERR-RTN  THRU  ERR-EX
+002090               GO  TO  OSET-EX.
+002100     MOVE      W-TGR      TO     OKJF-11.
+002110     REWRITE   OKJF-R            INVALID  KEY
+002120               MOVE     "OKJF"      TO  ERR-F
+002130               MOVE     "R"         TO  ERR-M
+002140               MOVE     OKJF-KEY    TO  ERR-K
+002150               PERFORM  ERR-RTN  THRU  ERR-EX.
+002160 OSET-EX.
+002170     EXIT.
+002180*****************************
+002190*    ｴﾗｰ DISPLAY (ﾒｲﾝ)      *
+002200*****************************
+002210 ERR-RTN.
+002220     MOVE    ERR-STAT  TO  ERR-FLG.
+002230     DISPLAY  DISP-MSG-SPACE.
+002240 ERR-010.
+002250     DISPLAY ERR-DIS.
+002260     DISPLAY DISP-BUZ-B.
+002270     DISPLAY DISP-MSG-SPACE.
+002280 ERR-EX.
+002290     EXIT.
+002300*
+002310*
+002320*******************    E N D    O F    P R O G R A M    ******************

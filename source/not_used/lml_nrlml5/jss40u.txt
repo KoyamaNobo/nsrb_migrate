@@ -1,0 +1,625 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. JSS40U.
+000030*********************************************************
+000040*    PROGRAM         :  生協出荷指図データ作成          *
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :                                  *
+000070*    COMPILE TYPE    :  COBOL                           *
+000080*********************************************************
+000090 ENVIRONMENT DIVISION.
+000100 CONFIGURATION SECTION.
+000110 SOURCE-COMPUTER. SYSTEM3100.
+000120 OBJECT-COMPUTER. SYSTEM3100.
+000130 INPUT-OUTPUT SECTION.
+000140 FILE-CONTROL.
+000150     SELECT SK-HAT ASSIGN TO HAT-RDB
+000160         ORGANIZATION INDEXED
+000170         ACCESS MODE  DYNAMIC
+000180         RECORD KEY   HAT-KEY
+000190         FILE STATUS IS ERR-STAT.
+000200     SELECT SSTR ASSIGN TO SSTR-RDB
+000210         ORGANIZATION INDEXED
+000220         ACCESS MODE  DYNAMIC
+000230         RECORD KEY   SSTR-KEY
+000240         FILE STATUS IS ERR-STAT.
+000250     SELECT JCON ASSIGN TO JCON-MSD
+000260         ORGANIZATION INDEXED
+000270         ACCESS MODE  RANDOM
+000280         RECORD KEY   JCON1-KEY
+000290         FILE STATUS IS ERR-STAT.
+000300     SELECT JT-DNKN ASSIGN TO DNKN-MSD
+000310         ORGANIZATION INDEXED
+000320         ACCESS MODE  RANDOM
+000330         RECORD KEY   DNKN-KEY
+000340         FILE STATUS IS ERR-STAT.
+000350     SELECT HI2-M ASSIGN TO HI2-MSD
+000360         ORGANIZATION INDEXED
+000370         ACCESS MODE  RANDOM
+000380         RECORD KEY   HI-KEY2
+000390         FILE STATUS IS ERR-STAT.
+000400     SELECT   NJZAI    ASSIGN  TO      F11-MSD                    I.070409
+000410                       ORGANIZATION    INDEXED                    I.070409
+000420                       ACCESS  MODE    DYNAMIC                    I.070409
+000430                       RECORD  KEY     NJZAI-KEY                  I.070409
+000440                       FILE    STATUS  ERR-STAT.                  I.070409
+000450 I-O-CONTROL.
+000460     APPLY SHARED-MODE ON    SK-HAT   SSTR  JCON
+000470                             JT-DNKN  HI2-M   NJZAI.              I.070409
+000480*****                        JT-DNKN  HI2-M.                      D.070409
+000490*
+000500 DATA DIVISION.
+000510 FILE SECTION.
+000520     COPY    LSKHAT.
+000530     COPY    L-SSTR.
+000540     COPY    L-JCON.
+000550     COPY    LTDNKN.
+000560     COPY    LIHIM2.
+000570     COPY     LNJZAI.                                             I.070409
+000580*
+000590 WORKING-STORAGE SECTION.
+000600 77  W-FILE             PIC  X(13).
+000610 77  W-CNT              PIC  9(06) VALUE ZERO.
+000620 77  WRI-SW             PIC  9(01).                               I.070409
+000630 01  ERR-STAT           PIC  X(02).
+000640 01  W-SCR.
+000650     02  W-YMD.
+000660         03  W-YEAR     PIC  9(04).
+000670         03  W-MONTH    PIC  9(02).
+000680         03  W-DAY      PIC  9(02).
+000690     02  W-DDM          PIC  9(01).
+000700 01  STN-NO.
+000710     02  STN-NO1        PIC  X(03).
+000720     02  STN-NO2        PIC  X(03).
+000730 01  W-DATA.
+000740     02  W-SYSYMD       PIC  9(08).
+000750     02  F              REDEFINES    W-SYSYMD.
+000760       03  W-SYSYEAR    PIC  9(04).
+000770       03  W-SYSMONTH   PIC  9(02).
+000780       03  W-SYSDAY     PIC  9(02).
+000790     02  W-FLG          PIC  9(01).
+000800     02  W-SASNO        PIC  9(06).
+000810     02  W-GYO          PIC  9(01).
+000820     02  W-KEY.
+000830       03  W-KEY1.
+000840         04  W-TYCD     PIC  9(07).
+000850         04  W-DEN      PIC  9(01).
+000860         04  W-KICD     PIC  9(07).
+000870       03  W-HICD       PIC  9(06).
+000880     02  W-SASTBL.
+000890         03  W-SIZ      PIC  9(01)  OCCURS 9.                     *A040518
+000900         03  W-SAS-T    OCCURS  9.                                *A040518
+000910             04  W-SAS  PIC S9(04)  OCCURS 10.
+000920             04  W-SUM  PIC S9(05).
+000930     02  II             PIC  9(02).                               *A040518
+000940     02  W-SIZD         PIC  9(01).                               I.070409
+000950 01  O-DATA.
+000960     02  O-KEY.
+000970       03  O-KEY1.
+000980         04  O-TYCD     PIC  9(07).
+000990         04  O-DEN      PIC  9(01).
+001000         04  O-KICD     PIC  9(07).
+001010       03  O-HICD       PIC  9(06).
+001020     02  O-GNO          PIC  9(01).
+001030     02  O-UNCD         PIC  9(01).
+001040     02  O-HAI          PIC  N(09).
+001050     02  O-TEKI         PIC  N(23).
+001060     02  O-SZKB         PIC  9(01).
+001070 01  OO-DATA.
+001080     02  OO-KEY.
+001090       03  OO-KEY1.
+001100         04  OO-TYCD    PIC  9(07).
+001110         04  OO-DEN     PIC  9(01).
+001120         04  OO-KICD    PIC  9(07).
+001130       03  OO-HICD      PIC  9(06).
+001140 01  W-YN               PIC  X(01).
+001150     COPY    LWSIZC.
+001160     COPY    LSTAT.
+001170     COPY    LWMSG.
+001180*
+001190 SCREEN SECTION.
+001200 SD  C-CRT
+001210     END STATUS ESTAT.
+001220 01  C-CLEAR.
+001230     02  LINE   1  CLEAR SCREEN.
+001240 01  ACP-AREA.
+001250     02  LINE  07.
+001260       03  A-YEAR   COLUMN  33    PIC  9(02)
+001270           USING  W-YEAR     NO IFC.
+001280       03  A-MONTH  COLUMN  37    PIC  9(02)
+001290           USING  W-MONTH    NO IFC.
+001300       03  A-DAY    COLUMN  41    PIC  9(02)
+001310           USING  W-DAY      CHECK  OVERFLOW  NO IFC.
+001320     02  A-DDM      LINE  23    COLUMN  66  PIC  9(01)
+001330         USING  W-DDM      CHECK  OVERFLOW  NO IFC.
+001340     02  A-YN       LINE  24    COLUMN  57  PIC  X(01)
+001350         USING  W-YN       CHECK  OVERFLOW  NO IFC.
+001360 01  DSP-AREA.
+001370     02  D-TITLE    LINE  01    COLUMN  16  PIC  N(20)  VALUE
+001380         NC"＊＊＊　　生協出荷指図データ生成　＊＊＊".
+001390     02  LINE  07.
+001400       03  D-NOKI   COLUMN  24  PIC  N(04)  VALUE
+001410         NC"納　期：".
+001420       03  D-YMD    COLUMN  35  PIC  X(10)  VALUE
+001430           "年  月  日".
+001440     02  D-DDM      LINE  23    COLUMN  50  PIC  X(21)  VALUE
+001450           "確認 OK=1 NO=9   ﾘﾀｰﾝ".
+001460 01  MSG-AREA.
+001470     02  LINE  24.
+001480       03  MSG-01   COLUMN  15  PIC  X(48) VALUE
+001490            "他でデータ生成中です.処理を実行しますか？　(Y/N)".
+001500       03  MSG-02   COLUMN  15  PIC  X(57) VALUE
+001510     "未発行の納品書が有ります。[ESC]押下により処理を終了します".
+001520     COPY    LSSEM.
+001530     COPY    LSMSG.
+001540*
+001550 PROCEDURE DIVISION.
+001560 MAIN-01.
+001570     PERFORM    INIT-RTN  THRU  INIT-EX.
+001580     IF  W-FLG = 9
+001590         GO TO    MAIN-05.
+001600 MAIN-02.
+001610     PERFORM    ACP-RTN  THRU  ACP-EX.
+001620     IF W-FLG = 9
+001630         GO TO    MAIN-05.
+001640 MAIN-04.
+001650     PERFORM    UPDT-RTN  THRU  UPDT-EX.
+001660     IF  W-FLG = 5
+001670         GO TO    MAIN-02.
+001680 MAIN-05.
+001690     PERFORM    END-RTN  THRU  END-EX.
+001700     STOP RUN.
+001710*
+001720*-----初期処理-----*
+001730 INIT-RTN.
+001740     INITIALIZE    W-DATA.
+001750     DISPLAY    C-CLEAR  DSP-AREA.
+001760     ACCEPT     W-SYSYMD  FROM  DATE.
+001770     ADD     2000  TO  W-SYSYEAR.
+001780     CALL    "CBLSTNNO"  USING  STN-NO.
+001790     OPEN I-O    JCON.
+001800     MOVE    "7 "  TO  JCON7-KEY.
+001810     READ    JCON  WITH UNLOCK
+001820         INVALID KEY    MOVE    ERR-STAT   TO  ERR-FLG
+001830                        MOVE    "G"        TO  ERR-M
+001840                        MOVE    "JCON"     TO  ERR-F
+001850                        MOVE    JCON7-KEY  TO  ERR-K
+001860                        MOVE    9          TO  W-FLG
+001870                        DISPLAY    ERR-DIS  DISP-BUZ-B.
+001880     IF  W-FLG = 9 OR JCON7-11 = ZERO
+001890         GO TO    INIT-EX.
+001900     DISPLAY    MSG-01.
+001910 INIT-01.
+001920     ACCEPT     A-YN.
+001930     IF  ESTAT NOT = HTB AND SKP
+001940         GO TO    INIT-01.
+001950     IF  W-YN = "N"
+001960         MOVE     9  TO  W-FLG
+001970     ELSE
+001980         IF  W-YN = "Y"
+001990             DISPLAY    E-CL
+002000         ELSE
+002010             GO TO    INIT-01.
+002020 INIT-EX.
+002030     EXIT.
+002040*
+002050*-----終了処理-----*
+002060 END-RTN.
+002070     IF  W-FLG = 9
+002080         CLOSE    JCON
+002090         MOVE     255  TO  COMPLETION-CODE
+002100     ELSE
+002110         CLOSE    SK-HAT  SSTR  JCON  JT-DNKN  HI2-M  NJZAI.      I.070409
+002120*****    CLOSE    SK-HAT  SSTR  JCON  JT-DNKN  HI2-M.             D.070409
+002130 END-EX.
+002140     EXIT.
+002150*
+002160*-----画面処理-----*
+002170 ACP-RTN.
+002180     INITIALIZE    W-SCR  W-FLG.
+002190 ACP-01.
+002200     ACCEPT    A-YEAR.
+002210     IF  ESTAT = PF9
+002220         MOVE     9  TO  W-FLG
+002230         GO TO    ACP-EX.
+002240     IF  ESTAT NOT = HTB AND SKP AND NOC
+002250         GO TO    ACP-01.
+002260     ADD    2000  TO  W-YEAR.
+002270 ACP-02.
+002280     ACCEPT    A-MONTH.
+002290     IF  ESTAT = BTB
+002300         GO TO    ACP-01.
+002310     IF  ESTAT NOT = HTB AND SKP AND NOC
+002320         GO TO    ACP-02.
+002330     IF  W-MONTH > 12
+002340         GO TO    ACP-02.
+002350 ACP-03.
+002360     ACCEPT    A-DAY.
+002370     IF  ESTAT = BTB
+002380         GO TO    ACP-02.
+002390     IF  ESTAT NOT = HTB AND SKP
+002400         GO TO    ACP-03.
+002410     IF  W-YMD = "20000000"
+002420         MOVE    W-SYSYMD  TO  W-YMD
+002430         DISPLAY    A-YEAR A-MONTH A-DAY.
+002440     IF  W-DAY = 00
+002450         GO TO    ACP-03.
+002460     IF  W-MONTH = 02
+002470         IF  W-DAY > 29
+002480             GO TO    ACP-03
+002490         ELSE
+002500             GO TO    ACP-99.
+002510     IF  W-MONTH = 04 OR 06 OR 09 OR 11
+002520         IF  W-DAY > 30
+002530             GO TO    ACP-03
+002540         ELSE
+002550             GO TO    ACP-99.
+002560     IF  W-MONTH = 01 OR 03 OR 05 OR 07 OR 08 OR 10 OR 12
+002570         IF  W-DAY > 31
+002580             GO TO    ACP-03
+002590         END-IF
+002600     ELSE
+002610         GO TO    ACP-02.
+002620 ACP-99.
+002630     ACCEPT    A-DDM.
+002640     IF  ESTAT = BTB
+002650         GO TO    ACP-03.
+002660     IF  ESTAT = PF9
+002670         MOVE     9  TO  W-FLG
+002680         GO TO    ACP-EX.
+002690     IF  ESTAT NOT = HTB AND SKP
+002700         GO TO    ACP-99.
+002710     IF  W-DDM = 9
+002720         MOVE     9  TO  W-FLG
+002730     ELSE
+002740         IF  W-DDM NOT = 1
+002750             GO TO    ACP-99.
+002760 ACP-EX.
+002770     EXIT.
+002780*
+002790*-----更新処理-----*
+002800 UPDT-RTN.
+002810     OPEN INPUT    SK-HAT.
+002820     SELECT    SK-HAT
+002830         WHERE   (HAT-98 NOT = 1)    AND
+002840                 (HAT-031 = W-YEAR)  AND
+002850                 (HAT-032 = W-MONTH) AND
+002860                 (HAT-033 = W-DAY)   AND
+002870                 (HAT-97  = ZERO)
+002880         COUNT   W-CNT.
+002890     SCRATCH   SK-HAT.
+002900     CLOSE     SK-HAT.
+002910     IF  W-CNT NOT = ZERO
+002920         DISPLAY MSG-02 DISP-BUZ-B
+002930         MOVE    9          TO  W-FLG
+002940         GO  TO  UPDT-EX.
+002950*
+002960*****OPEN I-O      SK-HAT  SSTR  JT-DNKN.                         D.070409
+002970     OPEN I-O      SK-HAT  SSTR  JT-DNKN  NJZAI.                  I.070409
+002980     OPEN INPUT    HI2-M.
+002990     MOVE    5          TO  W-FLG.
+003000     MOVE    ZERO       TO  W-GYO.
+003010     MOVE    LOW-VALUE  TO  O-KEY.
+003020     SELECT    SK-HAT
+003030         WHERE    HAT-98 NOT = 1       AND HAT-031 = W-YEAR
+003040              AND HAT-032    = W-MONTH AND HAT-033 = W-DAY
+003050         ORDER BY    HAT-04  HAT-24  HAT-18  HAT-07  HAT-08.
+003060 UPDT-01.
+003070     READ    SK-HAT    NEXT RECORD
+003080             AT END    SCRATCH    SK-HAT
+003090                       MOVE    HIGH-VALUE  TO  W-KEY
+003100         NOT AT END    MOVE    HAT-04  TO  W-TYCD
+003110                       MOVE    HAT-24  TO  W-DEN
+003120                       MOVE    HAT-18  TO  W-KICD
+003130                       MOVE    HAT-07  TO  W-HICD.
+003140     IF  W-KEY NOT = O-KEY
+003150         GO TO    UPDT-02.
+003160     MOVE    HAT-07  TO  SIZE-WK-HIN.
+003170     MOVE    HAT-08  TO  SIZE-WK-CD.
+003180     PERFORM    SIZE-RTN  THRU  SIZE-EX.
+003190     IF  SIZE-WK-SW = 0
+003200         PERFORM    RHAT-RTN  THRU  RHAT-EX
+003210         MOVE SIZE-WK-KB TO W-SIZ(SIZE-WK-KB)                     *R040518
+003220*****    IF  HAT-24 = 5                                           D.040602
+003230*****        COMPUTE W-SAS(SIZE-WK-KB SIZE-WK-JJ) =               D.040602
+003240*****                W-SAS(SIZE-WK-KB SIZE-WK-JJ) + HAT-11 * (-1) D.040602
+003250*****        COMPUTE W-SUM(SIZE-WK-KB) =                          D.040602
+003260*****                W-SUM(SIZE-WK-KB) + HAT-11 * (-1)            D.040602
+003270*****    ELSE                                                     D.040602
+003280             COMPUTE W-SAS(SIZE-WK-KB SIZE-WK-JJ) =               *R040518
+003290                     W-SAS(SIZE-WK-KB SIZE-WK-JJ) + HAT-11        *R040518
+003300             COMPUTE W-SUM(SIZE-WK-KB) =                          *R040518
+003310                     W-SUM(SIZE-WK-KB) + HAT-11                   *R040518
+003320*****    END-IF                                                   D.040602
+003330         IF  O-SZKB = 0
+003340             MOVE    SIZE-WK-KB  TO  O-SZKB.
+003350     GO TO    UPDT-01.
+003360 UPDT-02.
+003370     IF  O-SZKB = 0
+003380         GO TO    UPDT-04.
+003390     IF  (W-FLG NOT = 5) AND
+003400         ((OO-KEY1 = O-KEY1) AND (W-GYO NOT = 6))
+003410         GO TO    UPDT-03.
+003420     PERFORM FUBAN-RTN THRU FUBAN-EX.                             *A040518
+003430 UPDT-03.
+003440     PERFORM    WSSTR-RTN  THRU  WSSTR-EX
+003450                VARYING II FROM 1 BY 1                            *A040518
+003460                UNTIL   II > 6.                                   *A040518
+003470 UPDT-04.
+003480     IF W-KEY NOT = HIGH-VALUE
+003490        INITIALIZE    W-SASTBL  O-SZKB
+003500        MOVE    HAT-07  TO  SIZE-WK-HIN
+003510        MOVE    HAT-08  TO  SIZE-WK-CD
+003520        PERFORM    SIZE-RTN  THRU  SIZE-EX
+003530        IF SIZE-WK-SW = 0
+003540           MOVE SIZE-WK-KB TO W-SIZ(SIZE-WK-KB)                   *R040518
+003550                              O-SZKB
+003560*****      IF HAT-24 = 5                                          D.040602
+003570*****         COMPUTE W-SAS(SIZE-WK-KB SIZE-WK-JJ) =              D.040602
+003580*****                 HAT-11 * (-1)                               D.040602
+003590*****      ELSE                                                   D.040602
+003600              MOVE HAT-11 TO W-SAS(SIZE-WK-KB SIZE-WK-JJ)         *R040518
+003610*****      END-IF                                                 D.040602
+003620           MOVE W-SAS(SIZE-WK-KB SIZE-WK-JJ) TO W-SUM(SIZE-WK-KB) *R040518
+003630           PERFORM    RHAT-RTN  THRU  RHAT-EX
+003640        END-IF
+003650        MOVE    W-KEY   TO  O-KEY
+003660        MOVE    HAT-02  TO  O-GNO
+003670        MOVE    HAT-16  TO  O-UNCD
+003680        MOVE    HAT-17  TO  O-HAI
+003690        MOVE    HAT-19  TO  O-TEKI
+003700        GO TO    UPDT-01.
+003710     IF  W-FLG = 5
+003720*****    CLOSE    SK-HAT  SSTR  JT-DNKN  HI2-M                    D.070411
+003730         CLOSE    SK-HAT  SSTR  JT-DNKN  HI2-M  NJZAI             I.070411
+003740     ELSE
+003750         PERFORM    RJCON7-RTN  THRU  RJCON7-EX.
+003760 UPDT-EX.
+003770     EXIT.
+003780*
+003790*-----受注コントロールファイル１追加処理-----*
+003800 WJCON1-RTN.
+003810     MOVE    1  TO  JCON1-01.
+003820     MOVE    2  TO  JCON1-02.
+003830     MOVE    1  TO  JCON1-03.
+003840     MOVE    100001  TO  JCON1-04.
+003850     MOVE    200001  TO  JCON1-05  W-SASNO.
+003860     WRITE    JCON1-R
+003870         INVALID KEY    MOVE    "W"        TO  ERR-M
+003880                        MOVE    "JCON"     TO  ERR-F
+003890                        MOVE    JCON1-KEY  TO  ERR-K
+003900                        PERFORM    ERR-RTN  THRU  ERR-EX.
+003910 WJCON1-EX.
+003920     EXIT.
+003930*
+003940*-----受注コントロールファイル１変更処理-----*
+003950 RJCON1-RTN.
+003960     ADD     1  TO  JCON1-05.
+003970     IF  JCON1-05 = 300000
+003980         MOVE    200001  TO  JCON1-05.
+003990     MOVE    JCON1-05  TO  W-SASNO.
+004000     REWRITE    JCON1-R
+004010         INVALID KEY    MOVE    "R"        TO  ERR-M
+004020                        MOVE    "JCON"     TO  ERR-F
+004030                        MOVE    JCON1-KEY  TO  ERR-K
+004040                        PERFORM    ERR-RTN  THRU  ERR-EX.
+004050 RJCON1-EX.
+004060     EXIT.
+004070*
+004080*-----受注コントロールファイル７変更処理-----*
+004090 RJCON7-RTN.
+004100     MOVE    "7 "  TO  JCON7-KEY.
+004110     READ    JCON
+004120         INVALID KEY    MOVE    ERR-STAT   TO  ERR-FLG
+004130                        MOVE    "G"        TO  ERR-M
+004140                        MOVE    "JCON"     TO  ERR-F
+004150                        MOVE    JCON7-KEY  TO  ERR-K
+004160                        DISPLAY    ERR-DIS  DISP-BUZ-B
+004170                        GO TO    RJCON7-EX.
+004180     MOVE    W-YMD(3:6)  TO  JCON7-11.
+004190     MOVE    1  TO  JCON7-12.
+004200     REWRITE    JCON7-R
+004210         INVALID KEY    MOVE    ERR-STAT   TO  ERR-FLG
+004220                        MOVE    "R"        TO  ERR-M
+004230                        MOVE    "JCON"     TO  ERR-F
+004240                        MOVE    JCON7-KEY  TO  ERR-K
+004250                        PERFORM    ERR-RTN  THRU  ERR-EX.
+004260 RJCON7-EX.
+004270     EXIT.
+004280*
+004290*-----生協出荷指図トラン追加処理-----*
+004300 WSSTR-RTN.
+004310     IF W-SIZ(II) = ZERO                    GO TO WSSTR-EX.       *R040518
+004320*
+004330     IF W-GYO     = 6                                             *A040518
+004340        PERFORM FUBAN-RTN THRU FUBAN-EX.                          *A040518
+004350*
+004360     INITIALIZE            SSTR-R.
+004370     MOVE W-SASNO       TO SSTR-01.
+004380     ADD  1             TO W-GYO.
+004390     MOVE W-GYO         TO SSTR-02.
+004400     MOVE O-DEN         TO SSTR-03.
+004410*****MOVE    W-YMD     TO  SSTR-04.                               D.040402
+004420*****MOVE    HAT-10    TO  SSTR-04.                               D.040406
+004430     MOVE    HAT-25    TO  SSTR-04.                               I.040406
+004440     MOVE W-YMD         TO SSTR-05.
+004450     MOVE O-TYCD        TO SSTR-06.
+004460     MOVE 1             TO SSTR-07.
+004470     MOVE O-HICD        TO SSTR-09.
+004480     MOVE W-SIZ(II)     TO SSTR-10.
+004490     MOVE W-SAS-T(II)   TO SSTR-11.
+004500     MOVE O-UNCD        TO SSTR-14.
+004510     MOVE O-HAI         TO SSTR-14D.
+004520     MOVE O-TEKI        TO SSTR-15.
+004530     MOVE STN-NO2       TO SSTR-4011.
+004540     MOVE 1             TO SSTR-4012.
+004550     MOVE O-KICD        TO SSTR-18.
+004560     MOVE 2             TO SSTR-16.
+004570     MOVE    SPACE     TO  SSTR-19    SSTR-20    SSTR-4021.       I.040331
+004580*****MOVE    SPACE     TO  SSTR-20    SSTR-4021.                  D.040331
+004590*****MOVE    ZERO      TO  SSTR-05    SSTR-08    SSTR-12          0.040606
+004600     MOVE    ZERO      TO  SSTR-08    SSTR-12                     I.040606
+004610                           SSTR-13 SSTR-14A SSTR-14B
+004620                           SSTR-14C SSTR-15A SSTR-30
+004630                           SSTR-4022 SSTR-4023 SSTR-90
+004640                                      SSTR-158   SSTR-17.         I.040331
+004650*****                      SSTR-19    SSTR-158   SSTR-17.         D.040331
+004660*
+004670     WRITE SSTR-R INVALID
+004680           MOVE "W"           TO ERR-M
+004690           MOVE "SSTR"        TO ERR-F
+004700           MOVE SSTR-KEY      TO ERR-K
+004710           PERFORM ERR-RTN  THRU ERR-EX.
+004720*
+004730     PERFORM    WDNKN-RTN  THRU  WDNKN-EX.                        *A040518
+004740*
+004750     IF   O-HICD       >  999899                                  I.070409
+004760          GO  TO  WSSTR-EX.                                       I.070409
+004770     MOVE   W-SIZ(II)  TO    W-SIZD.                              I.070409
+004780     MOVE   1          TO    NJZAI-01.                            I.070409
+004790     MOVE   O-HICD     TO    NJZAI-02.                            I.070409
+004800     MOVE   W-SIZD     TO    NJZAI-03.                            I.070409
+004810     MOVE   NJZAI-KEY  TO    ERR-K.                               I.070409
+004820     READ   NJZAI      INVALID                GO  TO  WSSTR-10.   I.070409
+004830     PERFORM    NZS-RTN    THRU  NZS-EX.                          I.070409
+004840     REWRITE  NJZAI-R    INVALID                                  I.070409
+004850              MOVE    "R"         TO    ERR-M                     I.070409
+004860              MOVE    "NJZAI"     TO    ERR-F                     I.070409
+004870              PERFORM  ERR-RTN  THRU    ERR-EX.                   I.070409
+004880     GO  TO  WSSTR-20.                                            I.070409
+004890 WSSTR-10.                                                        I.070409
+004900     MOVE   SPACE      TO    NJZAI-R.                             I.070409
+004910     INITIALIZE              NJZAI-R.                             I.070409
+004920     MOVE   1          TO    NJZAI-01.                            I.070409
+004930     MOVE   O-HICD     TO    NJZAI-02.                            I.070409
+004940     MOVE   W-SIZD     TO    NJZAI-03.                            I.070409
+004950     PERFORM    NZS-RTN    THRU  NZS-EX.                          I.070409
+004960     PERFORM    NJW-RTN    THRU  NJW-EX.                          I.070409
+004970     IF  WRI-SW           =  1                GO  TO  WSSTR-10.   I.070409
+004980 WSSTR-20.                                                        I.070409
+004990     MOVE   9          TO    NJZAI-01.                            I.070409
+005000     MOVE   O-HICD     TO    NJZAI-02.                            I.070409
+005010     MOVE   W-SIZD     TO    NJZAI-03.                            I.070409
+005020     MOVE   NJZAI-KEY  TO    ERR-K.                               I.070409
+005030     READ   NJZAI      INVALID                GO  TO  WSSTR-30.   I.070409
+005040     PERFORM  NZS-RTN     THRU  NZS-EX.                           I.070409
+005050     REWRITE  NJZAI-R    INVALID                                  I.070409
+005060              MOVE    "R"         TO    ERR-M                     I.070409
+005070              MOVE    "NJZAI"     TO    ERR-F                     I.070409
+005080              PERFORM  ERR-RTN  THRU    ERR-EX.                   I.070409
+005090     GO  TO  WSSTR-EX.                                            I.070409
+005100 WSSTR-30.                                                        I.070409
+005110     MOVE   SPACE      TO    NJZAI-R.                             I.070409
+005120     INITIALIZE              NJZAI-R.                             I.070409
+005130     MOVE   9          TO    NJZAI-01.                            I.070409
+005140     MOVE   O-HICD     TO    NJZAI-02.                            I.070409
+005150     MOVE   W-SIZD     TO    NJZAI-03.                            I.070409
+005160     MOVE   NJZAI-KEY  TO    ERR-K.                               I.070409
+005170     PERFORM  NZS-RTN     THRU  NZS-EX.                           I.070409
+005180     PERFORM  NJW-RTN     THRU  NJW-EX.                           I.070409
+005190     IF  WRI-SW           =  1                GO  TO  WSSTR-30.   I.070409
+005200 WSSTR-EX.
+005210     EXIT.
+005220*
+005230 NZS-RTN.                                                         I.070409
+005240     IF  O-DEN    NOT =  5  AND 6                                 I.070409
+005250         ADD      W-SAS(W-SIZD  1)  TO    NJZAI-0911(01)          I.070409
+005260         ADD      W-SAS(W-SIZD  2)  TO    NJZAI-0911(02)          I.070409
+005270         ADD      W-SAS(W-SIZD  3)  TO    NJZAI-0911(03)          I.070409
+005280         ADD      W-SAS(W-SIZD  4)  TO    NJZAI-0911(04)          I.070409
+005290         ADD      W-SAS(W-SIZD  5)  TO    NJZAI-0911(05)          I.070409
+005300         ADD      W-SAS(W-SIZD  6)  TO    NJZAI-0911(06)          I.070409
+005310         ADD      W-SAS(W-SIZD  7)  TO    NJZAI-0911(07)          I.070409
+005320         ADD      W-SAS(W-SIZD  8)  TO    NJZAI-0911(08)          I.070409
+005330         ADD      W-SAS(W-SIZD  9)  TO    NJZAI-0911(09)          I.070409
+005340         ADD      W-SAS(W-SIZD 10)  TO    NJZAI-0911(10)          I.070409
+005350     ELSE                                                         I.070409
+005360         IF  O-DEN        =  5                                    I.070409
+005370             SUBTRACT W-SAS(W-SIZD  1)  FROM  NJZAI-0911(01)      I.070409
+005380             SUBTRACT W-SAS(W-SIZD  2)  FROM  NJZAI-0911(02)      I.070409
+005390             SUBTRACT W-SAS(W-SIZD  3)  FROM  NJZAI-0911(03)      I.070409
+005400             SUBTRACT W-SAS(W-SIZD  4)  FROM  NJZAI-0911(04)      I.070409
+005410             SUBTRACT W-SAS(W-SIZD  5)  FROM  NJZAI-0911(05)      I.070409
+005420             SUBTRACT W-SAS(W-SIZD  6)  FROM  NJZAI-0911(06)      I.070409
+005430             SUBTRACT W-SAS(W-SIZD  7)  FROM  NJZAI-0911(07)      I.070409
+005440             SUBTRACT W-SAS(W-SIZD  8)  FROM  NJZAI-0911(08)      I.070409
+005450             SUBTRACT W-SAS(W-SIZD  9)  FROM  NJZAI-0911(09)      I.070409
+005460             SUBTRACT W-SAS(W-SIZD 10)  FROM  NJZAI-0911(10).     I.070409
+005470 NZS-EX.                                                          I.070409
+005480     EXIT.                                                        I.070409
+005490*
+005500 NJW-RTN.                                                         I.070409
+005510     MOVE     0          TO    WRI-SW.                            I.070409
+005520     WRITE  NJZAI-R    INVALID                 GO  TO  NJW-010.   I.070409
+005530     CALL    "CBLTCLS"   USING  NJZAI.                            I.070409
+005540     GO  TO  NJW-EX.                                              I.070409
+005550 NJW-010.                                                         I.070409
+005560     IF  ERR-STAT      =  "24"                 GO  TO  NJW-020.   I.070409
+005570     IF  ERR-STAT  NOT =  "00"                                    I.070409
+005580              MOVE    "W"         TO    ERR-M                     I.070409
+005590              MOVE    "NJZAI"     TO    ERR-F                     I.070409
+005600              PERFORM  ERR-RTN  THRU    ERR-EX.                   I.070409
+005610     MOVE     2          TO    WRI-SW.                            I.070409
+005620     GO  TO  NJW-EX.                                              I.070409
+005630 NJW-020.                                                         I.070409
+005640     MOVE     1          TO    WRI-SW.                            I.070409
+005650     MOVE    "W"         TO    ERR-M.                             I.070409
+005660     MOVE    "NJZAI"     TO    ERR-F.                             I.070409
+005670     MOVE     NJZAI-KEY  TO    ERR-K.                             I.070409
+005680     MOVE     ERR-STAT   TO    ERR-FLG.                           I.070409
+005690     DISPLAY  ERR-DIS    DISP-BUZ-B.                              I.070409
+005700     CLOSE    NJZAI.                                              I.070409
+005710     STOP    "ｴﾘｱ ｶｸﾁｮｳｺﾞ,ｻｲｶｲｷｰ ｦ ｵｽ!".                          I.070409
+005720     DISPLAY  DISP-MSG-SPACE.                                     I.070409
+005730     OPEN     I-O    NJZAI.                                       I.070409
+005740 NJW-EX.                                                          I.070409
+005750     EXIT.                                                        I.070409
+005760*-----伝票№検索ファイル追加処理-----*
+005770 WDNKN-RTN.
+005780     MOVE    1        TO  DNKN-01.
+005790     MOVE    O-HICD   TO  DNKN-02.
+005800     MOVE    3        TO  DNKN-03.
+005810     MOVE    SSTR-01  TO  DNKN-041.
+005820     MOVE    SSTR-02  TO  DNKN-042.
+005830     READ    JT-DNKN
+005840             INVALID KEY    CONTINUE
+005850         NOT INVALID KEY    GO TO    WDNKN-EX.
+005860     WRITE    DNKN-R
+005870         INVALID KEY    MOVE    "W"        TO  ERR-M
+005880                        MOVE    "JT-DNKN"  TO  ERR-F
+005890                        MOVE    DNKN-KEY   TO  ERR-K
+005900                        PERFORM    ERR-RTN  THRU  ERR-EX.
+005910 WDNKN-EX.
+005920     EXIT.
+005930*
+005940*-----生協　発注データ変更処理-----*
+005950 RHAT-RTN.
+005960     MOVE    1  TO  HAT-98.
+005970     REWRITE    HAT-R
+005980         INVALID KEY    MOVE    "R"       TO  ERR-M
+005990                        MOVE    "SK-HAT"  TO  ERR-F
+006000                        MOVE    HAT-KEY   TO  ERR-K
+006010                        PERFORM    ERR-RTN  THRU  ERR-EX.
+006020 RHAT-EX.
+006030     EXIT.
+006040*
+006050*-----出荷指図№付番処理-----*                                    *A040518
+006060 FUBAN-RTN.
+006070     MOVE ZERO          TO W-GYO.
+006080     MOVE O-KEY         TO OO-KEY.
+006090     MOVE 0             TO W-FLG.
+006100 FUBAN-010.
+006110     MOVE 1             TO JCON1-01.
+006120     MOVE 2             TO JCON1-02.
+006130     READ JCON     INVALID PERFORM WJCON1-RTN THRU WJCON1-EX
+006140               NOT INVALID PERFORM RJCON1-RTN THRU RJCON1-EX.
+006150     MOVE W-SASNO       TO SSTR-01.
+006160     MOVE ZERO          TO SSTR-02.
+006170     START SSTR KEY NOT < SSTR-KEY INVALID  GO TO FUBAN-EX.
+006180     READ  SSTR NEXT AT END                 GO TO FUBAN-EX.
+006190     IF W-SASNO    = SSTR-01                GO TO FUBAN-010.
+006200 FUBAN-EX.
+006210     EXIT.
+006220*
+006230***
+006240     COPY    LPSIZC.
+006250     COPY    LPMSG.

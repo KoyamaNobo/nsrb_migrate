@@ -1,0 +1,345 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. JSS90U.
+000030*********************************************************
+000040*    PROGRAM         :  生協荷札確定更新                *
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :                                  *
+000070*    COMPILE TYPE    :  COBOL                           *
+000080*********************************************************
+000090 ENVIRONMENT DIVISION.
+000100 CONFIGURATION SECTION.
+000110 SOURCE-COMPUTER. SYSTEM3100.
+000120 OBJECT-COMPUTER. SYSTEM3100.
+000130 INPUT-OUTPUT SECTION.
+000140 FILE-CONTROL.
+000150     SELECT SOKJW ASSIGN TO SOKJW-MSD
+000160         ORGANIZATION INDEXED
+000170         ACCESS MODE  DYNAMIC
+000180         RECORD KEY   SOW-KEY
+000190         FILE STATUS IS ERR-STAT.
+000200     SELECT OKJF ASSIGN TO OKJF-MSD
+000210         ORGANIZATION INDEXED
+000220         ACCESS MODE  DYNAMIC
+000230         RECORD KEY   OKJF-KEY
+000240         FILE STATUS IS ERR-STAT.
+000250     SELECT JCON ASSIGN TO JCON-MSD
+000260         ORGANIZATION INDEXED
+000270         ACCESS MODE  RANDOM
+000280         RECORD KEY   JCON7-KEY
+000290         FILE STATUS IS ERR-STAT.
+000300     SELECT SK-HAT ASSIGN TO HAT-RDB
+000310         ORGANIZATION INDEXED
+000320         ACCESS MODE  DYNAMIC
+000330         RECORD KEY   HAT-KEY
+000340         FILE STATUS IS ERR-STAT.
+000350     SELECT SSTR ASSIGN TO SSTR-RDB
+000360         ORGANIZATION INDEXED
+000370         ACCESS MODE  DYNAMIC
+000380         RECORD KEY   SSTR-KEY
+000390         FILE STATUS IS ERR-STAT.
+000400*****SELECT THTM ASSIGN TO THTM1-MSD THTM2-MSD                    D.060629
+000410*****    ORGANIZATION INDEXED                                     D.060629
+000420*****    ACCESS MODE  DYNAMIC                                     D.060629
+000430*****    RECORD KEY   THT-KEY                                     D.060629
+000440*****    ALTERNATE RECORD KEY THT-KEY2                            D.060629
+000450*****    FILE STATUS IS ERR-STAT.                                 D.060629
+000460     SELECT T-M ASSIGN TO T1-MSD T2-MSD
+000470         ORGANIZATION INDEXED
+000480         ACCESS MODE  RANDOM
+000490         RECORD KEY   T-KEY
+000500         ALTERNATE RECORD KEY T-KEY2
+000510         FILE STATUS IS ERR-STAT.
+000520     SELECT HI2-M ASSIGN TO HI2-MSD
+000530         ORGANIZATION INDEXED
+000540         ACCESS MODE  DYNAMIC
+000550         RECORD KEY   HI-KEY2
+000560         FILE STATUS IS ERR-STAT.
+000570 I-O-CONTROL.
+000580     APPLY SHARED-MODE ON    OKJF  JCON  SK-HAT
+000590                                   T-M   HI2-M.                   I.060629
+000600*****                        THTM  T-M   HI2-M.                   D.060629
+000610*
+000620 DATA DIVISION.
+000630 FILE SECTION.
+000640     COPY    LSOKJW.
+000650     COPY    LOKJF.
+000660     COPY    L-JCON.
+000670     COPY    LSKHAT.
+000680     COPY    L-SSTR.
+000690*****COPY    LITHTM.                                              D.060629
+000700     COPY    LITM.
+000710     COPY    LIHIM2.
+000720*
+000730 WORKING-STORAGE SECTION.
+000740 77  W-FILE             PIC  X(13).
+000750 01  ERR-STAT           PIC  X(02).
+000760 01  W-DATA.
+000770     02  W-FLG          PIC  9(01).
+000780     02  W-SYSYMD       PIC  9(08).
+000790     02  F              REDEFINES  W-SYSYMD.
+000800       03  W-SYSY       PIC  9(04).
+000810       03  W-SYSM       PIC  9(02).
+000820       03  W-SYSD       PIC  9(02).
+000830     02  W-NONYMD       PIC  9(08).
+000840     02  F              REDEFINES  W-NONYMD.
+000850       03  W-NONY       PIC  9(04).
+000860       03  W-NONM       PIC  9(02).
+000870       03  W-NOND       PIC  9(02).
+000880     COPY    LWSIZC.
+000890     COPY    LSTAT.
+000900     COPY    LWMSG.
+000910*
+000920 SCREEN SECTION.
+000930 SD  C-CRT
+000940     END STATUS ESTAT.
+000950 01  C-CLEAR.
+000960     02  LINE   1  CLEAR SCREEN.
+000970 01  DSP-AREA.
+000980     02  D-TITLE    LINE  01    COLUMN  16  PIC  N(20)  VALUE
+000990       NC"＊＊＊　　生協　荷札確定更新　　　＊＊＊".
+001000     02  LINE  07.
+001010       03  D-NONY      COLUMN  33  PIC  9(02)    FROM  W-NONY.
+001020       03  D-NONM      COLUMN  37  PIC  9(02)    FROM  W-NONM.
+001030       03  D-NOND      COLUMN  41  PIC  9(02)    FROM  W-NOND.
+001040       03  D-NONYMD    COLUMN  24  PIC  X(21)    VALUE
+001050           "納  期：   年  月  日".
+001060 01  MSG-AREA.
+001070     02  LINE  24.
+001080       03  MSG-01      COLUMN  15  PIC  N(13)    VALUE
+001090         NC"生協荷札データ未作成です。".
+001100     COPY    LSSEM.
+001110     COPY    LSMSG.
+001120*
+001130 PROCEDURE DIVISION.
+001140 MAIN-01.
+001150     PERFORM    INIT-RTN  THRU  INIT-EX.
+001160     IF  W-FLG = 9
+001170         MOVE     255  TO  COMPLETION-CODE
+001180         GO TO    MAIN-03.
+001190 MAIN-02.
+001200     PERFORM    UPDT-RTN  THRU  UPDT-EX.
+001210 MAIN-03.
+001220     PERFORM    END-RTN  THRU  END-EX.
+001230     STOP RUN.
+001240*
+001250*-----初期処理-----*
+001260 INIT-RTN.
+001270     INITIALIZE    W-DATA.
+001280     DISPLAY    C-CLEAR  DSP-AREA.
+001290     ACCEPT     W-SYSYMD  FROM  DATE.
+001300     ADD     2000  TO  W-SYSY.
+001310     OPEN I-O    JCON.
+001320     MOVE    "7 "  TO  JCON7-KEY.
+001330     READ    JCON    WITH UNLOCK
+001340         INVALID KEY    MOVE    ERR-STAT   TO  ERR-FLG
+001350                        MOVE    "G"        TO  ERR-M
+001360                        MOVE    "JCON"     TO  ERR-F
+001370                        MOVE    JCON7-KEY  TO  ERR-K
+001380                        MOVE    9          TO  W-FLG
+001390                        DISPLAY    ERR-DIS  DISP-BUZ-B
+001400                        GO TO    INIT-EX.
+001410     IF  JCON7-11 = ZERO
+001420         DISPLAY    MSG-01  DISP-BUZ-B
+001430         MOVE    9  TO  W-FLG
+001440     ELSE
+001450         COMPUTE    W-NONYMD = JCON7-11 + 20000000
+001460         DISPLAY    D-NONY  D-NONM  D-NOND.
+001470 INIT-EX.
+001480     EXIT.
+001490*
+001500*-----終了処理-----*
+001510 END-RTN.
+001520     CLOSE    JCON.
+001530     IF  W-FLG NOT = 9
+001540         CLOSE    SOKJW  OKJF  SK-HAT  SSTR
+001550                         T-M   HI2-M.                             I.060629
+001560*****             THTM   T-M   HI2-M.                             D.060629
+001570 END-EX.
+001580     EXIT.
+001590*
+001600*-----更新処理-----*
+001610 UPDT-RTN.
+001620     OPEN INPUT    SOKJW  T-M  HI2-M.
+001630     OPEN I-O      OKJF   SK-HAT  SSTR.                           I.060629
+001640*****OPEN I-O      OKJF   SK-HAT  SSTR  THTM.                     D.060629
+001650     MOVE    LOW-VALUE  TO  SOW-R.
+001660     START   SOKJW    KEY NOT < SOW-KEY
+001670         INVALID KEY    GO TO    UPDT-02.
+001680 UPDT-01.
+001690     READ    SOKJW    NEXT RECORD  WITH UNLOCK
+001700         AT END    GO TO    UPDT-02.
+001710*
+001720     PERFORM SSTR-UPD-RTN THRU SSTR-UPD-EX.
+001730*
+001740     MOVE    SOW-09  TO  OKJF-01.
+001750     READ    OKJF
+001760         INVALID KEY    PERFORM    WOKJF-RTN  THRU  WOKJF-EX.
+001770     GO TO    UPDT-01.
+001780 UPDT-02.
+001790     CLOSE    SOKJW.
+001800     OPEN OUTPUT    SOKJW.
+001810     SELECT    SK-HAT
+001820         WHERE    HAT-031 = W-NONY AND HAT-032 = W-NONM
+001830              AND HAT-033 = W-NOND.
+001840 UPDT-03.
+001850     READ    SK-HAT    NEXT RECORD
+001860         AT END    SCRATCH    SK-HAT
+001870                   GO TO    UPDT-04.
+001880     IF  HAT-24 NOT = 0
+001890         PERFORM    DHAT-RTN  THRU  DHAT-EX
+001900         GO TO    UPDT-03.
+001910     MOVE    HAT-07  TO  SIZE-WK-HIN.
+001920     MOVE    HAT-08  TO  SIZE-WK-CD.
+001930     PERFORM    SIZE-RTN  THRU  SIZE-EX.
+001940     IF  SIZE-WK-SW NOT = 0
+001950         PERFORM    DHAT-RTN  THRU  DHAT-EX
+001960         GO TO    UPDT-03.
+001970*****MOVE    HAT-041  TO  THT-TCD  THT-TCD1.                      D.060629
+001980*****MOVE    HAT-07   TO  THT-HCD.                                D.060629
+001990*****MOVE    SIZE-WK-KB   TO  THT-SIZ.                            D.060629
+002000*****READ    THTM                                                 D.060629
+002010*****        INVALID KEY    PERFORM    WTHTM-RTN  THRU  WTHTM-EX  D.060629
+002020*****    NOT INVALID KEY    PERFORM    RTHTM-RTN  THRU  RTHTM-EX. D.060629
+002030     PERFORM    DHAT-RTN  THRU  DHAT-EX.
+002040     GO TO    UPDT-03.
+002050 UPDT-04.
+002060     SELECT    SSTR
+002070         WHERE    SSTR-051 = W-NONY AND SSTR-052 = W-NONM         I.040402
+002080              AND SSTR-053 = W-NOND AND SSTR-17 = 0.              I.040402
+002090*****    WHERE    SSTR-041 = W-NONY AND SSTR-042 = W-NONM         D.040402
+002100*****         AND SSTR-043 = W-NOND AND SSTR-17 = 0.              D.040402
+002110 UPDT-05.
+002120     READ    SSTR    NEXT RECORD
+002130             AT END    SCRATCH    SSTR
+002140         NOT AT END    PERFORM    RSSTR-RTN  THRU  RSSTR-EX
+002150                       GO TO    UPDT-05.
+002160     MOVE    "7 "  TO  JCON7-KEY.
+002170     READ    JCON
+002180         INVALID KEY    MOVE    ERR-STAT   TO  ERR-FLG
+002190                        MOVE    "G"        TO  ERR-M
+002200                        MOVE    "JCON"     TO  ERR-F
+002210                        MOVE    JCON7-KEY  TO  ERR-K
+002220                        MOVE    255        TO  COMPLETION-CODE
+002230                        DISPLAY    ERR-DIS  DISP-BUZ-B
+002240                        GO TO    UPDT-EX.
+002250     IF  JCON7-11 = ZERO
+002260         MOVE    255  TO  COMPLETION-CODE
+002270         DISPLAY    MSG-01
+002280     ELSE
+002290         PERFORM    RJCON-RTN  THRU  RJCON-EX.
+002300 UPDT-EX.
+002310     EXIT.
+002320*
+002330*-----送り状ファイル　追加処理-----*
+002340 WOKJF-RTN.
+002350     MOVE    SOW-09  TO  OKJF-01.
+002360     MOVE    SOW-03  TO  OKJF-02.
+002370     MOVE    SOW-05  TO  OKJF-03.
+002380     MOVE    SOW-04  TO  OKJF-04.
+002390     MOVE    SOW-01  TO  OKJF-05.
+002400     MOVE    SOW-06  TO  OKJF-06.
+002410     MOVE    SOW-08  TO  OKJF-07.
+002420     MOVE    ZERO  TO  OKJF-08  OKJF-11.
+002430     MOVE    2  TO  OKJF-09.
+002440     MOVE    1  TO  OKJF-10.
+002450     WRITE   OKJF-R
+002460         INVALID KEY    MOVE    "W"       TO  ERR-M
+002470                        MOVE    "OKJF"    TO  ERR-F
+002480                        MOVE    OKJF-KEY  TO  ERR-K
+002490                        PERFORM    ERR-RTN  THRU  ERR-EX.
+002500 WOKJF-EX.
+002510     EXIT.
+002520*
+002530*----得意先品名別単価マスタ　追加処理-----*
+002540*WTHTM-RTN.                                                       D.090629
+002550*****MOVE    HAT-041  TO  THT-TCD  THT-TCD1  T-TCD.               D.060629
+002560*****MOVE    HAT-07   TO  THT-HCD.                                D.060629
+002570*****MOVE    SIZE-WK-KB   TO  THT-SIZ.                            D.060629
+002580*****MOVE    HAT-13   TO  THT-T.                                  D.060629
+002590*****READ    T-M    WITH UNLOCK                                   D.060629
+002600*****        INVALID KEY    MOVE    ZERO   TO  THT-TNC            D.060629
+002610*****    NOT INVALID KEY    MOVE    T-TNC  TO  THT-TNC.           D.060629
+002620*****MOVE    HAT-21(01:06)  TO  THT-NG.                           D.060629
+002630*****WRITE   THT-R                                                D.060629
+002640*****    INVALID KEY    MOVE    "W"      TO  ERR-M                D.060629
+002650*****                   MOVE    "THTM"   TO  ERR-F                D.060629
+002660*****                   MOVE    THT-KEY  TO  ERR-K                D.060629
+002670*****                   PERFORM    ERR-RTN  THRU  ERR-EX.         D.060629
+002680*WTHTM-EX.                                                        D.062629
+002690*****EXIT.                                                        D.060629
+002700*
+002710*-----得意先品名別単価マスタ　変更処理-----*
+002720*RTHTM-RTN.                                                       D.060629
+002730*****MOVE    HAT-13  TO  THT-T.                                   D.060629
+002740*****IF  HAT-21(03:04) > THT-NG(03:04)                            D.060629
+002750*****    MOVE    HAT-21(01:06)  TO  THT-NG.                       D.062629
+002760*****REWRITE     THT-R                                            D.060629
+002770*****    INVALID KEY    MOVE    "R"      TO  ERR-M                D.060629
+002780*****                   MOVE    "THTM"   TO  ERR-F                D.060629
+002790*****                   MOVE    THT-KEY  TO  ERR-K                D.060629
+002800*****                   PERFORM    ERR-RTN  THRU  ERR-EX.         D.060629
+002810*RTHTM-EX.                                                        D.060629
+002820*****EXIT.                                                        D.060629
+002830*
+002840*-----生協　発注データ　削除処理-----*
+002850 DHAT-RTN.
+002860     DELETE    SK-HAT
+002870         INVALID KEY    MOVE    "D"      TO  ERR-M
+002880                        MOVE    "SK-HAT" TO  ERR-F
+002890                        MOVE    HAT-KEY  TO  ERR-K
+002900                        PERFORM    ERR-RTN  THRU  ERR-EX.
+002910 DHAT-EX.
+002920     EXIT.
+002930*
+002940*-----生協出荷指図トラン　更新処理-----*
+002950 RSSTR-RTN.
+002960     MOVE    SSTR-04  TO  SSTR-05.
+002970     MOVE    SSTR-11  TO  SSTR-12.
+002980     MOVE    0        TO  SSTR-158.
+002990     MOVE    9        TO  SSTR-17.
+003000     REWRITE    SSTR-R
+003010         INVALID KEY    MOVE    "R"       TO  ERR-M
+003020                        MOVE    "SSTR"    TO  ERR-F
+003030                        MOVE    SSTR-KEY  TO  ERR-K
+003040                        PERFORM    ERR-RTN  THRU  ERR-EX.
+003050 RSSTR-EX.
+003060     EXIT.
+003070*
+003080*-----受注コントロールファイル　更新処理-----*
+003090 RJCON-RTN.
+003100     MOVE    ZERO  TO  JCON7-11  JCON7-12.
+003110     REWRITE    JCON7-R
+003120         INVALID KEY    MOVE    "R"        TO  ERR-M
+003130                        MOVE    "JCON"     TO  ERR-F
+003140                        MOVE    JCON7-KEY  TO  ERR-K
+003150                        PERFORM    ERR-RTN  THRU  ERR-EX.
+003160 RJCON-EX.
+003170     EXIT.
+003180*
+003190*-----生協出荷指図トラン　送り状№、個数　更新処理-----*
+003200 SSTR-UPD-RTN.
+003210     SELECT SSTR
+003220      WHERE     (SSTR-06   = SOW-01)
+003230            AND (SSTR-18   = SOW-02)
+003240            AND (SSTR-14B  = ZERO).
+003250 SSTR-UPD-010.
+003260     READ   SSTR  NEXT  AT  END
+003270            SCRATCH   SSTR
+003280            GO  TO  SSTR-UPD-EX.
+003290*
+003300     MOVE   SOW-08     TO  SSTR-15A.
+003310     MOVE   SOW-09     TO  SSTR-14B.
+003320*
+003330     REWRITE  SSTR-R  INVALID
+003340              MOVE   "R"        TO  ERR-M
+003350              MOVE   "SSTR"     TO  ERR-F
+003360              MOVE   SSTR-KEY   TO  ERR-K
+003370              PERFORM  ERR-RTN  THRU  ERR-EX.
+003380*
+003390     GO  TO  SSTR-UPD-010.
+003400 SSTR-UPD-EX.
+003410     EXIT.
+003420*
+003430*****
+003440     COPY    LPSIZC.
+003450     COPY    LPMSG.

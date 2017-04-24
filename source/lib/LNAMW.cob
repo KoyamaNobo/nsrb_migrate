@@ -1,0 +1,25 @@
+       01  WN-AREA.
+           02  WN-DCHK        PIC  9(001).
+           02  WN-CNT1        PIC  9(002).
+           02  WN-CNT2        PIC  9(002).
+           02  WN-CNT3        PIC  9(002).
+           02  WN-NAME        PIC  N(026).
+           02  WN-ANA   REDEFINES WN-NAME.
+             03  WN-NAD   OCCURS  26.
+               04  WN-NA      PIC  N(001).
+           02  WN-WNAME       PIC  N(026).
+           02  WN-WANA   REDEFINES WN-WNAME.
+             03  WN-WNAD   OCCURS  26.
+               04  WN-WNA     PIC  N(001).
+           02  WN-ONAME       PIC  N(020).
+           02  WN-AONA  REDEFINES WN-ONAME.
+             03  WN-ONAD  OCCURS  20.
+               04  WN-ONA     PIC  N(001).
+           02  WN-UNAME       PIC  N(020).
+           02  WN-AUNA  REDEFINES WN-UNAME.
+             03  WN-UNAD  OCCURS  20.
+               04  WN-UNA     PIC  N(001).
+           02  WN-KUM         PIC  N(004).
+           02  WN-AKUM  REDEFINES WN-KUM.
+             03  WN-KUMD  OCCURS   4.
+               04  WN-KU      PIC  N(001).
