@@ -1,0 +1,442 @@
+000010 IDENTIFICATION      DIVISION.
+000020 PROGRAM-ID.         JT051R.
+000030********************************************************
+000040******    出荷指図№　問合せ                      ******
+000050******    JS-SIGN  :  本社=0 , 玉島=2 , 早島=3    ******
+000060********************************************************
+000070 ENVIRONMENT         DIVISION.
+000080 CONFIGURATION       SECTION.
+000090 SOURCE-COMPUTER.    SYSTEM3100.
+000100 OBJECT-COMPUTER.    SYSTEM3100.
+000110 INPUT-OUTPUT        SECTION.
+000120 FILE-CONTROL.
+000130     COPY  LIBCSE.
+000140     SELECT  JSTR  ASSIGN  F1-MSD
+000150         ORGANIZATION  INDEXED
+000160         ACCESS  MODE  DYNAMIC
+000170         RECORD  KEY   JSTR-KEY.
+000180     SELECT  TC-M  ASSIGN  F2-MSD
+000190         ORGANIZATION  INDEXED
+000200         ACCESS  MODE  RANDOM
+000210         RECORD  KEY   TC-KEY.
+000220     SELECT  JCON  ASSIGN  F3-MSD
+000230         ORGANIZATION  INDEXED
+000240         ACCESS  MODE  RANDOM
+000250         RECORD  KEY   JCON1-KEY.
+000260 I-O-CONTROL.
+000270     APPLY  SHARED-MODE  ON  M-DATE
+000280     APPLY  SHARED-MODE  ON  JSTR
+000290     APPLY  SHARED-MODE  ON  TC-M
+000300     APPLY  SHARED-MODE  ON  JCON.
+000310 DATA                DIVISION.
+000320 FILE                SECTION.
+000330     COPY  LIBFDD.
+000340     COPY  L-JSTR.
+000350     COPY  LITCM.
+000360     COPY  L-JCON.
+000370 WORKING-STORAGE     SECTION.
+000380 77  ERR-STAT                PIC X(02)    VALUE  SPACE.
+000390 77  JS-SIGN                 PIC 9(01).                           I.091021
+000400*77  JS-SIGN                 PIC 9(01).                           D.060207
+000410 01  WORK-AREA.
+000420     02  W-FSK               PIC 9(01).
+000430     02  W-TSK               PIC 9(01).
+000440     02  W-FDT               PIC 9(06).
+000450     02  W-FDTD  REDEFINES  W-FDT.
+000460         03  W-FNEN          PIC 9(02).
+000470         03  W-FGET          PIC 9(02).
+000480         03  W-FPEY          PIC 9(02).
+000490     02  W-TDT               PIC 9(06).
+000500     02  W-TDTD  REDEFINES  W-TDT.
+000510         03  W-TNEN          PIC 9(02).
+000520         03  W-TGET          PIC 9(02).
+000530         03  W-TPEY          PIC 9(02).
+000540     02  W-SEN               PIC 9(01).
+000550     02  W-FNGP              PIC 9(08).
+000560     02  W-TNGP              PIC 9(08).
+000570     02  W-NGP.
+000580         03  W-NEN           PIC 9(04).
+000590         03  W-NENL  REDEFINES  W-NEN.
+000600             04  W-NEN1      PIC 9(02).
+000610             04  W-NEN2      PIC 9(02).
+000620         03  W-GET           PIC 9(02).
+000630         03  W-PEY           PIC 9(02).
+000640     02  W-NGPL  REDEFINES  W-NGP.
+000650         03  F               PIC 9(02).
+000660         03  W-NGPS          PIC 9(06).
+000670*****02  W-SENM              PIC N(02).                           D.030725
+000680     02  W-SENM              PIC N(05).                           I.030725
+000690     02  W-DC                PIC X(01).                           I.060207
+000700     02  W-SNA               PIC N(06).
+000710     02  W-UNA               PIC N(06).
+000720     02  W-HK                PIC N(01).                           印字ｻｲﾝ
+000730     02  W-SS                PIC N(01).                           生成ｻｲﾝ
+000740     02  W-L.
+000750         03  W-L1            PIC 9(02).                           行
+000760         03  W-L2            PIC 9(02).                           行
+000770     02  W-DMM               PIC 9(01).                           確認
+000780     02  W-END               PIC 9(01).                           I.980122
+000790 COPY  LWMSG.
+000800 SCREEN              SECTION.
+000810 SD  C-CRT
+000820     END  STATUS  IS  ESTAT.
+000830 01  C-CLEAR.
+000840     02  LINE   1    CLEAR  SCREEN.
+000850 01  MID-AREA.
+000860     02  LINE   1  COLUMN  32   PIC N(09)  VALUE
+000870          NC"出荷指図№　問合せ".
+000880*****02  LINE  10.                                                D.070419
+000890*****    03  COLUMN  48   PIC X(08)  VALUE "0 教　育".            D.070419
+000900     02  LINE  12.
+000910         03  COLUMN  27   PIC X(08)  VALUE "倉庫ｺｰﾄﾞ".
+000920         03  COLUMN  37   PIC N(03)  VALUE NC"指図日".
+000930         03  COLUMN  48   PIC X(08)  VALUE "0 教　育".            I.070419
+000940*****    03  COLUMN  48   PIC X(08)  VALUE "1 ワーク".            D.070419
+000950*****    03  COLUMN  48   PIC X(06)  VALUE "0 教育".              D.030725
+000960     02  LINE  14.
+000970         03  COLUMN  18   PIC N(04)  VALUE NC"ＦＲＯＭ".
+000980         03  COLUMN  36   PIC X(08)  VALUE "  /  /  ".
+000990         03  COLUMN  48   PIC X(08)  VALUE "1 一　般".            I.070419
+001000*****    03  COLUMN  48   PIC X(01)  VALUE "2".                   D.070419
+001010*****    03  COLUMN  50   PIC N(05)  VALUE NC"カジュアル".        D.070419
+001020*****    03  COLUMN  48   PIC X(06)  VALUE "1 一般".              D.030725
+001030     02  LINE  16.
+001040         03  COLUMN  18   PIC N(02)  VALUE NC"ＴＯ".
+001050         03  COLUMN  36   PIC X(08)  VALUE "  /  /  ".
+001060         03  COLUMN  48   PIC X(18)  VALUE "9 全　件   選択[ ]".  I.030725
+001070*****    03  COLUMN  48   PIC X(16)  VALUE "2 全件   選択[ ]".    D.030725
+001080     02  LINE  23  COLUMN  48   PIC X(22)  VALUE
+001090          "確認  OK=1 NO=9   ﾘﾀｰﾝ".
+001100 01  ACP-AREA.
+001110     02  LINE  14.
+001120         03  A-FSK   COLUMN  30    PIC 9(01)
+001130              USING  W-FSK   CHECK  OVERFLOW  NO  IFC.
+001140         03  A-FNEN  COLUMN  36    PIC 9(02)
+001150              USING  W-FNEN                   NO  IFC.
+001160         03  A-FGET  COLUMN  39    PIC 9(02)
+001170              USING  W-FGET                   NO  IFC.
+001180         03  A-FPEY  COLUMN  42    PIC 9(02)
+001190              USING  W-FPEY  CHECK  OVERFLOW  NO  IFC.
+001200     02  LINE  16.
+001210         03  A-TSK   COLUMN  30    PIC 9(01)
+001220              USING  W-TSK   CHECK  OVERFLOW  NO  IFC.
+001230         03  A-TNEN  COLUMN  36    PIC 9(02)
+001240              USING  W-TNEN                   NO  IFC.
+001250         03  A-TGET  COLUMN  39    PIC 9(02)
+001260              USING  W-TGET                   NO  IFC.
+001270         03  A-TPEY  COLUMN  42    PIC 9(02)
+001280              USING  W-TPEY  CHECK  OVERFLOW  NO  IFC.
+001290*****    03  A-SEN   COLUMN  62    PIC 9(01)                      D.030725
+001300         03  A-SEN   COLUMN  64    PIC 9(01)                      D.030725
+001310              USING  W-SEN   CHECK  OVERFLOW  NO  IFC.
+001320     02  A-DMM  LINE  23    COLUMN  65    PIC 9(01)
+001330           USING  W-DMM  CHECK  OVERFLOW  NO  IFC.
+001340 01  DSP-AREA.
+001350     02  DSP-SENM  LINE   1.
+001360         03  COLUMN  61   PIC X(01)  VALUE  "[".
+001370         03  COLUMN  62   PIC N(05)  FROM   W-SENM.               I.030725
+001380         03  COLUMN  72   PIC X(01)  VALUE  "]".                  I.030725
+001390*****    03  COLUMN  62   PIC N(02)  FROM   W-SENM.               D.030725
+001400*****    03  COLUMN  66   PIC X(01)  VALUE  "]".                  D.030725
+001410     02  DSP-DATA.
+001420         03  LINE  W-L1.
+001430             04  COLUMN   1    PIC 9(06)  FROM   JSTR-01.
+001440             04  COLUMN   7    PIC X(01)  FROM   W-DC.            I.060207
+001450             04  COLUMN   9    PIC 9(04)  FROM   JSTR-061.
+001460             04  COLUMN  14    PIC N(24)  FROM   TC-NAME.
+001470             04  COLUMN  64    PIC N(06)  FROM   W-SNA.
+001480             04  COLUMN  78    PIC N(01)  FROM   W-HK.
+001490         03  LINE  W-L2.
+001500             04  COLUMN   1    PIC X(01)  VALUE  "(".
+001510             04  COLUMN   2    PIC Z9     FROM   JSTR-042.
+001520             04  COLUMN   4    PIC X(01)  VALUE  "/".
+001530             04  COLUMN   5    PIC Z9     FROM   JSTR-043.
+001540             04  COLUMN   7    PIC X(01)  VALUE  ")".
+001550             04  COLUMN  55    PIC N(04)  FROM   JSTR-15.
+001560             04  COLUMN  64    PIC N(06)  FROM   W-UNA.
+001570             04  COLUMN  78    PIC N(01)  FROM   W-SS.
+001580     02  DSP-CNA  LINE  W-L2.
+001590         03  COLUMN  10    PIC 9(03)  FROM   JSTR-062.
+001600         03  COLUMN  14    PIC N(20)  FROM   TC-NAME.
+001610 01  ERR-MSG-AREA.
+001620     02  LINE 24.
+001630         03  E-STAT   COLUMN  1   PIC X(02)   FROM  ERR-STAT.
+001640         03  E-ME1    COLUMN  5   PIC N(07)   VALUE
+001650               NC"該当データなし".
+001660         03  E-ME2    COLUMN  5   PIC N(05)   VALUE
+001670               NC"データ終了".
+001680         03  E-ME98   COLUMN 75   PIC X(05)   VALUE ""27"J"05"".
+001690         03  E-ME99   COLUMN 75   PIC X(05)   VALUE ""27"B"05"".
+001700         03  E-CL     COLUMN  1   PIC X(40)   VALUE
+001710               "                                        ".
+001720     COPY  LIBSCR.
+001730 PROCEDURE           DIVISION.
+001740*M-00.                                                            D.060207
+001750*****ACCEPT  JS-SIGN.                                             D.060207
+001760*****IF  JS-SIGN NOT = 1 AND 3  AND 4                             D.060207
+001770*****    STOP  RUN.                                               D.060207
+001780 M-00.                                                            I.091020
+001790     ACCEPT  JS-SIGN.                                             I.091020
+001800     IF  JS-SIGN NOT = 0 AND 2  AND 3                             I.091020
+001810         STOP  RUN.                                               I.091020
+001820 M-05.
+001830     DISPLAY  C-CLEAR.
+001840     DISPLAY  MID-AREA.
+001850     COPY  LIBCPR.
+001860     MOVE  ZERO      TO  WORK-AREA.
+001870     IF  JS-SIGN     =  2                                         I.091020
+001880         MOVE   6        TO  W-FSK  W-TSK                         I.091020
+001890         DISPLAY  A-FSK  A-TSK                                    I.091020
+001900         GO  TO  M-20.                                            I.091020
+001910     IF  JS-SIGN     =  3                                         I.091020
+001920         MOVE   4        TO  W-FSK  W-TSK                         I.091020
+001930         DISPLAY  A-FSK  A-TSK                                    I.091020
+001940         GO  TO  M-20.                                            I.091020
+001950*****IF  JS-SIGN     =  3                                         D.060207
+001960*****    MOVE   6        TO  W-FSK  W-TSK                         D.060207
+001970*****    DISPLAY  A-FSK  A-TSK                                    D.060207
+001980*****    GO  TO  M-20.                                            D.06020
+001990*****IF  JS-SIGN     =  4                                         D.060207
+002000*****    MOVE   7        TO  W-FSK  W-TSK                         D.060207
+002010*****    DISPLAY  A-FSK  A-TSK                                    D.060207
+002020*****    GO  TO  M-20.                                            D.060207
+002030 M-10.
+002040     ACCEPT  A-FSK.
+002050     IF  ESTAT       =  "P9"
+002060         GO  TO  M-95.
+002070     IF  ESTAT   NOT =  "01" AND  "06"
+002080         GO  TO  M-10.
+002090 M-15.
+002100     ACCEPT  A-TSK.
+002110     IF  ESTAT       =  "09"
+002120         GO  TO  M-10.
+002130     IF  ESTAT   NOT =  "01" AND  "06"
+002140         GO  TO  M-15.
+002150     IF  W-FSK       >  W-TSK
+002160         GO  TO  M-15.
+002170 M-20.
+002180     ACCEPT  A-FNEN.
+002190     IF  ESTAT       =  "P9"                                      I.091020
+002200         GO  TO  M-95.                                            I.091020
+002210*****IF  ESTAT       =  "P9"                                      D.060207
+002220*****    IF  JS-SIGN NOT =  1                                     D.060207
+002230*****        GO  TO  M-95.                                        D.060207
+002240     IF  ESTAT       =  "09"
+002250*****    IF  JS-SIGN     =  1                                     D.060207
+002260         IF  JS-SIGN     =  0                                     I.060207
+002270             GO  TO  M-15.
+002280     IF  ESTAT   NOT =  "00"  AND  "01"  AND  "06"
+002290         GO  TO  M-20.
+002300 M-25.
+002310     ACCEPT  A-FGET.
+002320     IF  ESTAT       =  "09"
+002330         GO  TO  M-20.
+002340     IF  ESTAT   NOT =  "00"  AND  "01"  AND  "06"
+002350         GO  TO  M-25.
+002360     IF  W-FGET      =  ZERO
+002370         IF  W-FNEN      =  ZERO
+002380             GO  TO  M-30.
+002390     IF  W-FGET      <  1  OR  >  12
+002400         GO  TO  M-25.
+002410 M-30.
+002420     ACCEPT  A-FPEY.
+002430     IF  ESTAT       =  "09"
+002440         GO  TO  M-25.
+002450     IF  ESTAT   NOT =  "00"  AND  "01"  AND  "06"
+002460         GO  TO  M-30.
+002470     IF  W-FPEY      =  ZERO
+002480         IF  W-FGET      =  ZERO
+002490             MOVE  ZERO      TO  W-FNGP
+002500             GO  TO  M-35.
+002510     IF  W-FPEY      <  1  OR  >  31
+002520         GO  TO  M-30.
+002530     MOVE  ZERO      TO  W-NGP.
+002540     MOVE  W-FDT     TO  W-NGPS.
+002550     IF  W-NEN2      >=  DATE-NF1  AND  <=  DATE-NT1
+002560         ADD  DATE-NC1     TO  W-NEN.
+002570     IF  W-NEN2      >=  DATE-NF2  AND  <=  DATE-NT2
+002580         ADD  DATE-NC2     TO  W-NEN.
+002590     MOVE  W-NGP     TO  W-FNGP.
+002600 M-35.
+002610     ACCEPT  A-TNEN.
+002620     IF  ESTAT       =  "09"
+002630         GO  TO  M-30.
+002640     IF  ESTAT   NOT =  "00"  AND  "01"  AND  "06"
+002650         GO  TO  M-35.
+002660 M-40.
+002670     ACCEPT  A-TGET.
+002680     IF  ESTAT       =  "09"
+002690         GO  TO  M-35.
+002700     IF  ESTAT   NOT =  "00"  AND  "01"  AND  "06"
+002710         GO  TO  M-40.
+002720     IF  W-TGET      =  99
+002730         IF  W-TNEN      =  99
+002740             GO  TO  M-45.
+002750     IF  W-TGET      <  1  OR  >  12
+002760         GO  TO  M-40.
+002770 M-45.
+002780     ACCEPT  A-TPEY.
+002790     IF  ESTAT       =  "09"
+002800         GO  TO  M-40.
+002810     IF  ESTAT   NOT =  "00"  AND  "01"  AND  "06"
+002820         GO  TO  M-45.
+002830     IF  W-TPEY      =  99
+002840         IF  W-TGET      =  99
+002850             MOVE  99999999  TO  W-TNGP
+002860             GO  TO  M-47.                                        I.091020
+002870*****        GO  TO  M-50.                                        D.091020
+002880     IF  W-TPEY      <  1  OR  >  31
+002890         GO  TO  M-45.
+002900     MOVE  ZERO      TO  W-NGP.
+002910     MOVE  W-TDT     TO  W-NGPS.
+002920     IF  W-NEN2      >=  DATE-NF1  AND  <=  DATE-NT1
+002930         ADD  DATE-NC1     TO  W-NEN.
+002940     IF  W-NEN2      >=  DATE-NF2  AND  <=  DATE-NT2
+002950         ADD  DATE-NC2     TO  W-NEN.
+002960     MOVE  W-NGP     TO  W-TNGP.
+002970     IF  W-FNGP      >  W-TNGP
+002980         GO  TO  M-35.
+002990 M-47.                                                            I.091020
+003000     IF  JS-SIGN     =  2     OR   3                              I.091020
+003010         MOVE  9         TO  W-SEN                                I.091020
+003020         DISPLAY  A-SEN                                           I.091020
+003030         GO  TO  M-55.                                            I.091020
+003040 M-50.
+003050     ACCEPT  A-SEN.
+003060     IF  ESTAT       =  "09"
+003070         GO  TO  M-45.
+003080     IF  ESTAT   NOT =  "01"  AND  "06"
+003090         GO  TO  M-50.
+003100*****IF  W-SEN       >  2                                         D.030725
+003110*****IF  W-SEN   NOT =  0  AND  1  AND  2  AND  9                 D.070419
+003120     IF  W-SEN   NOT =  0  AND  1  AND  9                         I.070419
+003130         GO  TO  M-50.
+003140 M-55.
+003150     ACCEPT  A-DMM.
+003160     IF  ESTAT       =  "09"
+003170         IF  JS-SIGN     =  2     OR   3                          I.091020
+003180                 GO  TO  M-45                                     I.091020
+003190             ELSE                                                 I.091020
+003200                 GO  TO  M-50.
+003210     IF  ESTAT   NOT =  "01"  AND  "06"
+003220         GO  TO  M-55.
+003230     IF  W-DMM       =  9
+003240         GO  TO  M-05.
+003250     IF  W-DMM   NOT =  1
+003260         GO  TO  M-55.
+003270*
+003280     MOVE  SPACE     TO  W-SENM.
+003290     IF  W-SEN       =  0
+003300         MOVE  NC"　教　育　"  TO  W-SENM.                        I.030725
+003310*****    MOVE  NC"教育"  TO  W-SENM.                              D.030725
+003320     IF  W-SEN       =  1
+003330         MOVE  NC"　一　般　"  TO  W-SENM.                        I.070419
+003340*****    MOVE  NC"　ワーク　"  TO  W-SENM.                        D.070419
+003350*****    MOVE  NC"一般"  TO  W-SENM.                              D.030725
+003360*****IF  W-SEN       =  2                                         D.070419
+003370*****    MOVE  NC"カジュアル"  TO  W-SENM.                        D.070419
+003380     IF  W-SEN       =  9                                         I.030725
+003390         MOVE  NC"　全　件　"  TO  W-SENM.                        I.030725
+003400*****    MOVE  NC"全件"  TO  W-SENM.                              D.030725
+003410     DISPLAY  C-CLEAR.
+003420     CALL  "SJ051R".
+003430     DISPLAY  DSP-SENM.
+003440     MOVE  3         TO  W-L1.
+003450     MOVE  4         TO  W-L2.
+003460     OPEN  INPUT  JSTR  TC-M  JCON.
+003470*****IF  W-SEN     NOT =  1                                       D.030725
+003480*****    GO  TO  M-60.                                            D.030725
+003490     MOVE  SPACE     TO  JSTR-KEY.
+003500     IF  W-SEN         =  1                                       I.030725
+003510         MOVE  100000    TO  JSTR-01.
+003520*****IF  W-SEN         =  2                                       D.070419
+003530*****    MOVE  200000    TO  JSTR-01.                             D.070419
+003540     START  JSTR     KEY  NOT <  JSTR-KEY   INVALID KEY
+003550         GO  TO  M-75.
+003560 M-60.
+003570     READ  JSTR    NEXT RECORD  WITH UNLOCK  AT END
+003580         GO  TO  M-75.
+003590     IF  JSTR-02   NOT =  1
+003600         GO  TO  M-60.
+003610     IF  JSTR-07       <  W-FSK  OR  >  W-TSK
+003620         GO  TO  M-60.
+003630     IF  JSTR-04       <  W-FNGP OR  >  W-TNGP
+003640         GO  TO  M-60.
+003650     IF  W-SEN         =  0                                       I.981124
+003660         IF  JSTR-01       >  099999                              I.981124
+003670             GO  TO  M-75.                                        I.981124
+003680*****IF  W-SEN         =  1                                       D.070419
+003690*****    IF  JSTR-01       >  199999                              D.070419
+003700*****        GO  TO  M-75.                                        D.070419
+003710*
+003720     IF  W-END         =  0
+003730         MOVE  1         TO  W-END.
+003740*****MOVE  SPACE     TO  W-SNA  W-UNA  W-HK   W-SS.               D.060207
+003750     MOVE  SPACE     TO  W-DC  W-SNA  W-UNA  W-HK   W-SS.         I.060207
+003760     IF  JSTR-03       =  5  OR  6                                I.060207
+003770         MOVE    "*"     TO  W-DC.                                I.060207
+003780*
+003790     MOVE  JSTR-061  TO  TC-TCD.
+003800     MOVE  1         TO  TC-CCD.
+003810     READ  TC-M     WITH UNLOCK  INVALID KEY
+003820         MOVE  SPACE     TO  TC-NAME.
+003830*
+003840     MOVE  3         TO  JCON1-01.
+003850     MOVE  JSTR-07   TO  JCON1-02.
+003860     READ  JCON     WITH UNLOCK  INVALID KEY
+003870         MOVE  SPACE     TO  JCON3-03.
+003880     MOVE  JCON3-03  TO  W-SNA.
+003890*
+003900     MOVE  2         TO  JCON1-01.
+003910     MOVE  JSTR-14   TO  JCON1-02.
+003920     READ  JCON     WITH UNLOCK  INVALID KEY
+003930         MOVE  SPACE     TO  JCON2-03.
+003940     MOVE  JCON2-03  TO  W-UNA.
+003950*
+003960     IF  JSTR-158      =  0
+003970         MOVE  NC"未"    TO  W-HK
+003980       ELSE
+003990         MOVE  NC"済"    TO  W-HK.
+004000     IF  JSTR-17       =  0
+004010         MOVE  NC"未"    TO  W-SS
+004020       ELSE
+004030         MOVE  NC"済"    TO  W-SS.
+004040 M-65.
+004050     ADD   2         TO  W-L1  W-L2.
+004060     IF  W-L1          =  23
+004070         GO  TO  M-70.
+004080     DISPLAY  DSP-DATA.
+004090     IF  JSTR-062      = 001
+004100         GO  TO  M-60.
+004110     MOVE  JSTR-061  TO  TC-TCD.
+004120     MOVE  JSTR-062  TO  TC-CCD.
+004130     READ  TC-M     WITH UNLOCK  INVALID KEY
+004140         MOVE  SPACE     TO  TC-NAME.
+004150     DISPLAY  DSP-CNA.
+004160     GO  TO  M-60.
+004170 M-70.
+004180     ACCEPT  A-DMM.
+004190     IF  ESTAT   NOT =  "01"  AND  "06"
+004200         GO  TO  M-70.
+004210     IF  W-DMM       =  9
+004220         CLOSE  JSTR  TC-M  JCON
+004230         GO  TO  M-95.
+004240     IF  W-DMM   NOT =  1
+004250         GO  TO  M-70.
+004260*
+004270     DISPLAY  C-CLEAR.
+004280     CALL  "SJ051R".
+004290     DISPLAY  DSP-SENM.
+004300     MOVE  3         TO  W-L1.
+004310     MOVE  4         TO  W-L2.
+004320     GO  TO  M-65.
+004330 M-75.
+004340     CLOSE  JSTR  TC-M  JCON.
+004350     IF  W-END       =  0
+004360         DISPLAY  E-ME1  E-ME99
+004370       ELSE
+004380         DISPLAY  E-ME2  E-ME99.
+004390 M-95.
+004400     DISPLAY  C-CLEAR.
+004410     STOP  RUN.
+

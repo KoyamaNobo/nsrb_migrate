@@ -1,0 +1,443 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. HMY060.
+000030**************************************************************
+000040*    PROGRAM         :  履物年間サイズ別作表　期間日付入力   *
+000050*    PRINTER TYPE    :  JIPS                                 *
+000060*    SCREEN          :  ******                               *
+000070*        変更　　　  :  95/08/08                             *
+000080*    COMPILE TYPE    :  COBOL                                *
+000090*    JS-SIGN         :  0=日付入力 , 1=先月分                *
+000100*    W-JS2           :  0=出荷返品 , 1=出荷     , 2=返品     *
+000110**************************************************************
+000120 ENVIRONMENT DIVISION.
+000130 CONFIGURATION SECTION.
+000140 SOURCE-COMPUTER. SYSTEM7200.
+000150 OBJECT-COMPUTER. SYSTEM7200.
+000160 INPUT-OUTPUT SECTION.
+000170 FILE-CONTROL.
+000180     COPY LIBCSE.
+000190     SELECT SNTRF ASSIGN TO SNTR-MSD.                             I.000911
+000200*****SELECT STRANYR ASSIGN TO STRANY-MSD.                         D.050202
+000210     SELECT STRANYR ASSIGN TO STRANY-RDB                          I.050202
+000220         FILE STATUS ERR-STAT.                                    I.050202
+000230     SELECT NSSWF ASSIGN TO NSSW-MSD.
+000240 I-O-CONTROL.
+000250     APPLY SHARED-MODE ON STRANYR
+000260     APPLY SHARED-MODE ON M-DATE.
+000270 DATA DIVISION.
+000280 FILE SECTION.
+000290     COPY LIBFDD.
+000300 FD  SNTRF                                                        I.000911
+000310     BLOCK  2 RECORDS                                             I.000911
+000320     LABEL RECORD IS STANDARD                                     I.000911
+000330     VALUE OF IDENTIFICATION "SNTRF".                             I.000911
+000340 01  SNTR-R             PIC  X(128).                              I.000911
+000350 FD  STRANYR
+000360     BLOCK  2 RECORDS
+000370     LABEL RECORD IS STANDARD
+000380     VALUE OF IDENTIFICATION "STRANYR-RDB".                       I.050202
+000390*****VALUE OF IDENTIFICATION "STRANYR".                           D.050202
+000400 01  STRANY-R.
+000410*****02  F              PIC  X(007).                              D.000907
+000420     02  STR-DNO        PIC  9(006).                              I.000907
+000430     02  STR-GNO        PIC  9(001).                              I.000907
+000440     02  STR-DATE.
+000450*****  03  STR-NG       PIC  9(004).                              D.970722
+000460       03  STR-NG       PIC  9(006).                              I.970722
+000470       03  STR-PEY      PIC  9(002).
+000480     02  STR-TCD        PIC  9(004).
+000490     02  STR-HCD        PIC  9(006).
+000500     02  STR-SC         PIC  9(001).
+000510     02  STR-SUD.
+000520       03  STR-SU    OCCURS  10  PIC S9(004)  COMP-3.             I.000817
+000530*****  03  STR-SU       PIC S9(004)  OCCURS  10.                  D.000817
+000540     02  STR-TSU        PIC S9(005).
+000550     02  F              PIC  X(014).
+000560     02  STR-DC         PIC  9(001).
+000570*****02  F              PIC  X(051).                              D.050405
+000580     02  F              PIC  X(012).                              I.050405
+000590     02  STR-BC3        PIC  9(002).                              I.050405
+000600     02  F              PIC  X(037).                              I.050405
+000610     02  STR-UNC        PIC  9(001).                              I.000817
+000620*****02  F              PIC  X(049).                              D.000817
+000630*****02  F              PIC  X(051).                              D.970722
+000640 FD  NSSWF
+000650*****BLOCK  2 RECORDS                                             D.970708
+000660     BLOCK  4 RECORDS                                             I.970708
+000670     LABEL RECORD IS STANDARD
+000680     VALUE OF IDENTIFICATION "WK0064".                            I.970708
+000690*****VALUE OF IDENTIFICATION "WK0128".                            D.970708
+000700 01  NSSW-R.
+000710     02  NSS-HCD        PIC  9(006).
+000720     02  NSS-SC         PIC  9(001).
+000730     02  NSS-SUD.
+000740       03  NSS-SUDA  OCCURS  10.                                  I.970708
+000750         04  NSS-SU     PIC S9(006)  COMP-3.                      I.970708
+000760     02  NSS-TSU        PIC S9(008)  COMP-3.                      I.970708
+000770*****  03  NSS-SU       PIC S9(005)  OCCURS  10.                  D.960511
+000780*****02  NSS-TSU        PIC S9(007).                              D.960511
+000790*****  03  NSS-SU       PIC S9(006)  OCCURS  10.                  D.970708
+000800*****02  NSS-TSU        PIC S9(008).                              D.970708
+000810     02  NSS-TCD        PIC  9(004).                              I.951016
+000820     02  NSS-NG         PIC  9(006).                              I.970722
+000830     02  NSS-BC3        PIC  9(002).                              I.050405
+000840*****02  F              PIC  X(002).                              D.050405
+000850*****02  NSS-NG         PIC  9(004).                              D.970722
+000860*****02  F              PIC  X(004).                              D.970722
+000870*****02  F              PIC  X(064).                              D.951016
+000880*****02  F              PIC  X(056).                              D.960511
+000890*****02  F              PIC  X(045).                              D.970708
+000900 WORKING-STORAGE SECTION.
+000910 01  ERR-STAT           PIC  X(002).                              I.050202
+000920 01  JS-SIGN            PIC  9(001).                              I.000403
+000930 01  W-JS2              PIC  9(001).                              I.031209
+000940 01  W-DATA.
+000950*****02  W-SNG.                                                   D.050202
+000960*****  03  W-SNEN       PIC  9(002).                              D.970722
+000970     02  W-SNG          PIC  9(006).                              I.050202
+000980     02  W-SNGD  REDEFINES W-SNG.                                 I.050202
+000990       03  W-SNEN       PIC  9(004).                              I.970722
+001000       03  W-SND   REDEFINES W-SNEN.                              I.970722
+001010         04  W-SN1      PIC  9(002).                              I.970722
+001020         04  W-SN2      PIC  9(002).                              I.970722
+001030       03  W-SGET       PIC  9(002).
+001040     02  W-SNGL  REDEFINES W-SNG.                                 I.970722
+001050       03  F            PIC  9(002).                              I.970722
+001060       03  W-SNGS       PIC  9(004).                              I.970722
+001070*****02  W-ENG.                                                   D.050202
+001080*****  03  W-ENEN       PIC  9(002).                              D.970722
+001090     02  W-ENG          PIC  9(006).                              I.050202
+001100     02  W-ENGD  REDEFINES W-ENG.                                 I.050202
+001110       03  W-ENEN       PIC  9(004).                              I.970722
+001120       03  W-END   REDEFINES W-ENEN.                              I.970722
+001130         04  W-EN1      PIC  9(002).                              I.970722
+001140         04  W-EN2      PIC  9(002).                              I.970722
+001150       03  W-EGET       PIC  9(002).
+001160     02  W-ENGL  REDEFINES W-ENG.                                 I.970722
+001170       03  F            PIC  9(002).                              I.970722
+001180       03  W-ENGS       PIC  9(004).                              I.970722
+001190     02  W-SYM.
+001200*****  03  W-SYY        PIC  9(002).                              D.970722
+001210       03  W-SYY        PIC  9(004).                              I.970722
+001220       03  W-SYD   REDEFINES W-SYY.                               I.970722
+001230         04  W-SY1      PIC  9(002).                              I.970722
+001240         04  W-SY2      PIC  9(002).                              I.970722
+001250       03  W-SMM        PIC  9(002).
+001260     02  W-SYML  REDEFINES W-SYM.                                 I.970722
+001270       03  F            PIC  9(002).                              I.970722
+001280       03  W-SYMS       PIC  9(004).                              I.970722
+001290     02  W-EYM.
+001300*****  03  W-EYY        PIC  9(002).                              D.970722
+001310       03  W-EYY        PIC  9(004).                              I.970722
+001320       03  W-EYD   REDEFINES W-EYY.                               I.970722
+001330         04  W-EY1      PIC  9(002).                              I.970722
+001340         04  W-EY2      PIC  9(002).                              I.970722
+001350       03  W-EMM        PIC  9(002).
+001360     02  W-EYML  REDEFINES W-EYM.                                 I.970722
+001370       03  F            PIC  9(002).                              I.970722
+001380       03  W-EYMS       PIC  9(004).                              I.970722
+001390     02  W-SEN          PIC  9(001).                              I.100419
+001400     02  W-DMM          PIC  9(001).
+001410     COPY LSTAT.
+001420 SCREEN SECTION.
+001430 SD  C-CRT
+001440     END STATUS IS ESTAT.
+001450 01  C-CLEAR.
+001460     02  LINE  1  CLEAR SCREEN.
+001470 01  C-MID.
+001480     02  LINE   3  COLUMN  10  PIC  N(020) VALUE
+001490          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001500     02  LINE   4  COLUMN  10  PIC  N(020) VALUE
+001510          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001520     02  LINE   5  COLUMN  10  PIC  N(020) VALUE
+001530          NC"＊＊＊　　　　　　　　　　　　　　＊＊＊".
+001540     02  LINE   6  COLUMN  10  PIC  N(020) VALUE
+001550          NC"＊＊＊　　履物年間サイズ別作表　　＊＊＊".
+001560     02  LINE   7  COLUMN  10  PIC  N(025) VALUE
+001570          NC"＊＊＊　　　　　　　　　　　　　　＊＊＊".
+001580     02  LINE   8  COLUMN  10  PIC  N(020) VALUE
+001590          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001600     02  LINE   9  COLUMN  10  PIC  N(020) VALUE
+001610          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001620     02  LINE  12  COLUMN  10  PIC  X(049) VALUE                  I.100419
+001630          "全体 = 0  ,  一般・ワーク = 1  ,  教育 = 2  ...  ".    I.100419
+001640*****02  LINE  13  COLUMN  10  PIC  X(040) VALUE                  D.100419
+001650     02  LINE  15  COLUMN  10  PIC  X(040) VALUE                  I.100419
+001660          "ＤＡＴＡ期間    '  年   月 ～ '  年   月".
+001670*****02  LINE  15  COLUMN  10  PIC  X(040) VALUE                  D.100419
+001680     02  LINE  17  COLUMN  10  PIC  X(040) VALUE                  I.100419
+001690          "作 表 期 間     '  年   月 ～ '  年   月".
+001700     02  LINE  20  COLUMN  24  PIC  X(022) VALUE
+001710          "確認  OK=1 NO=9   ﾘﾀｰﾝ".
+001720 01  C-ACP.
+001730     02  A-SEN   LINE  12  COLUMN  58  PIC  9(001)
+001740          USING W-SEN   CHECK OVERFLOW NO IFC.
+001750*****02  A-DNG    LINE  13.                                       D.970722
+001760*****  03  A-SYY   COLUMN  32  PIC  9(002)                        D.970722
+001770*****       USING W-SYY   CHECK OVERFLOW NO IFC.                  D.970722
+001780*****  03  A-SMM   COLUMN  37  PIC  9(002)                        D.970722
+001790*****       USING W-SMM   CHECK OVERFLOW NO IFC.                  D.970722
+001800*****  03  A-EYY   COLUMN  46  PIC  9(002)                        D.970722
+001810*****       USING W-EYY   CHECK OVERFLOW NO IFC.                  D.970722
+001820*****  03  A-EMM   COLUMN  51  PIC  9(002)                        D.970722
+001830*****       USING W-EMM   CHECK OVERFLOW NO IFC.                  D.970722
+001840*****02  A-PNG    LINE  15.                                       D.100419
+001850     02  A-PNG    LINE  17.                                       I.100419
+001860       03  A-SNEN  COLUMN  27  PIC  9(002)
+001870            USING W-SN2   CHECK OVERFLOW NO IFC.                  I.970722
+001880*****       USING W-SNEN  CHECK OVERFLOW NO IFC.                  D.970722
+001890       03  A-SGET  COLUMN  32  PIC  9(002)
+001900            USING W-SGET  CHECK OVERFLOW NO IFC.
+001910       03  A-ENEN  COLUMN  41  PIC  9(002)
+001920            USING W-EN2   CHECK OVERFLOW NO IFC.                  I.970722
+001930*****       USING W-ENEN  CHECK OVERFLOW NO IFC.                  D.970722
+001940       03  A-EGET  COLUMN  46  PIC  9(002)
+001950            USING W-EGET  CHECK OVERFLOW NO IFC.
+001960     02  A-DMM   LINE  20  COLUMN  41  PIC  9(001)
+001970          USING W-DMM   CHECK OVERFLOW NO IFC.
+001980 01  C-DSP.                                                       I.970722
+001990*****02  D-DNG    LINE  13.                                       D.100419
+002000     02  D-DNG    LINE  15.                                       I.100419
+002010       03  COLUMN  27  PIC  9(002) FROM  W-SY2.                   I.970722
+002020       03  COLUMN  32  PIC  9(002) FROM  W-SMM.                   I.970722
+002030       03  COLUMN  41  PIC  9(002) FROM  W-EY2.                   I.970722
+002040       03  COLUMN  46  PIC  9(002) FROM  W-EMM.                   I.970722
+002050 01  C-ERR.
+002060     02  LINE  24.
+002070       03  E-ME1   COLUMN  15  PIC  X(018) VALUE
+002080            "***  DATEM ﾅｼ  ***".
+002090       03  E-ME2   COLUMN  15  PIC  X(027) VALUE
+002100            "***  DATEM REWRITE ｴﾗｰ  ***".
+002110       03  E-ME3   COLUMN  15  PIC  X(017) VALUE                  I.000911
+002120            "***  DATA ﾅｼ  ***".                                  I.000911
+002130       03  E-ME98  COLUMN  75  PIC  X(005) VALUE ""27"J"05"".
+002140       03  E-ME99  COLUMN  75  PIC  X(005) VALUE ""27"B"05"".
+002150     COPY LIBSCR.
+002160 PROCEDURE DIVISION.
+002170 M-05.
+002180     ACCEPT JS-SIGN.                                              I.000403
+002190     IF JS-SIGN > 1                                               I.000403
+002200         MOVE 255 TO COMPLETION-CODE                              I.000403
+002210         STOP RUN.                                                I.000403
+002220     ACCEPT W-JS2.                                                I.031209
+002230     IF W-JS2 > 2                                                 1.031209
+002240         MOVE 255 TO COMPLETION-CODE                              I.031209
+002250         STOP RUN.                                                I.031209
+002260     DISPLAY C-CLEAR.
+002270     DISPLAY C-MID.
+002280     MOVE ZERO TO W-DATA.                                         I.970723
+002290     COPY LIBCPR.
+002300     MOVE D-NHNG TO W-EYMS.                                       I.970723
+002310     IF W-EY2 >= DATE-NF1 AND <= DATE-NT1                         I.970723
+002320         ADD DATE-NC1 TO W-EYY.                                   I.970723
+002330     IF W-EY2 >= DATE-NF2 AND <= DATE-NT2                         I.970723
+002340         ADD DATE-NC2 TO W-EYY.                                   I.970723
+002350*****MOVE D-NHNG TO W-EYM.                                        D.970723
+002360*
+002370     OPEN INPUT SNTRF.                                            I.000911
+002380     READ SNTRF AT END                                            I.000911
+002390         SUBTRACT 1 FROM W-EMM.
+002400     CLOSE SNTRF.                                                 I.000911
+002410     IF W-EMM = ZERO
+002420         SUBTRACT 1 FROM W-EYY
+002430         MOVE 12 TO W-EMM.
+002440*
+002450     OPEN INPUT STRANYR.                                          I.000911
+002460     READ STRANYR AT END                                          I.000911
+002470         CLOSE STRANYR                                            I.000911
+002480         MOVE 255 TO COMPLETION-CODE                              I.000911
+002490         DISPLAY E-ME3 E-ME99                                     I.000911
+002500         GO TO M-95.                                              I.000911
+002510     MOVE STR-NG TO W-SYM.                                        I.000911
+002520     CLOSE STRANYR                                                I.000911
+002530*
+002540*****MOVE 5 TO W-SMM.                                             D.000911
+002550*****IF W-EMM < 5                                                 D.000911
+002560*****    COMPUTE W-SYY = W-EYY - 2                                D.000911
+002570*****  ELSE                                                       D.000911
+002580*****    COMPUTE W-SYY = W-EYY - 1.                               D.000911
+002590     MOVE W-EYM TO W-SNG W-ENG.                                   I.000911
+002600     IF JS-SIGN = 1                                               I.000403
+002610*****    MOVE W-EYM TO W-SNG W-ENG                                D.000911
+002620         DISPLAY D-DNG A-PNG                                      I.000403
+002630         GO TO M-40.                                              I.000403
+002640*****MOVE W-SYM TO W-SNG W-ENG.                                   D.000911
+002650*****ADD 1 TO W-ENEN.                                             D.000911
+002660     IF W-EGET < 4                                                I.000911
+002670         COMPUTE W-ENEN = W-ENEN - 1.                             I.000911
+002680     MOVE 4 TO W-EGET.
+002690     COMPUTE W-SNEN = W-ENEN - 1.                                 I.000911
+002700     MOVE 5 TO W-SGET.                                            I.000911
+002710     IF W-SYM > W-SNG                                             I.000911
+002720         MOVE W-SYM TO W-SNG.                                     I.000911
+002730     DISPLAY D-DNG A-PNG.                                         I.970722
+002740*****DISPLAY A-DNG A-PNG.                                         D.970722
+002750 M-10.                                                            I.100419
+002760     ACCEPT A-SEN.                                                I.100419
+002770     IF ESTAT = PF9                                               I.100419
+002780         MOVE 255 TO COMPLETION-CODE                              I.100419
+002790         DISPLAY C-CLEAR                                          I.100419
+002800         STOP RUN.                                                I.100419
+002810     IF ESTAT NOT = HTB AND SKP                                   I.100419
+002820         GO TO M-10.                                              I.100419
+002830     IF W-SEN > 2                                                 I.100419
+002840         GO TO M-10.                                              I.100419
+002850 M-15.
+002860     ACCEPT A-SNEN.
+002870     IF ESTAT = PF9
+002880         MOVE 255 TO COMPLETION-CODE
+002890         DISPLAY C-CLEAR
+002900         STOP RUN.
+002910     IF ESTAT = BTB                                               I.100419
+002920         GO TO M-10.                                              I.100419
+002930     IF ESTAT NOT = HTB AND SKP
+002940         GO TO M-15.
+002950     MOVE ZERO TO W-SN1.                                          I.970723
+002960     IF W-SN2 >= DATE-NF1 AND <= DATE-NT1                         I.970723
+002970         ADD DATE-NC1 TO W-SNEN.                                  I.970723
+002980     IF W-SN2 >= DATE-NF2 AND <= DATE-NT2                         I.970723
+002990         ADD DATE-NC2 TO W-SNEN.                                  I.970723
+003000     IF W-SNEN < W-SYY OR > W-EYY
+003010         GO TO M-15.
+003020 M-20.
+003030     ACCEPT A-SGET.
+003040     IF ESTAT = BTB
+003050         GO TO M-15.
+003060     IF ESTAT NOT = HTB AND SKP
+003070         GO TO M-20.
+003080     IF W-SNG < W-SYM OR > W-EYM
+003090         GO TO M-20.
+003100     IF W-SGET < 1 OR > 12
+003110         GO TO M-20.
+003120 M-25.
+003130     ACCEPT A-ENEN.
+003140     IF ESTAT = BTB
+003150         GO TO M-20.
+003160     IF ESTAT NOT = HTB AND SKP
+003170         GO TO M-25.
+003180     MOVE ZERO TO W-EN1.                                          I.970723
+003190     IF W-EN2 >= DATE-NF1 AND <= DATE-NT1                         I.970723
+003200         ADD DATE-NC1 TO W-ENEN.                                  I.970723
+003210     IF W-EN2 >= DATE-NF2 AND <= DATE-NT2                         I.970723
+003220         ADD DATE-NC2 TO W-ENEN.                                  I.970723
+003230     IF W-ENEN < W-SNEN OR > W-EYY
+003240         GO TO M-25.
+003250 M-30.
+003260     ACCEPT A-EGET.
+003270     IF ESTAT = BTB
+003280         GO TO M-25.
+003290     IF ESTAT NOT = HTB AND SKP
+003300         GO TO M-30.
+003310     IF W-ENG < W-SNG
+003320         GO TO M-30.
+003330     IF W-ENG < W-SYM OR > W-EYM
+003340         GO TO M-30.
+003350     IF W-EGET < 1 OR > 12
+003360         GO TO M-30.
+003370 M-35.
+003380     ACCEPT A-DMM.
+003390     IF ESTAT = BTB
+003400         GO TO M-30.
+003410     IF ESTAT NOT = HTB AND SKP
+003420         GO TO M-35.
+003430     IF W-DMM = 9
+003440         GO TO M-10.                                              I.100419
+003450*****    GO TO M-15.                                              D.100419
+003460     IF W-DMM NOT = 1
+003470         GO TO M-35.
+003480 M-40.                                                            I.000403
+003490     OPEN INPUT STRANYR.
+003500     OPEN OUTPUT NSSWF.
+003510     SELECT STRANYR WHERE                                         I.050202
+003520         STR-NG NOT < W-SNG AND STR-NG NOT > W-ENG AND            I.050202
+003530         STR-UNC NOT = 1 AND STR-HCD < 999900.                    I.050202
+003540 M-45.
+003550     READ STRANYR AT END
+003560         SCRATCH STRANYR                                          I.050202
+003570         GO TO M-80.
+003580*****IF STR-GNO = 9                                               D.050202
+003590*****    GO TO M-45.                                              D.050202
+003600*****IF STR-NG < W-SNG                                            D.050202
+003610*****    GO TO M-45.                                              D.050202
+003620*****IF STR-NG > W-ENG                                            D.050202
+003630*****    GO TO M-80.                                              D.050202
+003640*****IF STR-DC = 3 OR 6 OR 8 OR 9                                 D.950809
+003650*****IF STR-UNC = 1                                               D.050202
+003660*****    GO TO M-45.                                              D.050202
+003670     IF W-JS2 = 0                                                 I.031209
+003680         IF STR-DC = 2 OR 3 OR 6 OR 8 OR 9                        I.950809
+003690             GO TO M-45.
+003700     IF W-JS2 = 1                                                 I.031209
+003710         IF STR-DC = 1 OR 2 OR 3 OR 6 OR 8 OR 9                   1.031209
+003720             GO TO M-45.                                          I.031209
+003730     IF W-JS2 = 2                                                 I.031209
+003740         IF STR-DC NOT = 1                                        1.031209
+003750             GO TO M-45.                                          I.031209
+003760     IF W-SEN = 1                                                 I.100419
+003770        IF STR-BC3 = 30                                           I.100419
+003780             GO TO M-45.                                          I.100419
+003790     IF W-SEN = 2                                                 I.100419
+003800        IF STR-BC3 NOT = 30                                       I.100419
+003810             GO TO M-45.                                          I.100419
+003820*****IF STR-HCD > 999899                                          D.050202
+003830*****    GO TO M-45.                                              D.050202
+003840     IF ZERO = STR-SU(01) AND STR-SU(02) AND STR-SU(03) AND
+003850               STR-SU(04) AND STR-SU(05) AND STR-SU(06) AND
+003860               STR-SU(07) AND STR-SU(08) AND STR-SU(09) AND
+003870               STR-SU(10)
+003880         GO TO M-45.
+003890*
+003900     MOVE ZERO TO NSSW-R.
+003910     MOVE STR-HCD TO NSS-HCD.
+003920     MOVE STR-SC TO NSS-SC.
+003930     MOVE STR-TCD TO NSS-TCD.                                     I.951016
+003940     MOVE STR-NG TO NSS-NG.                                       I.951016
+003950     MOVE STR-BC3 TO NSS-BC3.                                     I.050405
+003960     IF STR-DC = 0 OR 4 OR 7
+003970         MOVE STR-SU(01) TO NSS-SU(01)
+003980         MOVE STR-SU(02) TO NSS-SU(02)
+003990         MOVE STR-SU(03) TO NSS-SU(03)
+004000         MOVE STR-SU(04) TO NSS-SU(04)
+004010         MOVE STR-SU(05) TO NSS-SU(05)
+004020         MOVE STR-SU(06) TO NSS-SU(06)
+004030         MOVE STR-SU(07) TO NSS-SU(07)
+004040         MOVE STR-SU(08) TO NSS-SU(08)
+004050         MOVE STR-SU(09) TO NSS-SU(09)
+004060         MOVE STR-SU(10) TO NSS-SU(10)
+004070       ELSE
+004080         COMPUTE NSS-SU(01) = -1 * STR-SU(01)
+004090         COMPUTE NSS-SU(02) = -1 * STR-SU(02)
+004100         COMPUTE NSS-SU(03) = -1 * STR-SU(03)
+004110         COMPUTE NSS-SU(04) = -1 * STR-SU(04)
+004120         COMPUTE NSS-SU(05) = -1 * STR-SU(05)
+004130         COMPUTE NSS-SU(06) = -1 * STR-SU(06)
+004140         COMPUTE NSS-SU(07) = -1 * STR-SU(07)
+004150         COMPUTE NSS-SU(08) = -1 * STR-SU(08)
+004160         COMPUTE NSS-SU(09) = -1 * STR-SU(09)
+004170         COMPUTE NSS-SU(10) = -1 * STR-SU(10).
+004180     COMPUTE NSS-TSU = NSS-SU(01) + NSS-SU(02) + NSS-SU(03) +
+004190                       NSS-SU(04) + NSS-SU(05) + NSS-SU(06) +
+004200                       NSS-SU(07) + NSS-SU(08) + NSS-SU(09) +
+004210                       NSS-SU(10).
+004220     WRITE NSSW-R.
+004230     GO TO M-45.
+004240 M-80.
+004250     CLOSE STRANYR.
+004260     CLOSE NSSWF.
+004270     OPEN I-O M-DATE.
+004280 M-85.
+004290     MOVE "01" TO DATE-KEY.
+004300     READ M-DATE INVALID KEY
+004310         DISPLAY E-ME1 E-ME99
+004320         GO TO M-95.
+004330*****MOVE W-SNG TO D-SSNG.                                        D.970723
+004340*****MOVE W-ENG TO D-ESNG.                                        D.970723
+004350     MOVE W-SNGS TO D-SSNG.                                       I.970723
+004360     MOVE W-ENGS TO D-ESNG.                                       I.970723
+004370     REWRITE DATE-R INVALID KEY
+004380         DISPLAY E-ME2 E-ME99.
+004390 M-90.
+004400     CLOSE M-DATE.
+004410 M-95.
+004420     DISPLAY C-CLEAR.
+004430     STOP RUN.

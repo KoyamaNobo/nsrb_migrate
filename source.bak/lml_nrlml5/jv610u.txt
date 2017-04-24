@@ -1,0 +1,324 @@
+000010 IDENTIFICATION   DIVISION.
+000020 PROGRAM-ID. JV610U.
+000030************************************************************
+000040*    PROGRAM         :  玉島棚卸変換(WK0128→HTIM)         *
+000050*    PRINTER TYPE    :  JIPS                               *
+000060*    SCREEN          :  ______                             *
+000070*    COMPILE TYPE    :  COBOL                              *
+000080*    JS-SIGN         :  バーコードあり=0 , なし=1          *
+000090************************************************************
+000100 ENVIRONMENT DIVISION.
+000110 CONFIGURATION SECTION.
+000120 SOURCE-COMPUTER. SYSTEM3100.
+000130 OBJECT-COMPUTER. SYSTEM3100.
+000140 INPUT-OUTPUT SECTION.
+000150 FILE-CONTROL.
+000160     SELECT TANAO ASSIGN TO TANAO-MSD.
+000170     SELECT HTI-M ASSIGN TO HIT-MSD
+000180         ORGANIZATION INDEXED
+000190         ACCESS MODE DYNAMIC
+000200         RECORD KEY HTI-KEY
+000210         FILE STATUS IS ERR-STAT.
+000220     SELECT   JCON     ASSIGN  TO      F9-MSD                     I.120420
+000230                       ORGANIZATION    INDEXED                    I.120420
+000240                       ACCESS  MODE    RANDOM                     I.120420
+000250                       RECORD  KEY     JCON3-KEY.                 I.120420
+000260 I-O-CONTROL.
+000270     APPLY SHARED-MODE ON JCON                                    I.120420
+000280     APPLY SHARED-MODE ON HTI-M.
+000290 DATA DIVISION.
+000300 FILE SECTION.
+000310     COPY LIHTIM.
+000320     COPY L-JCON.                                                 I.120420
+000330 FD  TANAO                                                        ﾆﾌﾀﾞﾄﾗﾝ
+000340     BLOCK    2     RECORDS
+000350     LABEL    RECORD   STANDARD
+000360     VALUE    OF  IDENTIFICATION  WK0128ID.
+000370 01  TANAO-R.
+000380     02  TANAO-KEY.
+000390       03  TANAO-HHT    PIC X(6).                                 HHT
+000400       03  TANAO-SOK    PIC 9(1).                                 倉庫C
+000410       03  TANAO-BAS    PIC 9(6).                                 場所NO
+000420       03  TANAO-HCD    PIC 9(6).                                 品名C
+000430     02  TANAO-SC       PIC 9(1).                                 ｻｲｽﾞ
+000440     02  TANAO-ASU.                                               数量
+000450       03  TANAO-SUD   OCCURS  10.                                数量
+000460         04  TANAO-SU   PIC S9(6).                                数量
+000470     02  TANAO-GC       PIC 9(1).                                 行C
+000480     02  TANAO-ISU      PIC 9(3).                                 入数
+000490     02  TANAO-BC       PIC 9(06).
+000500     02  F              PIC X(38).
+000510 WORKING-STORAGE  SECTION.
+000520 77  JS-SIGN            PIC  9(001).
+000530 77  ERR-STAT           PIC  X(002).
+000540 77  W-FILE             PIC  X(013).
+000550 77  W-END              PIC  9(001) VALUE 0.
+000560 77  WK0128ID           PIC  X(009) VALUE SPACE.
+000570 01  STN-NO.
+000580     02  STN-NO1        PIC  X(003).
+000590     02  STN-NO2        PIC  X(003).
+000600 01  W-FID2.
+000610     02  W-FID21        PIC  X(006) VALUE "WK0128".
+000620     02  W-FID22        PIC  X(003).
+000630 01  W-DATA.
+000640     02  W-SOKD         PIC  9(01).                               I.120420
+000650     02  W-DMM          PIC  X(01).
+000660     02  W-DNO          PIC  9(05).
+000670     02  W-KEY.
+000680       03  W-HHT        PIC  X(06).
+000690       03  W-SOK        PIC  9(01).
+000700       03  W-BAS        PIC  9(06).
+000710       03  W-HCD        PIC  9(06).
+000720     COPY LSTAT.
+000730 SCREEN SECTION.
+000740 SD  C-CRT
+000750     END STATUS IS ESTAT.
+000760 01  C-CLEAR.
+000770     02  C-CL    LINE   1  CLEAR SCREEN.
+000780 01  C-MID.
+000790     02  LINE  23.
+000800         03  COLUMN  41  VALUE  NC"確認（".
+000810         03  COLUMN  47  VALUE  "OK=1,NO=9".
+000820         03  COLUMN  56  VALUE  NC"）".
+000830         03  COLUMN  58  VALUE  "---> ﾘﾀｰﾝ".
+000840 01  C-MID0.
+000850     02  LINE   1  COLUMN  13  PIC  N(023) VALUE
+000860          NC"＊＊＊　　玉島棚卸変換（バーコード分）　＊＊＊".
+000870 01  C-MID1.
+000880     02  LINE   1  COLUMN  13  PIC  N(023) VALUE                  I.120420
+000890          NC"＊＊＊　　棚卸変換（バーコードなし分）　＊＊＊".     I.120420
+000900*****02  LINE   1  COLUMN  11  PIC  N(025) VALUE                  D.120420
+000910*****     NC"＊＊＊　　玉島棚卸変換（バーコードなし分）　＊＊＊". D.120420
+000920 01  C-ACP.
+000930     02  A-DMM   LINE  23  COLUMN  62  PIC  9(001)
+000940          USING W-DMM   CHECK OVERFLOW NO IFC.
+000950 01  C-DSP.
+000960     02  D-SOM   LINE  11  COLUMN  30  PIC  N(006) FROM  JCON3-03.I.120420
+000970     02  LINE  15.
+000980       03  D-DEL   COLUMN  27  PIC  N(009) VALUE
+000990                   NC"「　削　除　中　」"  BLINK.
+001000       03  D-WRI   COLUMN  27  PIC  N(009) VALUE
+001010                   NC"「　書き込み中　」"  BLINK.
+001020 01  C-ERR.
+001030     02  LINE  24.
+001040       03  E-ME1   COLUMN  15  PIC  X(017) VALUE
+001050            "***  DATA ﾅｼ  ***".
+001060       03  E-ME2   COLUMN  15  PIC  X(018) VALUE
+001070            "***  DATA ｴﾗｰ  ***".
+001080       03  E-ME3   COLUMN  15  PIC  X(025) VALUE
+001090            "***  HTIM DELETE ｴﾗｰ  ***".
+001100       03  E-ME4   COLUMN  15  PIC  X(024) VALUE
+001110            "***  HTIM WRITE ｴﾗｰ  ***".
+001120       03  E-ME5   COLUMN  15  PIC  X(026) VALUE
+001130            "***  HTIM 2ｼﾞｭｳｷｰ ｴﾗｰ  ***".
+001140       03  E-ME6   COLUMN  15  PIC  X(025) VALUE
+001150            "***  ﾃﾞﾝﾋﾟｮｳNO ｵｰﾊﾞｰ  ***".
+001160       03  E-ME7.                                                 I.120420
+001170         04  COLUMN  15  PIC  X(016) VALUE                        I.120420
+001180              "***  ｿｳｺ ﾅｼ  ***".                                 I.120420
+001190         04  COLUMN  36  PIC  9(001) FROM  TANAO-SOK.             I.120420
+001200       03  E-KEY   COLUMN  45  PIC  X(007) FROM  HTI-KEY.
+001210     COPY LSSEM.
+001220 PROCEDURE DIVISION.
+001230 M-05.
+001240     ACCEPT JS-SIGN.
+001250     IF JS-SIGN > 1
+001260         MOVE 255 TO COMPLETION-CODE
+001270         GO TO M-95.
+001280     DISPLAY C-CLEAR.
+001290     IF JS-SIGN = 0
+001300         DISPLAY C-MID0.
+001310     IF JS-SIGN = 1
+001320         DISPLAY C-MID1.
+001330     DISPLAY C-MID.
+001340     IF JS-SIGN = 0                                               I.120420
+001350         GO TO M-10.                                              I.120420
+001360     PERFORM S-05 THRU S-15.                                      I.120420
+001370     IF COMPLETION-CODE = 255                                     I.120420
+001380         GO TO M-95.                                              I.120420
+001390 M-10.
+001400     ACCEPT A-DMM.
+001410     IF ESTAT = PF9
+001420         MOVE 255 TO COMPLETION-CODE
+001430         GO TO M-95.
+001440     IF ESTAT NOT = HTB AND SKP
+001450         GO TO M-10.
+001460     IF W-DMM = 9
+001470         MOVE 255 TO COMPLETION-CODE
+001480         GO TO M-95.
+001490     IF W-DMM NOT = 1
+001500         GO TO M-10.
+001510*
+001520     DISPLAY D-DEL.
+001530     OPEN I-O HTI-M.
+001540     MOVE SPACE TO HTI-KEY.
+001550     IF JS-SIGN = 0
+001560         MOVE 70000 TO HTI-DNO1.
+001570     IF JS-SIGN = 1
+001580         IF W-SOKD = 1                                            I.120420
+001590             MOVE 60000 TO HTI-DNO1                               I.120420
+001600           ELSE                                                   I.120420
+001610             IF W-SOKD = 7                                        I.120420
+001620                 MOVE 65000 TO HTI-DNO1                           I.120420
+001630               ELSE                                               I.120420
+001640                 IF W-SOKD = 6                                    I.120420
+001650                     MOVE 80000 TO HTI-DNO1.
+001660     START HTI-M KEY NOT < HTI-KEY INVALID KEY
+001670         GO TO M-20.
+001680 M-15.
+001690     READ HTI-M NEXT RECORD AT END
+001700         GO TO M-20.
+001710     IF JS-SIGN = 0
+001720         IF HTI-DNO1 > 79999
+001730             GO TO M-20.
+001740     IF JS-SIGN = 1                                               I.120420
+001750         IF W-SOKD = 1                                            I.120420
+001760             IF HTI-DNO1 > 64999                                  I.120420
+001770                 GO TO M-20.                                      I.120420
+001780     IF JS-SIGN = 1                                               I.120420
+001790         IF W-SOKD = 7                                            I.120420
+001800             IF HTI-DNO1 > 69999                                  I.120420
+001810                 GO TO M-20.                                      I.120420
+001820     IF JS-SIGN = 1
+001830         IF W-SOKD = 6                                            I.120420
+001840             IF HTI-DNO1 > 84999
+001850                 GO TO M-20.
+001860     IF JS-SIGN = 0
+001870         IF HTI-NC NOT = 1
+001880             GO TO M-15.
+001890     IF JS-SIGN = 1
+001900         IF HTI-NC NOT = 2
+001910             GO TO M-15.
+001920     DELETE HTI-M INVALID KEY
+001930         CLOSE HTI-M
+001940         MOVE 255 TO COMPLETION-CODE
+001950         DISPLAY E-ME3 E-KEY E-ME99
+001960         GO TO M-95.
+001970     GO TO M-15.
+001980 M-20.
+001990     CLOSE HTI-M.
+002000     DISPLAY D-WRI.
+002010     CALL "CBLSTNNO" USING STN-NO.
+002020     MOVE STN-NO2 TO W-FID22.
+002030     MOVE W-FID2 TO WK0128ID.
+002040     OPEN INPUT TANAO.
+002050     OPEN I-O HTI-M.
+002060*
+002070     READ TANAO AT END
+002080         MOVE 255 TO COMPLETION-CODE
+002090         DISPLAY E-STAT E-ME1 E-ME99
+002100         GO TO M-90.
+002110     IF JS-SIGN = 0
+002120         MOVE 70000 TO W-DNO.
+002130     IF JS-SIGN = 1
+002140         IF W-SOKD = 1                                            I.120420
+002150             MOVE 60000 TO W-DNO                                  I.120420
+002160           ELSE                                                   I.120420
+002170             IF W-SOKD = 7                                        I.120420
+002180                 MOVE 65000 TO W-DNO                              I.120420
+002190               ELSE                                               I.120420
+002200                 IF W-SOKD = 6                                    I.120420
+002210                     MOVE 80000 TO W-DNO.
+002220 M-25.
+002230     MOVE TANAO-KEY TO W-KEY.
+002240     ADD 1 TO W-DNO.
+002250     IF JS-SIGN = 0
+002260         IF W-DNO > 79999
+002270             MOVE 255 TO COMPLETION-CODE
+002280             DISPLAY E-ME6 E-ME99
+002290             GO TO M-90.
+002300     IF JS-SIGN = 1                                               I.120420
+002310         IF W-SOKD = 1                                            I.120420
+002320             IF W-DNO > 64999                                     I.120420
+002330                 MOVE 255 TO COMPLETION-CODE                      I.120420
+002340                 DISPLAY E-ME6 E-ME99                             I.120420
+002350                 GO TO M-90.                                      I.120420
+002360     IF JS-SIGN = 1                                               I.120420
+002370         IF W-SOKD = 7                                            I.120420
+002380             IF W-DNO > 69999                                     I.120420
+002390                 MOVE 255 TO COMPLETION-CODE                      I.120420
+002400                 DISPLAY E-ME6 E-ME99                             I.120420
+002410                 GO TO M-90.                                      I.120420
+002420     IF JS-SIGN = 1
+002430         IF W-SOKD = 6                                            I.120420
+002440             IF W-DNO > 84999
+002450                 MOVE 255 TO COMPLETION-CODE
+002460                 DISPLAY E-ME6 E-ME99
+002470                 GO TO M-90.
+002480*
+002490     MOVE SPACE TO HTI-KEY.
+002500     MOVE W-DNO TO HTI-DNO1.
+002510     START HTI-M KEY NOT < HTI-KEY INVALID KEY
+002520         GO TO M-30.
+002530     READ HTI-M NEXT RECORD AT END
+002540         GO TO M-30.
+002550     IF HTI-DNO1 = W-DNO
+002560         DISPLAY E-ME5 E-KEY E-ME99
+002570         GO TO M-25.
+002580 M-30.
+002590     MOVE ZERO TO HTI-R.
+002600     MOVE W-DNO TO HTI-DNO1.
+002610     MOVE SPACE TO HTI-DNO2.
+002620     MOVE TANAO-GC TO HTI-GNO.
+002630     MOVE TANAO-SOK TO HTI-SNO.
+002640     MOVE TANAO-HCD TO HTI-HCD.
+002650     MOVE TANAO-SC TO HTI-SIZ.
+002660     MOVE TANAO-ASU TO HTI-SUD.
+002670     MOVE TANAO-BC TO HTI-BC.
+002680     MOVE TANAO-ISU TO HTI-ISU.
+002690     IF JS-SIGN = 0
+002700         MOVE 1 TO HTI-NC.
+002710     IF JS-SIGN = 1
+002720         MOVE 2 TO HTI-NC.
+002730     WRITE HTI-R INVALID KEY
+002740         DISPLAY E-STAT E-ME4 E-KEY E-ME99
+002750         GO TO M-35.
+002760     GO TO M-40.
+002770 M-35.
+002780     IF ERR-STAT = 22
+002790         DISPLAY E-ME5 E-KEY E-ME99
+002800         DISPLAY E-CL
+002810         GO TO M-25.
+002820     IF ERR-STAT NOT = 24
+002830         GO TO M-90.
+002840     DISPLAY E-CL.
+002850     CLOSE HTI-M.
+002860     MOVE "HTIM         " TO W-FILE.
+002870     DISPLAY E-ME71 E-ME98 STOP " ".
+002880     DISPLAY E-CL.
+002890     OPEN I-O HTI-M.
+002900     GO TO M-30.
+002910 M-40.
+002920     READ TANAO AT END
+002930         GO TO M-90.
+002940     IF TANAO-KEY = W-KEY
+002950         GO TO M-30.
+002960     GO TO M-25.
+002970 M-90.
+002980     CLOSE TANAO.
+002990     CLOSE HTI-M.
+003000 M-95.
+003010     DISPLAY C-CLEAR.
+003020     STOP RUN.
+003030 S-05.                                                            I.120420
+003040     CALL "CBLSTNNO" USING STN-NO.                                I.120420
+003050     MOVE STN-NO2 TO W-FID22.                                     I.120420
+003060     MOVE W-FID2 TO WK0128ID.                                     I.120420
+003070     OPEN INPUT TANAO.                                            I.120420
+003080     OPEN INPUT JCON.                                             I.120420
+003090     READ TANAO AT END                                            I.120420
+003100         MOVE 255 TO COMPLETION-CODE                              I.120420
+003110         DISPLAY E-STAT E-ME1 E-ME99                              I.120420
+003120         GO TO S-10.                                              I.120420
+003130     MOVE "3" TO JCON3-01.                                        I.120420
+003140     MOVE TANAO-SOK TO W-SOKD JCON3-02.                           I.120420
+003150     READ JCON UNLOCK INVALID                                     I.120420
+003160         MOVE 255 TO COMPLETION-CODE                              I.120420
+003170         DISPLAY E-ME7 E-ME99                                     I.120420
+003180         GO TO S-10.                                              I.120420
+003190     DISPLAY D-SOM.                                               I.120420
+003200 S-10.                                                            I.120420
+003210     CLOSE TANAO JCON.                                            I.120420
+003220 S-15.                                                            I.120420
+003230     EXIT.                                                        I.120420
+

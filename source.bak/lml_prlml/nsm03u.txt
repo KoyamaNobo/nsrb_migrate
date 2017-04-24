@@ -1,0 +1,158 @@
+000010 IDENTIFICATION  DIVISION.
+000020 PROGRAM-ID.     NSM03U.
+000030 AUTHOR.         A.KOMATSUBARA.
+000040**********************************
+000050*        人事マスタ変換          *
+000060**********************************
+000070 ENVIRONMENT     DIVISION.
+000080 CONFIGURATION   SECTION.
+000090 SOURCE-COMPUTER.    SYSTEM100.
+000100 OBJECT-COMPUTER.    SYSTEM100.
+000110 INPUT-OUTPUT    SECTION.
+000120 FILE-CONTROL.
+000130     SELECT  JINJIM          ASSIGN  TO  F1-MSD
+000140             ORGANIZATION    INDEXED
+000150             ACCESS          SEQUENTIAL
+000160             RECORD  KEY IS  J-KEY
+000170             FILE    STATUS  ERR-STAT.
+000180     SELECT  TK              ASSIGN  TO  F2-MSD
+000190             ORGANIZATION    INDEXED
+000200             ACCESS          DYNAMIC
+000210             RECORD  KEY IS  TK-KEY
+000220             FILE    STATUS  ERR-STAT.
+000230 I-O-CONTROL.
+000240     APPLY   SHARED-MODE       ON  JINJIM
+000250     APPLY   EXCLUSIVE-MODE    ON  TK.
+000260 DATA    DIVISION.
+000270 FILE    SECTION.
+000280 COPY    LIJIN.
+000290 COPY    TKLIB.
+000300 WORKING-STORAGE SECTION.
+000310 77  ERR-STAT              PIC  X(02).
+000320 01  SW-AREA.
+000330     02  END-SW            PIC  9(01)    VALUE 0.
+000340     02  TK-SW             PIC  9(01)    VALUE 0.
+000350 01  W-AREA.
+000360     02  W-OKC             PIC  X(01).
+000370     02  W-TCD.
+000380         03  W-TCD1        PIC  9(01).
+000390         03  W-TCD2        PIC  9(01).
+000400         03  W-TCD3        PIC  9(01).
+000410         03  W-TCD4        PIC  9(01).
+000420         03  W-TCD5        PIC  9(01).
+000430 COPY    LWMSG.
+000440 SCREEN  SECTION.
+000450 SD  SRT-X
+000460     END STATUS  IS  ESTAT.
+000470 01  DISP-C      LINE  1.
+000480     02  DISP-CLE    CLEAR   SCREEN.
+000490 01  DISP-AREA.
+000500     02  LINE  01.
+000510         03  COLUMN  21    PIC  N(07)  VALUE
+000520             NC"人事マスタ変換"   REVERSE.
+000530     02  LINE  24.
+000540         03  COLUMN  61    PIC  N(02)  VALUE  NC"確認".
+000550         03  COLUMN  66    PIC  X(13)  VALUE
+000560             "OK=1,NO=9 ( )".
+000570 01  ACEP-AREA.
+000580     02  ACP-OKC     LINE  24   COLUMN 77
+000590                           PIC  X(01)  INTO  W-OKC
+000600                           CHECK OVERFLOW    NO IFC.
+000610**
+000620 COPY    LSMSG.
+000630**
+000640 PROCEDURE   DIVISION.
+000650*************************
+000660*    ＭＡＩＮ処理       *
+000670*************************
+000680 HAJIME.
+000690     PERFORM     INI-RTN   THRU   INI-EX.
+000700     PERFORM     UPD-RTN   THRU   UPD-EX.
+000710     PERFORM     CLSE-ENT  THRU   CLSE-EXT.
+000720 OWARI.
+000730     STOP RUN.
+000740*************************
+000750*    初期処理           *
+000760*************************
+000770 INI-RTN.
+000780     DISPLAY     DISP-C.
+000790     DISPLAY     DISP-AREA.
+000800     OPEN        INPUT     JINJIM
+000810                 I-O       TK.
+000820 INI-010.
+000830     ACCEPT  ACP-OKC.
+000840     IF  ESTAT  =  "P9"
+000850         MOVE  255         TO   COMPLETION-CODE
+000860         PERFORM  CLSE-ENT THRU CLSE-EXT
+000870         STOP  RUN.
+000880     IF  ESTAT  NOT =  "01" AND "06"
+000890         GO  TO  INI-010.
+000900     IF  W-OKC  NOT =  "1" AND "9"
+000910         GO  TO  INI-010.
+000920     IF  W-OKC  =  "9"
+000930         MOVE  255         TO   COMPLETION-CODE
+000940         PERFORM  CLSE-ENT THRU CLSE-EXT
+000950         STOP  RUN.
+000960 INI-EX.
+000970     EXIT.
+000980*************************
+000990*    更新処理           *
+001000*************************
+001010 UPD-RTN.
+001020     MOVE  00000           TO   TK-KEY.
+001030     START TK  KEY IS  NOT <    TK-KEY  INVALID
+001040           MOVE  1         TO   TK-SW.
+001050     PERFORM  TK1-RTN      THRU TK1-EX
+001060           UNTIL  TK-SW    =    1.
+001070     PERFORM  TK2-RTN      THRU TK2-EX
+001080           UNTIL  END-SW   =    1.
+001090 UPD-EX.
+001100     EXIT.
+001110*************************
+001120*    終了処理           *
+001130*************************
+001140 CLSE-ENT.
+001150     CLOSE       JINJIM   TK.
+001160 CLSE-EXT.
+001170     EXIT.
+001180*************************
+001190*    取引先マスタ更新① *
+001200*************************
+001210 TK1-RTN.
+001220     READ  TK              NEXT AT END
+001230           MOVE  1         TO   TK-SW
+001240           GO  TO  TK1-EX.
+001250     MOVE  TK-KEY          TO   W-TCD.
+001260     IF  W-TCD1  NOT =  0
+001270         MOVE  1           TO   TK-SW
+001280         GO  TO  TK1-EX.
+001290     MOVE  TK-KEY          TO   ERR-K.
+001300     DELETE  TK            INVALID
+001310             MOVE  "TK"    TO   ERR-F
+001320             MOVE  "D"     TO   ERR-M
+001330             PERFORM ERR-ENT    THRU  ERR-EXT.
+001340 TK1-EX.
+001350     EXIT.
+001360*************************
+001370*    取引先マスタ更新② *
+001380*************************
+001390 TK2-RTN.
+001400     READ  JINJIM          UNLOCK  AT  END
+001410           MOVE  1         TO   END-SW
+001420           GO  TO  TK2-EX.
+001430     MOVE  SPACE           TO   TK-REC.
+001440     INITIALIZE            TK-REC.
+001450     MOVE  SPACE           TO   TK-NAMEN.
+001460     MOVE  J-SIC           TO   TK-CD.
+001470     MOVE  J-NAME          TO   TK-NAMEN.
+001480     MOVE  J-PNO           TO   TK-PRC.
+001490     MOVE  J-KBC           TO   TK-BKC.                           I.990603
+001500     MOVE  TK-KEY          TO   ERR-K.
+001510     WRITE TK-REC          INVALID
+001520           MOVE  "TK"      TO   ERR-F
+001530           MOVE  "W"       TO   ERR-M
+001540           PERFORM ERR-ENT THRU ERR-EXT.
+001550 TK2-EX.
+001560     EXIT.
+001570*******
+001580     COPY    LPMSG.

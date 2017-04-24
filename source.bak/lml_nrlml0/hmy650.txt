@@ -1,0 +1,358 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. HMY650.
+000030**************************************************************
+000040*    PROGRAM         :  履物年間サイズ別入庫作表期間日付入力 *
+000050*    PRINTER TYPE    :  JIPS                                 *
+000060*    SCREEN          :  ******                               *
+000070*    COMPILE TYPE    :  COBOL                                *
+000080**************************************************************
+000090 ENVIRONMENT DIVISION.
+000100 CONFIGURATION SECTION.
+000110 SOURCE-COMPUTER. SYSTEM7200.
+000120 OBJECT-COMPUTER. SYSTEM7200.
+000130 INPUT-OUTPUT SECTION.
+000140 FILE-CONTROL.
+000150     COPY LIBCSE.
+000160     SELECT UTRF ASSIGN TO UTR-MSD.
+000170*****SELECT UTRYR ASSIGN TO UTRYR-MSD.                            D.050510
+000180     SELECT UTRYR ASSIGN TO UTRYR-RDB                             I.050510
+000190         FILE STATUS ERR-STAT.                                    I.050510
+000200     SELECT NSSWF ASSIGN TO NSSW-MSD.
+000210 I-O-CONTROL.
+000220     APPLY SHARED-MODE ON UTRYR
+000230     APPLY SHARED-MODE ON M-DATE.
+000240 DATA DIVISION.
+000250 FILE SECTION.
+000260     COPY LIBFDD.
+000270 FD  UTRF
+000280     BLOCK  2 RECORDS
+000290     LABEL RECORD IS STANDARD
+000300     VALUE OF IDENTIFICATION "UTRF".
+000310 01  UTR-R              PIC  X(128).
+000320 FD  UTRYR
+000330     BLOCK  2 RECORDS
+000340     LABEL RECORD IS STANDARD
+000350     VALUE OF IDENTIFICATION "UTRYR-RDB".                         I.050510
+000360*****VALUE OF IDENTIFICATION "UTRYR".                             D.050510
+000370 01  UTRY-R.
+000380     02  F              PIC  9(007).
+000390     02  UTR-DATE.
+000400       03  UTR-NG       PIC  9(006).
+000410       03  UTR-PEY      PIC  9(002).
+000420     02  UTR-HCD        PIC  9(006).
+000430     02  UTR-SC         PIC  9(001).
+000440     02  UTR-SUD.
+000450       03  UTR-SU    OCCURS  10  PIC S9(004).
+000460     02  UTR-TSU        PIC S9(005).
+000470     02  F              PIC  X(016).
+000480     02  UTR-NC         PIC  9(001).
+000490     02  F              PIC  X(007).                              I.100419
+000500     02  UTR-BC3        PIC  9(002).                              I.100419
+000510     02  F              PIC  X(035).                              I.100419
+000520*****02  F              PIC  X(044).                              D.100419
+000530 FD  NSSWF
+000540     BLOCK  4 RECORDS
+000550     LABEL RECORD IS STANDARD
+000560     VALUE OF IDENTIFICATION "WK0064".
+000570 01  NSSW-R.
+000580     02  NSS-HCD        PIC  9(006).
+000590     02  NSS-SC         PIC  9(001).
+000600     02  NSS-SUD.
+000610       03  NSS-SUDA  OCCURS  10.
+000620         04  NSS-SU     PIC S9(006)  COMP-3.
+000630     02  NSS-TSU        PIC S9(008)  COMP-3.
+000640     02  NSS-TCD        PIC  9(004).
+000650     02  NSS-NG         PIC  9(006).
+000660     02  NSS-BC3        PIC  9(002).                              I.100419
+000670*****02  F              PIC  X(002).                              D.100419
+000680 WORKING-STORAGE SECTION.
+000690 77  ERR-STAT           PIC  X(002).
+000700 01  W-DATA.
+000710     02  W-SNG.
+000720       03  W-SNEN       PIC  9(004).
+000730       03  W-SND   REDEFINES W-SNEN.
+000740         04  W-SN1      PIC  9(002).
+000750         04  W-SN2      PIC  9(002).
+000760       03  W-SGET       PIC  9(002).
+000770     02  W-SNGL  REDEFINES W-SNG.
+000780       03  F            PIC  9(002).
+000790       03  W-SNGS       PIC  9(004).
+000800     02  W-ENG.
+000810       03  W-ENEN       PIC  9(004).
+000820       03  W-END   REDEFINES W-ENEN.
+000830         04  W-EN1      PIC  9(002).
+000840         04  W-EN2      PIC  9(002).
+000850       03  W-EGET       PIC  9(002).
+000860     02  W-ENGL  REDEFINES W-ENG.
+000870       03  F            PIC  9(002).
+000880       03  W-ENGS       PIC  9(004).
+000890     02  W-SYM.
+000900       03  W-SYY        PIC  9(004).
+000910       03  W-SYD   REDEFINES W-SYY.
+000920         04  W-SY1      PIC  9(002).
+000930         04  W-SY2      PIC  9(002).
+000940       03  W-SMM        PIC  9(002).
+000950     02  W-SYML  REDEFINES W-SYM.
+000960       03  F            PIC  9(002).
+000970       03  W-SYMS       PIC  9(004).
+000980     02  W-EYM.
+000990       03  W-EYY        PIC  9(004).
+001000       03  W-EYD   REDEFINES W-EYY.
+001010         04  W-EY1      PIC  9(002).
+001020         04  W-EY2      PIC  9(002).
+001030       03  W-EMM        PIC  9(002).
+001040     02  W-EYML  REDEFINES W-EYM.
+001050       03  F            PIC  9(002).
+001060       03  W-EYMS       PIC  9(004).
+001070     02  W-SEN          PIC  9(001).                              I.100419
+001080     02  W-DMM          PIC  9(001).
+001090     COPY LSTAT.
+001100 SCREEN SECTION.
+001110 SD  C-CRT
+001120     END STATUS IS ESTAT.
+001130 01  C-CLEAR.
+001140     02  LINE  1  CLEAR SCREEN.
+001150 01  C-MID.
+001160     02  LINE   3  COLUMN  10  PIC  N(023) VALUE
+001170          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001180     02  LINE   4  COLUMN  10  PIC  N(023) VALUE
+001190          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001200     02  LINE   5  COLUMN  10  PIC  N(023) VALUE
+001210          NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+001220     02  LINE   6  COLUMN  10  PIC  N(023) VALUE
+001230          NC"＊＊＊　　履物年間サイズ別　入庫作表　　＊＊＊".
+001240     02  LINE   7  COLUMN  10  PIC  N(023) VALUE
+001250          NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+001260     02  LINE   8  COLUMN  10  PIC  N(023) VALUE
+001270          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001280     02  LINE   9  COLUMN  10  PIC  N(023) VALUE
+001290          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001300     02  LINE  12  COLUMN  10  PIC  X(049) VALUE                  I.100419
+001310          "全体 = 0  ,  一般・ワーク = 1  ,  教育 = 2  ...  ".    I.100419
+001320*****02  LINE  13  COLUMN  15  PIC  X(040) VALUE                  D.100419
+001330     02  LINE  15  COLUMN  15  PIC  X(040) VALUE                  I.100419
+001340          "ＤＡＴＡ期間    '  年   月 ～ '  年   月".
+001350*****02  LINE  15  COLUMN  15  PIC  X(040) VALUE                  D.100419
+001360     02  LINE  17  COLUMN  15  PIC  X(040) VALUE                  I.100419
+001370          "作 表 期 間     '  年   月 ～ '  年   月".
+001380     02  LINE  20  COLUMN  24  PIC  X(022) VALUE
+001390          "確認  OK=1 NO=9   ﾘﾀｰﾝ".
+001400 01  C-ACP.
+001410     02  A-SEN   LINE  12  COLUMN  58  PIC  9(001)                I.100419
+001420          USING W-SEN   CHECK OVERFLOW NO IFC.                    I.100419
+001430*****02  A-PNG    LINE  15.                                       D.100419
+001440     02  A-PNG    LINE  17.                                       I.100419
+001450       03  A-SNEN  COLUMN  32  PIC  9(002)
+001460            USING W-SN2   CHECK OVERFLOW NO IFC.
+001470       03  A-SGET  COLUMN  37  PIC  9(002)
+001480            USING W-SGET  CHECK OVERFLOW NO IFC.
+001490       03  A-ENEN  COLUMN  46  PIC  9(002)
+001500            USING W-EN2   CHECK OVERFLOW NO IFC.
+001510       03  A-EGET  COLUMN  51  PIC  9(002)
+001520            USING W-EGET  CHECK OVERFLOW NO IFC.
+001530     02  A-DMM   LINE  20  COLUMN  41  PIC  9(001)
+001540          USING W-DMM   CHECK OVERFLOW NO IFC.
+001550 01  C-DSP.
+001560*****02  D-DNG    LINE  13.                                       D.100419
+001570     02  D-DNG    LINE  15.                                       I.100419
+001580       03  COLUMN  32  PIC  9(002) FROM  W-SY2.
+001590       03  COLUMN  37  PIC  9(002) FROM  W-SMM.
+001600       03  COLUMN  46  PIC  9(002) FROM  W-EY2.
+001610       03  COLUMN  51  PIC  9(002) FROM  W-EMM.
+001620 01  C-ERR.
+001630     02  LINE  24.
+001640       03  E-ME1   COLUMN  15  PIC  X(018) VALUE
+001650            "***  DATEM ﾅｼ  ***".
+001660       03  E-ME2   COLUMN  15  PIC  X(027) VALUE
+001670            "***  DATEM REWRITE ｴﾗｰ  ***".
+001680       03  E-ME3   COLUMN  15  PIC  X(017) VALUE
+001690            "***  DATA ﾅｼ  ***".
+001700       03  E-ME98  COLUMN  75  PIC  X(005) VALUE ""27"J"05"".
+001710       03  E-ME99  COLUMN  75  PIC  X(005) VALUE ""27"B"05"".
+001720     COPY LIBSCR.
+001730 PROCEDURE DIVISION.
+001740 M-05.
+001750     DISPLAY C-CLEAR.
+001760     DISPLAY C-MID.
+001770     MOVE ZERO TO W-DATA.
+001780     COPY LIBCPR.
+001790     MOVE D-NHNG TO W-EYMS.
+001800     IF W-EY2 >= DATE-NF1 AND <= DATE-NT1
+001810         ADD DATE-NC1 TO W-EYY.
+001820     IF W-EY2 >= DATE-NF2 AND <= DATE-NT2
+001830         ADD DATE-NC2 TO W-EYY.
+001840*
+001850     OPEN INPUT UTRF.
+001860     READ UTRF AT END
+001870         SUBTRACT 1 FROM W-EMM.
+001880     CLOSE UTRF.
+001890     IF W-EMM = ZERO
+001900         SUBTRACT 1 FROM W-EYY
+001910         MOVE 12 TO W-EMM.
+001920*
+001930     OPEN INPUT UTRYR.
+001940     READ UTRYR AT END
+001950         CLOSE UTRYR
+001960         MOVE 255 TO COMPLETION-CODE
+001970         DISPLAY E-ME3 E-ME99
+001980         GO TO M-95.
+001990     MOVE UTR-NG TO W-SYM.
+002000     CLOSE UTRYR
+002010*
+002020     MOVE W-EYM TO W-SNG W-ENG.
+002030     IF W-EGET < 4
+002040         COMPUTE W-ENEN = W-ENEN - 1.
+002050     MOVE 4 TO W-EGET.
+002060     COMPUTE W-SNEN = W-ENEN - 1.
+002070     MOVE 5 TO W-SGET.
+002080     IF W-SYM > W-SNG
+002090         MOVE W-SYM TO W-SNG.
+002100     DISPLAY D-DNG A-PNG.
+002110 M-10.                                                            I.100419
+002120     ACCEPT A-SEN.                                                I.100419
+002130     IF ESTAT = PF9                                               I.100419
+002140         MOVE 255 TO COMPLETION-CODE                              I.100419
+002150         DISPLAY C-CLEAR                                          I.100419
+002160         STOP RUN.                                                I.100419
+002170     IF ESTAT NOT = HTB AND SKP                                   I.100419
+002180         GO TO M-10.                                              I.100419
+002190     IF W-SEN > 2                                                 I.100419
+002200         GO TO M-10.                                              I.100419
+002210 M-15.
+002220     ACCEPT A-SNEN.
+002230     IF ESTAT = PF9
+002240         MOVE 255 TO COMPLETION-CODE
+002250         DISPLAY C-CLEAR
+002260         STOP RUN.
+002270     IF ESTAT = BTB                                               I.100419
+002280         GO TO M-10.                                              I.100419
+002290     IF ESTAT NOT = HTB AND SKP
+002300         GO TO M-15.
+002310     MOVE ZERO TO W-SN1.
+002320     IF W-SN2 >= DATE-NF1 AND <= DATE-NT1
+002330         ADD DATE-NC1 TO W-SNEN.
+002340     IF W-SN2 >= DATE-NF2 AND <= DATE-NT2
+002350         ADD DATE-NC2 TO W-SNEN.
+002360     IF W-SNEN < W-SYY OR > W-EYY
+002370         GO TO M-15.
+002380 M-20.
+002390     ACCEPT A-SGET.
+002400     IF ESTAT = BTB
+002410         GO TO M-15.
+002420     IF ESTAT NOT = HTB AND SKP
+002430         GO TO M-20.
+002440     IF W-SNG < W-SYM OR > W-EYM
+002450         GO TO M-20.
+002460     IF W-SGET < 1 OR > 12
+002470         GO TO M-20.
+002480 M-25.
+002490     ACCEPT A-ENEN.
+002500     IF ESTAT = BTB
+002510         GO TO M-20.
+002520     IF ESTAT NOT = HTB AND SKP
+002530         GO TO M-25.
+002540     MOVE ZERO TO W-EN1.
+002550     IF W-EN2 >= DATE-NF1 AND <= DATE-NT1
+002560         ADD DATE-NC1 TO W-ENEN.
+002570     IF W-EN2 >= DATE-NF2 AND <= DATE-NT2
+002580         ADD DATE-NC2 TO W-ENEN.
+002590     IF W-ENEN < W-SNEN OR > W-EYY
+002600         GO TO M-25.
+002610 M-30.
+002620     ACCEPT A-EGET.
+002630     IF ESTAT = BTB
+002640         GO TO M-25.
+002650     IF ESTAT NOT = HTB AND SKP
+002660         GO TO M-30.
+002670     IF W-ENG < W-SNG
+002680         GO TO M-30.
+002690     IF W-ENG < W-SYM OR > W-EYM
+002700         GO TO M-30.
+002710     IF W-EGET < 1 OR > 12
+002720         GO TO M-30.
+002730 M-35.
+002740     ACCEPT A-DMM.
+002750     IF ESTAT = BTB
+002760         GO TO M-30.
+002770     IF ESTAT NOT = HTB AND SKP
+002780         GO TO M-35.
+002790     IF W-DMM = 9
+002800         GO TO M-10.                                              I.100419
+002810*****    GO TO M-15.                                              D.100419
+002820     IF W-DMM NOT = 1
+002830         GO TO M-35.
+002840 M-40.
+002850     OPEN INPUT UTRYR.
+002860     OPEN OUTPUT NSSWF.
+002870 M-45.
+002880     READ UTRYR AT END
+002890         GO TO M-80.
+002900*****IF UTR-NC = 2 OR 4 OR 5                                      D.070323
+002910     IF UTR-NC = 2 OR 4                                           I.070323
+002920         GO TO M-45.
+002930     IF UTR-NG < W-SNG
+002940         GO TO M-45.
+002950     IF UTR-NG > W-ENG
+002960         GO TO M-80.
+002970     IF UTR-HCD > 999899
+002980         GO TO M-45.
+002990     IF W-SEN = 1                                                 I.100419
+003000         IF UTR-BC3 = 30                                          I.100419
+003010             GO TO M-45.                                          I.100419
+003020     IF W-SEN = 2                                                 I.100419
+003030         IF UTR-BC3 NOT = 30                                      I.100419
+003040             GO TO M-45.                                          I.100419
+003050     IF ZERO = UTR-SU(01) AND UTR-SU(02) AND UTR-SU(03) AND
+003060               UTR-SU(04) AND UTR-SU(05) AND UTR-SU(06) AND
+003070               UTR-SU(07) AND UTR-SU(08) AND UTR-SU(09) AND
+003080               UTR-SU(10)
+003090         GO TO M-45.
+003100*
+003110     MOVE ZERO TO NSSW-R.
+003120     MOVE UTR-HCD TO NSS-HCD.
+003130     MOVE UTR-SC TO NSS-SC.
+003140     MOVE UTR-NG TO NSS-NG.
+003150     MOVE UTR-BC3 TO NSS-BC3.                                     I.100419
+003160     MOVE UTR-SU(01) TO NSS-SU(01).
+003170     MOVE UTR-SU(02) TO NSS-SU(02).
+003180     MOVE UTR-SU(03) TO NSS-SU(03).
+003190     MOVE UTR-SU(04) TO NSS-SU(04).
+003200     MOVE UTR-SU(05) TO NSS-SU(05).
+003210     MOVE UTR-SU(06) TO NSS-SU(06).
+003220     MOVE UTR-SU(07) TO NSS-SU(07).
+003230     MOVE UTR-SU(08) TO NSS-SU(08).
+003240     MOVE UTR-SU(09) TO NSS-SU(09).
+003250     MOVE UTR-SU(10) TO NSS-SU(10).
+003260     MOVE UTR-TSU TO NSS-TSU.
+003270     IF UTR-NC = 5                                                I.070323
+003280         COMPUTE NSS-SU(01) = NSS-SU(01) * -1                     I.070323
+003290         COMPUTE NSS-SU(02) = NSS-SU(02) * -1                     I.070323
+003300         COMPUTE NSS-SU(03) = NSS-SU(03) * -1                     I.070323
+003310         COMPUTE NSS-SU(04) = NSS-SU(04) * -1                     I.070323
+003320         COMPUTE NSS-SU(05) = NSS-SU(05) * -1                     I.070323
+003330         COMPUTE NSS-SU(06) = NSS-SU(06) * -1                     I.070323
+003340         COMPUTE NSS-SU(07) = NSS-SU(07) * -1                     I.070323
+003350         COMPUTE NSS-SU(08) = NSS-SU(08) * -1                     I.070323
+003360         COMPUTE NSS-SU(09) = NSS-SU(09) * -1                     I.070323
+003370         COMPUTE NSS-SU(10) = NSS-SU(10) * -1                     I.070323
+003380         COMPUTE NSS-TSU = NSS-TSU * -1.                          I.070323
+003390     WRITE NSSW-R.
+003400     GO TO M-45.
+003410 M-80.
+003420     CLOSE UTRYR.
+003430     CLOSE NSSWF.
+003440     OPEN I-O M-DATE.
+003450 M-85.
+003460     MOVE "01" TO DATE-KEY.
+003470     READ M-DATE INVALID KEY
+003480         DISPLAY E-ME1 E-ME99
+003490         GO TO M-95.
+003500     MOVE W-SNGS TO D-SSNG.
+003510     MOVE W-ENGS TO D-ESNG.
+003520     REWRITE DATE-R INVALID KEY
+003530         DISPLAY E-ME2 E-ME99.
+003540 M-90.
+003550     CLOSE M-DATE.
+003560 M-95.
+003570     DISPLAY C-CLEAR.
+003580     STOP RUN.

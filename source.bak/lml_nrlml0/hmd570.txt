@@ -1,0 +1,237 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. HMD570.
+000030 AUTHOR. S-NAKAO.
+000040 DATE-WRITTEN. 1974-05-01.
+000050*********************************************************
+000060*    PROGRAM         :  履物　在庫集計表　作成　　　　　*
+000070*    PRINTER TYPE    :  JIPS                            *
+000080*    SCREEN          :  ******                          *
+000090*        変更　　　  :  99/01/30                        *
+000100*    COMPILE TYPE    :  COBOL                           *
+000110*********************************************************
+000120 ENVIRONMENT DIVISION.
+000130 CONFIGURATION SECTION.
+000140 SOURCE-COMPUTER. SYSTEM3100.
+000150 OBJECT-COMPUTER. SYSTEM3100.
+000160 INPUT-OUTPUT SECTION.
+000170 FILE-CONTROL.
+000180     COPY LIBCSE.
+000190*****SELECT HZ-M ASSIGN TO HZ-MSD                                 D.990130
+000200*****SELECT HHTF ASSIGN TO HHT-MSD                                D.010806
+000210     SELECT HHTF ASSIGN TO HHT1-MSD HHT2-MSD                      I.010806
+000220         ORGANIZATION IS INDEXED
+000230         ACCESS MODE IS DYNAMIC
+000240         RECORD KEY IS HHT-KEY                                    I.010806
+000250         ALTERNATE RECORD KEY IS HHT-KEY2.                        I.010806
+000260*****    RECORD KEY IS HHT-KEY.                                   D.010806
+000270*****    RECORD KEY IS HZ-KEY.                                    D.990130
+000280*****SELECT SUSR-F ASSIGN TO SUSR-MSD.                            D.970114
+000290*****SELECT UTR-F ASSIGN TO UTR-MSD.                              D.070419
+000300     SELECT SP-F ASSIGN TO P-PRN999.
+000310 I-O-CONTROL.
+000320     APPLY SHARED-MODE ON M-DATE
+000330     APPLY SHARED-MODE ON HHTF                                    I.990130
+000340*****APPLY SHARED-MODE ON HZ-M                                    D.990130
+000350     APPLY SHIFT-CODE  ON SP-F.                                   A 62/04
+000360 DATA DIVISION.
+000370 FILE SECTION.
+000380     COPY LIBFDD.
+000390     COPY LIHHTF.                                                 I.990130
+000400*****COPY LIHZM.                                                  D.990130
+000410     COPY LSPF.
+000420*FD  SUSR-F                                                       D.970114
+000430*****BLOCK  6 RECORDS                                             D.970114
+000440*****LABEL RECORD IS STANDARD                                     D.970114
+000450*****VALUE OF IDENTIFICATION "SUSRF".                             D.970114
+000460*01  SUSR-R.                                                      D.970114
+000470*****02  F              PIC  X(012).                              D.970114
+000480*****02  SUSR-SU        PIC S9(006).                              D.970114
+000490*****02  F              PIC  X(023).                              D.970114
+000500*****02  SUSR-NRC       PIC  9(001).                              D.970114
+000510*FD  UTR-F                                                        D.070419
+000520*****BLOCK  5 RECORDS                                             D.020516
+000530*****BLOCK  2 RECORDS                                             D.070419
+000540*****LABEL RECORD IS STANDARD                                     D.070419
+000550*****VALUE OF IDENTIFICATION "UTRF".                              D.070419
+000560*01  UTR-R.                                                       D.070419
+000570*****02  UTR-NO         PIC  9(007).                              D.070419
+000580*****02  UTR-DATE       PIC  9(006).                              D.970711
+000590*****02  UTR-DATE       PIC  9(008).                              D.070419
+000600*****02  UTR-HCD        PIC  9(006).                              D.070419
+000610*****02  UTR-SIZ        PIC  9(001).                              D.070419
+000620*****02  UTR-SUD.                                                 D.070419
+000630*****  03  UTR-SU       PIC S9(004)  OCCURS  10.                  D.070419
+000640*****02  UTR-SUT        PIC S9(005).                              D.070419
+000650*****02  UTR-BKIN       PIC S9(008).                              D.070419
+000660*****02  UTR-FKIN       PIC S9(008).                              D.070419
+000670*****02  UTR-NRC        PIC  9(001).                              D.070419
+000680*****02  UTR-SSC        PIC  9(001).                              D.070419
+000690*****02  UTR-HPC        PIC  9(001).                              D.070419
+000700*****02  UTR-SKC        PIC  9(001).                              D.070419
+000710*****02  UTR-BC.                                                  D.070419
+000720*****  03  UTR-BC1      PIC  9(002).                              D.070419
+000730*****  03  UTR-BC2      PIC  9(002).                              D.070419
+000740*****  03  UTR-BC3      PIC  9(002).                              D.070419
+000750*****02  UTR-BMC        PIC  9(002).                              D.070419
+000760*****02  UTR-BMNO       PIC  9(001).                              D.070419
+000770*****02  F              PIC  X(032).                              D.070419
+000780*****02  F              PIC  X(009).                              D.020516
+000790*****02  F              PIC  X(011).                              D.970711
+000800 WORKING-STORAGE SECTION.
+000810 01  HEAD1.
+000820     02  F              PIC  X(005) VALUE ""3FE04FE080"".         A 62/04
+000830     02  F              PIC  X(007) VALUE SPACE.
+000840     02  F              PIC  N(004) VALUE NC"実在庫数".
+000850     02  F              PIC  X(009) VALUE SPACE.
+000860     02  F              PIC  N(003) VALUE NC"預り数".
+000870*****02  F              PIC  X(009) VALUE SPACE.                  D.070419
+000880*****02  F              PIC  N(003) VALUE NC"成型数".             D.070419
+000890 01  W-P.
+000900     02  P-ZSK          PIC ---,---,---,--9.
+000910     02  P-AZ           PIC ---,---,---,--9.
+000920*****02  P-SK           PIC ---,---,---,--9.                      D.070419
+000930 01  W-EM.
+000940     02  F              PIC  N(008) VALUE NC"［　日計更新終了".
+000950     02  F              PIC  X(006) VALUE SPACE.
+000960     02  F              PIC  X(005) VALUE "DATE ".
+000970     02  EM-DATE        PIC 99B99B99BBB.
+000980     02  F              PIC  X(005)  VALUE "TIME ".
+000990     02  EM-TIME        PIC 99B99B99.
+001000     02  F              PIC  N(002)  VALUE NC"　］".
+001010 01  W-DATA.
+001020     02  CNT            PIC  9(002).                              I.990130
+001030     02  W-NG           PIC  9(004).
+001040     02  W-AD.
+001050       03  W-ZSK        PIC S9(008).
+001060       03  W-AZ         PIC S9(008).
+001070*****  03  W-SK         PIC S9(008).                              D.070419
+001080     02  W-TIMED.
+001090       03  W-TIME       PIC  9(006).
+001100       03  F            PIC  X(002).
+001110     02  W-DMM          PIC  9(001).
+001120     COPY LSTAT.
+001130 SCREEN SECTION.
+001140 SD  C-CRT
+001150     END STATUS IS ESTAT.
+001160 01  C-CLEAR.
+001170     02  C-CL    LINE   1  CLEAR SCREEN.
+001180 01  C-MID.
+001190     02  LINE   3  COLUMN  10  PIC  N(019) VALUE
+001200          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001210     02  LINE   4  COLUMN  10  PIC  N(019) VALUE
+001220          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001230     02  LINE   5  COLUMN  10  PIC  N(019) VALUE
+001240          NC"＊＊＊　　　　　　　　　　　　　＊＊＊".
+001250     02  LINE   6  COLUMN  10  PIC  N(019) VALUE
+001260          NC"＊＊＊　履物　在庫集計表　作成　＊＊＊".
+001270     02  LINE   7  COLUMN  10  PIC  N(019) VALUE
+001280          NC"＊＊＊　　　　　　　　　　　　　＊＊＊".
+001290     02  LINE   8  COLUMN  10  PIC  N(019) VALUE
+001300          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001310     02  LINE   9  COLUMN  10  PIC  N(019) VALUE
+001320          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001330     02  LINE  15  COLUMN  15  PIC  X(029) VALUE
+001340          "作表  する=5  しない=0   ﾘﾀｰﾝ".
+001350 01  C-ACP.
+001360     02  A-DMM   LINE  15  COLUMN  39  PIC  9(001)
+001370          USING W-DMM   CHECK OVERFLOW NO IFC.
+001380 01  C-ERR.
+001390     02  LINE  24.
+001400       03  E-ME1   COLUMN  15  PIC  X(017) VALUE
+001410            "***  DATA ﾅｼ  ***".
+001420       03  E-ME98  COLUMN  75  PIC  X(005) VALUE ""27"J"05"".
+001430       03  E-ME99  COLUMN  75  PIC  X(005) VALUE ""27"B"05"".
+001440     COPY LIBSCR.
+001450 PROCEDURE DIVISION.
+001460 M-05.
+001470     DISPLAY C-CLEAR.
+001480     DISPLAY C-MID.
+001490     ACCEPT EM-DATE FROM DATE.
+001500     ACCEPT W-TIMED FROM TIME.
+001510     MOVE W-TIME TO EM-TIME.
+001520     OPEN OUTPUT SP-F.
+001530     MOVE SPACE TO SP-R.
+001540     MOVE W-EM TO SP-R.
+001550     WRITE SP-R.
+001560     COPY LIBCPR.
+001570     IF D-HKC NOT = 1
+001580         GO TO M-95.
+001590 M-10.
+001600     ACCEPT A-DMM.
+001610     IF ESTAT NOT = HTB AND SKP
+001620         GO TO M-10.
+001630     IF W-DMM = ZERO
+001640         GO TO M-95.
+001650     IF W-DMM NOT = 5
+001660         GO TO M-10.
+001670*
+001680     MOVE ZERO TO W-AD.                                           I.940718
+001690*****OPEN INPUT HZ-M.                                             D.990130
+001700*****READ HZ-M NEXT RECORD WITH UNLOCK AT END                     D.990130
+001710     OPEN INPUT HHTF.                                             I.990130
+001720     READ HHTF NEXT RECORD WITH UNLOCK AT END                     I.990130
+001730         DISPLAY E-ME1 E-ME99
+001740         CLOSE HHTF                                               I.990130
+001750*****    CLOSE HZ-M                                               D.990130
+001760         GO TO M-95.
+001770 M-15.
+001780     MOVE ZERO TO CNT.                                            I.990130
+001790 M-20.                                                            I.990130
+001800     ADD 1 TO CNT.                                                I.990130
+001810     IF CNT = 11                                                  I.990130
+001820         GO TO M-25.                                              I.990130
+001830     IF (HHT-SIZ = 4) AND (CNT = 10)                              I.990130
+001840         COMPUTE W-AZ = W-AZ + HHT-ZSU(10) - HHT-USU(10)          I.990130
+001850       ELSE                                                       I.990130
+001860         COMPUTE W-AZ = W-AZ + HHT-ASS(CNT)                       I.990130
+001870         COMPUTE W-ZSK = W-ZSK + HHT-ZSU(CNT) + HHT-NSU(CNT)      I.990130
+001880                               - HHT-USU(CNT) - HHT-ASS(CNT).     I.990130
+001890     GO TO M-20.                                                  I.990130
+001900*****IF HZ-GSU NOT = ZERO                                         D.990130
+001910*****    IF HZ-SIZ NOT = 111                                      D.990130
+001920*****        ADD HZ-GSU TO W-ZSK                                  D.990130
+001930*****      ELSE                                                   D.990130
+001940*****        ADD HZ-GSU TO W-AZ.                                  D.990130
+001950 M-25.
+001960*****READ HZ-M NEXT RECORD WITH UNLOCK AT END                     D.990130
+001970     READ HHTF NEXT RECORD WITH UNLOCK AT END                     I.990130
+001980         GO TO M-40.                                              I.940718
+001990*****    GO TO M-90.                                              D.940718
+002000     GO TO M-15.
+002010 M-40.                                                            I.940718
+002020     CLOSE HHTF.                                                  I.990130
+002030*****CLOSE HZ-M.                                                  D.990130
+002040*****OPEN INPUT SUSR-F.                                           D.970114
+002050*****OPEN INPUT UTR-F.                                            D.070419
+002060*M-45.                                                            D.070419
+002070*****READ SUSR-F AT END                                           D.970114
+002080*****READ UTR-F AT END                                            D.070419
+002090*****    GO TO M-90.                                              D.070419
+002100*****IF SUSR-NRC = 2                                              D.970114
+002110*****    ADD SUSR-SU TO W-SK.                                     D.970114
+002120*****IF UTR-NRC = 2                                               D.070419
+002130*****    ADD UTR-SUT TO W-SK.                                     D.070419
+002140*****IF UTR-NRC = 5                                               D.070419
+002150*****    IF UTR-SSC = 1 OR 2                                      D.070419
+002160*****        SUBTRACT UTR-SUT FROM W-SK.                          D.070419
+002170*****GO TO M-45.                                                  D.070419
+002180 M-90.
+002190*****CLOSE HZ-M.                                                  D.940718
+002200*****CLOSE SUSR-F.                                                D.970114
+002210*****CLOSE UTR-F.                                                 D.070419
+002220*
+002230     COMPUTE W-AZ = W-AZ * -1.
+002240     MOVE SPACE TO SP-R.
+002250     MOVE HEAD1 TO SP-R.
+002260     WRITE SP-R AFTER 2.
+002270     MOVE SPACE TO SP-R.
+002280     MOVE SPACE TO W-P.
+002290     MOVE W-ZSK TO P-ZSK.
+002300     MOVE W-AZ TO P-AZ.
+002310*****MOVE W-SK TO P-SK.                                           D.070419
+002320     MOVE W-P TO SP-R.
+002330     WRITE SP-R.
+002340 M-95.
+002350     CLOSE SP-F.
+002360     DISPLAY C-CLEAR.
+002370     STOP RUN.

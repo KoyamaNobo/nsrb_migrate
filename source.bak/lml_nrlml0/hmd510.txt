@@ -1,0 +1,1158 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. HMD510.
+000030*********************************************************
+000040*    PROGRAM         :  履物日次　在庫・売上更新        *
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :  ******                          *
+000070*        変更　　　  :  62/04/16                        *
+000080*    COMPILE TYPE    :  COBOL                           *
+000090*********************************************************
+000100 ENVIRONMENT DIVISION.
+000110 CONFIGURATION SECTION.
+000120 SOURCE-COMPUTER. SYSTEM3100.
+000130 OBJECT-COMPUTER. SYSTEM3100.
+000140 INPUT-OUTPUT SECTION.
+000150 FILE-CONTROL.
+000160*****SELECT SU-F ASSIGN TO SU-MSD.                                D.970113
+000170*****SELECT SYU-F ASSIGN TO SYU-MSD.                              D.961226
+000180     SELECT UTRAN ASSIGN TO UTRAN-MSD.                            I.970113
+000190     SELECT STRAN ASSIGN TO STRAN-MSD.                            I.961226
+000200*****SELECT AZ-F ASSIGN TO AZ-MSD.                                D.961228
+000210*****SELECT NBK-F ASSIGN TO NBK-MSD.                              D.000811
+000220*****SELECT HI-M ASSIGN TO HI-MSD                                 D.010806
+000230     SELECT HI-M ASSIGN TO HI1-MSD HI2-MSD                        I.010806
+000240         ORGANIZATION IS INDEXED
+000250         ACCESS MODE IS RANDOM
+000260         RECORD KEY IS HI-KEY
+000270         ALTERNATE RECORD KEY IS HI-KEY2                          I.010806
+000280         FILE STATUS IS ERR-STAT.
+000290*****SELECT HZ-M ASSIGN TO HZ-MSD                                 D.990225
+000300*****    ORGANIZATION IS INDEXED                                  D.990225
+000310*****    ACCESS MODE IS RANDOM                                    D.990225
+000320*****    RECORD KEY IS HZ-KEY                                     D.990225
+000330*****    FILE STATUS IS ERR-STAT.                                 D.990225
+000340*****SELECT HHTF ASSIGN TO HHT-MSD                                D.010806
+000350     SELECT HHTF ASSIGN TO HHT1-MSD HHT2-MSD                      I.010806
+000360         ORGANIZATION IS INDEXED                                  I.990129
+000370         ACCESS MODE IS RANDOM                                    I.990129
+000380         RECORD KEY IS HHT-KEY                                    I.990129
+000390         ALTERNATE RECORD KEY IS HHT-KEY2                         I.010806
+000400         FILE STATUS IS ERR-STAT.                                 I.990129
+000410     SELECT HUH-M ASSIGN TO HUH-MSD
+000420         ORGANIZATION IS INDEXED
+000430         ACCESS MODE IS RANDOM
+000440         RECORD KEY IS HUH-KEY
+000450         FILE STATUS IS ERR-STAT.
+000460     SELECT TAZ-M ASSIGN TO TAZ-MSD
+000470         ORGANIZATION IS INDEXED
+000480         ACCESS MODE IS RANDOM
+000490         RECORD KEY TAZ-KEY
+000500         FILE STATUS IS ERR-STAT.
+000510*****SELECT T-M ASSIGN TO T1-MSD T2-MSD                           D.081210
+000520*****    ORGANIZATION IS INDEXED                                  D.081210
+000530*****    ACCESS MODE IS RANDOM                                    D.081210
+000540*****    RECORD KEY T-KEY                                         D.081210
+000550*****    ALTERNATE RECORD KEY T-KEY2.                             D.081210
+000560*****SELECT HIHF ASSIGN TO HIH-MSD                                D.040323
+000570*****    ORGANIZATION IS INDEXED                                  D.040323
+000580*****    ACCESS MODE IS RANDOM                                    D.040323
+000590*****    RECORD KEY HIH-KEY                                       D.040323
+000600*****    FILE STATUS IS ERR-STAT.                                 D.040323
+000610*****SELECT JZAI  ASSIGN TO JZAI-MSD                              D.970321
+000620*****    ORGANIZATION IS INDEXED                                  D.970321
+000630*****    ACCESS MODE IS RANDOM                                    D.970321
+000640*****    RECORD KEY JZAI-KEY                                      D.970321
+000650*****    FILE STATUS IS ERR-STAT.                                 D.970321
+000660 I-O-CONTROL.
+000670     APPLY SHARED-MODE ON HI-M
+000680*****APPLY SHARED-MODE ON HZ-M                                    D.990225
+000690     APPLY SHARED-MODE ON HHTF                                    I.990129
+000700     APPLY SHARED-MODE ON HUH-M
+000710*****APPLY SHARED-MODE ON T-M                                     D.081210
+000720*****APPLY SHARED-MODE ON HIHF                                    D.040323
+000730     APPLY SHARED-MODE ON TAZ-M.                                  I.970321
+000740*****APPLY SHARED-MODE ON TAZ-M JZAI.                             D.970321
+000750 DATA DIVISION.
+000760 FILE SECTION.
+000770     COPY LIHIM.
+000780*****COPY LIHZM.                                                  D.990225
+000790     COPY LIHHTF.                                                 I.990129
+000800     COPY LIHUHM.
+000810*****COPY L-JZAI.                                                 D.970321
+000820     COPY LUTRAN.                                                 I.970113
+000830*****COPY LITM.                                                   D.081210
+000840*****COPY LIHIHF.                                                 D.040323
+000850*FD  SU-F                                                         D.970113
+000860*****BLOCK  5 RECORDS                                             D.970113
+000870*****LABEL RECORD IS STANDARD                                     D.970113
+000880*****VALUE OF IDENTIFICATION "SUF".                               D.970113
+000890*01  SU-R.                                                        D.970113
+000900*****02  U-DATE         PIC  9(006).                              D.970113
+000910*****02  U-KEY.                                                   D.970113
+000920*****  03  U-HCD        PIC  9(006).                              D.970113
+000930*****  03  U-SIZ        PIC  9(001).                              D.970113
+000940*****  03  U-S          PIC  9(003).                              D.970113
+000950*****02  U-SU           PIC S9(006).                              D.970113
+000960*****02  U-BK           PIC S9(008).                              D.970113
+000970*****02  U-FK           PIC S9(008).                              D.970113
+000980*****02  U-SC           PIC  9(001).                              D.970113
+000990*****02  U-BC1          PIC  9(002).                              D.970113
+001000*****02  U-BC2          PIC  9(002).                              D.970113
+001010*****02  U-BC3          PIC  9(002).                              D.970113
+001020*****02  U-NC           PIC  9(001).                              D.970113
+001030*****02  U-SKC          PIC  9(001).                              D.970113
+001040*****02  F              PIC  X(004).                              D.970113
+001050*FD  SYU-F                                                        D.961226
+001060*****BLOCK  4 RECORDS                                             D.961226
+001070*****LABEL RECORD IS STANDARD                                     D.961226
+001080*****VALUE OF IDENTIFICATION "SYUF".                              D.961226
+001090*01  SYU-R.                                                       D.961226
+001100*****02  S-DATE         PIC  9(006).                              D.961226
+001110*****02  S-TCD          PIC  9(004).                              D.961226
+001120*****02  S-KEY.                                                   D.961226
+001130*****  03  S-HCD        PIC  9(006).                              D.961226
+001140*****  03  S-SIZ        PIC  9(001).                              D.961226
+001150*****  03  S-S          PIC  9(003).                              D.961226
+001160*****02  S-SU           PIC S9(005).                              D.961226
+001170*****02  S-T            PIC  9(004).                              D.941209
+001180*****02  S-T            PIC  9(005).                              D.961226
+001190*****02  S-UKI          PIC S9(008).                              D.961226
+001200*****02  S-FT           PIC  9(004).                              D.941209
+001210*****02  S-FT           PIC  9(005).                              D.961226
+001220*****02  S-SKI          PIC S9(008).                              D.961226
+001230*****02  S-DK           PIC  9(001).                              D.961226
+001240*****02  S-BC.                                                    D.961226
+001250*****  03  S-BC1        PIC  9(002).                              D.961226
+001260*****  03  S-BC2        PIC  9(002).                              D.961226
+001270*****  03  S-BC3        PIC  9(002).                              D.961226
+001280*****02  S-SKC          PIC  9(001).                              D.961226
+001290*****02  F              PIC  X(007).                              D.941209
+001300*****02  F              PIC  X(005).                              D.961226
+001310 FD  STRAN                                                        I.961226
+001320     BLOCK  2 RECORDS                                             I.961226
+001330     LABEL RECORD IS STANDARD                                     I.961226
+001340     VALUE OF IDENTIFICATION "STRAN".                             I.961226
+001350 01  STRAN-R.                                                     I.961226
+001360*****02  S-DATE         PIC  9(006).                              D.970711
+001370     02  S-DNO          PIC  9(006).                              I.000811
+001380     02  S-GNO          PIC  9(001).                              I.000811
+001390*****02  S-DATE         PIC  9(008).                              D.070125
+001400     02  S-DATE.                                                  I.070125
+001410       03  S-NG         PIC  9(006).                              I.070125
+001420       03  F            PIC  9(002).                              I.070125
+001430     02  S-TCD          PIC  9(004).                              I.961226
+001440     02  S-KEY.                                                   I.961226
+001450       03  S-HCD        PIC  9(006).                              I.961226
+001460       03  S-SIZ        PIC  9(001).                              I.961226
+001470     02  S-SUD.                                                   I.961226
+001480*****  03  S-SU         PIC S9(004)  OCCURS 10.                   D.000811
+001490       03  S-SU    OCCURS  10  PIC S9(004)  COMP-3.               I.000811
+001500     02  S-SUT          PIC S9(005).                              I.961226
+001510     02  S-T            PIC  9(005).                              I.961226
+001520     02  S-UKI          PIC S9(008).                              I.961226
+001530     02  F              PIC  X(001).                              I.941209
+001540     02  S-DK           PIC  9(001).                              I.961226
+001550     02  S-FT           PIC  9(005).                              I.961226
+001560     02  F              PIC  X(003).                              I.000811
+001570*****02  F              PIC  X(007).                              D.000811
+001580     02  S-BC.                                                    I.961226
+001590       03  S-BC1        PIC  9(002).                              I.961226
+001600       03  S-BC2        PIC  9(002).                              I.961226
+001610       03  S-BC3        PIC  9(002).                              I.961226
+001620     02  S-SKC          PIC  9(001).                              I.961226
+001630*****02  F              PIC  X(036).                              D.020821
+001640     02  F              PIC  X(023).                              I.020821
+001650     02  S-SNGP         PIC  9(008).                              I.020821
+001660*****02  F              PIC  X(005).                              D.050301
+001670     02  F              PIC  X(004).                              I.050301
+001680     02  S-DHC          PIC  9(001).                              I.050301
+001690     02  S-UNC          PIC  9(001).                              I.000811
+001700*****02  F              PIC  X(030).                              D.000811
+001710*****02  F              PIC  X(032).                              D.970711
+001720*****02  F              PIC  X(014).                              D.970707
+001730*****02  S-ANO          PIC  9(007).                              D.970707
+001740*****02  F              PIC  X(011).                              D.970707
+001750*FD  AZ-F                                                         D.961228
+001760*****BLOCK  8 RECORDS                                             D.961228
+001770*****LABEL RECORD IS STANDARD                                     D.961228
+001780*****VALUE OF IDENTIFICATION "AZF".                               D.961228
+001790*01  AZ-R.                                                        D.961228
+001800*****02  AZ-KEY.                                                  D.961228
+001810*****  03  AZ-TCD       PIC  9(004).                              D.961228
+001820*****  03  AZ-HCD       PIC  9(006).                              D.961228
+001830*****02  AZ-DATE        PIC  9(006).                              D.961228
+001840*****02  AZ-AC          PIC  9(001).                              D.961228
+001850*****02  AZ-ASU         PIC S9(005).                              D.961228
+001860*****02  AZ-NO.                                                   D.961228
+001870*****  03  AZ-NO1       PIC  9(006).                              D.961228
+001880*****  03  AZ-NO2       PIC  9(001).                              D.961228
+001890*****02  F              PIC  X(002).                              D.961228
+001900*****02  AZ-KB          PIC  X(001).                              D.961228
+001910*FD  NBK-F                                                        D.000811
+001920*****BLOCK  4 RECORDS                                             D.000811
+001930*****LABEL RECORD IS STANDARD                                     D.000811
+001940*****VALUE OF IDENTIFICATION "NBKF".                              D.000811
+001950*01  NBK-R.                                                       D.000811
+001960*****02  B-DATE         PIC  9(006).                              D.970711
+001970*****02  B-DATE         PIC  9(008).                              D.000811
+001980*****02  B-TCD          PIC  9(004).                              D.000811
+001990*****02  B-HCD          PIC  9(006).                              D.000811
+002000*****02  B-KEY.                                                   D.961101
+002010*****  03  B-HCD        PIC  9(006).                              D.961101
+002020*****  03  B-SIZ        PIC  9(001).                              D.961101
+002030*****  03  B-S          PIC  9(003).                              D.961101
+002040*****02  B-SU           PIC S9(006).                              D.961101
+002050*****02  B-NT           PIC  9(004).                              D.941209
+002060*****02  B-SU           PIC S9(005).                              D.000811
+002070*****02  B-NT           PIC  9(005).                              D.000811
+002080*****02  B-KI           PIC S9(008).                              D.000811
+002090*****02  B-CSC          PIC  9(001).                              D.000811
+002100*****02  B-NO           PIC  9(003).                              D.000811
+002110*****02  B-G            PIC  9(001).                              D.000811
+002120*****02  B-CCD          PIC  9(003).                              D.970711
+002130*****02  F              PIC  X(010).                              D.000811
+002140*****02  B-SZC          PIC  9(001).                              D.000811
+002150*****02  F              PIC  X(012).                              D.000811
+002160*****02  F              PIC  X(007).                              D.941209
+002170*****02  F              PIC  X(006).                              D.961101
+002180*****02  F              PIC  X(011).                              D.970711
+002190 FD  TAZ-M
+002200*****BLOCK  8 RECORDS                                             D.020821
+002210     BLOCK  6 RECORDS                                             I.020821
+002220     LABEL RECORD IS STANDARD
+002230     VALUE OF IDENTIFICATION "TAZM".                              C 62/04
+002240 01  TAZ-R.
+002250     02  TAZ-KEY.
+002260       03  TAZ-TCD      PIC  9(004).
+002270       03  TAZ-HCD      PIC  9(006).                              C 62/04
+002280*****  03  TAZ-NO       PIC  9(007).                              D.000622
+002290*****  03  TAZ-NO.                                                D.970707
+002300*****    04  TAZ-NO1    PIC  9(006).                              D.970707
+002310*****    04  TAZ-NO2    PIC  9(001).                              D.970707
+002320     02  TAZ-AZS        PIC S9(005).
+002330     02  TAZ-AAS        PIC S9(005).
+002340     02  TAZ-SZS        PIC S9(005).                              I.020821
+002350     02  TAZ-SAS        PIC S9(005).                              I.020821
+002360     02  F              PIC  X(006).                              I.000622
+002370     02  TAZ-NG         PIC  9(006).                              I.000622
+002380*****02  F              PIC  X(005).                              D.000622
+002390 WORKING-STORAGE  SECTION.
+002400 77  ZERO-SW            PIC  9(001).                              *A920516
+002410 77  W-FILE             PIC  X(013).                              I.940623
+002420 77  W-INV              PIC  9(001) VALUE 0.                      I.990129
+002430 01  W-DATA.
+002440     02  W-ACT          PIC  9(001).                              I.070125
+002450     02  W-DMM          PIC  9(001).                              I.050303
+002460     02  W-D.
+002470       03  W-HCD        PIC  9(006).
+002480       03  W-NS         PIC S9(007).
+002490       03  W-NK         PIC S9(010).
+002500       03  W-US         PIC S9(008).                                C 62/0
+002510       03  W-UK         PIC S9(010).
+002520       03  W-YS         PIC S9(006).
+002530       03  W-YK         PIC S9(009).
+002540       03  W-UG         PIC S9(010).
+002550       03  W-FT         PIC  9(005).                              I.941209
+002560*****  03  W-FT         PIC  9(004).                              D.941209
+002570     02  CHK            PIC  9(001).                              ********
+002580     02  W-DC           PIC  9(001).                              ********
+002590     02  W-FM           PIC  N(002).                              ********
+002600     02  W-KIN          PIC S9(009).                              ********
+002610     02  CNT            PIC  9(010).                              I.961226
+002620     02  WD-D.                                                    I.961226
+002630       03  WD-SUD.                                                I.961226
+002640         04  WD-SU      PIC S9(004)  OCCURS 10.                   I.961226
+002650       03  WD-SUT       PIC S9(005).                              I.961226
+002660       03  WD-UKI       PIC S9(008).                              I.961226
+002670       03  WD-SKI       PIC S9(008).                              I.961226
+002680     02  W-KEY.                                                   I.970113
+002690*****  03  W-HCDD       PIC  9(006).                              D.990129
+002700*****  03  W-SIZD       PIC  9(001).                              D.990129
+002710       03  W-KEYD.                                                I.990129
+002720         04  W-HCDD     PIC  9(006).                              I.990129
+002730         04  W-SIZD     PIC  9(001).                              I.990129
+002740*****  03  W-SD         PIC  9(003).                              D.990225
+002750 01  W-AREA.                                                      *I911122
+002760     02  INV-SW         PIC  9(001).
+002770*****02  CHK-SW         PIC  9(001).                              D.970113
+002780     02  I              PIC  9(002).                              *I911122
+002790*****02  W-I            PIC  9(002).                              D.970113
+002800     02  W-SKC          PIC  9(001).                              *I911122
+002810     02  W-SIZ          PIC  9(001).                              *I911122
+002820*****02  W-S            PIC  9(003).                              D.990225
+002830*****02  W-SU           PIC S9(006).                              D.970113
+002840*****02  W-SUD.                                                   D.970321
+002850*****  03  W-SURYO      PIC S9(005) OCCURS  10.                   D.970107
+002860*****  03  W-SURYO      PIC S9(004) OCCURS  10.                   D.970321
+002870*
+002880*01  W-TBL.                                                       D.990225
+002890*****02  W-SIZ1         PIC  X(030) VALUE                         D.990225
+002900*****     "003002001000201301401280290300".                       D.990225
+002910*****02  W-TBL1  REDEFINES W-SIZ1  OCCURS  10  PIC  9(003).       D.990225
+002920*****02  W-SIZ2         PIC  X(030) VALUE                         D.990225
+002930*****     "125130135140150160170180190200".                       D.990225
+002940*****02  W-TBL2  REDEFINES W-SIZ2  OCCURS  10  PIC  9(003).       D.990225
+002950*****02  W-SIZ3         PIC  X(030) VALUE                         D.990225
+002960*****     "210215220225230235240245250   ".                       D.990225
+002970*****02  W-TBL3  REDEFINES W-SIZ3  OCCURS  10  PIC  9(003).       D.990225
+002980*****02  W-SIZ4         PIC  X(030) VALUE                         D.990225
+002990*****     "240245250255260265270275      ".                       D.961226
+003000*****     "240245250255260265270275   111".                       D.990225
+003010*****02  W-TBL4  REDEFINES W-SIZ4  OCCURS  10  PIC  9(003).       D.990225
+003020*
+003030 01  ERR-STAT           PIC  X(002).
+003040     COPY LSTAT.                                                  I.050303
+003050     COPY   LWMSG.
+003060 SCREEN SECTION.
+003070 SD  C-CRT
+003080     END STATUS IS ESTAT.
+003090 01  C-CLEAR.
+003100     02  C-CL    LINE   1  CLEAR SCREEN.
+003110 01  C-MID.
+003120     02  LINE   3  COLUMN  10  PIC  N(022) VALUE
+003130          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+003140     02  LINE   4  COLUMN  10  PIC  N(022) VALUE
+003150          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+003160     02  LINE   5  COLUMN  10  PIC  N(022) VALUE
+003170          NC"＊＊＊　　　　　　　　　　　　　　　　＊＊＊".
+003180     02  LINE   6  COLUMN  10  PIC  N(022) VALUE
+003190          NC"＊＊＊　　履物日次　在庫・売上更新　　＊＊＊".
+003200     02  LINE   7  COLUMN  10  PIC  N(022) VALUE
+003210          NC"＊＊＊　　　　　　　　　　　　　　　　＊＊＊".
+003220     02  LINE   8  COLUMN  10  PIC  N(022) VALUE
+003230          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+003240     02  LINE   9  COLUMN  10  PIC  N(022) VALUE
+003250          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+003260     02  LINE  20  COLUMN  30  PIC  X(022) VALUE                  I.050303
+003270          "確認  OK=1 NO=9   ﾘﾀｰﾝ".                               I.050303
+003280 01  C-ACP.                                                       I.050303
+003290     02  A-DMM   LINE  20  COLUMN  47  PIC  9(001)                I.050303
+003300          USING W-DMM   CHECK OVERFLOW NO IFC.                    I.050303
+003310 01  C-DSP.                                                       ********
+003320     02  LINE  18.                                                ********
+003330       03  D-ED.                                                  ********
+003340         04  COLUMN  12  PIC  N(002) FROM  W-FM.                  ********
+003350         04  COLUMN  17  PIC  9(006) FROM  W-HCD.                 ********
+003360         04  COLUMN  25  PIC  N(014) VALUE                        ********
+003370              NC"ハードコピーをし，ＲＥＳＥＴ".                   ********
+003380       03  D-EDC   COLUMN  10  PIC  X(050) VALUE                  ********
+003390            "                                                  ". ********
+003400 01  C-ERR.
+003410     02  LINE  24.
+003420*****  03  E-ME81  COLUMN  15  PIC  X(022) VALUE                  D.970113
+003430*****       "***  HZM ﾅｼ (SUF)  ***".                             D.970113
+003440*****  03  E-ME82  COLUMN  15  PIC  X(031) VALUE                  D.970113
+003450*****       "***  HZM REWRITE ｴﾗｰ (SUF)  ***".                    D.970113
+003460*****  03  E-ME83  COLUMN  15  PIC  X(024) VALUE                  D.990225
+003470*****       "***  HZM ﾅｼ (UTRAN)  ***".                           D.990225
+003480*****  03  E-ME84  COLUMN  15  PIC  X(033) VALUE                  D.990225
+003490*****       "***  HZM REWRITE ｴﾗｰ (UTRAN)  ***".                  D.990225
+003500*****  03  E-ME85  COLUMN  15  PIC  X(023) VALUE                  D.990225
+003510*****       "***  HZM ﾅｼ (SYUF)  ***".                            D.990225
+003520       03  E-ME1   COLUMN  15  PIC  X(030) VALUE                  I.050301
+003530            "***  売上，値引伝票未発行  ***".                     I.050301
+003540       03  E-ME4   COLUMN  15  PIC  X(017) VALUE
+003550            "***  TAZM ﾅｼ  ***".
+003560       03  E-ME5   COLUMN  15  PIC  X(024) VALUE                  I.070125
+003570            "***  TAZM WRITE ｴﾗｰ  ***".                           I.070125
+003580       03  E-ME6   COLUMN  15  PIC  X(026) VALUE
+003590            "***  TAZM REWRITE ｴﾗｰ  ***".
+003600*****  03  E-ME7   COLUMN  15  PIC  X(032) VALUE                  D.990225
+003610*****       "***  HZM REWRITE ｴﾗｰ (SYUF)  ***".                   D.990225
+003620       03  E-ME9   COLUMN  15  PIC  X(017) VALUE
+003630            "***  HUHM ﾅｼ  ***".
+003640       03  E-ME10  COLUMN  15  PIC  X(026) VALUE
+003650            "***  HUHM REWRITE ｴﾗｰ  ***".
+003660       03  E-ME11  COLUMN  15  PIC  X(016) VALUE
+003670            "***  HIM ﾅｼ  ***".
+003680       03  E-ME12  COLUMN  15  PIC  X(032) VALUE                  I.961226
+003690            "***  STRAN･HIM ﾌﾘｶｴﾀﾝｶ ﾌｲｯﾁ  ***".                   I.961226
+003700*****  03  E-ME13  COLUMN  15  PIC  X(015) VALUE                  D.081210
+003710*****       "***  TM ﾅｼ  ***".                                    D.081210
+003720*****  03  E-ME14  COLUMN  15  PIC  X(024) VALUE                  D.040323
+003730*****       "***  HIHF WRITE ｴﾗｰ  ***".                           D.040323
+003740       03  E-ME21  COLUMN  15  PIC  X(025) VALUE                  I.990129
+003750            "***  HHTF ﾅｼ (UTRAN)  ***".                          I.990129
+003760       03  E-ME22  COLUMN  15  PIC  X(034) VALUE                  I.990129
+003770            "***  HHTF REWRITE ｴﾗｰ (UTRAN)  ***".                 I.990129
+003780       03  E-ME23  COLUMN  15  PIC  X(024) VALUE                  I.990129
+003790            "***  HHTF ﾅｼ (SYUF)  ***".                           I.990129
+003800       03  E-ME27  COLUMN  15  PIC  X(033) VALUE                  I.990129
+003810            "***  HHTF REWRITE ｴﾗｰ (SYUF)  ***".                  I.990129
+003820*****  03  E-ME12  COLUMN  15  PIC  X(031) VALUE                  D.961226
+003830*****       "***  SYUF･HIM ﾌﾘｶｴﾀﾝｶ ﾌｲｯﾁ  ***".                    D.961226
+003840*****  03  E-ME98  COLUMN 75  PIC X(5)  VALUE ""27"J"05"".        D.940623
+003850*****  03  E-ME99  COLUMN 75  PIC X(5)  VALUE ""27"B"05"".        D.940623
+003860*****  03  E-STAT  COLUMN 10  PIC X(2)  FROM  ERR-STAT.           D.940623
+003870*****  03  E-KEY1  COLUMN  60  PIC  9(010) FROM  U-KEY.           D.970113
+003880*****  03  E-KEY1  COLUMN  60  PIC  9(010) FROM  W-KEY.           D.010806
+003890       03  E-KEY1  COLUMN  60  PIC  9(007) FROM  W-KEY.           I.010806
+003900       03  E-KEY2  COLUMN  60  PIC  9(007) FROM  S-KEY.           C 62/04
+003910*****  03  E-KEY3  COLUMN  60  PIC  9(010) FROM  AZ-KEY.          D.961228
+003920*****  03  E-KEY3  COLUMN  60  PIC  X(017) FROM  TAZ-KEY.         D.000620
+003930       03  E-KEY3  COLUMN  60  PIC  X(010) FROM  TAZ-KEY.         I.000620
+003940       03  E-KEY4  COLUMN  60  PIC  9(007) FROM  W-KEYD.          I.990129
+003950       03  E-KEY9  COLUMN  60  PIC  9(006) FROM  W-HCD.           C 62/04
+003960*****  03  E-TCD   COLUMN  40  PIC  9(004) FROM  S-TCD.           D.081210
+003970*****  03  E-HIH   COLUMN  40  PIC  X(032) FROM  HIH-KEY.         D.040323
+003980*****  03  E-CL    COLUMN 10  PIC X(50) VALUE
+003990*****       "                                                 ".
+004000*****  03  E-CL.                                                  D.940623
+004010*****    04  COLUMN  1  PIC X(80) VALUE " ".                      D.940623
+004020     COPY LSSEM.                                                  I.940623
+004030     COPY  LSMSG.
+004040 PROCEDURE DIVISION.
+004050 M-020.
+004060     DISPLAY C-CLEAR.
+004070     DISPLAY C-MID.
+004080 M-030.                                                           I.050303
+004090     ACCEPT A-DMM.                                                I.050303
+004100     IF ESTAT NOT = HTB AND SKP                                   I.050303
+004110         GO TO M-030.                                             I.050303
+004120     IF W-DMM = 9                                                 I.050303
+004130         MOVE 255 TO COMPLETION-CODE                              I.050303
+004140         DISPLAY C-CLEAR                                          I.050303
+004150         STOP RUN.                                                I.050303
+004160     IF W-DMM NOT = 1                                             I.050303
+004170         GO TO M-030.                                             I.050303
+004180*
+004190     OPEN INPUT STRAN.                                            I.050301
+004200 M-040.                                                           I.050301
+004210     READ STRAN AT END                                            I.050301
+004220         GO TO M-060.                                             I.050301
+004230     IF S-DHC NOT = 0                                             I.050301
+004240         GO TO M-040.                                             I.050301
+004250     CLOSE STRAN.                                                 I.050301
+004260     MOVE 255 TO COMPLETION-CODE.                                 I.050301
+004270     DISPLAY E-ME1 E-ME99.                                        I.050301
+004280     DISPLAY C-CLEAR.                                             I.050301
+004290     STOP RUN.                                                    I.050301
+004300 M-060.                                                           I.050301
+004310     CLOSE STRAN.                                                 I.050301
+004320*****OPEN INPUT SU-F.                                             D.970113
+004330*****OPEN INPUT SYU-F.                                            D.961226
+004340     OPEN INPUT UTRAN.                                            I.970113
+004350     OPEN INPUT STRAN.                                            I.961226
+004360     OPEN INPUT HI-M.
+004370     OPEN I-O HUH-M.                                              I.990129
+004380     OPEN I-O HHTF.                                               I.990129
+004390*****OPEN I-O HZ-M.                                               D.990225
+004400*****OPEN I-O HZ-M HUH-M.                                         D.990129
+004410*****OPEN INPUT AZ-F.                                             D.961228
+004420*****OPEN I-O TAZ-M JZAI.                                         D.970321
+004430     OPEN I-O TAZ-M.                                              I.970321
+004440*****OPEN INPUT T-M.                                              D.081210
+004450*****OPEN I-O HIHF.                                               D.040323
+004460*****OPEN INPUT NBK-F.                                            D.000811
+004470*----　仕上・受入　-------------------------------------------------------
+004480     MOVE 1 TO CHK.
+004490 M-100.
+004500*****READ SU-F AT END                                             D.970113
+004510     READ UTRAN AT END                                            I.970113
+004520         GO TO M-300.
+004530*****IF U-NC = 2                                                  D.970113
+004540*****IF UTRAN-NRC = 2                                             D.971028
+004550*****IF UTRAN-NRC = 2 OR 5                                        D.070322
+004560     IF UTRAN-NRC = 2                                             I.070322
+004570         GO TO M-100.
+004580 M-120.
+004590     MOVE ZERO TO W-D W-DC.                                       ***  ***
+004600     MOVE UTRAN-HCD TO W-HCD.                                     I.970113
+004610*****MOVE U-HCD TO W-HCD.                                         D.970113
+004620 M-140.                                                           *I911122
+004630*****PERFORM U-JZAI-RTN THRU U-JZAI-EX.                           D.970321
+004640*****INITIALIZE    W-AREA.                                        D.970113
+004650*****MOVE U-SIZ TO W-SIZ.                                         D.970113
+004660*****MOVE U-SKC TO W-SKC.                                         D.970113
+004670*M-150.                                                           D.970113
+004680*****PERFORM SUB1-RTN  THRU  SUB1-EX.                             D.970113
+004690*****IF  U-NC = 4     GO  TO  M-200.                              D.970113
+004700*****IF UTRAN-NRC = 4                                             D.070517
+004710*****    GO TO M-200.                                             D.070517
+004720*****ADD UTRAN-SUT TO W-NS W-YS.                                  D.070322
+004730     IF UTRAN-NRC = 5                                             I.070322
+004740         SUBTRACT UTRAN-SUT FROM W-NS W-YS                        I.070322
+004750         SUBTRACT UTRAN-FKIN FROM W-NK W-YK                       I.070322
+004760       ELSE                                                       I.070322
+004770         ADD UTRAN-SUT TO W-NS W-YS                               I.070322
+004780         ADD UTRAN-FKIN TO W-NK W-YK.                             I.970113
+004790     MOVE UTRAN-HCD TO W-HCDD.                                    I.970113
+004800     MOVE UTRAN-SIZ TO W-SIZD.                                    I.970113
+004810*
+004820     MOVE 0 TO W-INV.                                             I.990129
+004830     MOVE W-KEYD TO HHT-KEY.                                      I.990129
+004840     READ HHTF INVALID KEY                                        I.990129
+004850         MOVE 1 TO W-INV                                          I.990129
+004860         DISPLAY E-ME21 E-KEY4 E-ME99                             I.990129
+004870         DISPLAY E-CL.                                            I.990129
+004880     MOVE ZERO  TO CNT.                                           I.970113
+004890 M-160.                                                           I.970113
+004900     ADD 1 TO CNT.                                                I.970113
+004910     IF CNT > 10                                                  I.970113
+004920         GO TO M-180.                                             I.990129
+004930*****    GO TO M-200.                                             D.990129
+004940     IF UTRAN-SU(CNT) = ZERO                                      I.970113
+004950         GO TO M-160.                                             I.970113
+004960     IF W-INV = 0                                                 I.990129
+004970         IF UTRAN-NRC = 5                                         I.070322
+004980             SUBTRACT UTRAN-SU(CNT) FROM HHT-NSU(CNT)             I.070322
+004990           ELSE                                                   I.070322
+005000             ADD UTRAN-SU(CNT) TO HHT-NSU(CNT).                   I.990129
+005010*****IF UTRAN-SIZ = 1                                             D.990225
+005020*****    MOVE W-TBL1(CNT) TO W-SD.                                D.990225
+005030*****IF UTRAN-SIZ = 2                                             D.990225
+005040*****    MOVE W-TBL2(CNT) TO W-SD.                                D.990225
+005050*****IF UTRAN-SIZ = 3                                             D.990225
+005060*****    MOVE W-TBL3(CNT) TO W-SD.                                D.990225
+005070*****IF UTRAN-SIZ = 4                                             D.990225
+005080*****    MOVE W-TBL4(CNT) TO W-SD.                                D.990225
+005090*****DISPLAY E-CL.                                                D.990225
+005100*****MOVE U-KEY TO HZ-KEY.                                        D.970113
+005110*****MOVE W-KEY TO HZ-KEY.                                        D.990225
+005120*****READ HZ-M INVALID KEY                                        D.990225
+005130*****    DISPLAY E-ME83 E-KEY1 E-ME99                             D.990225
+005140*****    DISPLAY E-CL                                             D.990225
+005150*****    GO TO M-160.                                             D.990225
+005160*****    GO TO M-200.                                             D.970113
+005170*****ADD U-SU TO HZ-NSU HZ-GSU W-NS W-YS.                         D.970113
+005180*****ADD U-FK TO W-NK W-YK.                                       D.970113
+005190*****ADD UTRAN-SU(CNT) TO HZ-NSU HZ-GSU.                          D.990225
+005200*****REWRITE HZ-R INVALID KEY                                     D.990225
+005210*****    MOVE 255 TO COMPLETION-CODE                              D.990225
+005220*****    DISPLAY E-ME78 E-STAT E-ME84 E-KEY1 E-ME99               D.990225
+005230*****    DISPLAY E-CL                                             D.990225
+005240*****    GO TO M-980.                                             D.990225
+005250*****MOVE HZ-FT TO W-FT.                                          ********
+005260     GO TO M-160.                                                 I.970113
+005270 M-180.                                                           I.990129
+005280     IF W-INV NOT = 0                                             I.990129
+005290         GO TO M-200.                                             I.990129
+005300     REWRITE HHT-R INVALID KEY                                    I.990129
+005310         MOVE 255 TO COMPLETION-CODE                              I.990129
+005320         DISPLAY E-ME78 E-STAT E-ME22 E-KEY4 E-ME99               I.990129
+005330         DISPLAY E-CL                                             I.990129
+005340         GO TO M-980.                                             I.990129
+005350 M-200.
+005360*****READ SU-F AT END                                             D.970113
+005370     READ UTRAN AT END                                            I.970113
+005380         GO TO M-220.
+005390*****IF U-NC = 2                                                  D.970113
+005400*****IF UTRAN-NRC = 2                                             D.971028
+005410*****IF UTRAN-NRC = 2 OR 5                                        D.070322
+005420     IF UTRAN-NRC = 2                                             I.070322
+005430         GO TO M-200.
+005440     IF W-HCD = UTRAN-HCD                                         I.970113
+005450         GO TO M-140.                                             I.970113
+005460*****IF  W-HCD = U-HCD                                            D.970113
+005470*****    IF ( W-SKC NOT = U-SKC ) OR ( W-SIZ NOT = U-SIZ )        D.970113
+005480*****         PERFORM UPD-RTN  THRU  UPD-EX                       D.970113
+005490*****         GO TO M-140                                         D.970113
+005500*****    ELSE GO TO M-150.                                        D.970113
+005510     PERFORM HUH-RTN THRU HUH-EX.
+005520*****PERFORM UPD-RTN  THRU  UPD-EX.                               D.970113
+005530     GO TO M-120.
+005540 M-220.
+005550     PERFORM HUH-RTN THRU HUH-EX.
+005560*****PERFORM UPD-RTN  THRU  UPD-EX.                               D.970113
+005570*----　出　荷　-----------------------------------------------------------
+005580 M-300.
+005590     MOVE ZERO TO CHK.                                            ********
+005600     MOVE 2 TO CHK.                                               ********
+005610*****READ SYU-F AT END                                            D.961226
+005620     READ STRAN AT END                                            I.961226
+005630         GO TO M-980.                                             I.000811
+005640     IF S-GNO = 9                                                 I.000811
+005650         GO TO M-300.                                             I.000811
+005660*****    GO TO M-500.                                             D.000811
+005670*****    GO TO M-430.                                             D.961228
+005680     IF S-HCD = ZERO                                              I.970110
+005690         GO TO M-300.                                             I.970110
+005700     IF S-UNC = 0                                                 I.000811
+005710         IF S-DK = 6 OR 8                                         *I911122
+005720             GO TO M-300.                                         *I911122
+005730 M-320.
+005740     MOVE ZERO TO W-D.
+005750     MOVE S-HCD TO W-HCD.
+005760*M-330.                                                           D.961226
+005770*****INITIALIZE   W-AREA.                                         D.961226
+005780*****MOVE S-SIZ TO W-SIZ.                                         D.961226
+005790*****MOVE S-SKC TO W-SKC.                                         D.961226
+005800 M-340.
+005810     IF S-UNC = 1                                                 I.000811
+005820         SUBTRACT S-UKI FROM W-UK                                 I.000811
+005830         GO TO M-400.                                             I.000811
+005840*****PERFORM S-JZAI-RTN THRU S-JZAI-EX.                           D.970321
+005850*****PERFORM SUB2-RTN  THRU  SUB2-EX.                             D.961226
+005860     MOVE W-HCD TO HI-KEY.
+005870     READ HI-M WITH UNLOCK INVALID KEY
+005880         MOVE ZERO TO HI-FT
+005890         DISPLAY E-ME11 E-KEY9 E-ME99
+005900         DISPLAY E-CL.                                            *I911125
+005910     IF S-DK = 0 OR 1 OR 3 OR 5
+005920         IF S-FT NOT = HI-FT
+005930             DISPLAY E-ME12 E-KEY9 E-ME99.
+005940*****DISPLAY E-CL.                                                D.961226
+005950*****MOVE S-KEY TO HZ-KEY.                                        D.961226
+005960*****READ HZ-M INVALID KEY                                        D.961226
+005970*****    DISPLAY E-ME85 E-KEY2 E-ME99                             D.961226
+005980*****    DISPLAY E-CL                                             D.961226
+005990*****    GO TO M-400.                                             D.961226
+006000*****IF S-DK = 2 OR 6                                             D.961226
+006010*****    GO TO M-390.                                             D.961226
+006020*****IF S-DK < 1 OR > 2                                           D.961226
+006030*****    GO TO M-360.                                             D.961226
+006040*****ADD S-SU TO HZ-USU W-US.                                     D.961226
+006050*****ADD S-UKI TO W-UK.                                           D.961226
+006060*****SUBTRACT S-SU FROM HZ-GSU W-YS.                              D.961226
+006070*****COMPUTE W-YK = W-YK - (S-SU * S-FT).                         D.961226
+006080*****COMPUTE W-UG = W-UG + (S-SU * S-FT).                         D.961226
+006090*****REWRITE HZ-R INVALID KEY                                     D.961226
+006100*****    DISPLAY E-ME78 E-STAT E-ME7 E-KEY2 E-ME99                D.961226
+006110*****    DISPLAY E-CL                                             D.961226
+006120*****    GO TO M-980.                                             D.961226
+006130*****MOVE HZ-FT TO W-FT.                                          ********
+006140*****GO TO M-400.                                                 D.961226
+006150     PERFORM DST-RTN THRU DST-EX.                                 I.961226
+006160*****PERFORM HIH-RTN THRU HIH-EX.                                 D.040323
+006170     PERFORM UHS-RTN THRU UHS-EX.                                 I.961226
+006180     IF S-DK = 2                                                  I.961226
+006190         GO TO M-400.                                             I.961226
+006200     IF S-DK = 3 OR 4 OR 9                                        I.961228
+006210         PERFORM TZM-RTN THRU TZM-EX.                             I.961228
+006220     IF S-HCD > 999899                                            I.961226
+006230         GO TO M-400.                                             I.961226
+006240*
+006250     MOVE 0 TO W-INV.                                             I.990129
+006260     MOVE S-HCD TO HHT-HCD.                                       I.990129
+006270     MOVE S-SIZ TO HHT-SIZ.                                       I.990129
+006280     READ HHTF INVALID KEY                                        I.990129
+006290         MOVE 1 TO W-INV                                          I.990129
+006300         DISPLAY E-ME23 E-KEY2 E-ME99                             I.990129
+006310         DISPLAY E-CL.                                            I.990129
+006320*
+006330     MOVE ZERO TO CNT.                                            I.961226
+006340 M-360.
+006350     ADD 1 TO CNT.                                                I.961226
+006360     IF CNT > 10                                                  I.961226
+006370         GO TO M-380.                                             I.990129
+006380*****    GO TO M-400.                                             D.990129
+006390     IF WD-SU(CNT) = ZERO                                         I.961226
+006400         GO TO M-360.                                             I.961226
+006410     IF W-INV = 0                                                 I.990129
+006420         IF S-DK = 4                                              I.990129
+006430             ADD WD-SU(CNT) TO HHT-ASS(CNT)                       I.990129
+006440           ELSE                                                   I.990129
+006450             ADD WD-SU(CNT) TO HHT-USU(CNT).                      I.990129
+006460*****MOVE S-HCD TO HZ-HCD.                                        D.990225
+006470*****MOVE S-SIZ TO HZ-SC.                                         D.990225
+006480*****IF S-SIZ = 1                                                 D.990225
+006490*****    MOVE W-TBL1(CNT) TO HZ-SIZ.                              D.990225
+006500*****IF S-SIZ = 2                                                 D.990225
+006510*****    MOVE W-TBL2(CNT) TO HZ-SIZ.                              D.990225
+006520*****IF S-SIZ = 3                                                 D.990225
+006530*****    MOVE W-TBL3(CNT) TO HZ-SIZ.                              D.990225
+006540*****IF S-SIZ = 4                                                 D.990225
+006550*****    MOVE W-TBL4(CNT) TO HZ-SIZ.                              D.990225
+006560*****READ HZ-M INVALID KEY                                        D.990225
+006570*****    DISPLAY E-ME85 E-KEY2 E-ME99                             D.990225
+006580*****    DISPLAY E-CL                                             D.990225
+006590*****    GO TO M-400.                                             D.990225
+006600*****IF S-DK =  7                                                 D.961226
+006610*****    ADD S-SU TO HZ-USU W-US                                  D.961226
+006620*****    COMPUTE W-UG = W-UG + (S-SU * S-FT).                     D.961226
+006630*****IF S-DK = 4                                                  D.990225
+006640*****    ADD WD-SU(CNT) TO HZ-ASS                                 D.990225
+006650*****  ELSE                                                       D.990225
+006660*****    ADD WD-SU(CNT) TO HZ-USU.                                D.990225
+006670*****SUBTRACT WD-SU(CNT) FROM HZ-GSU.                             D.990225
+006680*****    ADD S-SU TO HZ-ASS.                                      D.961226
+006690*****IF S-DK NOT = 4 AND 7                                        D.961226
+006700*****    ADD S-SU TO HZ-USU W-US                                  D.961226
+006710*****    ADD S-UKI TO W-UK                                        D.961226
+006720*****    COMPUTE W-UG = W-UG + (S-SU * S-FT).                     D.961226
+006730*****SUBTRACT S-SU FROM HZ-GSU W-YS.                              D.961226
+006740*****IF S-DK NOT =  7                                             D 920708
+006750*****COMPUTE W-YK = W-YK - (S-SU * S-FT).                         D.961226
+006760*****REWRITE HZ-R INVALID KEY                                     D.990225
+006770*****    MOVE 255 TO COMPLETION-CODE                              D.990225
+006780*****    DISPLAY E-ME78 E-STAT E-ME7 E-KEY2 E-ME99                D.990225
+006790*****    DISPLAY E-CL                                             D.990225
+006800*****    GO TO M-980.                                             D.990225
+006810*****MOVE HZ-FT TO W-FT.                                          ********
+006820*****IF S-DK NOT = 4                                              D.990225
+006830*****    GO TO M-360.                                             D.990225
+006840*****    GO TO M-400.                                             D.961226
+006850*****MOVE S-HCD TO HZ-HCD.                                        D.990225
+006860*****MOVE 4 TO HZ-SC.                                             D.990225
+006870*****MOVE 111 TO HZ-SIZ.                                          D.990225
+006880*****READ HZ-M INVALID KEY                                        D.990225
+006890*****    DISPLAY E-ME85 E-KEY2 E-ME99                             D.990225
+006900*****    DISPLAY E-CL                                             D.990225
+006910*****    GO TO M-400.                                             D.990225
+006920*****ADD WD-SU(CNT) TO HZ-GSU.                                    D.990225
+006930*****ADD S-SU TO HZ-GSU W-YS.                                     D.961226
+006940*****COMPUTE W-YK = W-YK + (S-SU * S-FT).                         D.961226
+006950*****REWRITE HZ-R INVALID KEY                                     D.990225
+006960*****    MOVE 255 TO COMPLETION-CODE                              D.990225
+006970*****    DISPLAY E-ME78 E-STAT E-ME7 E-KEY2 E-ME99                D.990225
+006980*****    GO TO M-980.                                             D.990225
+006990     GO TO M-360.                                                 I.961226
+007000 M-380.                                                           I.990129
+007010     REWRITE HHT-R INVALID KEY                                    I.990129
+007020         MOVE 255 TO COMPLETION-CODE                              I.990129
+007030         DISPLAY E-ME78 E-STAT E-ME27 E-KEY2 E-ME99               I.990129
+007040         GO TO M-980.                                             I.990129
+007050*****MOVE HZ-FT TO W-FT.                                          ********
+007060*****GO TO M-400.                                                 D.961226
+007070*M-390.                                                           D.961226
+007080*****ADD S-SU TO HZ-USU HZ-NSU W-US W-NS.                         D.961226
+007090*****ADD S-UKI TO W-UK.                                           D.961226
+007100*****ADD S-SKI TO W-NK.                                           D.961226
+007110*****COMPUTE W-UG = W-UG + (S-SU * S-FT).                         D.961226
+007120*****REWRITE HZ-R INVALID KEY                                     D.961226
+007130*****    DISPLAY E-ME78 E-STAT E-ME7 E-KEY2 E-ME99                D.961226
+007140*****    DISPLAY E-CL                                             D.961226
+007150*****    GO TO M-980.                                             D.961226
+007160*****MOVE HZ-FT TO W-FT.                                          ********
+007170 M-400.
+007180*****READ SYU-F AT END                                            D.961226
+007190     READ STRAN AT END                                            I.961226
+007200         GO TO M-420.
+007210     IF S-GNO = 9                                                 I.000811
+007220         GO TO M-400.                                             I.000811
+007230     IF S-HCD = ZERO                                              I.970110
+007240         GO TO M-400.                                             I.970110
+007250     IF S-UNC = 0                                                 I.000811
+007260         IF S-DK = 6 OR 8                                         *I911122
+007270             GO TO M-400.                                         *I911122
+007280     IF W-HCD = S-HCD
+007290*****   IF  ( W-SKC NOT = S-SKC ) OR ( W-SIZ NOT = S-SIZ )        D.961226
+007300*****         PERFORM UPD-RTN  THRU  UPD-EX                       D.961226
+007310*****         GO  TO  M-330                                       D.961226
+007320*****   ELSE                                                      D.961226
+007330        GO TO M-340.
+007340     PERFORM HUH-RTN THRU HUH-EX.
+007350*****PERFORM UPD-RTN  THRU  UPD-EX.                               D.961226
+007360     GO TO M-320.
+007370 M-420.
+007380     PERFORM HUH-RTN THRU HUH-EX.
+007390*****PERFORM UPD-RTN  THRU  UPD-EX.                               D.961226
+007400*M-430.                                                           D.961228
+007410*****READ AZ-F AT END                                             D.961228
+007420*****    GO TO M-500.                                             D.961228
+007430*****MOVE AZ-TCD TO TAZ-TCD.                                      D.961228
+007440*****MOVE AZ-HCD TO TAZ-HCD.                                      D.961228
+007450*****MOVE AZ-NO  TO TAZ-NO.                                       D.961228
+007460*****READ TAZ-M INVALID KEY                                       D.961228
+007470*****    DISPLAY E-ME4 E-KEY3 E-ME99                              D.961228
+007480*****    DISPLAY E-CL                                             D.961228
+007490*****    GO TO M-430.                                             D.961228
+007500*****IF AZ-AC = 3                                                 D.961228
+007510*****    ADD AZ-ASU TO TAZ-AS.                                    D.961228
+007520*****IF AZ-AC = 4                                                 D.961228
+007530*****    SUBTRACT AZ-ASU FROM TAZ-AS.                             D.961228
+007540*****REWRITE TAZ-R INVALID KEY                                    D.961228
+007550*****    DISPLAY E-ME78 E-STAT E-ME6 E-KEY3 E-ME99                D.961228
+007560*****    DISPLAY E-CL                                             D.961228
+007570*****    GO TO M-980.                                             D.961228
+007580*****GO TO M-430.                                                 D.961228
+007590*----　値　引　-----------------------------------------------------------
+007600*M-500.                                                           D.000811
+007610*****MOVE ZERO TO CHK.                                            D.000811
+007620*****MOVE 3 TO CHK.                                               D.000811
+007630*****READ NBK-F AT END                                            D.000811
+007640*****    GO TO M-980.                                             D.000811
+007650*M-520.                                                           D.000811
+007660*****MOVE ZERO TO W-D.                                            D.000811
+007670*****MOVE B-HCD TO W-HCD.                                         D.000811
+007680*M-540.                                                           D.000811
+007690*****SUBTRACT B-KI FROM W-UK.                                     D.000811
+007700*
+007710*****READ NBK-F AT END                                            D.000811
+007720*****    GO TO M-560.                                             D.000811
+007730*****IF W-HCD = B-HCD                                             D.000811
+007740*****    GO TO M-540.                                             D.000811
+007750*****PERFORM HUH-RTN THRU HUH-EX.                                 D.000811
+007760*****GO TO M-520.                                                 D.000811
+007770*M-560.                                                           D.000811
+007780*****PERFORM HUH-RTN THRU HUH-EX.                                 D.000811
+007790 M-980.
+007800     PERFORM  END-RTN  THRU  END-EX.                              *I911122
+007810     STOP RUN.
+007820 HUH-RTN.
+007830     MOVE W-HCD TO HI-KEY.
+007840     READ HI-M WITH UNLOCK INVALID KEY
+007850         MOVE ZERO TO HI-FT
+007860         DISPLAY E-ME11 E-KEY9 E-ME99
+007870         DISPLAY E-CL.                                            *I911125
+007880     MOVE W-HCD TO HUH-KEY.
+007890     READ HUH-M INVALID KEY
+007900         DISPLAY E-ME9 E-KEY9 E-ME99
+007910         GO TO HUH-EX.
+007920     COMPUTE W-KIN = HUH-YK + W-YK.                               A.910530
+007930     ADD W-NS TO HUH-NS.
+007940     ADD W-NK TO HUH-NK.
+007950     ADD W-US TO HUH-SS.
+007960     ADD W-UK TO HUH-SK.
+007970     ADD W-YS TO HUH-YS.
+007980     COMPUTE HUH-YK = HUH-YS * HI-FT.                             I.921006
+007990*****COMPUTE HUH-YK = HUH-YS * HI-FT.                             D.921006
+008000*****ADD W-YK TO HUH-YK.                                          D.910529
+008010*****ADD W-YK TO HUH-YK.                                          D.921006
+008020     ADD W-UG TO HUH-UG.
+008030     REWRITE HUH-R INVALID KEY
+008040         DISPLAY E-ME78 E-STAT E-ME10 E-ME99                      C.940623
+008050         DISPLAY E-CL.                                            *I911125
+008060*****COMPUTE W-KIN = HUH-YK * HI-FT.                              D.910529
+008070     IF HUH-YK = W-KIN                                            C.910529
+008080         GO TO HUH-EX.
+008090     IF W-DC NOT = ZERO
+008100         GO TO HUH-EX.
+008110     MOVE 5 TO W-DC.
+008120     IF CHK = 1
+008130         MOVE NC"入庫" TO W-FM.
+008140     IF CHK = 2
+008150         MOVE NC"売上" TO W-FM.
+008160*****IF CHK = 3                                                   D.000811
+008170*****    MOVE NC"値引" TO W-FM.                                   D.000811
+008180     DISPLAY D-ED E-ME99.
+008190     DISPLAY D-EDC.
+008200 HUH-EX.
+008210     EXIT.
+008220 END-RTN.
+008230*****CLOSE SU-F.                                                  D.970113
+008240*****CLOSE SYU-F.                                                 D.961226
+008250     CLOSE UTRAN.                                                 I.970113
+008260     CLOSE STRAN.                                                 I.961226
+008270*****CLOSE NBK-F.                                                 D.000811
+008280*****CLOSE AZ-F.                                                  D.961228
+008290     CLOSE HI-M.
+008300     CLOSE HUH-M.                                                 I.990129
+008310     CLOSE HHTF.                                                  I.990129
+008320*****CLOSE T-M.                                                   D.081210
+008330*****CLOSE HIHF.                                                  D.040323
+008340*****CLOSE HZ-M.                                                  D.990225
+008350*****CLOSE HZ-M HUH-M.                                            D.990129
+008360*****CLOSE TAZ-M JZAI.                                            D.970321
+008370     CLOSE TAZ-M.                                                 I.970321
+008380     DISPLAY C-CLEAR.
+008390 END-EX.
+008400     EXIT.
+008410***** 追加 (S91.11.22) *****
+008420*SUB1-RTN.                                                        D.970113
+008430*****MOVE     U-S     TO    W-S.                                  D.970113
+008440*****MOVE     U-SU    TO    W-SU.                                 D.970113
+008450*****PERFORM  SET-RTN THRU  SET-EX.                               D.970113
+008460*SUB1-EX.                                                         D.970113
+008470*****EXIT.                                                        D.970113
+008480*****
+008490*SUB2-RTN.                                                        D.961226
+008500*****IF       S-DK NOT = 0 AND 1 AND 4 AND 5 AND 7                D.961226
+008510*****         GO  TO  SUB2-EX.                                    D.961226
+008520*****MOVE     S-S     TO    W-S.                                  D.961226
+008530*****MOVE     S-SU    TO    W-SU.                                 D.961226
+008540*****PERFORM  SET-RTN THRU  SET-EX.                               D.961226
+008550*SUB2-EX.                                                         D.961226
+008560*****EXIT.                                                        D.961226
+008570*****
+008580*SET-RTN.                                                         D.970113
+008590*****MOVE     0        TO    CHK-SW W-I.                          D.970113
+008600*****PERFORM  CHK-RTN  THRU  CHK-EX                               D.970113
+008610*****         VARYING  I  FROM  1  BY  1                          D.970113
+008620*****         UNTIL  ( I > 10 ) OR ( CHK-SW = 1 ).                D.970113
+008630*****IF       CHK-SW = 0             GO  TO  SET-EX.              D.970113
+008640*****IF       W-I = 0  OR    W-I > 10  GO  TO  SET-EX.            D.970113
+008650*****ADD      W-SU     TO    W-SURYO(W-I).                        D.970113
+008660*SET-EX.                                                          D.970113
+008670*****EXIT.                                                        D.970113
+008680*****
+008690*CHK-RTN.                                                         D.970113
+008700*****IF   W-SIZ = 1                                               D.970113
+008710*****     IF  W-S  = W-TBL1(I)                                    D.970113
+008720*****         MOVE I  TO  W-I                                     D.970113
+008730*****         MOVE 1  TO  CHK-SW.                                 D.970113
+008740*****IF   W-SIZ = 2                                               D.970113
+008750*****     IF  W-S  = W-TBL2(I)                                    D.970113
+008760*****         MOVE I  TO  W-I                                     D.970113
+008770*****         MOVE 1  TO  CHK-SW.                                 D.970113
+008780*****IF   W-SIZ = 3                                               D.970113
+008790*****     IF  W-S  = W-TBL3(I)                                    D.970113
+008800*****         MOVE I  TO  W-I                                     D.970113
+008810*****         MOVE 1  TO  CHK-SW.                                 D.970113
+008820*****IF   W-SIZ = 4                                               D.970113
+008830*****     IF  W-S  = W-TBL4(I)                                    D.970113
+008840*****         MOVE I  TO  W-I                                     D.970113
+008850*****         MOVE 1  TO  CHK-SW.                                 D.970113
+008860*CHK-EX.                                                          D.970113
+008870*****EXIT.                                                        D.970113
+008880***************************
+008890*    倉別在庫マスタ更新   *
+008900***************************
+008910*UPD-RTN.                                                         D.970321
+008920*****IF W-SKC = 9 OR 0                                            D.970321
+008930*****   GO TO UPD-EX.                                             D.970321
+008940*****MOVE 0     TO ZERO-SW.                                       D.970321
+008950*****PERFORM CHK-ZERO-RTN THRU CHK-ZERO-EX                        D.970321
+008960*****        VARYING I FROM 1 BY 1                                D.970321
+008970*****        UNTIL (I > 10) OR (ZERO-SW = 1).                     D.970321
+008980*****IF ZERO-SW = 0                                               D.970321
+008990*****   GO TO UPD-EX.                                             D.970321
+009000*****MOVE     0        TO   INV-SW.                               D.970321
+009010*****MOVE     W-SKC    TO   JZAI-01.                              D.970321
+009020*****MOVE     W-HCD    TO   JZAI-02.                              D.970321
+009030*****MOVE     W-SIZ    TO   JZAI-03.                              D.970321
+009040*****READ     JZAI     INVALID                                    D.970321
+009050*****         MOVE  1  TO   INV-SW.                               D.970321
+009060*****IF       INV-SW = 1                                          D.970321
+009070*****         PERFORM  WRI-JZAI-RTN  THRU  WRI-JZAI-EX            D.970321
+009080*****         GO  TO   UPD-EX.                                    D.970321
+009090*****PERFORM  ADD-RTN  THRU  ADD-EX                               D.970321
+009100*****         VARYING  I  FROM  1  BY  1                          D.970321
+009110*****         UNTIL    I > 10.                                    D.970321
+009120*****REWRITE  JZAI-R      INVALID KEY                             D.970321
+009130*****         MOVE  "R"         TO  ERR-M                         D.970321
+009140*****         MOVE  "JZAI"      TO  ERR-F                         D.970321
+009150*****         MOVE  JZAI-KEY    TO  ERR-K                         D.970321
+009160*****         PERFORM     ERR-RTN   THRU      ERR-EX.             D.970321
+009170*UPD-EX.                                                          D.970321
+009180*****EXIT.                                                        D.970321
+009190*****
+009200*WRI-JZAI-RTN.                                                    D.970321
+009210*****MOVE     SPACE    TO  JZAI-R.                                D.970321
+009220*****INITIALIZE            JZAI-R.                                D.970321
+009230*****MOVE     W-SKC    TO  JZAI-01.                               D.970321
+009240*****MOVE     W-HCD    TO  JZAI-02.                               D.970321
+009250*****MOVE     W-SIZ    TO  JZAI-03.                               D.970321
+009260*****PERFORM  ADD-RTN  THRU  ADD-EX                               D.970321
+009270*****         VARYING  I  FROM  1 BY  1                           D.970321
+009280*****         UNTIL    I > 10.                                    D.970321
+009290*****WRITE    JZAI-R      INVALID KEY   GO  TO  WRI-JZAI-010.     D.970321
+009300*WRI-JZAI-005.                                                    D.970321
+009310*****CALL     "CBLTCLS"   USING     JZAI.                         D.970321
+009320*****GO  TO   WRI-JZAI-EX.                                        D.970321
+009330*WRI-JZAI-010.                                                    D.970321
+009340*****IF       ERR-STAT =  "24"  GO  TO  WRI-JZAI-999.             D.970321
+009350*****IF       ERR-STAT NOT = "00"                                 D.970321
+009360*****         MOVE  "W"         TO  ERR-M                         D.970321
+009370*****         MOVE  "JZAI"      TO  ERR-F                         D.970321
+009380*****         MOVE  JZAI-KEY    TO  ERR-K                         D.970321
+009390*****         PERFORM     ERR-RTN   THRU      ERR-EX.             D.970321
+009400*****GO  TO   WRI-JZAI-005.                                       D.970321
+009410*WRI-JZAI-999.                                                    D.970321
+009420*****MOVE    "W"         TO  ERR-M.                               D.970321
+009430*****MOVE    "JZAI"      TO  ERR-F.                               D.970321
+009440*****MOVE     JZAI-KEY   TO  ERR-K.                               D.970321
+009450*****MOVE     ERR-STAT   TO  ERR-FLG.                             D.970321
+009460*****DISPLAY  ERR-DIS    DISP-BUZ-B.                              D.970321
+009470*****CLOSE    JZAI.                                               D.970321
+009480*****STOP    "ｴﾘｱ ｶｸﾁｮｳｺﾞ､ｻｲｶｲｷｰ ｦ ｵｽ!".                          D.970321
+009490*****DISPLAY  E-CL.                                               D.970321
+009500*****OPEN     I-O  JZAI.                                          D.970321
+009510*****GO  TO   WRI-JZAI-RTN.                                       D.970321
+009520*WRI-JZAI-EX.                                                     D.970321
+009530*****EXIT.                                                        D.970321
+009540*****
+009550*ADD-RTN.                                                         D.970321
+009560*****IF       CHK =  1                                            D.970321
+009570*****         ADD    W-SURYO(I)  TO  JZAI-0511(I).                D.970321
+009580*****IF       CHK =  2                                            D.970321
+009590*****         ADD    W-SURYO(I)  TO  JZAI-0611(I).                D.970321
+009600*ADD-EX.                                                          D.970321
+009610*****EXIT.                                                        D.970321
+009620*CHK-ZERO-RTN.                                                    D.970321
+009630*****IF W-SURYO(I) NOT = ZERO                                     D.970321
+009640*****   MOVE 1     TO ZERO-SW.                                    D.970321
+009650*CHK-ZERO-EX.                                                     D.970321
+009660*****EXIT.                                                        D.970321
+009670*U-JZAI-RTN.                                                      D.970321
+009680*****IF UTRAN-HCD > 999899                                        D.970321
+009690*****    GO TO U-JZAI-EX.                                         D.970321
+009700*****IF UTRAN-SIZ < 1 OR > 4                                      D.970321
+009710*****    GO TO U-JZAI-EX.                                         D.970321
+009720*****INITIALIZE W-AREA.                                           D.970321
+009730*****MOVE UTRAN-SIZ TO W-SIZ.                                     D.970321
+009740*****MOVE UTRAN-SKC TO W-SKC.                                     D.970321
+009750*****MOVE UTRAN-SUD TO W-SUD.                                     D.970321
+009760*
+009770*****PERFORM UPD-RTN  THRU  UPD-EX.                               D.970321
+009780*U-JZAI-EX.                                                       D.970321
+009790*****EXIT.                                                        D.970321
+009800*S-JZAI-RTN.                                                      D.970321
+009810*****IF S-HCD > 999899                                            D.970321
+009820*****    GO TO S-JZAI-EX.                                         D.970321
+009830*****IF S-DK NOT = 0 AND 1 AND 4 AND 5 AND 7                      D.970321
+009840*****    GO TO S-JZAI-EX.                                         D.970321
+009850*****IF S-SIZ < 1 OR > 4                                          D.970321
+009860*****    GO TO S-JZAI-EX.                                         D.970321
+009870*****INITIALIZE W-AREA.                                           D.970321
+009880*****MOVE S-SIZ TO W-SIZ.                                         D.970321
+009890*****MOVE S-SKC TO W-SKC.                                         D.970321
+009900*****IF S-DK = 0 OR 4 OR 7                                        D.970321
+009910*****    MOVE S-SUD TO W-SUD                                      D.970321
+009920*****  ELSE                                                       D.970321
+009930*****    COMPUTE W-SURYO(01) = -1 * S-SU(01)                      D.970321
+009940*****    COMPUTE W-SURYO(02) = -1 * S-SU(02)                      D.970321
+009950*****    COMPUTE W-SURYO(03) = -1 * S-SU(03)                      D.970321
+009960*****    COMPUTE W-SURYO(04) = -1 * S-SU(04)                      D.970321
+009970*****    COMPUTE W-SURYO(05) = -1 * S-SU(05)                      D.970321
+009980*****    COMPUTE W-SURYO(06) = -1 * S-SU(06)                      D.970321
+009990*****    COMPUTE W-SURYO(07) = -1 * S-SU(07)                      D.970321
+010000*****    COMPUTE W-SURYO(08) = -1 * S-SU(08)                      D.970321
+010010*****    COMPUTE W-SURYO(09) = -1 * S-SU(09)                      D.970321
+010020*****    COMPUTE W-SURYO(10) = -1 * S-SU(10).                     D.970321
+010030*
+010040*****PERFORM UPD-RTN  THRU  UPD-EX.                               D.970321
+010050*S-JZAI-EX.                                                       D.970321
+010060*****EXIT.                                                        D.970321
+010070 DST-RTN.                                                         I.961226
+010080     MOVE ZERO TO WD-D.                                           I.961226
+010090     IF (S-HCD > 999899) OR (S-DK = 3)                            I.000819
+010100         MOVE ZERO TO S-SU(01) S-SU(02) S-SU(03) S-SU(04)         I.000819
+010110           S-SU(05) S-SU(06) S-SU(07) S-SU(08) S-SU(09) S-SU(10). I.000819
+010120*****IF S-DK = 0 OR 3 OR 7 OR 9                                   D.970107
+010130     IF S-DK = 0 OR 3 OR 4 OR 7 OR 9                              I.970107
+010140*****    MOVE S-SUD TO WD-SUD                                     D.000811
+010150         MOVE S-SU(01) TO WD-SU(01)                               D.000811
+010160         MOVE S-SU(02) TO WD-SU(02)                               D.000811
+010170         MOVE S-SU(03) TO WD-SU(03)                               D.000811
+010180         MOVE S-SU(04) TO WD-SU(04)                               D.000811
+010190         MOVE S-SU(05) TO WD-SU(05)                               D.000811
+010200         MOVE S-SU(06) TO WD-SU(06)                               D.000811
+010210         MOVE S-SU(07) TO WD-SU(07)                               D.000811
+010220         MOVE S-SU(08) TO WD-SU(08)                               D.000811
+010230         MOVE S-SU(09) TO WD-SU(09)                               D.000811
+010240         MOVE S-SU(10) TO WD-SU(10)                               D.000811
+010250         MOVE S-SUT TO WD-SUT                                     I.961226
+010260         MOVE S-UKI TO WD-UKI                                     I.961226
+010270         COMPUTE WD-SKI = S-SUT * S-FT                            I.961226
+010280       ELSE                                                       I.961226
+010290         COMPUTE WD-SU(01) = -1 * S-SU(01)                        I.961226
+010300         COMPUTE WD-SU(02) = -1 * S-SU(02)                        I.961226
+010310         COMPUTE WD-SU(03) = -1 * S-SU(03)                        I.961226
+010320         COMPUTE WD-SU(04) = -1 * S-SU(04)                        I.961226
+010330         COMPUTE WD-SU(05) = -1 * S-SU(05)                        I.961226
+010340         COMPUTE WD-SU(06) = -1 * S-SU(06)                        I.961226
+010350         COMPUTE WD-SU(07) = -1 * S-SU(07)                        I.961226
+010360         COMPUTE WD-SU(08) = -1 * S-SU(08)                        I.961226
+010370         COMPUTE WD-SU(09) = -1 * S-SU(09)                        I.961226
+010380         COMPUTE WD-SU(10) = -1 * S-SU(10)                        I.961226
+010390         COMPUTE WD-SUT = -1 * S-SUT                              I.961226
+010400         COMPUTE WD-UKI = -1 * S-UKI                              I.961226
+010410         COMPUTE WD-SKI = WD-SUT * S-FT.                          I.961226
+010420     IF S-DK = 3                                                  I.961226
+010430         MOVE 4 TO S-SIZ                                          I.961226
+010440         MOVE WD-SUT TO WD-SU(10).                                I.961226
+010450     IF S-HCD > 999899                                            I.970107
+010460         MOVE ZERO TO WD-SUD WD-SUT.                              I.970107
+010470 DST-EX.                                                          I.961226
+010480     EXIT.                                                        I.961226
+010490 UHS-RTN.                                                         I.961226
+010500     IF S-DK NOT = 4                                              I.961226
+010510         IF S-DK = 2                                              I.961226
+010520             ADD WD-UKI TO W-UK                                   I.961226
+010530             ADD WD-SKI TO W-NK                                   I.961226
+010540           ELSE                                                   I.961226
+010550             ADD WD-SUT TO W-US                                   I.961226
+010560             ADD WD-UKI TO W-UK                                   I.961226
+010570             SUBTRACT WD-SUT FROM W-YS                            I.961226
+010580             SUBTRACT WD-SKI FROM W-YK                            I.961226
+010590             ADD WD-SKI TO W-UG.                                  I.961226
+010600 UHS-EX.                                                          I.961226
+010610     EXIT.                                                        I.961226
+010620 TZM-RTN.                                                         I.961228
+010630     MOVE 0 TO W-ACT.                                             I.070125
+010640     MOVE S-TCD TO TAZ-TCD.                                       I.961228
+010650     MOVE S-HCD TO TAZ-HCD.                                       I.961228
+010660*****MOVE ZERO  TO TAZ-NO.                                        D.000622
+010670*****MOVE S-ANO TO TAZ-NO.                                        D.970707
+010680     READ TAZ-M INVALID KEY                                       I.961228
+010690         MOVE 1 TO W-ACT                                          I.070125
+010700         GO TO TZM-020.                                           I.070125
+010710     MOVE 2 TO W-ACT.                                             I.070125
+010720     GO TO TZM-040.                                               I.070125
+010730*****    DISPLAY E-ME4 E-KEY3 E-ME99                              D.070125
+010740*****    DISPLAY E-CL                                             D.070125
+010750*****    GO TO TZM-EX.                                            D.070125
+010760 TZM-020.                                                         I.070125
+010770     MOVE ZERO TO TAZ-R                                           I.070125
+010780     MOVE S-TCD TO TAZ-TCD.                                       I.070125
+010790     MOVE S-HCD TO TAZ-HCD.                                       I.070125
+010800     MOVE S-NG TO TAZ-NG.                                         I.070125
+010810 TZM-040.                                                         I.070125
+010820     IF S-DK = 3 OR 9                                             I.961228
+010830         ADD S-SUT TO TAZ-AAS                                     I.020821
+010840         IF S-SNGP NOT = 99999999                                 I.020821
+010850             ADD S-SUT TO TAZ-SAS.                                I.020821
+010860*****    ADD S-SUT TO TAZ-AAS.                                    D.020821
+010870     IF S-DK = 4                                                  I.961228
+010880         SUBTRACT S-SUT FROM TAZ-AAS TAZ-SAS.                     I.021129
+010890*****    SUBTRACT S-SUT FROM TAZ-AAS.                             D.021129
+010900     IF W-ACT NOT = 1                                             I.070125
+010910         GO TO TZM-080.                                           I.070125
+010920     WRITE TAZ-R INVALID KEY                                      I.070125
+010930         DISPLAY E-STAT E-ME5 E-KEY3 E-ME99                       I.070125
+010940         GO TO TZM-060.                                           I.070125
+010950     CALL "CBLTCLS" USING TAZ-M.                                  I.070125
+010960     GO TO TZM-EX.                                                I.070125
+010970 TZM-060.                                                         I.070125
+010980     IF ERR-STAT NOT = "24"                                       I.070125
+010990         DISPLAY E-ME78 E-ME99                                    I.070125
+011000         DISPLAY E-CL                                             I.070125
+011010         GO TO TZM-EX.                                            I.070125
+011020     DISPLAY E-CL.                                                I.070125
+011030     CLOSE TAZ-M.                                                 I.070125
+011040     MOVE "TAZM         " TO W-FILE.                              I.070125
+011050     DISPLAY E-ME71 E-ME98 STOP " ".                              I.070125
+011060     DISPLAY E-CL.                                                I.070125
+011070     OPEN I-O TAZ-M.                                              I.070125
+011080     GO TO TZM-020.                                               I.070125
+011090 TZM-080.                                                         I.070125
+011100     REWRITE TAZ-R INVALID KEY                                    I.961228
+011110         MOVE  "R"         TO  ERR-M                              I.961228
+011120         MOVE  "TAZM"      TO  ERR-F                              I.961228
+011130         MOVE  TAZ-KEY     TO  ERR-K                              I.961228
+011140         PERFORM     ERR-RTN   THRU      ERR-EX.                  I.961228
+011150 TZM-EX.                                                          I.961228
+011160     EXIT.                                                        I.961228
+011170*HIH-RTN.                                                         D.040323
+011180*****IF S-DK NOT = 0 AND 1 AND 2 AND 5                            D.040323
+011190*****    GO TO HIH-EX.                                            D.040323
+011200*****IF S-HCD > 999899                                            D.040323
+011210*****    GO TO HIH-EX.                                            D.040323
+011220*****MOVE S-TCD TO T-KEY.                                         D.040323
+011230*****READ T-M WITH UNLOCK INVALID KEY                             D.040323
+011240*****    MOVE 0 TO T-IHC                                          D.040323
+011250*****    DISPLAY E-ME13 E-TCD E-ME99                              D.040323
+011260*****    DISPLAY E-CL.                                            D.040323
+011270*****IF T-IHC = 0                                                 D.040323
+011280*****    GO TO HIH-EX.                                            D.040323
+011290*****IF ZERO = S-SU(01) AND S-SU(02) AND S-SU(03) AND S-SU(04)    D.040323
+011300*****      AND S-SU(05) AND S-SU(06) AND S-SU(07) AND S-SU(08)    D.040323
+011310*****      AND S-SU(09) AND S-SU(10)                              D.040323
+011320*****    GO TO HIH-EX.                                            D.040323
+011330*****MOVE ZERO TO HIH-R.                                          D.040323
+011340*****MOVE S-TCD TO HIH-TCD.                                       D.040323
+011350*****MOVE HI-MHCD TO HIH-HCD.                                     D.040323
+011360*****MOVE S-T TO HIH-T.                                           D.040323
+011370*****MOVE S-DATE TO HIH-DATE.                                     D.040323
+011380*****MOVE 1 TO HIH-DC.                                            D.040323
+011390*****MOVE S-SIZ TO HIH-SIZ.                                       D.040323
+011400*****MOVE S-DNO TO HIH-DNO.                                       D.040323
+011410*****MOVE S-GNO TO HIH-GNO.                                       D.040323
+011420*****MOVE WD-SU(01) TO HIH-SU(01).                                D.040323
+011430*****MOVE WD-SU(02) TO HIH-SU(02).                                D.040323
+011440*****MOVE WD-SU(03) TO HIH-SU(03).                                D.040323
+011450*****MOVE WD-SU(04) TO HIH-SU(04).                                D.040323
+011460*****MOVE WD-SU(05) TO HIH-SU(05).                                D.040323
+011470*****MOVE WD-SU(06) TO HIH-SU(06).                                D.040323
+011480*****MOVE WD-SU(07) TO HIH-SU(07).                                D.040323
+011490*****MOVE WD-SU(08) TO HIH-SU(08).                                D.040323
+011500*****MOVE WD-SU(09) TO HIH-SU(09).                                D.040323
+011510*****MOVE WD-SU(10) TO HIH-SU(10).                                D.040323
+011520*****WRITE HIH-R INVALID KEY                                      D.040323
+011530*****    DISPLAY E-STAT E-ME14 E-HIH E-ME99                       D.040323
+011540*****    DISPLAY E-CL.                                            D.040323
+011550*HIH-EX.                                                          D.040323
+011560*****EXIT.                                                        D.040323
+011570***
+011580     COPY  LPMSG.

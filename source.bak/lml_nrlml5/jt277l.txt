@@ -1,0 +1,234 @@
+000010 IDENTIFICATION                 DIVISION.
+000020 PROGRAM-ID.                    JT277L.
+000030***************************************************
+000040*    PROGRAM        : 得意先別受注残金額明細表    *
+000050*    DATA WRITTEN   : 05/01/12                    *
+000060*    SCREEN USED    : UNUSED                      *
+000070*    FORM   USED    : UNUSED                      *
+000080*    PRINTER TYPE   : JIPS                        *
+000090*    COMPILE TYPE   : COBOL                       *
+000100***************************************************
+000110 ENVIRONMENT                    DIVISION.
+000120 CONFIGURATION                  SECTION.
+000130 SOURCE-COMPUTER.               SYSTEM150.
+000140 OBJECT-COMPUTER.               SYSTEM150.
+000150 INPUT-OUTPUT                   SECTION.
+000160 FILE-CONTROL.
+000170     SELECT   JT-WK04   ASSIGN  F1-MSD.
+000180     SELECT   TC-M      ASSIGN  F2-MSD
+000190                        ORGANIZATION  INDEXED
+000200                        ACCESS MODE   RANDOM
+000210                        RECORD KEY    TC-KEY.
+000220     SELECT  SP-F       ASSIGN  P1-PRN999.
+000230 I-O-CONTROL.
+000240     APPLY   SHARED-MODE ON  TC-M
+000250     APPLY   SHIFT-CODE  ON  SP-F.
+000260 DATA                       DIVISION.
+000270 FILE                       SECTION.
+000280 COPY  LTWK04.
+000290 COPY  LITCM.
+000300 COPY  LSPF.
+000310 WORKING-STORAGE            SECTION.
+000320 77  ERR-STAT                  PIC X(02)    VALUE SPACE.
+000330 77  WK0256ID                  PIC  X(009) VALUE SPACE.
+000340 01  STN-NO.
+000350     02  STN-NO1               PIC  X(003).
+000360     02  STN-NO2               PIC  X(003).
+000370 01  W-FID.
+000380     02  W-FID1                PIC  X(006) VALUE "WK0256".
+000390     02  W-FID2                PIC  X(003).
+000400 01  HEAD1.
+000410     02  K-1                   PIC X(05)  VALUE  ""3FE04F40A0"".
+000420     02  H-SEN                 PIC N(06).
+000430     02  FILLER                PIC X(02)  VALUE   SPACE.
+000440     02  F                     PIC N(04)  VALUE   NC"得意先別".
+000450     02  H-PM                  PIC N(04)  VALUE   SPACE.
+000460     02  F                     PIC N(08)  VALUE
+000470           NC"残　金額明細表　".
+000480     02  FILLER                PIC X(02)  VALUE  SPACE.
+000490     02  H-CHK                 PIC N(06)  VALUE  SPACE.
+000500     02  FILLER                PIC X(03)  VALUE  SPACE.
+000510     02  FILLER                PIC X(05)  VALUE  "DATE ".
+000520     02  H-NGP                 PIC 99/99/99.
+000530     02  FILLER                PIC X(05)  VALUE  "   P.".
+000540     02  H-PAGE                PIC Z9.
+000550 01  HEAD2.
+000560     02  FILLER                PIC X(05)  VALUE  "ｺｰﾄﾞ ".
+000570     02  FILLER                PIC N(08)  VALUE
+000580           NC"得　意　先　名　".
+000590     02  FILLER                PIC X(33)  VALUE  SPACE.
+000600     02  FILLER                PIC N(04)  VALUE  NC"　数　量".
+000610     02  FILLER                PIC X(07)  VALUE  SPACE.
+000620     02  FILLER                PIC N(04)  VALUE  NC"　金　額".
+000630 01  W-P.
+000640     02  P-TCD                 PIC 9(04).
+000650     02  F                     PIC X(01).
+000660     02  P-NAME                PIC N(26).
+000670     02  P-SU                  PIC ----,---,--9.
+000680     02  P-KIN                 PIC -----,---,--9.
+000690 01  W-DATA.
+000700     02  W-POC                 PIC 9(01).
+000710     02  W-CHK                 PIC 9(01).
+000720     02  W-PC                  PIC 9(01).
+000730     02  W-SEN                 PIC 9(01).
+000740     02  CNT                   PIC 9(02).
+000750     02  W-PAGE                PIC 9(02).
+000760     02  W-TCD                 PIC 9(04).
+000770     02  W-SUD                 PIC S9(07).
+000780     02  W-KIND                PIC S9(09).
+000790     02  W-SU                  PIC S9(07).
+000800     02  W-KIN                 PIC S9(09).
+000810     02  WT-SU                 PIC S9(07).
+000820     02  WT-KIN                PIC S9(09).
+000830 COPY    LWMSG.
+000840 SCREEN                  SECTION.
+000850 SD  CRT-X
+000860     END STATUS  IS  ESTAT.
+000870 01  CLE-01          LINE  1.
+000880     02  CLEAR   SCREEN.
+000890 01  DSP-AREA.
+000900     02  DSP-01       LINE 1.
+000910         03  COLUMN  23  VALUE
+000920               "                            " REVERSE.
+000930         03  COLUMN  24  VALUE
+000940              NC"得意先別受注残　金額明細表".
+000950 COPY    LSMSG.
+000960 PROCEDURE               DIVISION.
+000970 M-05.
+000980     MOVE     ZERO    TO   W-DATA.
+000990     ACCEPT         H-NGP       FROM     DATE.
+001000     DISPLAY        CLE-01      DSP-AREA.
+001010     CALL "CBLSTNNO" USING STN-NO.
+001020     MOVE STN-NO2 TO W-FID2.
+001030     MOVE W-FID TO WK0256ID.
+001040     OPEN  INPUT   JT-WK04  TC-M.
+001050*
+001060     READ      JT-WK04           AT END
+001070         CLOSE  JT-WK04  TC-M
+001080         DISPLAY  ERR-02   DISP-BUZ-B
+001090         GO  TO  M-95.
+001100     MOVE  WK04-88    TO  W-CHK.
+001110     MOVE  WK04-89    TO  W-PC,
+001120     MOVE  WK04-90    TO  W-SEN.
+001130*
+001140     PERFORM     SET-RTN     THRU     SET-EX.
+001150 M-10.
+001160     MOVE  WK04-04    TO  W-TCD.
+001170     MOVE  ZERO       TO  W-SU  W-KIN.
+001180 M-15.
+001190     ADD   W-SUD      TO  W-SU.
+001200     ADD   W-KIND     TO  W-KIN.
+001210*
+001220     READ    JT-WK04                  AT      END
+001230         GO  TO  M-80.
+001240     PERFORM     SET-RTN     THRU     SET-EX.
+001250     IF  WK04-04        =   W-TCD
+001260         GO  TO  M-15.
+001270     PERFORM     PRI-RTN     THRU     PRI-EX.
+001280     GO  TO  M-10.
+001290 M-80.
+001300     PERFORM     PRI-RTN     THRU     PRI-EX.
+001310     PERFORM     TOT-RTN     THRU     TOT-EX.
+001320 M-90.
+001330     CLOSE  JT-WK04  TC-M.
+001340     IF  W-POC          =   1
+001350         CLOSE  SP-F.
+001360 M-95.
+001370     DISPLAY        CLE-01.
+001380     STOP  RUN.
+001390 MID-RTN.
+001400     MOVE   SPACE     TO  SP-R.
+001410     WRITE  SP-R     AFTER    PAGE.
+001420 MID-010.
+001430     ADD    1         TO  W-PAGE.
+001440     MOVE   W-PAGE    TO  H-PAGE.
+001450     MOVE   HEAD1     TO  SP-R.
+001460     WRITE  SP-R    AFTER   1.
+001470     MOVE   SPACE     TO  SP-R.
+001480     MOVE   HEAD2     TO  SP-R.
+001490     WRITE  SP-R    AFTER   2.
+001500     MOVE   SPACE     TO  SP-R.
+001510 MID-EX.
+001520     EXIT.
+001530 SET-RTN.
+001540     MOVE ZERO TO CNT W-SUD W-KIND.
+001550 SET-010.
+001560     ADD 1 TO CNT.
+001570     IF CNT > 10
+001580         GO TO SET-020.
+001590     ADD WK04-1111(CNT) TO W-SUD.
+001600     SUBTRACT WK04-1211(CNT) FROM W-SUD.
+001610     SUBTRACT WK04-141(CNT) FROM W-SUD.
+001620     IF  W-CHK    =   1
+001630         SUBTRACT WK04-151(CNT) FROM W-SUD.
+001640     GO TO SET-010.
+001650 SET-020.
+001660     COMPUTE  W-KIND  =  W-SUD  *  WK04-17.
+001670 SET-EX.
+001680     EXIT.
+001690 PRI-RTN.
+001700     IF  ZERO     =   W-SU  AND  W-KIN
+001710         GO  TO  PRI-EX.
+001720     IF  W-POC    =   1
+001730         GO  TO  PRI-010.
+001740     MOVE  1               TO  W-POC.
+001750     IF    W-SEN      =   0
+001760           MOVE  NC"【教　育】"   TO  H-SEN.
+001770     IF    W-SEN      =   1
+001780           MOVE  NC"【一　般】"   TO  H-SEN.                      I.070420
+001790*****      MOVE  NC"【ワーク】"   TO  H-SEN.                      D.070420
+001800*****IF    W-SEN      =   2                                       D.070420
+001810*****      MOVE  NC"【カジュ】"   TO  H-SEN.                      D.070420
+001820     IF    W-SEN      =   9
+001830           MOVE  ALL  NX"2121"    TO  H-SEN.
+001840     IF  W-PC     =  0
+001850         MOVE  NC"　　受注"    TO  H-PM.
+001860     IF  W-PC     =  5
+001870         MOVE  NC"　　預り"    TO  H-PM.
+001880     IF  W-PC     =  6
+001890         MOVE  NC"　取よけ"    TO  H-PM.
+001900     IF  W-CHK    =   1
+001910         MOVE  NC"　（指図含）"   TO  H-CHK
+001920       ELSE
+001930         MOVE  ALL  NX"2121"      TO  H-CHK.
+001940     OPEN  OUTPUT  SP-F.
+001950     PERFORM     MID-010    THRU   MID-EX.
+001960 PRI-010.
+001970     MOVE   W-TCD    TO    TC-TCD.
+001980     MOVE   001      TO    TC-CCD.
+001990     READ   TC-M    UNLOCK   INVALID
+002000         MOVE   ALL NX"2121"  TO    TC-NAME.
+002010*
+002020     MOVE   SPACE    TO    W-P.
+002030     MOVE   W-TCD    TO    P-TCD.
+002040     MOVE   TC-NAME  TO    P-NAME.
+002050     MOVE   W-SU     TO    P-SU.
+002060     MOVE   W-KIN    TO    P-KIN.
+002070     IF  LINAGE-COUNTER   >  62
+002080         PERFORM     MID-010    THRU   MID-EX.
+002090     MOVE   SPACE    TO    SP-R.
+002100     MOVE   W-P      TO    SP-R.
+002110     WRITE  SP-R    AFTER   1.
+002120     MOVE   SPACE    TO    SP-R.
+002130*
+002140     ADD    W-SU     TO    WT-SU.
+002150     ADD    W-KIN    TO    WT-KIN.
+002160 PRI-EX.
+002170     EXIT.
+002180 TOT-RTN.
+002190     IF  W-POC    =   0
+002200         GO  TO  TOT-EX.
+002210*
+002220     MOVE   SPACE    TO    W-P.
+002230     MOVE   NC"　　　　　　　　　　【　合　計　】"  TO    P-NAME.
+002240     MOVE   WT-SU    TO    P-SU.
+002250     MOVE   WT-KIN   TO    P-KIN.
+002260     IF  LINAGE-COUNTER   >  62
+002270         PERFORM     MID-010    THRU   MID-EX.
+002280     MOVE   SPACE    TO    SP-R.
+002290     MOVE   W-P      TO    SP-R.
+002300     WRITE  SP-R    AFTER   2.
+002310     MOVE   SPACE    TO    SP-R.
+002320 TOT-EX.
+002330     EXIT.
+

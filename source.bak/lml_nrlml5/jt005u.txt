@@ -1,0 +1,111 @@
+000010 IDENTIFICATION         DIVISION.
+000020 PROGRAM-ID.            JT005U.
+000030*********************************************************
+000040*    PROGRAM         :  受注マスタ　担当区分セット      *
+000050*    PRINTER TYPE    :  ****                            *
+000060*    SCREEN          :  SJ010I                          *
+000070*    DATE      　　  :  03/09/10                        *
+000080*    COMPILE TYPE    :  COBOL                           *
+000090*********************************************************
+000100 ENVIRONMENT            DIVISION.
+000110 CONFIGURATION          SECTION.
+000120 SOURCE-COMPUTER.       NEAC-SYSTEM100.
+000130 OBJECT-COMPUTER.       NEAC-SYSTEM100.
+000140 INPUT-OUTPUT           SECTION.
+000150 FILE-CONTROL.
+000160     SELECT       JMSTD      ASSIGN   TO F7-MSD F7A-MSD F7B-MSD   受注M
+000170                  ORGANIZATION        INDEXED
+000180                  ACCESS     MODE     DYNAMIC
+000190                  RECORD     KEY      JMSTD-KEY1
+000200                  ALTERNATE  RECORD   KEY   IS     JMSTD-KEY2
+000210                  ALTERNATE  RECORD   KEY   IS     JMSTD-KEY3
+000220                  FILE       STATUS   IS    ERR-STAT.
+000230*****SELECT       T-M        ASSIGN   TO    F14-MSD               D.000224
+000240     SELECT       T-M        ASSIGN   TO    F141-MSD  F142-MSD    I.000224
+000250                  ORGANIZATION        INDEXED
+000260                  RECORD     KEY      T-KEY
+000270                  ALTERNATE    RECORD     KEY      T-KEY2         I.000224
+000280                  ACCESS     MODE     RANDOM
+000290                  FILE       STATUS   IS    ERR-STAT.
+000300 I-O-CONTROL.
+000310     APPLY SHARED-MODE ON T-M JMSTD.
+000320 DATA                   DIVISION.
+000330 FILE                   SECTION.
+000340     COPY   LJMSTD.
+000350     COPY   LITM.                                                 I.941005
+000360****
+000370 WORKING-STORAGE        SECTION.
+000380 77  ERR-STAT           PIC  X(02).                               ｴﾗｰｽﾃｰﾀｽ
+000390 77  OKC                PIC  9(01).
+000400     COPY   LWMSG.
+000410 SCREEN                 SECTION.
+000420 SD  DSP-CRT
+000430     END STATUS IS ESTAT.
+000440 01  DSP-CLEAR.
+000450   02  LINE  1  CLEAR   SCREEN.
+000460 01  ACT-AREA.
+000470   02  A-OKC    LINE 24  COLUMN  60   PIC  9(01)
+000480     USING          OKC          CHECK  OVERFLOW     NO IFC.
+000490 01  DSP-AREA.
+000500     02  LINE   1  COLUMN 19  PIC X(32) VALUE
+000510           "                                "  REVERSE.
+000520     02  LINE   1  COLUMN 20  PIC N(15) VALUE
+000530         NC"受注マスタ　担当者区分　セット".
+000540     02  LINE  24  COLUMN 35  PIC X(30) VALUE
+000550           "確認 (OK=1,終了=PF9) -->  ﾘﾀｰﾝ".
+000560     COPY LSMSG.
+000570 PROCEDURE              DIVISION.
+000580*************************************************
+000590*    ＭＡＩＮ－ＲＴＮ　 （主処理）              *
+000600*************************************************
+000610 MAIN-RTN.
+000620     PERFORM  INIT-RTN       THRU  INIT-EX.
+000630     PERFORM  UPD-RTN        THRU  UPD-EX.
+000640     PERFORM  END-RTN        THRU  END-EX.
+000650     STOP     RUN.
+000660     COPY   LPMSG.
+000670*
+000680 INIT-RTN.
+000690     DISPLAY DSP-CLEAR.
+000700     DISPLAY DSP-AREA.
+000710 INIT-010.
+000720     ACCEPT  A-OKC.
+000730     IF      ESTAT         =   "P9"
+000740             DISPLAY DSP-CLEAR
+000750             STOP    RUN.
+000760     IF      ESTAT    NOT  =   "01"  AND "06"
+000770             GO  TO  INIT-010.
+000780     IF      OKC      NOT  =    1
+000790             GO  TO  INIT-010.
+000800*
+000810     DISPLAY DSP-AREA.                                            I.971103
+000820     DISPLAY A-OKC.                                               I.971103
+000830     OPEN    INPUT     T-M.
+000840     OPEN    I-O       JMSTD.
+000850 INIT-EX.
+000860     EXIT.
+000870*
+000880 UPD-RTN.
+000890     READ    JMSTD     NEXT  RECORD   AT  END
+000900             GO  TO  UPD-EX.
+000910     MOVE    JMSTD-04  TO    T-KEY.
+000920     READ    T-M       UNLOCK  INVALID  KEY
+000930             GO  TO  UPD-RTN.
+000940     IF      JMSTD-91      =   T-TNC
+000950             GO  TO  UPD-RTN.
+000960     MOVE    T-TNC     TO    JMSTD-91.
+000970     REWRITE  JMSTD-R               INVALID KEY
+000980              MOVE  "R"         TO  ERR-M
+000990              MOVE  "JMSTD"     TO  ERR-F
+001000              MOVE  JMSTD-KEY1  TO  ERR-K
+001010              PERFORM     ERR-RTN   THRU      ERR-EX.
+001020     GO  TO  UPD-RTN.
+001030 UPD-EX.
+001040     EXIT.
+001050*
+001060 END-RTN.
+001070     CLOSE             T-M.
+001080     CLOSE             JMSTD.
+001090 END-EX.
+001100     EXIT.
+

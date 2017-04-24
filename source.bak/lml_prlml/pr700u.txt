@@ -1,0 +1,175 @@
+000010 IDENTIFICATION      DIVISION.
+000020 PROGRAM-ID.         PR700U.
+000030*
+000040 ENVIRONMENT         DIVISION.
+000050 CONFIGURATION       SECTION.
+000060 SOURCE-COMPUTER.    SYSTEM100.
+000070 OBJECT-COMPUTER.    SYSTEM100.
+000080 INPUT-OUTPUT        SECTION.
+000090 FILE-CONTROL.
+000100     SELECT  SDH     ASSIGN    TO  F1-MSD
+000110                     ORGANIZATION  INDEXED
+000120                     RECORD   KEY  SH-KEY1
+000130                     FILE  STATUS  IS  ERR-STAT.
+000140     SELECT  FCTL-F  ASSIGN    TO  FCTL-MSD
+000150                     ORGANIZATION  INDEXED
+000160                     ACCESS  MODE  RANDOM
+000170                     RECORD   KEY  FCTL-KEY
+000180                     FILE  STATUS  IS  ERR-STAT.
+000190     SELECT  SDI     ASSIGN    TO  F4-MSD
+000200                     ORGANIZATION  INDEXED
+000210                     ACCESS  MODE  SEQUENTIAL
+000220                     RECORD   KEY  SDI-KEY
+000230                     FILE  STATUS  IS  ERR-STAT.
+000240 I-O-CONTROL.
+000250     APPLY   EXCLUSIVE-MODE   ON   SDH  FCTL-F  SDI.
+000260 DATA                DIVISION.
+000270 FILE                SECTION.
+000280*
+000290 FD  SDH
+000300     LABEL   RECORD   IS   STANDARD
+000310     BLOCK   CONTAINS   3   RECORDS
+000320     VALUE   OF   IDENTIFICATION   "SIWAKE-H1".
+000330     COPY    SIWAKH.
+000340     COPY    FCTL.
+000350     COPY    SIWAID.
+000360**********************************
+000370 WORKING-STORAGE     SECTION.
+000380**********************************
+000390 77  ERR-STAT        PIC  X(02).
+000400 01  WK-AREA.
+000410     02  CHK         PIC  X(01).
+000420*****
+000430 COPY  LWMSG.
+000440**********************************
+000450 SCREEN          SECTION.
+000460**********************************
+000470 SD  SCR-D
+000480     END STATUS  IS    ESTAT.
+000490 01  DSP-CLR-AREA.
+000500     03  DSP-CLR        LINE    1.
+000510         05  CLEAR  SCREEN.
+000520 01  DSP-INIT.
+000530     03  LINE  01.
+000540         05      COLUMN  04  PIC  N(01)  VALUE  NC"年".
+000550         05      COLUMN  08  PIC  N(02)  VALUE  NC"月度".
+000560*****    05      COLUMN  02  PIC  9(02)  FROM  FCTL-GEMYY.        D.971117
+000570         05      COLUMN  02  PIC  9(02)  FROM  FCTL-GEMYY2.       I.971117
+000580         05      COLUMN  06  PIC  9(02)  FROM  FCTL-GEMMM.
+000590         05  COLUMN  36            PIC  X(10)
+000600             VALUE " 月次繰越 "    REVERSE.
+000610     03  LINE  24.
+000620         05  COLUMN  61            PIC  N(02)
+000630             VALUE NC"確認".
+000640         05  COLUMN  66            PIC  X(13)
+000650             VALUE "OK=1,NO=9 ( )".
+000660 01  ACP-AREA.
+000670     03  ACP-CHK        LINE   24    COLUMN    77  PIC X(1)
+000680                        INTO   CHK      CHECK OVERFLOW NO IFC.
+000690 01  MG-AREA.
+000700     03  LINE 10.
+000710         05 MG-01   COLUMN 10   PIC N(23) VALUE
+000720            NC"翌期の月次繰越は、当期分の期末繰越後処理可！！".
+000730         05 MG-02   COLUMN 10   PIC N(23) VALUE
+000740            NC"期末月に付き、月次繰越後、期末繰越を実行します".
+000750         05 MG-03   COLUMN 10   PIC N(23) VALUE
+000760            NC"日次未処理の為、月次繰越実行不可！！　　　　　".
+000770*****
+000780 COPY  LSMSG.
+000790**********************************
+000800 PROCEDURE           DIVISION.
+000810**********************************
+000820 ST.
+000830     DISPLAY  DSP-CLR-AREA.
+000840     OPEN  I-O    FCTL-F  SDH.
+000850     MOVE  "DATE "        TO  FCTL-KEY1.
+000860     READ   FCTL-F   INVALID
+000870            MOVE     255      TO   COMPLETION-CODE
+000880            DISPLAY  INV-CON  DISP-BUZ-B
+000890            GO TO ST-999.
+000900     MOVE   FCTL-REC1     TO  Z-R.
+000910     DISPLAY  DSP-INIT.
+000920     MOVE Z-GEMYMD     TO ZYMD.
+000930     PERFORM Z-RTN THRU Z-EXT.
+000940     IF ZI > 12
+000950        MOVE 255     TO COMPLETION-CODE
+000960        DISPLAY MG-01
+000970                DISP-BUZ-B
+000980        GO TO ST-999.
+000990     IF Z-GEMYMD = Z-TOUT(Z-KSMM)
+001000        DISPLAY MG-02
+001010                DISP-BUZ-B.
+001020*
+001030     OPEN INPUT SDI.
+001040     READ SDI NEXT AT END
+001050          GO TO ST-09.
+001060     MOVE 255     TO COMPLETION-CODE.
+001070     DISPLAY MG-03
+001080             DISP-BUZ-B.
+001090     CLOSE SDI.
+001100     GO TO ST-999.
+001110 ST-09.
+001120     CLOSE SDI.
+001130*
+001140 ST-10.
+001150     ACCEPT  ACP-CHK.
+001160     IF  ESTAT  =  "P9"
+001170         MOVE  255        TO  COMPLETION-CODE
+001180         GO TO ST-999.
+001190     IF  ESTAT  NOT =  "01" AND "06"
+001200         GO  TO  ST-10.
+001210     IF  CHK  NOT =  "1" AND "9"
+001220         GO  TO  ST-10.
+001230     IF  CHK  =  "9"
+001240         MOVE  255        TO  COMPLETION-CODE
+001250         GO TO ST-999.
+001260***
+001270***
+001280***
+001290     PERFORM  SDH-RTN     THRU     SDH-EX.
+001300*
+001310     PERFORM  FCTL-RTN    THRU     FCTL-EX.
+001320 ST-999.
+001330     PERFORM  CLSE-ENT    THRU     CLSE-EXT.
+001340 ED.
+001350     STOP     RUN.
+001360**********************************
+001370*    仕訳ヒストリ　更新処理      *
+001380**********************************
+001390 SDH-RTN.
+001400     READ   SDH      AT   END
+001410            GO  TO   SDH-EX.
+001420     IF  HTRDATE  >  FCTL-GEMYMD
+001430         GO TO SDH-EX.
+001440     MOVE   SH-KEY1       TO  ERR-K.
+001450     DELETE SDH.
+001460     IF  ERR-STAT  NOT =  "00"
+001470            MOVE     "SDH"    TO  ERR-F
+001480            MOVE     "D"      TO  ERR-M
+001490            PERFORM  ERR-ENT  THRU  ERR-EXT.
+001500     GO TO SDH-RTN.
+001510 SDH-EX.
+001520     EXIT.
+001530**********************************
+001540*    コントロールＦ　更新処理    *
+001550**********************************
+001560 FCTL-RTN.
+001570     MOVE FCTL-GEMYY     TO  FCTL-UPDYY.
+001580     MOVE FCTL-GEMMM     TO  FCTL-UPDMM.
+001590     MOVE FCTL-KEY1      TO  ERR-K.
+001600     REWRITE  FCTL-REC1   INVALID
+001610            MOVE     "FCTL-F" TO  ERR-F
+001620            MOVE     "R"      TO  ERR-M
+001630            PERFORM  ERR-ENT  THRU  ERR-EXT.
+001640 FCTL-EX.
+001650     EXIT.
+001660**********************************
+001670*    終了　処理                  *
+001680**********************************
+001690 CLSE-ENT.
+001700     CLOSE  SDH  FCTL-F.
+001710 CLSE-EXT.
+001720     EXIT.
+001730**********
+001740 COPY  LPMSG.
+001750**********

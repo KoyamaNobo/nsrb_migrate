@@ -1,0 +1,145 @@
+000010 IDENTIFICATION  DIVISION.
+000020 PROGRAM-ID.     PR220U.
+000030 ENVIRONMENT         DIVISION.
+000040 CONFIGURATION       SECTION.
+000050 SOURCE-COMPUTER.    NEAC-SYSTEM100.
+000060 OBJECT-COMPUTER.    NEAC-SYSTEM100.
+000070 INPUT-OUTPUT        SECTION.
+000080 FILE-CONTROL.
+000090     SELECT  SSD     ASSIGN  TO  SIWAKED-MSD.
+000100     SELECT  FCTL-F  ASSIGN  TO  F1-MSD
+000110       ORGANIZATION  IS  INDEXED
+000120       ACCESS  MODE  IS  RANDOM
+000130       RECORD  KEY   IS  FCTL-KEY1.
+000140     SELECT  KZM-F   ASSIGN  TO  F2-MSD
+000150       ORGANIZATION  IS  INDEXED
+000160       ACCESS  MODE  IS  RANDOM
+000170       RECORD  KEY   IS  KZM-KEY
+000180       FILE    STATUS    ERR-STAT.
+000190     SELECT  AM  ASSIGN  TO  KAMOKK-MSD
+000200       ORGANIZATION  IS  INDEXED
+000210       ACCESS  MODE  IS  RANDOM
+000220       RECORD  KEY   IS  AM-KEY
+000230       FILE    STATUS    ERR-STAT.
+000240 I-O-CONTROL.
+000250     APPLY       EXCLUSIVE-MODE  ON  SSD  FCTL-F  KZM-F
+000260     APPLY       SHARED-MODE     ON  AM.
+000270 DATA            DIVISION.
+000280 FILE            SECTION.
+000290 COPY    SIWAKE.
+000300 COPY    FCTL.
+000310 COPY    LKAZAN.
+000320 COPY    ACCUNT.
+000330 WORKING-STORAGE SECTION.
+000340 77  INV-SW          PIC 9(1).
+000350 77  ERR-STAT        PIC X(02).
+000360 01  I               PIC 9(02).
+000370 01  W-ACT           PIC X(01).
+000380 01  W-FILE          PIC N(11).
+000390 01  W-DATE.                                                      I.971112
+000400     02  F           PIC 9(02).                                   I.971112
+000410     02  W-YMD       PIC 9(06).                                   I.971112
+000420 COPY    LWMSG.
+000430 SCREEN          SECTION.
+000440 SD  SCR-D
+000450     END  STATUS IS  ESTAT.
+000460 01  DSP-CLR.                                                     I.970120
+000470     02  LINE 01  CLEAR  SCREEN.                                  I.970120
+000480 01  DSP-AREA  LINE  24.
+000490     03  DSP-FILE    COLUMN  01  PIC  N(11)  FROM  W-FILE.
+000500     03  COLUMN   24   PIC   N(04) VALUE  NC"“`•[“ú•t".
+000510     03  COLUMN   32   PIC   X(01) VALUE  "=".
+000520     03  DSP-TRDATE
+000530         COLUMN   33   PIC   9(06) FROM   W-YMD.                  I.971112
+000540*****    COLUMN   33   PIC   9(06) FROM   TRDATE.                 D.971112
+000550     03  COLUMN   40   PIC   N(04) VALUE  NC"“`•[”Ô†".
+000560     03  COLUMN   48   PIC   X(01) VALUE  "=".
+000570     03  DSP-JUNLNO
+000580         COLUMN   49   PIC   9(06) FROM   JUNLNO.
+000590     03  COLUMN   55   PIC   X(01) VALUE  "-".
+000600     03  DSP-LINENO
+000610         COLUMN   56   PIC   9(02) FROM   LINENO.
+000620     03  COLUMN   59   PIC   N(04) VALUE  NC"‘ÝŽØ‹æ•ª".
+000630     03  COLUMN   67   PIC   X(01) VALUE  "=".
+000640     03  DSP-DR-CR
+000650         COLUMN   68   PIC   9(01) FROM   DR-CR OF  SSD.
+000660     03  COLUMN   71   PIC   N(02) VALUE  NC"Šm”F".
+000670     03  COLUMN   76   PIC   X(03) VALUE  "( )".
+000680 01  ACP-AREA.
+000690     03  ACP-010  LINE  24   COLUMN  77  PIC  X(1)                U901214
+000700                  INTO  W-ACT  CHECK OVERFLOW NO IFC.
+000710 01  DSP-AREA2.                                                   I.970120
+000720     02  LINE 01  COLUMN 35  VALUE  NC"ƒ}ƒXƒ^XV@‡A"  REVERSE.  I.970120
+000730 COPY    LSMSG.
+000740 PROCEDURE       DIVISION.
+000750 ST.
+000760     DISPLAY  DSP-CLR.                                            I.970120
+000770     DISPLAY  DSP-AREA2.                                          I.970120
+000780     OPEN       INPUT        SSD  FCTL-F.
+000790     OPEN       I-O          AM   KZM-F.
+000800     MOVE  "DATE  "         TO      FCTL-KEY1.
+000810     READ  FCTL-F           UNLOCK  INVALID
+000820           CLOSE  SSD  FCTL-F  KZM-F  AM
+000830           MOVE 255         TO      COMPLETION-CODE
+000840           DISPLAY     INV-CON DISP-BUZ-B
+000850           STOP RUN.
+000860     MOVE  FCTL-REC1        TO      Z-R.
+000870     CLOSE FCTL-F.
+000880 ST-10.
+000890     READ       SSD           AT END
+000900       PERFORM  CLSE-ENT     THRU    CLSE-EXT
+000910       STOP     RUN.
+000920     MOVE       ACCNTCD OF SSD TO    AM-KEY OF  AM.
+000930     READ       AM           INVALID KEY
+000940       MOVE  NC"‰È–Úƒ}ƒXƒ^–¢“o˜^"    TO      W-FILE
+000950       MOVE  TRDATE        TO  W-DATE
+000960       DISPLAY  DSP-AREA
+000970       ACCEPT   ACP-010
+000980       GO TO    ST-10.
+000990     IF         DR-CR  OF SSD =      1
+001000       ADD      AMOUNT OF SSD TO     DDR.
+001010     IF         DR-CR  OF SSD =      2
+001020       ADD      AMOUNT OF SSD TO     DCR.
+001030     MOVE       AM-KEY       TO      ERR-K.
+001040     REWRITE    AM-REC       INVALID KEY
+001050                MOVE  "AM"   TO      ERR-F
+001060                MOVE  "R"    TO      ERR-M
+001070                PERFORM ERR-ENT THRU ERR-EXT.
+001080     MOVE       TRDATE         TO     ZYMD.
+001090     PERFORM    Z-RTN        THRU     Z-EXT.
+001100     MOVE       ZI             TO     I.
+001110     IF  I  >  15
+001120       GO TO    ST-10.
+001130     MOVE 0     TO INV-SW.                                        *
+001140     MOVE       ACCNTCD OF SSD TO    KZM-KEY.
+001150     READ       KZM-F        INVALID KEY
+001160                MOVE 1     TO INV-SW
+001170                INITIALIZE KZM-R
+001180                MOVE ACCNTCD     TO KZM-KEY.
+001190     IF  DR-CR OF SSD  =  1
+001200         ADD    AMOUNT         TO     KZM-TJKR(I)
+001210     ELSE
+001220         ADD    AMOUNT         TO     KZM-TJKS(I).
+001230     MOVE       KZM-KEY        TO     ERR-K.
+001240     IF INV-SW = 0     GO TO ST-999.                              *
+001250     WRITE KZM-R INVALID                                          *
+001260           MOVE  "KZM-F"  TO     ERR-F                            *
+001270           MOVE  "W"      TO     ERR-M                            *
+001280           PERFORM ERR-ENT THRU ERR-EXT.                          *
+001290     CALL "CBLTCLS" USING KZM-F.                                  *
+001300     GO TO ST-10.
+001310 ST-999.                                                          *
+001320     REWRITE    KZM-R          INVALID
+001330                MOVE  "KZM-F"  TO     ERR-F
+001340                MOVE  "R"      TO     ERR-M
+001350                PERFORM ERR-ENT THRU ERR-EXT.
+001360     GO TO      ST-10.
+001370 ED.
+001380     EXIT.
+001390******
+001400 CLSE-ENT.
+001410       CLOSE    SSD           AM KZM-F.
+001420 CLSE-EXT.
+001430     EXIT.
+001440******
+001450 COPY  LPMSG.

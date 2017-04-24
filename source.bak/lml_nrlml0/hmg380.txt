@@ -1,0 +1,405 @@
+000010 IDENTIFICATION   DIVISION.
+000020 PROGRAM-ID. HMG380.
+000030*********************************************************
+000040*    PROGRAM         :  品名別返品・不良返品合計表　    *
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :  ******                          *
+000070*    COMPILE TYPE    :  COBOL                           *
+000080*    JS-SIGN    1    :  返品                            *
+000090*               2    :  不良返品                        *
+000100*               3    :  不良返品(原価)                  *
+000110*               5    :  入庫格外品(原価)                *
+000120*********************************************************
+000130 ENVIRONMENT DIVISION.
+000140 CONFIGURATION SECTION.
+000150 SOURCE-COMPUTER. SYSTEM3100.
+000160 OBJECT-COMPUTER. SYSTEM3100.
+000170 INPUT-OUTPUT SECTION.
+000180 FILE-CONTROL.
+000190     COPY LIBCSE.
+000200     SELECT SNTRF ASSIGN TO SNTR-MSD
+000210         FILE STATUS IS ERR-STAT.
+000220*****SELECT HI-M ASSIGN TO HI-MSD                                 D.010806
+000230     SELECT HI-M ASSIGN TO HI1-MSD HI2-MSD                        I.010806
+000240         ORGANIZATION IS INDEXED
+000250         ACCESS MODE IS RANDOM
+000260         RECORD KEY IS HI-KEY
+000270         ALTERNATE RECORD KEY IS HI-KEY2                          I.010806
+000280         FILE STATUS IS ERR-STAT.
+000290     SELECT SP-F ASSIGN TO P-PRN999.
+000300 I-O-CONTROL.
+000310     APPLY SHARED-MODE ON M-DATE
+000320     APPLY SHARED-MODE ON HI-M
+000330     APPLY SHIFT-CODE  ON SP-F.
+000340 DATA DIVISION.
+000350 FILE SECTION.
+000360     COPY LIBFDD.
+000370     COPY LIHIM.
+000380     COPY LSSNTW.
+000390     COPY LSPF.
+000400 WORKING-STORAGE  SECTION.
+000410 77  JS-SIGN            PIC  9(001) VALUE 0.
+000420 77  WK0064ID           PIC  X(009) VALUE SPACE.
+000430 01  STN-NO.
+000440     02  STN-NO1        PIC  X(003).
+000450     02  STN-NO2        PIC  X(003).
+000460 01  W-FID.
+000470     02  W-FID1         PIC  X(006) VALUE "WK0064".
+000480     02  W-FID2         PIC  X(003).
+000490 01  HEAD1.
+000500     02  F              PIC  X(005) VALUE ""3FE04F40A0"".
+000510*****02  F              PIC  X(012) VALUE SPACE.                  D.070328
+000520*****02  H-MID          PIC  N(022).                              D.070328
+000530     02  F              PIC  X(009) VALUE SPACE.                  D.070328
+000540     02  H-MID          PIC  N(024).                              I.070328
+000550     02  F              PIC  X(005) VALUE SPACE.
+000560     02  F              PIC  X(005)  VALUE "DATE ".
+000570     02  H-DATE         PIC 99B99B99.
+000580     02  F              PIC  X(007)  VALUE "     P.".
+000590     02  H-PAGE         PIC Z9.
+000600 01  HEAD2.
+000610     02  F              PIC  X(008) VALUE " ｺｰﾄﾞ   ".
+000620     02  F              PIC  N(006) VALUE NC"品　　　名　".
+000630     02  F              PIC  X(030) VALUE SPACE.
+000640     02  F              PIC  N(004) VALUE NC"　数　量".
+000650     02  F              PIC  X(002) VALUE SPACE.
+000660     02  F              PIC  N(004) VALUE NC"　単　価".
+000670     02  F              PIC  X(005) VALUE SPACE.
+000680     02  F              PIC  N(004) VALUE NC"　金　額".
+000690     02  F              PIC  X(005) VALUE SPACE.                  I.070530
+000700     02  H-KGM          PIC  N(004) VALUE SPACE.                  I.070530
+000710 01  W-P.
+000720     02  P-HCD          PIC  9(006).
+000730     02  F              PIC  X(002).
+000740     02  P-HNA          PIC  N(024).
+000750     02  P-SU           PIC -----,--9.
+000760     02  P-T            PIC ----,--9.
+000770     02  P-KIN          PIC ---,---,--9.
+000780     02  P-KKIN         PIC ---,---,--9.                          I.070530
+000790 01  W-DATA.
+000800     02  W-BC3          PIC  9(002).                              I.070226
+000810     02  W-BC1          PIC  9(002).                              I.070402
+000820     02  W-BC1D REDEFINES W-BC1.                                  I.070402
+000830       03  W-BC11       PIC  9(001).                              I.070402
+000840       03  W-BC12       PIC  9(001).                              I.070402
+000850     02  W-FTC          PIC  9(001).                              I.070402
+000860     02  W-T            PIC S9(005).
+000870     02  W-KIN          PIC S9(008).                              I.070328
+000880     02  W-PAGE         PIC  9(002) VALUE ZERO.
+000890*****02  W-MID1         PIC  N(022) VALUE                         D.070328
+000900*****     NC"　＊＊＊　　品名別　返品合計表　　＊＊＊　　".       D.070328
+000910*****02  W-MID2         PIC  N(022) VALUE                         D.070328
+000920*****     NC"＊＊＊　　品名別　不良返品合計表　　＊＊＊　".       D.070328
+000930     02  W-MID1         PIC  N(024) VALUE                         I.070328
+000940          NC"　　＊＊＊　　品名別　返品合計表　　＊＊＊　　　".   I.070328
+000950     02  W-MID2         PIC  N(024) VALUE                         I.070328
+000960          NC"　＊＊＊　　品名別　不良返品合計表　　＊＊＊　　".   I.070328
+000970     02  W-MID3         PIC  N(024) VALUE                         I.070328
+000980          NC"＊＊＊　　品名別　不良返品合計表（原価）　＊＊＊".   I.070328
+000990     02  W-MID5         PIC  N(024) VALUE                         I.070418
+001000          NC"＊＊＊　　品名別　格外品合計表（入庫）　＊＊＊　".   I.070418
+001010 01  WN-D.                                                        I.070402
+001020     02  WN-SU          PIC S9(007).                              I.070402
+001030     02  WN-KIN         PIC S9(008).                              I.070402
+001040     02  WN-KKIN        PIC S9(008).                              I.070530
+001050 01  WT-D.                                                        I.070402
+001060     02  WT-SU          PIC S9(007).                              I.070402
+001070     02  WT-KIN         PIC S9(008).                              I.070402
+001080     02  WT-KKIN        PIC S9(008).                              I.070530
+001090 01  WS-D.                                                        I.070226
+001100     02  WS-SU          PIC S9(007).                              I.070226
+001110     02  WS-KIN         PIC S9(008).                              I.070226
+001120     02  WS-KKIN        PIC S9(008).                              I.070530
+001130 01  WA-D.
+001140     02  WA-SU          PIC S9(007).
+001150     02  WA-KIN         PIC S9(008).
+001160     02  WA-KKIN        PIC S9(008).                              I.070530
+001170 01  ERR-STAT           PIC  X(002).
+001180 SCREEN SECTION.
+001190 SD  C-CRT
+001200     END STATUS IS ESTAT.
+001210 01  C-CLEAR.
+001220     02  C-CL    LINE   1  CLEAR  SCREEN.
+001230 01  C-MID.
+001240     02  LINE   3  COLUMN  10  PIC  N(022) VALUE
+001250          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001260     02  LINE   4  COLUMN  10  PIC  N(022) VALUE
+001270          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001280     02  LINE   5  COLUMN  10  PIC  N(022) VALUE
+001290          NC"＊＊＊　　　　　　　　　　　　　　　　＊＊＊".
+001300     02  LINE   6  COLUMN  10  PIC  N(022) VALUE
+001310          NC"＊＊＊　　履物返品・不良返品合計表　　＊＊＊".
+001320     02  LINE   7  COLUMN  10  PIC  N(022) VALUE
+001330          NC"＊＊＊　　　　　　　　　　　　　　　　＊＊＊".
+001340     02  LINE   8  COLUMN  10  PIC  N(022) VALUE
+001350          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001360     02  LINE   9  COLUMN  10  PIC  N(022) VALUE
+001370          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001380 01  C-MID5.                                                      I.070418
+001390     02  LINE   6  COLUMN  10  PIC  N(022) VALUE                  I.070418
+001400          NC"＊＊＊　　履物　入庫　格外品合計表　　＊＊＊".       I.070418
+001410 01  C-ERR.
+001420     02  LINE  24.
+001430       03  E-ME98  COLUMN  75  PIC  X(005) VALUE ""27"J"05"".
+001440       03  E-ME99  COLUMN  75  PIC  X(005) VALUE ""27"B"05"".
+001450       03  E-STAT  COLUMN  10  PIC  X(002) FROM  ERR-STAT.
+001460       03  E-CL    COLUMN  10  PIC  X(050) VALUE
+001470            "                                                  ".
+001480     COPY LIBSCR.
+001490 PROCEDURE DIVISION.
+001500 M-05.
+001510     ACCEPT JS-SIGN.
+001520*****IF JS-SIGN NOT = 1 AND 2                                     D.070328
+001530*****IF JS-SIGN NOT = 1 AND 2 AND 3                               D.070418
+001540     IF JS-SIGN NOT = 1 AND 2 AND 3 AND 5                         I.070418
+001550         STOP RUN.
+001560     COPY LIBCPR.
+001570     MOVE DATE-02R TO H-DATE.
+001580     DISPLAY C-CLEAR.
+001590     DISPLAY C-MID.
+001600     IF JS-SIGN = 5                                               I.070418
+001610         DISPLAY C-MID5.                                          I.070418
+001620     CALL "CBLSTNNO" USING STN-NO.
+001630     MOVE STN-NO2 TO W-FID2.
+001640     MOVE W-FID TO WK0064ID.
+001650     OPEN INPUT SNTRF.
+001660 M-10.
+001670     READ SNTRF AT END
+001680         CLOSE SNTRF
+001690         DISPLAY C-CLEAR
+001700         STOP RUN.
+001710*****IF JS-SIGN = 3                                               D.070418
+001720     IF JS-SIGN = 3 OR 5                                          I.070418
+001730         IF SNTR-SU = ZERO                                        I.070328
+001740             GO TO M-10.                                          I.070328
+001750*****IF JS-SIGN NOT = 3                                           D.070418
+001760     IF JS-SIGN = 1 OR 2                                          I.070418
+001770         IF ZERO = SNTR-SU OR SNTR-KIN
+001780             GO TO M-10.
+001790     IF JS-SIGN = 1
+001800         MOVE W-MID1 TO H-MID.
+001810     IF JS-SIGN = 2
+001820         MOVE W-MID2 TO H-MID.
+001830     IF JS-SIGN = 3                                               I.070328
+001840         MOVE NC"格外金額" TO H-KGM                               I.070530
+001850         MOVE W-MID3 TO H-MID.                                    I.070328
+001860     IF JS-SIGN = 5                                               I.070418
+001870         MOVE NC"格外金額" TO H-KGM                               I.070530
+001880         MOVE W-MID5 TO H-MID.                                    I.070418
+001890     OPEN INPUT HI-M.
+001900     OPEN OUTPUT SP-F.
+001910     PERFORM S-10 THRU S-15.
+001920     MOVE ZERO TO WA-D.
+001930 M-15.                                                            I.070226
+001940     MOVE ZERO TO WS-D.                                           I.070226
+001950     MOVE SNTR-BC3 TO W-BC3.                                      I.070226
+001960*****IF JS-SIGN NOT = 3                                           D.070418
+001970     IF JS-SIGN = 1 OR 2                                          I.070418
+001980         GO TO M-30.                                              I.070402
+001990 M-20.                                                            I.070402
+002000     MOVE ZERO TO WT-D W-BC1.                                     I.070402
+002010     IF W-BC3 NOT = 10                                            I.070402
+002020         MOVE SNTR-BC1 TO W-BC1                                   I.070402
+002030         MOVE 0 TO W-FTC                                          I.070530
+002040         GO TO M-30                                               I.070402
+002050       ELSE                                                       I.070402
+002060         MOVE SNTR-BMNO TO W-BC11.                                I.070402
+002070 M-25.                                                            I.070402
+002080     MOVE ZERO TO WN-D.                                           I.070402
+002090     MOVE SNTR-FTC TO W-FTC.                                      I.070402
+002100 M-30.
+002110     MOVE SNTR-HCD TO HI-KEY.
+002120     READ HI-M WITH UNLOCK INVALID KEY
+002130         MOVE NC"　＊＊　マスター　なし　＊＊" TO HI-NAME.
+002140*****IF JS-SIGN = 3                                               D.070418
+002150     IF JS-SIGN = 3 OR 5                                          I.070418
+002160         COMPUTE W-KIN = HI-FT * SNTR-SU                          I.070328
+002170         MOVE HI-FT TO W-T                                        I.070328
+002180       ELSE                                                       I.070328
+002190         MOVE SNTR-KIN TO W-KIN                                   I.070328
+002200         COMPUTE W-T ROUNDED = SNTR-KIN / SNTR-SU.
+002210     MOVE SPACE TO W-P.                                           I.070530
+002220     MOVE SNTR-HCD TO P-HCD.
+002230     MOVE HI-NAME TO P-HNA.
+002240     MOVE SNTR-SU TO P-SU.
+002250     MOVE W-T TO P-T.
+002260     MOVE W-KIN TO P-KIN.                                         I.070328
+002270*****MOVE SNTR-KIN TO P-KIN.                                      D.070328
+002280     IF LINAGE-COUNTER > 62
+002290         PERFORM S-05 THRU S-15.
+002300     MOVE SPACE TO SP-R.
+002310     MOVE W-P TO SP-R.
+002320     WRITE SP-R.
+002330     MOVE SPACE TO SP-R W-P.
+002340     MOVE ALL NX"2121" TO P-HNA.
+002350*****IF JS-SIGN NOT = 3                                           D.070418
+002360     IF JS-SIGN = 1 OR 2                                          I.070418
+002370         ADD SNTR-SU TO WS-SU                                     I.070402
+002380         ADD W-KIN TO WS-KIN.                                     I.070402
+002390*****IF JS-SIGN = 3                                               D.070418
+002400     IF JS-SIGN = 3 OR 5                                          I.070418
+002410         IF W-BC3 NOT = 10                                        I.070402
+002420             ADD SNTR-SU TO WT-SU                                 I.070402
+002430             ADD W-KIN TO WT-KIN                                  I.070402
+002440           ELSE                                                   I.070402
+002450             ADD SNTR-SU TO WN-SU                                 I.070402
+002460             ADD W-KIN TO WN-KIN.                                 I.070402
+002470*****ADD SNTR-SU TO WS-SU.                                        D.070402
+002480*****ADD W-KIN TO WS-KIN.                                         D.070402
+002490*****ADD SNTR-KIN TO WS-KIN.                                      D.070328
+002500*****ADD SNTR-SU TO WA-SU.                                        D.070226
+002510*****ADD SNTR-KIN TO WA-KIN.                                      D.070226
+002520 M-45.
+002530     READ SNTRF AT END
+002540         GO TO M-80.
+002550*****IF JS-SIGN = 3                                               D.070418
+002560     IF JS-SIGN = 3 OR 5                                          I.070418
+002570         IF SNTR-SU = ZERO                                        I.070328
+002580             GO TO M-45.                                          I.070328
+002590*****IF JS-SIGN NOT = 3                                           D.070418
+002600     IF JS-SIGN = 1 OR 2                                          I.070418
+002610         IF ZERO = SNTR-SU OR SNTR-KIN
+002620             GO TO M-45.
+002630*****IF SNTR-BC3 = W-BC3                                          D.070402
+002640     IF SNTR-BC3 NOT = W-BC3                                      I.070402
+002650*****    IF JS-SIGN NOT = 3                                       D.070418
+002660         IF JS-SIGN = 1 OR 2                                      I.070418
+002670             GO TO M-55                                           I.070402
+002680           ELSE                                                   I.070402
+002690             GO TO M-50.                                          I.070402
+002700*****IF JS-SIGN NOT = 3                                           D.070418
+002710     IF JS-SIGN = 1 OR 2                                          I.070418
+002720         GO TO M-20.                                              I.070402
+002730     IF W-BC3 = 10                                                I.070402
+002740         IF SNTR-BMNO = W-BC11                                    I.070402
+002750             IF SNTR-FTC = W-FTC                                  I.070402
+002760                 GO TO M-30
+002770               ELSE                                               I.070402
+002780                 PERFORM S-20 THRU S-25                           I.070402
+002790                 GO TO M-25.                                      I.070402
+002800     IF W-BC3 NOT = 10                                            I.070402
+002810         IF SNTR-BC1 = W-BC1                                      I.070402
+002820             GO TO M-30.
+002830     IF W-BC3 = 10                                                I.070402
+002840         PERFORM S-20 THRU S-25.                                  I.070402
+002850     PERFORM S-30 THRU S-35.                                      I.070402
+002860     GO TO M-20.                                                  I.070402
+002870 M-50.                                                            I.070402
+002880     IF W-BC3 = 10                                                I.070402
+002890         PERFORM S-20 THRU S-25.                                  I.070402
+002900     PERFORM S-30 THRU S-35.                                      I.070402
+002910 M-55.                                                            I.070402
+002920     PERFORM S-40 THRU S-45.                                      I.070226
+002930     GO TO M-15.                                                  I.070226
+002940 M-80.
+002950*****IF JS-SIGN NOT = 3                                           D.070418
+002960     IF JS-SIGN = 1 OR 2                                          I.070418
+002970         GO TO M-85.                                              I.070402
+002980     IF W-BC3 = 10                                                I.070402
+002990         PERFORM S-20 THRU S-25.                                  I.070402
+003000     PERFORM S-30 THRU S-35.                                      I.070402
+003010 M-85.                                                            I.070402
+003020     PERFORM S-40 THRU S-45.                                      I.070226
+003030     MOVE SPACE TO W-P.
+003040     MOVE ALL NX"2121" TO P-HNA.
+003050     MOVE NC"　　　【　総　合　計　】　　　　" TO P-HNA.          I.070226
+003060*****MOVE NC"　　　　　【　ＴＯＴＡＬ　】　　" TO P-HNA.          D.070226
+003070     MOVE WA-SU TO P-SU.
+003080     MOVE WA-KIN TO P-KIN.
+003090     IF JS-SIGN = 3 OR 5                                          I.070530
+003100         MOVE WA-KKIN TO P-KKIN.                                  I.070530
+003110     IF LINAGE-COUNTER > 62
+003120         PERFORM S-05 THRU S-15.
+003130     MOVE SPACE TO SP-R.
+003140     MOVE W-P TO SP-R.
+003150     WRITE SP-R.
+003160 M-95.
+003170     CLOSE SNTRF.
+003180     CLOSE HI-M.
+003190     CLOSE SP-F.
+003200     DISPLAY C-CLEAR.
+003210     STOP RUN.
+003220 S-05.
+003230     MOVE SPACE TO SP-R.
+003240     WRITE SP-R AFTER PAGE.
+003250 S-10.
+003260     ADD 1 TO W-PAGE.
+003270     MOVE W-PAGE TO H-PAGE.
+003280     MOVE SPACE TO SP-R.
+003290     MOVE HEAD1 TO SP-R.
+003300     WRITE SP-R.
+003310     MOVE SPACE TO SP-R.
+003320     MOVE HEAD2 TO SP-R.
+003330     WRITE SP-R AFTER 2.
+003340     MOVE SPACE TO SP-R.
+003350 S-15.
+003360     EXIT.
+003370 S-20.                                                            I.070402
+003380     IF W-FTC = 1                                                 I.070530
+003390         COMPUTE WN-KKIN = WN-SU * 1500                           I.070530
+003400       ELSE                                                       I.070530
+003410         COMPUTE WN-KKIN = WN-SU * 2500.                          I.070530
+003420     MOVE SPACE TO W-P.                                           I.070402
+003430     MOVE ALL NX"2121" TO P-HNA.                                  I.070402
+003440     MOVE NC"　　　　　　　　　　　　　　　＜　計　＞" TO P-HNA.  I.070402
+003450     MOVE WN-SU TO P-SU.                                          I.070402
+003460     MOVE WN-KIN TO P-KIN.                                        I.070402
+003470     MOVE WN-KKIN TO P-KKIN.                                      I.070530
+003480     IF LINAGE-COUNTER > 62                                       I.070402
+003490         PERFORM S-05 THRU S-15.                                  I.070402
+003500     MOVE SPACE TO SP-R.                                          I.070402
+003510     MOVE W-P TO SP-R.                                            I.070402
+003520     WRITE SP-R.                                                  I.070402
+003530     MOVE SPACE TO SP-R.                                          I.070402
+003540     ADD WN-SU TO WT-SU.                                          I.070402
+003550     ADD WN-KIN TO WT-KIN.                                        I.070402
+003560     ADD WN-KKIN TO WT-KKIN.                                      I.070530
+003570 S-25.                                                            I.070402
+003580     EXIT.                                                        I.070402
+003590 S-30.                                                            I.070402
+003600     IF JS-SIGN = 3 OR 5                                          I.070530
+003610         IF W-BC3 = 20                                            I.070530
+003620             COMPUTE WT-KKIN = WT-SU * 700                        I.070530
+003630           ELSE                                                   I.070530
+003640               IF W-BC3 = 30                                      I.070530
+003650                   IF W-BC1 = 72                                  I.070530
+003660                       COMPUTE WT-KKIN = WT-SU * 1000             I.070530
+003670                     ELSE                                         I.070530
+003680                       COMPUTE WT-KKIN = WT-SU * 500.             I.070530
+003690     MOVE SPACE TO W-P.                                           I.070402
+003700     MOVE ALL NX"2121" TO P-HNA.                                  I.070402
+003710     MOVE NC"　　　　　　　　　　（　小　計　）" TO P-HNA.        I.070402
+003720     MOVE WT-SU TO P-SU.                                          I.070402
+003730     MOVE WT-KIN TO P-KIN.                                        I.070402
+003740     IF JS-SIGN = 3 OR 5                                          I.070530
+003750         MOVE WT-KKIN TO P-KKIN.                                  I.070530
+003760     IF LINAGE-COUNTER > 62                                       I.070402
+003770         PERFORM S-05 THRU S-15.                                  I.070402
+003780     MOVE SPACE TO SP-R.                                          I.070402
+003790     MOVE W-P TO SP-R.                                            I.070402
+003800     WRITE SP-R.                                                  I.070402
+003810     MOVE SPACE TO SP-R.                                          I.070402
+003820     ADD WT-SU TO WS-SU.                                          I.070402
+003830     ADD WT-KIN TO WS-KIN.                                        I.070402
+003840     ADD WT-KKIN TO WS-KKIN.                                      I.070402
+003850 S-35.                                                            I.070402
+003860     EXIT.                                                        I.070402
+003870 S-40.                                                            I.070226
+003880     MOVE SPACE TO W-P.                                           I.070226
+003890     MOVE ALL NX"2121" TO P-HNA.                                  I.070226
+003900     MOVE NC"　　　　　　　　［　合　計　］" TO P-HNA.            I.070226
+003910     MOVE WS-SU TO P-SU.                                          I.070226
+003920     MOVE WS-KIN TO P-KIN.                                        I.070226
+003930     IF JS-SIGN = 3 OR 5                                          I.070530
+003940         MOVE WS-KKIN TO P-KKIN.                                  I.070530
+003950     IF LINAGE-COUNTER > 62                                       I.070226
+003960         PERFORM S-05 THRU S-15.                                  I.070226
+003970     MOVE SPACE TO SP-R.                                          I.070226
+003980     MOVE W-P TO SP-R.                                            I.070226
+003990     WRITE SP-R.                                                  I.070226
+004000     MOVE SPACE TO SP-R.                                          I.070226
+004010     ADD WS-SU TO WA-SU.                                          I.070226
+004020     ADD WS-KIN TO WA-KIN.                                        I.070226
+004030     ADD WS-KKIN TO WA-KKIN.                                      I.070226
+004040 S-45.                                                            I.070226
+004050     EXIT.                                                        I.070226

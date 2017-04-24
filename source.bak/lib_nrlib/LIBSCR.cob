@@ -1,0 +1,5 @@
+000010 01  C-DERR.
+000020     02  LINE 24.
+000030       03  ERR-BUZ  COLUMN 75 PIC X(5)  VALUE ""27"B"10"".
+000040       03  ERR-DATE COLUMN 15 PIC X(27) VALUE
+000050            "***  Ë½Þ¹Ï½À° READ ´×°  ***".

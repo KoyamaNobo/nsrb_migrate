@@ -1,0 +1,615 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID.  KHG450.
+000030*********************************************************
+000040*    PROGRAM         :  工品・材料得意先品種別売上集計表*
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :  ******                          *
+000070*    COMPILE TYPE    :  COBOL                           *
+000080*    JS-SIGN         :  作表=0 , 参考表=2 , エクセル=1  *
+000090*********************************************************
+000100 ENVIRONMENT DIVISION.
+000110 CONFIGURATION SECTION.
+000120 SOURCE-COMPUTER. SYSTEM3100.
+000130 OBJECT-COMPUTER. SYSTEM3100.
+000140 INPUT-OUTPUT SECTION.
+000150 FILE-CONTROL.
+000160     COPY LIBCSE.
+000170     SELECT T-M ASSIGN TO T1-MSD T2-MSD
+000180         ORGANIZATION INDEXED
+000190         ACCESS MODE IS RANDOM
+000200         RECORD KEY T-KEY
+000210         ALTERNATE RECORD KEY T-KEY2
+000220         FILE STATUS IS ERR-STAT.
+000230     SELECT KH-M ASSIGN TO KH-MSD
+000240         ORGANIZATION INDEXED
+000250         ACCESS MODE IS RANDOM
+000260         RECORD KEY KH-KEY
+000270         FILE STATUS IS ERR-STAT.
+000280     SELECT J-M ASSIGN TO J-MSD
+000290         ORGANIZATION INDEXED
+000300         ACCESS MODE IS RANDOM
+000310         RECORD KEY J-KEY
+000320         FILE STATUS IS ERR-STAT.
+000330     SELECT URIR-F ASSIGN TO URIR-MSD
+000340         FILE STATUS IS ERR-STAT.
+000350     SELECT EXL-F ASSIGN TO EXL-MSD.                              I.110209
+000360     SELECT SP-F ASSIGN TO P-PRN999.
+000370 I-O-CONTROL.
+000380     APPLY SHARED-MODE ON M-DATE
+000390     APPLY SHARED-MODE ON T-M
+000400     APPLY SHARED-MODE ON KH-M
+000410     APPLY SHARED-MODE ON J-M
+000420     APPLY SHIFT-CODE  ON SP-F.
+000430 DATA DIVISION.
+000440 FILE SECTION.
+000450     COPY LIBFDD.
+000460     COPY LITM.
+000470     COPY LIKHM.
+000480     COPY LIJM.
+000490     COPY LSPF.
+000500 FD  URIR-F
+000510     BLOCK  2 RECORDS
+000520     LABEL RECORD IS STANDARD
+000530     VALUE OF IDENTIFICATION WK0128ID.
+000540 01  URIR-R.
+000550     02  URIR-DC        PIC  9(001).
+000560     02  F              PIC  X(008).
+000570     02  URIR-TCD       PIC  9(004).
+000580     02  URIR-HCD       PIC  X(005).
+000590     02  URIR-SU        PIC S9(006)V9(02).
+000600     02  URIR-T         PIC S9(006)V9(02).                        I.020828
+000610*****02  F              PIC  X(008).                              D.020828
+000620     02  URIR-KIN       PIC S9(008).
+000630     02  F              PIC  X(012).                              I.120405
+000640     02  URIR-HY        PIC  9(001).                              I.120405
+000650     02  F              PIC  X(018).                              I.120405
+000660*****02  F              PIC  X(031).                              D.120405
+000670     02  URIR-JCD       PIC  9(006).
+000680     02  URIR-GT        PIC  9(006)V9(02).                        I.020828
+000690     02  F              PIC  X(036).                              I.020828
+000700*****02  F              PIC  X(044).                              D.020828
+000710     02  URIR-BC        PIC  9(001).
+000720     02  F              PIC  X(004).
+000730 FD  EXL-F                                                        I.110209
+000740     BLOCK  2 RECORDS                                             I.110209
+000750     LABEL RECORD IS STANDARD                                     I.110209
+000760     VALUE OF IDENTIFICATION "WK0128000".                         I.110209
+000770 01  EXL-R.                                                       I.110209
+000780     02  EXL-TCD        PIC  X(004).                              I.110209
+000790     02  EXL-TNA        PIC  N(026).                              I.110209
+000800     02  EXL-HCD        PIC  X(005).                              I.110209
+000810     02  EXL-HNA        PIC  X(020).                              I.110209
+000820     02  EXL-TMD   REDEFINES EXL-HNA.                             I.110209
+000830       03  EXL-TM       PIC  N(010).                              I.110209
+000840     02  EXL-SU         PIC S9(007)V9(02).                        I.110209
+000850     02  EXL-T          PIC S9(006)V9(02).                        I.110209
+000860     02  EXL-KIN        PIC S9(009).                              I.110209
+000870     02  EXL-UG         PIC S9(009).                              I.110209
+000880     02  EXL-AR         PIC S9(008).                              I.110209
+000890     02  EXL-RR         PIC S9(003)V9(01).                        I.110209
+000900 WORKING-STORAGE SECTION.
+000910 77  JS-SIGN            PIC  9(001).                              I.110209
+000920 77  WK0128ID           PIC  X(009) VALUE SPACE.
+000930 01  STN-NO.
+000940     02  STN-NO1        PIC  X(003).
+000950     02  STN-NO2        PIC  X(003).
+000960 01  W-FID.
+000970     02  W-FID1         PIC  X(006) VALUE "WK0128".
+000980     02  W-FID2         PIC  X(003).
+000990 01  HEAD1.
+001000     02  W-20K          PIC  X(005) VALUE ""3FE04FE080"".
+001010*****02  F              PIC  X(036) VALUE SPACE.                  D.020410
+001020*****02  F              PIC  X(037) VALUE SPACE.                  D.120405
+001030     02  H-CHK          PIC  N(003) VALUE SPACE.                  I.120405
+001040     02  F              PIC  X(031) VALUE SPACE.                  I.120405
+001050     02  F              PIC  N(021) VALUE
+001060          NC"＊＊＊　　工品他　得意先品名別　売上集計表".
+001070     02  F              PIC  N(005) VALUE NC"　　＊＊＊".
+001080     02  F              PIC  X(023) VALUE SPACE.
+001090     02  F              PIC  X(005) VALUE "DATE ".
+001100     02  H-DATE         PIC 99B99B99.
+001110     02  F              PIC  X(007) VALUE "     P.".
+001120     02  H-PAGE         PIC Z9.
+001130 01  HEAD2.
+001140     02  W-15K          PIC  X(005) VALUE ""3FE04F40A0"".
+001150     02  F              PIC  X(005) VALUE "ｺｰﾄﾞ ".
+001160     02  F              PIC  N(010) VALUE
+001170          NC"得　　意　　先　　名".
+001180*****02  F              PIC  X(023) VALUE SPACE.                  D.020410
+001190     02  F              PIC  X(026) VALUE SPACE.                  I.020410
+001200     02  F              PIC  X(005) VALUE "ｺｰﾄﾞ ".
+001210     02  F              PIC  N(006) VALUE NC"品　　　名　".
+001220     02  F              PIC  X(017) VALUE SPACE.                  I.020410
+001230*****02  F              PIC  X(018) VALUE SPACE.                  D.020410
+001240     02  F              PIC  N(004) VALUE NC"数　　量".
+001250     02  F              PIC  X(005) VALUE SPACE.                  I.020410
+001260*****02  F              PIC  X(006) VALUE SPACE.                  D.020410
+001270     02  F              PIC  N(004) VALUE NC"単　　価".
+001280     02  F              PIC  X(006) VALUE SPACE.
+001290     02  F              PIC  N(004) VALUE NC"売上金額".
+001300     02  F              PIC  X(006) VALUE SPACE.
+001310     02  F              PIC  N(004) VALUE NC"売上原価".
+001320     02  F              PIC  X(005) VALUE SPACE.
+001330     02  F              PIC  N(004) VALUE NC"粗　　利".
+001340     02  F              PIC  X(002) VALUE SPACE.
+001350     02  F              PIC  N(002) VALUE NC"率　".
+001360     02  F              PIC  X(001) VALUE "%".
+001370 01  W-P.
+001380     02  P-15K          PIC  X(005).
+001390     02  P-TCD          PIC  9(004).
+001400     02  F              PIC  X(001).
+001410*****02  P-TNA          PIC  N(024).                              D.020410
+001420     02  P-TNA          PIC  N(026).                              I.020410
+001430     02  P-20K          PIC  X(005).
+001440     02  F              PIC  X(001).
+001450     02  P-HCD          PIC  X(005).
+001460     02  F              PIC  X(001).
+001470     02  P-HNA          PIC  X(020).
+001480     02  P-TMD   REDEFINES P-HNA.
+001490       03  P-TM         PIC  N(010).
+001500*****02  P-SU           PIC --,---,--9.99.                        D.020410
+001510*****02  P-T            PIC -----,--9.99.                         D.020410
+001520     02  P-SU           PIC -----,--9.99.                         I.020410
+001530     02  P-T            PIC ----,--9.99.                          I.020410
+001540     02  P-KIN          PIC ----,---,--9.
+001550     02  P-UG           PIC ----,---,---.                         I.020410
+001560     02  P-AR           PIC ---,---,---.                          I.020410
+001570     02  P-RR           PIC ---9.9.                               D.101228
+001580*****02  P-RR           PIC ----.-.                               D.101228
+001590*****02  P-UG           PIC ----,---,--9.                         D.020410
+001600*****02  P-AR           PIC ---,---,--9.                          D.020410
+001610*****02  P-RR           PIC ---9.9.                               D.020410
+001620 01  W-PJ.
+001630     02  P-15KJ         PIC  X(005).
+001640*****02  F              PIC  X(047).                              D.020410
+001650     02  F              PIC  X(050).                              I.020410
+001660     02  P-F            PIC  X(001).
+001670     02  P-JCD          PIC  9(006).
+001680     02  F              PIC  X(001).
+001690     02  P-JNA          PIC  N(024).
+001700     02  P-R            PIC  X(001).
+001710     02  F              PIC  X(039).                              I.020410
+001720*****02  F              PIC  X(041).                              D.020410
+001730 01  W-DATA.
+001740     02  W-BC           PIC  9(001).
+001750     02  W-TCD          PIC  9(004).
+001760     02  W-HCD          PIC  X(005).
+001770     02  W-TC           PIC  9(001).
+001780     02  W-JC           PIC  9(001).
+001790     02  W-PC           PIC  9(001).
+001800     02  W-D.
+001810       03  W-SU         PIC S9(006)V9(02).
+001820       03  W-T          PIC S9(006)V9(02).
+001830       03  W-KIN        PIC S9(009).
+001840       03  W-UG         PIC S9(009).
+001850       03  W-AR         PIC S9(008).
+001860       03  W-RR         PIC S9(003)V9(02).
+001870     02  WN-D.
+001880       03  WN-KIN       PIC S9(009).
+001890       03  WN-UG        PIC S9(009).
+001900       03  WN-AR        PIC S9(008).
+001910     02  WS-D.
+001920       03  WS-KIN       PIC S9(009).
+001930       03  WS-UG        PIC S9(009).
+001940       03  WS-AR        PIC S9(008).
+001950     02  WA-D.
+001960       03  WA-KIN       PIC S9(009).
+001970     02  W-PAGE         PIC  9(002).
+001980 01  ERR-STAT           PIC  X(002).
+001990 SCREEN SECTION.
+002000 SD  C-CRT
+002010     END STATUS IS ESTAT.
+002020 01  C-CLEAR.
+002030     02  C-CL    LINE   1  CLEAR SCREEN.
+002040 01  C-MID.
+002050     02  LINE   3  COLUMN  10  PIC  N(024) VALUE
+002060          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002070     02  LINE   4  COLUMN  10  PIC  N(024) VALUE
+002080          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002090     02  LINE   5  COLUMN  10  PIC  N(024) VALUE
+002100          NC"＊＊＊　　　　　　　　　　　　　　　　　　＊＊＊".
+002110     02  LINE   6  COLUMN  10  PIC  N(024) VALUE
+002120          NC"＊＊＊　工品他　得意先品名別　売上集計表　＊＊＊".
+002130     02  LINE   7  COLUMN  10  PIC  N(024) VALUE
+002140          NC"＊＊＊　　　　　　　　　　　　　　　　　　＊＊＊".
+002150     02  LINE   8  COLUMN  10  PIC  N(024) VALUE
+002160          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002170     02  LINE   9  COLUMN  10  PIC  N(024) VALUE
+002180          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002190 01  C-ERR.
+002200     02  LINE  24.
+002210       03  E-ME98  COLUMN  75  PIC  X(005) VALUE ""27"J"05"".
+002220       03  E-ME99  COLUMN  75  PIC  X(005) VALUE ""27"B"05"".
+002230       03  E-CL    COLUMN  10  PIC  X(050) VALUE
+002240            "                                                  ".
+002250     COPY LIBSCR.
+002260 PROCEDURE DIVISION.
+002270 M-05.
+002280     ACCEPT JS-SIGN.                                              I.110209
+002290*****IF JS-SIGN > 1                                               D.120405
+002300     IF JS-SIGN > 2                                               I.120405
+002310         STOP RUN.                                                I.110209
+002320     COPY LIBCPR.
+002330     MOVE DATE-03R TO H-DATE.
+002340     DISPLAY C-CLEAR.
+002350     DISPLAY C-MID.
+002360     CALL "CBLSTNNO" USING STN-NO.
+002370     MOVE STN-NO2 TO W-FID2.
+002380     MOVE W-FID TO WK0128ID.
+002390     OPEN INPUT URIR-F.
+002400 M-10.
+002410     READ URIR-F AT END
+002420         GO TO M-95.
+002430     IF URIR-DC = 4 OR 5 OR 9
+002440         GO TO M-10.
+002450*
+002460     OPEN INPUT T-M KH-M J-M.
+002470*****OPEN OUTPUT SP-F.                                            D.110209
+002480     IF JS-SIGN = 2                                               I.120405
+002490         MOVE NC"（参）" TO H-CHK.                                I.120405
+002500     IF JS-SIGN = 1                                               I.110209
+002510         OPEN OUTPUT EXL-F                                        I.110209
+002520       ELSE                                                       I.110209
+002530         OPEN OUTPUT SP-F                                         I.110209
+002540         PERFORM S-10 THRU S-15.
+002550     MOVE ZERO TO WA-D.
+002560 M-15.
+002570     MOVE ZERO TO WS-D.
+002580     MOVE URIR-BC TO W-BC.
+002590 M-20.
+002600     MOVE ZERO TO WN-D W-TC W-PC.
+002610     MOVE URIR-TCD TO W-TCD.
+002620     MOVE W-TCD TO T-KEY.
+002630     READ T-M WITH UNLOCK INVALID KEY
+002640         MOVE SPACE TO T-NAME.
+002650 M-25.
+002660     MOVE ZERO TO W-D W-JC.
+002670     MOVE URIR-HCD TO W-HCD.
+002680     MOVE W-HCD TO KH-KEY.
+002690     READ KH-M WITH UNLOCK INVALID KEY
+002700         MOVE SPACE TO KH-NAME.
+002710     IF JS-SIGN = 1                                               I.110209
+002720         GO TO M-30.                                              I.110209
+002730     IF URIR-JCD = ZERO
+002740         GO TO M-30.
+002750     MOVE 1 TO W-JC.
+002760     MOVE URIR-JCD TO J-KEY.
+002770     READ J-M WITH UNLOCK INVALID KEY
+002780         MOVE SPACE TO J-NAME.
+002790 M-30.
+002800     IF URIR-DC NOT = 8                                           I.061207
+002810         ADD URIR-SU TO W-SU                                      I.061207
+002820         ADD URIR-KIN TO W-KIN                                    D.061207
+002830       ELSE                                                       I.061207
+002840         SUBTRACT URIR-KIN FROM W-KIN                             I.061207
+002850         GO TO M-35.                                              I.061207
+002860*****ADD URIR-SU TO W-SU.                                         D.061207
+002870*****    ADD URIR-KIN TO W-KIN.                                   D.061207
+002880*****IF W-TCD NOT = 4745 AND 4758                                 D.020410
+002890*****IF W-TCD = 4745 OR 4758                                      D.110209
+002900     IF JS-SIGN NOT = 2                                           I.120405
+002910         IF W-TCD = 4758                                          I.110209
+002920             ADD URIR-KIN TO W-UG                                 I.020410
+002930           ELSE                                                   I.020410
+002940             IF URIR-JCD = ZERO
+002950*****        COMPUTE W-UG = W-UG + (URIR-SU * KH-T2)              D.020828
+002960                 COMPUTE W-UG = W-UG + (URIR-SU * URIR-GT)        I.020828
+002970               ELSE                                               I.020410
+002980                 ADD URIR-KIN TO W-UG.                            I.020410
+002990*****        COMPUTE W-UG = W-UG + (URIR-SU * KH-T2).             D.020410
+003000     IF JS-SIGN NOT = 2                                           I.120405
+003010         GO TO M-35.                                              I.120405
+003020     IF URIR-JCD NOT = ZERO                                       I.120405
+003030         MOVE URIR-KIN TO W-UG                                    I.120405
+003040         GO TO M-35.                                              I.120405
+003050     IF W-TCD = 4758                                              I.120405
+003060         IF URIR-HY = 0                                           I.120405
+003070             IF KH-YGT1 NOT = ZERO                                I.120405
+003080                 COMPUTE W-UG = W-UG + (URIR-SU * KH-YGT1)        I.120405
+003090               ELSE                                               I.120405
+003100                 ADD URIR-KIN TO W-UG.                            I.120405
+003110     IF W-TCD = 4758                                              I.120405
+003120         IF URIR-HY = 1                                           I.120405
+003130             IF KH-YGT2 NOT = ZERO                                I.120405
+003140                 COMPUTE W-UG = W-UG + (URIR-SU * KH-YGT2)        I.120405
+003150               ELSE                                               I.120405
+003160                 ADD URIR-KIN TO W-UG.                            I.120405
+003170     IF W-TCD NOT = 4758                                          I.120405
+003180         IF KH-YGT1 NOT = ZERO                                    I.120405
+003190             COMPUTE W-UG = W-UG + (URIR-SU * KH-YGT1)            I.120405
+003200           ELSE                                                   I.120405
+003210             COMPUTE W-UG = W-UG + (URIR-SU * URIR-GT).           I.120405
+003220 M-35.
+003230     READ URIR-F AT END
+003240         GO TO M-50.
+003250     IF URIR-DC = 4 OR 5 OR 9
+003260         GO TO M-35.
+003270     IF URIR-BC NOT = W-BC
+003280         GO TO M-45.
+003290     IF URIR-TCD NOT = W-TCD
+003300         GO TO M-40.
+003310     IF URIR-HCD = W-HCD
+003320         IF W-JC = 0
+003330             GO TO M-30.
+003340*
+003350     IF (W-SU NOT = ZERO) OR (W-KIN NOT = ZERO) OR                I.120405
+003360        (W-UG NOT = ZERO)                                         I.120405
+003370         PERFORM S-20 THRU S-30.
+003380     GO TO M-25.
+003390 M-40.
+003400     IF (W-SU NOT = ZERO) OR (W-KIN NOT = ZERO) OR                I.120405
+003410        (W-UG NOT = ZERO)                                         I.120405
+003420         PERFORM S-20 THRU S-30.
+003430     PERFORM S-35 THRU S-50.
+003440     GO TO M-20.
+003450 M-45.
+003460     IF (W-SU NOT = ZERO) OR (W-KIN NOT = ZERO) OR                I.120405
+003470        (W-UG NOT = ZERO)                                         I.120405
+003480         PERFORM S-20 THRU S-30.
+003490     PERFORM S-35 THRU S-50.
+003500     PERFORM S-55 THRU S-65.
+003510     GO TO M-15.
+003520 M-50.
+003530     IF (W-SU NOT = ZERO) OR (W-KIN NOT = ZERO) OR                I.120405
+003540        (W-UG NOT = ZERO)                                         I.120405
+003550         PERFORM S-20 THRU S-30.
+003560     PERFORM S-35 THRU S-50.
+003570     PERFORM S-55 THRU S-65.
+003580     PERFORM S-70 THRU S-75.
+003590 M-90.
+003600     CLOSE T-M KH-M J-M.
+003610     IF JS-SIGN = 1                                               I.110209
+003620         CLOSE EXL-F                                              I.110209
+003630       ELSE                                                       I.110209
+003640         CLOSE SP-F.
+003650 M-95.
+003660     CLOSE URIR-F.
+003670     DISPLAY C-CLEAR.
+003680     STOP RUN.
+003690 S-05.
+003700     MOVE SPACE TO SP-R.
+003710     WRITE SP-R AFTER PAGE.
+003720 S-10.
+003730     MOVE SPACE TO SP-R.
+003740     ADD 1 TO W-PAGE.
+003750     MOVE W-PAGE TO H-PAGE.
+003760     MOVE HEAD1 TO SP-R.
+003770     WRITE SP-R.
+003780     MOVE SPACE TO SP-R.
+003790     MOVE HEAD2 TO SP-R.
+003800     WRITE SP-R AFTER 2.
+003810     MOVE SPACE TO SP-R.
+003820 S-15.
+003830     EXIT.
+003840 S-20.
+003850     IF W-SU NOT = ZERO
+003860         IF W-KIN NOT = ZERO
+003870             COMPUTE W-T ROUNDED = W-KIN / W-SU.
+003880*****IF W-TCD = 4745 OR 4758                                      D.020410
+003890*****    GO TO S-21.                                              D.020410
+003900*****IF W-JC = 1                                                  D.020410
+003910*****    GO TO S-21.                                              D.020410
+003920     COMPUTE W-AR = W-KIN - W-UG.
+003930     IF W-KIN NOT = ZERO
+003940         IF W-AR NOT = ZERO
+003950             COMPUTE W-RR ROUNDED = (W-AR / W-KIN) * 100.
+003960     IF W-AR NOT = ZERO
+003970         IF W-KIN = ZERO
+003980             MOVE 100 TO W-RR.
+003990     IF JS-SIGN = 1                                               I.110209
+004000         GO TO S-25.                                              I.110209
+004010*S-21.                                                            D.020410
+004020     MOVE SPACE TO W-P.
+004030     MOVE W-15K TO P-15K.
+004040     MOVE W-20K TO P-20K.
+004050     MOVE SPACE TO P-TNA.
+004060     IF W-TC = 0
+004070         MOVE 1 TO W-TC
+004080         MOVE W-TCD TO P-TCD
+004090         MOVE T-NAME TO P-TNA.
+004100     MOVE W-HCD TO P-HCD.
+004110     MOVE KH-NAME TO P-HNA.
+004120*****MOVE W-SU TO P-SU.                                           D.101228
+004130     IF (W-SU NOT = ZERO) OR (W-T NOT = ZERO)                     I.101228
+004140         MOVE W-SU TO P-SU                                        I.101228
+004150         MOVE W-T TO P-T.
+004160     MOVE W-KIN TO P-KIN.
+004170*****IF W-TCD NOT = 4745 AND 4758                                 D.020410
+004180*****    IF W-JC = 0                                              D.020410
+004190*****        MOVE W-UG TO P-UG                                    D.020410
+004200*****        MOVE W-AR TO P-AR                                    D.020410
+004210     MOVE W-UG TO P-UG.                                           I.020410
+004220     MOVE W-AR TO P-AR.                                           I.020410
+004230     IF W-RR NOT = ZERO                                           I.101228
+004240         MOVE W-RR TO P-RR.
+004250*****IF LINAGE-COUNTER > 60                                       D.070205
+004260*****IF LINAGE-COUNTER > 63                                       D.101005
+004270     IF LINAGE-COUNTER > 62                                       I.101005
+004280         MOVE W-TCD TO P-TCD
+004290         MOVE T-NAME TO P-TNA
+004300         PERFORM S-05 THRU S-15.
+004310     MOVE SPACE TO SP-R.
+004320     MOVE W-P TO SP-R.
+004330     WRITE SP-R.
+004340     MOVE SPACE TO SP-R.
+004350     GO TO M-27.                                                  I.110209
+004360 S-25.                                                            I.110209
+004370     INITIALIZE EXL-R.                                            I.110209
+004380     MOVE SPACE TO EXL-TNA.                                       I.110209
+004390     IF W-TC = 0                                                  I.110209
+004400         MOVE 1 TO W-TC                                           I.110209
+004410         MOVE W-TCD TO EXL-TCD                                    I.110209
+004420         MOVE T-NAME TO EXL-TNA.                                  I.110209
+004430     MOVE W-HCD TO EXL-HCD.                                       I.110209
+004440     MOVE KH-NAME TO EXL-HNA.                                     I.110209
+004450     IF (W-SU NOT = ZERO) OR (W-T NOT = ZERO)                     I.110209
+004460         MOVE W-SU TO EXL-SU                                      I.110209
+004470         MOVE W-T TO EXL-T.                                       I.110209
+004480     MOVE W-KIN TO EXL-KIN.                                       I.110209
+004490     MOVE W-UG TO EXL-UG.                                         I.110209
+004500     MOVE W-AR TO EXL-AR.                                         I.110209
+004510     IF W-RR NOT = ZERO                                           I.110209
+004520         MOVE W-RR TO EXL-RR.                                     I.110209
+004530     WRITE EXL-R.                                                 I.110209
+004540 M-27.                                                            I.110209
+004550     ADD W-KIN TO WN-KIN.
+004560     ADD W-UG TO WN-UG.
+004570     ADD W-AR TO WN-AR.
+004580     IF W-PC = 1
+004590         MOVE 2 TO W-PC.
+004600     IF W-PC = 0
+004610         MOVE 1 TO W-PC.
+004620*
+004630     IF W-JC = 0
+004640         GO TO S-30.
+004650     MOVE SPACE TO W-PJ.
+004660     MOVE W-15K TO P-15KJ.
+004670     MOVE SPACE TO P-JNA.
+004680     MOVE "(" TO P-F.
+004690     MOVE J-JCD TO P-JCD.
+004700     MOVE J-NAME TO P-JNA.
+004710     MOVE ")" TO P-R.
+004720     MOVE SPACE TO SP-R.
+004730     MOVE W-PJ TO SP-R.
+004740     WRITE SP-R.
+004750     MOVE SPACE TO SP-R.
+004760 S-30.
+004770     EXIT.
+004780 S-35.
+004790*****IF JS-SIGN = 0                                               D.120205
+004800     IF JS-SIGN NOT = 1                                           I.120205
+004810         IF W-PC NOT = 2
+004820             GO TO S-45.
+004830*****IF JS-SIGN = 1                                               D.120906
+004840     IF JS-SIGN NOT = 1                                           I.120906
+004850         IF W-PC = 0                                              I.110209
+004860             GO TO S-45.                                          I.110209
+004870*****IF W-TCD = 4745 OR 4758                                      D.020410
+004880*****    GO TO S-40.                                              D.020410
+004890*****IF W-BC = 3                                                  D.020410
+004900*****    GO TO S-40.                                              D.020410
+004910     MOVE ZERO TO W-RR.
+004920     IF WN-KIN NOT = ZERO
+004930         IF WN-AR NOT = ZERO
+004940             COMPUTE W-RR ROUNDED = (WN-AR / WN-KIN) * 100.
+004950     IF WN-AR NOT = ZERO
+004960         IF WN-KIN = ZERO
+004970             MOVE 100 TO W-RR.
+004980     IF JS-SIGN = 1                                               I.110209
+004990         GO TO S-47.                                              I.110209
+005000*S-40.                                                            D.020410
+005010     MOVE SPACE TO W-P.
+005020     MOVE W-15K TO P-15K.
+005030     MOVE W-20K TO P-20K.
+005040     MOVE SPACE TO P-TNA.
+005050     MOVE NC"　（　ＴＯＴＡＬ　）" TO P-TM.
+005060     MOVE WN-KIN TO P-KIN.
+005070*****IF W-TCD NOT = 4745 AND 4758                                 D.020410
+005080*****    IF W-BC NOT = 3                                          D.020410
+005090*****        MOVE WN-UG TO P-UG                                   D.020410
+005100*****        MOVE WN-AR TO P-AR                                   D.020410
+005110     MOVE WN-UG TO P-UG.                                          I.020410
+005120     MOVE WN-AR TO P-AR.                                          I.020410
+005130     IF W-RR NOT = ZERO                                           I.101228
+005140         MOVE W-RR TO P-RR.
+005150*****IF LINAGE-COUNTER > 60                                       D.070205
+005160*****IF LINAGE-COUNTER > 63                                       D.101005
+005170     IF LINAGE-COUNTER > 62                                       I.101005
+005180         MOVE W-TCD TO P-TCD
+005190         MOVE T-NAME TO P-TNA
+005200         PERFORM S-05 THRU S-15.
+005210     MOVE SPACE TO SP-R.
+005220     MOVE W-P TO SP-R.
+005230     WRITE SP-R.
+005240 S-45.
+005250     MOVE SPACE TO SP-R.
+005260     WRITE SP-R.
+005270     GO TO S-49.                                                  I.110209
+005280 S-47.                                                            I.110209
+005290     INITIALIZE EXL-R.                                            I.110209
+005300     MOVE SPACE TO EXL-TNA.                                       I.110209
+005310     MOVE NC"　（　ＴＯＴＡＬ　）" TO EXL-TM.                     I.110209
+005320     MOVE WN-KIN TO EXL-KIN.                                      I.110209
+005330     MOVE WN-UG TO EXL-UG.                                        I.110209
+005340     MOVE WN-AR TO EXL-AR.                                        I.110209
+005350     IF W-RR NOT = ZERO                                           I.100209
+005360         MOVE W-RR TO EXL-RR.                                     I.110209
+005370     WRITE EXL-R.                                                 I.110209
+005380 S-49.                                                            I.110209
+005390     ADD WN-KIN TO WS-KIN.
+005400     ADD WN-UG TO WS-UG.
+005410     ADD WN-AR TO WS-AR.
+005420 S-50.
+005430     EXIT.
+005440 S-55.
+005450*****IF W-BC = 3                                                  D.020410
+005460*****    GO TO S-56.                                              D.020410
+005470     MOVE ZERO TO W-RR.
+005480     IF WS-KIN NOT = ZERO
+005490         IF WS-AR NOT = ZERO
+005500             COMPUTE W-RR ROUNDED = (WS-AR / WS-KIN) * 100.
+005510     IF WS-AR NOT = ZERO
+005520         IF WS-KIN = ZERO
+005530             MOVE 100 TO W-RR.
+005540     IF JS-SIGN = 1                                               I.110209
+005550         GO TO S-60.                                              I.110209
+005560*S-56.                                                            D.020410
+005570     MOVE SPACE TO W-P.
+005580     MOVE W-15K TO P-15K.
+005590     MOVE W-20K TO P-20K.
+005600     MOVE NC"　　　　　　　［　ＳＵＢ　ＴＯＴＡＬ　］" TO P-TNA.
+005610     MOVE WS-KIN TO P-KIN.
+005620*****IF W-BC NOT = 3                                              D.020410
+005630*****    MOVE WS-UG TO P-UG                                       D.020410
+005640*****    MOVE WS-AR TO P-AR                                       D.020410
+005650     MOVE WS-UG TO P-UG.                                          I.020410
+005660     MOVE WS-AR TO P-AR.                                          I.020410
+005670     IF W-RR NOT = ZERO                                           I.101228
+005680         MOVE W-RR TO P-RR.
+005690*****IF LINAGE-COUNTER > 60                                       D.070205
+005700*****IF LINAGE-COUNTER > 63                                       D.101005
+005710     IF LINAGE-COUNTER > 62                                       I.101005
+005720         PERFORM S-05 THRU S-15.
+005730     MOVE SPACE TO SP-R.
+005740     MOVE W-P TO SP-R.
+005750     WRITE SP-R.
+005760     MOVE SPACE TO SP-R.
+005770     WRITE SP-R.
+005780     GO TO S-62.                                                  I.110209
+005790 S-60.                                                            I.110209
+005800     INITIALIZE EXL-R.                                            I.110209
+005810     MOVE NC"　　　　　　　［　ＳＵＢ　ＴＯＴＡＬ　］" TO EXL-TNA.I.110209
+005820     MOVE WS-KIN TO EXL-KIN.                                      I.110209
+005830     MOVE WS-UG TO EXL-UG.                                        I.110209
+005840     MOVE WS-AR TO EXL-AR.                                        I.110209
+005850     IF W-RR NOT = ZERO                                           I.110209
+005860         MOVE W-RR TO EXL-RR.                                     I.110209
+005870     WRITE EXL-R.                                                 I.110209
+005880 S-62.                                                            I.110209
+005890     ADD WS-KIN TO WA-KIN.
+005900 S-65.
+005910     EXIT.
+005920 S-70.
+005930     IF JS-SIGN = 1                                               I.110209
+005940         GO TO S-72.                                              I.110209
+005950     MOVE SPACE TO W-P.
+005960     MOVE W-15K TO P-15K.
+005970     MOVE W-20K TO P-20K.
+005980     MOVE NC"　【　　ＡＬＬ　ＴＯＴＡＬ　　】" TO P-TNA.
+005990     MOVE WA-KIN TO P-KIN.
+006000*****IF LINAGE-COUNTER > 60                                       D.070205
+006010*****IF LINAGE-COUNTER > 63                                       D.101005
+006020     IF LINAGE-COUNTER > 62                                       I.101005
+006030         PERFORM S-05 THRU S-15.
+006040     MOVE SPACE TO SP-R.
+006050     MOVE W-P TO SP-R.
+006060     WRITE SP-R.
+006070     MOVE SPACE TO SP-R.
+006080     GO TO S-75.                                                  I.110209
+006090 S-72.                                                            I.110209
+006100     INITIALIZE EXL-R.                                            I.110209
+006110     MOVE NC"　【　　ＡＬＬ　ＴＯＴＡＬ　　】" TO EXL-TNA.        I.110209
+006120     MOVE WA-KIN TO EXL-KIN.                                      I.110209
+006130     WRITE EXL-R.                                                 I.110209
+006140 S-75.
+006150     EXIT.

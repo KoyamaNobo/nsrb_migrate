@@ -1,0 +1,253 @@
+000010 IDENTIFICATION   DIVISION.
+000020 PROGRAM-ID. JV510U.
+000030************************************************************
+000040*    PROGRAM         :  玉島棚卸変換用ワーク作成           *
+000050*    PRINTER TYPE    :  JIPS                               *
+000060*    SCREEN          :  ______                             *
+000070*    COMPILE TYPE    :  COBOL                              *
+000080************************************************************
+000090 ENVIRONMENT DIVISION.
+000100 CONFIGURATION SECTION.
+000110 SOURCE-COMPUTER. SYSTEM3100.
+000120 OBJECT-COMPUTER. SYSTEM3100.
+000130 INPUT-OUTPUT SECTION.
+000140 FILE-CONTROL.
+000150     SELECT WTANA ASSIGN TO WTANA-MSD.
+000160     SELECT TANAO ASSIGN TO TANAO-MSD.
+000170     SELECT HI-M ASSIGN TO HI1-MSD HI2-MSD
+000180         ORGANIZATION INDEXED
+000190         ACCESS MODE RANDOM
+000200         RECORD KEY HI-KEY
+000210         ALTERNATE RECORD KEY HI-KEY2
+000220         FILE STATUS IS ERR-STAT.
+000230     SELECT CODEF ASSIGN TO CODEF-MSD CODEF2-MSD
+000240         ORGANIZATION INDEXED
+000250         ACCESS MODE DYNAMIC
+000260         RECORD KEY CODE-KEY
+000270         ALTERNATE RECORD KEY CODE-KEY2
+000280         FILE STATUS IS ERR-STAT.
+000290 I-O-CONTROL.
+000300     APPLY SHARED-MODE ON HI-M
+000310     APPLY SHARED-MODE ON CODEF.
+000320 DATA DIVISION.
+000330 FILE SECTION.
+000340     COPY LIHIM.
+000350     COPY LICODE.
+000360 FD  WTANA
+000370     BLOCK    2     RECORDS                                       114/2
+000380     LABEL    RECORD   STANDARD
+000390     VALUE    OF  IDENTIFICATION  "TANAOROSI".
+000400 01  WTANA-R.
+000410     02  WTANA-HHT      PIC X(6).                                 HHT
+000420     02  WTANA-KBN      PIC 9(1).                                 検品C
+000430     02  WTANA-DATE     PIC 9(8).                                 日付
+000440     02  WTANA-SOK      PIC 9(1).                                 倉庫C
+000450     02  WTANA-BAS      PIC 9(6).                                 場所NO
+000460     02  WTANA-JAN      PIC X(16).                                JAN
+000470     02  WTANA-JAND  REDEFINES WTANA-JAN.
+000480       03  WTANA-JAN1   PIC X(13).
+000490       03  WTANA-JAN2   PIC X(3).
+000500     02  WTANA-NAME     PIC N(24).                                品名
+000510     02  WTANA-HCD      PIC 9(6).                                 品名C
+000520     02  WTANA-SIZ      PIC X(4).                                 ｻｲｽﾞ
+000530     02  WTANA-SU       PIC S9(4).                                数量
+000540     02  WTANA-NGP      PIC 9(8).                                 D日付
+000550     02  WTANA-TIME     PIC 9(6).                                 D時刻
+000560 FD  TANAO                                                        ﾆﾌﾀﾞﾄﾗﾝ
+000570     BLOCK    2     RECORDS
+000580     LABEL    RECORD   STANDARD
+000590     VALUE    OF  IDENTIFICATION  WK0128ID.
+000600 01  TANAO-R.
+000610     02  TANAO-HHT      PIC X(6).                                 HHT
+000620     02  TANAO-SOK      PIC 9(1).                                 倉庫C
+000630     02  TANAO-BAS      PIC 9(6).                                 場所NO
+000640     02  TANAO-HCD      PIC 9(6).                                 品名C
+000650     02  TANAO-SC       PIC 9(1).                                 ｻｲｽﾞ
+000660     02  TANAO-ASU.                                               数量
+000670       03  TANAO-SUD   OCCURS  10.                                数量
+000680         04  TANAO-SU   PIC S9(6).                                数量
+000690     02  TANAO-GC       PIC 9(1).                                 行C
+000700     02  TANAO-ISU      PIC 9(3).                                 入数
+000710     02  TANAO-BC       PIC 9(06).
+000720     02  F              PIC X(38).
+000730 WORKING-STORAGE  SECTION.
+000740 77  ERR-STAT           PIC  X(002).
+000750 77  W-FILE             PIC  X(013).
+000760 77  W-END              PIC  9(001) VALUE 0.
+000770 77  WK0128ID           PIC  X(009) VALUE SPACE.
+000780 01  STN-NO.
+000790     02  STN-NO1        PIC  X(003).
+000800     02  STN-NO2        PIC  X(003).
+000810 01  W-FID2.
+000820     02  W-FID21        PIC  X(006) VALUE "WK0128".
+000830     02  W-FID22        PIC  X(003).
+000840 01  W-DATA.
+000850     02  W-DMM          PIC  X(01).
+000860     02  W-SC           PIC  9(001).
+000870     02  CNT            PIC  9(02).
+000880     02  W-SCD          PIC  9(001).
+000890     02  W-ASID.
+000900       03  W-ASI   OCCURS   5.
+000910         04  W-SID   OCCURS  10.
+000920           05  W-SI     PIC  X(004).
+000930     02  W-MSI.
+000940       03  F            PIC  X(040) VALUE
+000950            "        SS  S   M   L   LL  XL  XXL     ".
+000960       03  F            PIC  X(040) VALUE
+000970            "                            28.029.030.0".
+000980       03  F            PIC  X(040) VALUE
+000990            "12.513.013.514.015.016.017.018.019.020.0".
+001000       03  F            PIC  X(040) VALUE
+001010            "21.021.522.022.523.023.524.024.525.0    ".
+001020       03  F            PIC  X(040) VALUE
+001030            "24.024.525.025.526.026.527.027.5        ".
+001040     02  W-CHK          PIC  9(05).
+001050     COPY LSTAT.
+001060 SCREEN SECTION.
+001070 SD  C-CRT
+001080     END STATUS IS ESTAT.
+001090 01  C-CLEAR.
+001100     02  C-CL    LINE   1  CLEAR SCREEN.
+001110 01  C-MID.
+001120     02  LINE   1  COLUMN  16  PIC  N(020) VALUE
+001130          NC"＊＊＊　　棚卸変換用ワーク作成　　＊＊＊".
+001140     02  LINE  23.
+001150         03  COLUMN  41  VALUE  NC"確認（".
+001160         03  COLUMN  47  VALUE  "OK=1,NO=9".
+001170         03  COLUMN  56  VALUE  NC"）".
+001180         03  COLUMN  58  VALUE  "---> ﾘﾀｰﾝ".
+001190 01  C-ACP.
+001200     02  A-DMM   LINE  23  COLUMN  62  PIC  9(001)
+001210          USING W-DMM   CHECK OVERFLOW NO IFC.
+001220 01  C-ERR.
+001230     02  LINE  24.
+001240       03  E-ME1   COLUMN  15  PIC  X(017) VALUE
+001250            "***  DATA ﾅｼ  ***".
+001260       03  E-ME2   COLUMN  15  PIC  X(018) VALUE
+001270            "***  DATA ｴﾗｰ  ***".
+001280       03  E-ME3   COLUMN  15  PIC  X(016) VALUE
+001290            "***  HIM ﾅｼ  ***".
+001300       03  E-ME8   COLUMN  15  PIC  X(017) VALUE
+001310            "***  ｻｲｽﾞ ﾅｼ  ***".
+001320       03  E-ME9   COLUMN  15  PIC  X(017) VALUE
+001330            "***  ｲﾘｽｳ ﾅｼ  ***".
+001340       03  E-HCD   COLUMN  45  PIC  9(006) FROM  WTANA-HCD.
+001350       03  E-SIZ   COLUMN  53  PIC  X(004) FROM  WTANA-SIZ.
+001360       03  E-CHK   COLUMN  75  PIC  9(005) FROM  W-CHK.
+001370     COPY LSSEM.
+001380 PROCEDURE DIVISION.
+001390 M-05.
+001400     DISPLAY C-CLEAR.
+001410     DISPLAY C-MID.
+001420 M-10.
+001430     ACCEPT A-DMM.
+001440     IF ESTAT = PF9
+001450         MOVE 255 TO COMPLETION-CODE
+001460         GO TO M-95.
+001470     IF ESTAT NOT = HTB AND SKP
+001480         GO TO M-10.
+001490     IF W-DMM = 9
+001500         MOVE 255 TO COMPLETION-CODE
+001510         GO TO M-95.
+001520     IF W-DMM NOT = 1
+001530         GO TO M-10.
+001540*
+001550     MOVE W-MSI TO W-ASID.
+001560     CALL "CBLSTNNO" USING STN-NO.
+001570     MOVE STN-NO2 TO W-FID22.
+001580     MOVE W-FID2 TO WK0128ID.
+001590     OPEN INPUT WTANA.
+001600     OPEN INPUT CODEF.
+001610     OPEN INPUT HI-M.
+001620     OPEN OUTPUT TANAO.
+001630     READ WTANA AT END
+001640         MOVE 255 TO COMPLETION-CODE
+001650         DISPLAY E-ME1 E-ME99
+001660         GO TO M-90.
+001670 M-15.
+001680     ADD 1 TO W-CHK.
+001690     DISPLAY E-CHK.
+001700     MOVE WTANA-HCD TO HI-KEY.
+001710     READ HI-M WITH UNLOCK INVALID KEY
+001720         MOVE 255 TO COMPLETION-CODE
+001730         DISPLAY E-ME3 E-HCD E-ME99
+001740         GO TO M-30.
+001750     IF WTANA-JAN2 NOT = SPACE
+001760         IF HI-ISU = ZERO
+001770             MOVE 255 TO COMPLETION-CODE
+001780             DISPLAY E-ME9 E-HCD E-SIZ E-ME99
+001790             GO TO M-30.
+001800     IF WTANA-SIZ = SPACE
+001810         MOVE 255 TO COMPLETION-CODE
+001820         DISPLAY E-ME8 E-HCD E-SIZ E-ME99
+001830         GO TO M-30.
+001840     MOVE 0 TO W-SC.
+001850 M-20.
+001860     ADD 1 TO W-SC.
+001870     IF W-SC = 6
+001880         MOVE 255 TO COMPLETION-CODE
+001890         DISPLAY E-ME8 E-HCD E-SIZ E-ME99
+001900         GO TO M-30.
+001910     IF W-SC > 1
+001920         COMPUTE W-SCD = W-SC - 1
+001930       ELSE
+001940         MOVE W-SC TO W-SCD.
+001950     MOVE ZERO TO CNT.
+001960 M-25.
+001970     ADD 1 TO CNT.
+001980     IF CNT = 11
+001990         GO TO M-20.
+002000     IF WTANA-SIZ NOT = W-SI(W-SC,CNT)
+002010         GO TO M-25.
+002020     IF HI-S(W-SCD,CNT) = 0
+002030         GO TO M-25.
+002040*
+002050     INITIALIZE TANAO-R.
+002060     MOVE WTANA-HHT TO TANAO-HHT.
+002070     IF WTANA-SOK = 1
+002080         MOVE 6 TO TANAO-SOK.
+002090     MOVE WTANA-BAS TO TANAO-BAS.
+002100     MOVE WTANA-HCD TO TANAO-HCD.
+002110     MOVE W-SCD TO TANAO-SC.
+002120     IF WTANA-JAN2 NOT = SPACE
+002130         COMPUTE TANAO-SU(CNT) = WTANA-SU / HI-ISU
+002140         IF W-SCD = 1
+002150             MOVE 4 TO TANAO-GC
+002160           ELSE
+002170             IF W-SCD = 2
+002180                 MOVE 1 TO TANAO-GC
+002190               ELSE
+002200                 IF W-SCD = 3
+002210                     MOVE 2 TO TANAO-GC
+002220                   ELSE
+002230                     IF W-SCD = 4
+002240                         MOVE 3 TO TANAO-GC.
+002250     IF WTANA-JAN2 = SPACE
+002260         MOVE WTANA-SU TO TANAO-SU(CNT)
+002270         IF W-SCD = 1
+002280             MOVE 8 TO TANAO-GC
+002290           ELSE
+002300             IF W-SCD = 2
+002310                 MOVE 5 TO TANAO-GC
+002320               ELSE
+002330                 IF W-SCD = 3
+002340                     MOVE 6 TO TANAO-GC
+002350                   ELSE
+002360                     IF W-SCD = 4
+002370                         MOVE 7 TO TANAO-GC.
+002380     MOVE HI-ISU TO TANAO-ISU.
+002390     MOVE HI-BC TO TANAO-BC.
+002400     WRITE TANAO-R.
+002410 M-30.
+002420     READ WTANA AT END
+002430         GO TO M-90.
+002440     GO TO M-15.
+002450 M-90.
+002460     CLOSE WTANA.
+002470     CLOSE CODEF.
+002480     CLOSE HI-M.
+002490     CLOSE TANAO.
+002500 M-95.
+002510     DISPLAY C-CLEAR.
+002520     STOP RUN.
+

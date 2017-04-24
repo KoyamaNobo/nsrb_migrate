@@ -1,0 +1,385 @@
+000010 IDENTIFICATION  DIVISION.
+000020 PROGRAM-ID.     TSD030.                                          C.910910
+000030 AUTHOR.         A.KOMATSUBARA.
+000040***************************************
+000050*    手形決済情報接続  [仕訳処理]     *
+000060*          (手形 --> 財務)            *
+000070***************************************
+000080 ENVIRONMENT     DIVISION.
+000090 CONFIGURATION   SECTION.
+000100 SOURCE-COMPUTER.    SYSTEM100.
+000110 OBJECT-COMPUTER.    SYSTEM100.
+000120 INPUT-OUTPUT    SECTION.
+000130 FILE-CONTROL.
+000140     SELECT  NS-W01          ASSIGN  TO  F1-MSD
+000150             FILE    STATUS  ERR-STAT.
+000160     SELECT  SDH             ASSIGN  TO  F2-MSD
+000170             ORGANIZATION    INDEXED
+000180             ACCESS          DYNAMIC
+000190             RECORD  KEY IS  SH-KEY1
+000200             FILE    STATUS  ERR-STAT.
+000210     SELECT  SDI             ASSIGN  TO  F3-MSD
+000220             ORGANIZATION    INDEXED
+000230             ACCESS          DYNAMIC
+000240             RECORD  KEY IS  SDI-KEY
+000250             FILE    STATUS  ERR-STAT.
+000260     SELECT  NS-DNO          ASSIGN  TO  F4-MSD
+000270             ORGANIZATION    INDEXED
+000280             ACCESS          RANDOM
+000290             RECORD  KEY IS  DNO1-KEY
+000300             FILE    STATUS  ERR-STAT.
+000310*****SELECT  NS-SIW          ASSIGN  TO  F5-MSD                   D.910913
+000320*****        FILE    STATUS  ERR-STAT.                            D.910913
+000330     SELECT  AM              ASSIGN  TO  F6-MSD
+000340             ORGANIZATION    INDEXED
+000350             ACCESS          RANDOM
+000360             RECORD  KEY IS  AM-KEY
+000370             FILE    STATUS  ERR-STAT.
+000380*****SELECT  CALNM           ASSIGN  TO  F7-MSD                   D.930914
+000390*****        ORGANIZATION    INDEXED                              D.930914
+000400*****        ACCESS          DYNAMIC                              D.930914
+000410*****        RECORD  KEY IS  CL-KEY                               D.930914
+000420*****        FILE    STATUS  ERR-STAT.                            D.930914
+000430     SELECT  TK              ASSIGN  TO  F8-MSD                   I.910910
+000440             ORGANIZATION    INDEXED                              I.910910
+000450             ACCESS          DYNAMIC                              I.910910
+000460             RECORD  KEY IS  TK-KEY                               I.910910
+000470             FILE    STATUS  ERR-STAT.                            I.910910
+000480 I-O-CONTROL.
+000490*****APPLY   SHARED-MODE       ON  SDH  AM  CALNM  TK             D.930914
+000500     APPLY   SHARED-MODE       ON  SDH  AM         TK             I.930914
+000510     APPLY   EXCLUSIVE-MODE    ON  NS-W01  SDI  NS-DNO.           C.910913
+000520*****                              NS-SIW.                        D.910913
+000530 DATA    DIVISION.
+000540 FILE    SECTION.
+000550 COPY    LNSW01.
+000560 FD  SDH
+000570     BLOCK       CONTAINS    3       RECORDS
+000580     LABEL       RECORD      STANDARD
+000590     VALUE       OF          IDENTIFICATION    "SIWAKE-H1".
+000600 COPY    SIWAKH.
+000610 COPY    SIWAID.
+000620 COPY    LNSDNO.
+000630*COPY    LNSSIW.                                                  D.910913
+000640 COPY    ACCUNT.
+000650*COPY    LICALN.                                                  D.930914
+000660 COPY    TKLIB.                                                   I.910910
+000670 WORKING-STORAGE SECTION.
+000680 77  ERR-STAT              PIC  X(02).
+000690*77  WK0085ID           PIC  X(009) VALUE SPACE.                  D.970530
+000700 77  WK0064ID           PIC  X(009) VALUE SPACE.                  I.970530
+000710 01  STN-NO.                                                      I.960116
+000720     02  STN-NO1        PIC  X(003).                              I.960116
+000730     02  STN-NO2        PIC  X(003).                              I.960116
+000740 01  W-FID.                                                       I.960116
+000750*****02  W-FID1         PIC  X(006) VALUE "WK0085".               D.970530
+000760     02  W-FID1         PIC  X(006) VALUE "WK0064".               I.970530
+000770     02  W-FID2         PIC  X(003).                              I.960116
+000780 01  W-AREA.
+000790     02  END-SW            PIC  9(01)    VALUE 0.                 AT END
+000800     02  W-CNT             PIC  9(01).                            CNT
+000810     02  WTK-KEY           PIC  9(05).                            I.910910
+000820     02  NEW-KEY.                                                 NEW
+000830         03  NEW-KEY1      PIC  9(01).
+000840         03  NEW-KEY2      PIC  9(08).                            I.971112
+000850*****    03  NEW-KEY2      PIC  9(06).                            D.971112
+000860         03  NEW-KEY3      PIC  9(04).
+000870         03  NEW-KEY4      PIC  9(04).
+000880     02  OLD-KEY.                                                 OLD
+000890         03  OLD-KEY1      PIC  9(01).
+000900         03  OLD-KEY2      PIC  9(08).                            I.971112
+000910*****    03  OLD-KEY2      PIC  9(06).                            D.971112
+000920         03  OLD-KEY3      PIC  9(04).
+000930         03  OLD-KEY4      PIC  9(04).
+000940     02  WDNO2-05.                                                決済
+000950         03  WDNO2-051     OCCURS  3.
+000960             04  WDNO2-0511.
+000970                 05  WDNO2-05111    PIC  9(04).
+000980                 05  WDNO2-05112    PIC  9(04).
+000990             04  WDNO2-0512.
+001000                 05  WDNO2-05121    PIC  9(04).
+001010                 05  WDNO2-05122    PIC  9(04).
+001020     02  WDNO2-06.                                                決済資金
+001030         03  WDNO2-061     OCCURS  3.
+001040             04  WDNO2-0611         PIC  9(03).
+001050             04  WDNO2-0612         PIC  9(03).
+001060     02  WDNO1-023         PIC  9(06).                            CURRENT
+001070*COPY    LWMSG.                                                   D.960116
+001080 COPY    LWMSGP.                                                  I.960116
+001090 SCREEN  SECTION.
+001100 SD  SRT-X
+001110     END STATUS  IS  ESTAT.
+001120 01  DISP-C      LINE  1.
+001130     02  DISP-CLE    CLEAR   SCREEN.
+001140 01  DISP-AREA.
+001150     02  LINE  03 COLUMN  10  PIC  N(022) VALUE                   I.910913
+001160          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".       I.910913
+001170     02  LINE  04 COLUMN  10  PIC  N(022) VALUE                   I.910913
+001180          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".       I.910913
+001190     02  LINE  05 COLUMN  10  PIC  N(022) VALUE                   I.910913
+001200          NC"＊＊＊　　　　　　　　　　　　　　　　＊＊＊".       I.910913
+001210     02  LINE  06 COLUMN  10  PIC  N(022) VALUE                   I.910913
+001220          NC"＊＊＊　　割手・支手決済　仕訳処理　　＊＊＊".       I.910913
+001230     02  LINE  07 COLUMN  10  PIC  N(022) VALUE                   I.910913
+001240          NC"＊＊＊　　　（手形－－－＞財務）　　　＊＊＊".       I.910913
+001250     02  LINE  08 COLUMN  10  PIC  N(022) VALUE                   I.910913
+001260          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".       I.910913
+001270     02  LINE  09 COLUMN  10  PIC  N(022) VALUE                   I.910913
+001280          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".       I.910913
+001290*****    03  COLUMN  21    PIC  N(06)  VALUE                      D.910913
+001300*****        NC"決済情報接続"   REVERSE.                          D.910913
+001310**
+001320 COPY    LSMSG.
+001330**
+001340 PROCEDURE   DIVISION.
+001350*************************
+001360*    ＭＡＩＮ処理       *
+001370*************************
+001380 HAJIME.
+001390     PERFORM     INI-RTN   THRU   INI-EX.
+001400     PERFORM     UPD-RTN   THRU   UPD-EX
+001410                 UNTIL     END-SW  =  1.
+001420     PERFORM     CLSE-ENT  THRU   CLSE-EXT.
+001430 OWARI.
+001440     DISPLAY     DISP-C.                                          I.910913
+001450     STOP RUN.
+001460*************************
+001470*    初期処理           *
+001480*************************
+001490 INI-RTN.
+001500     DISPLAY     DISP-C.
+001510     DISPLAY     DISP-AREA.
+001520     CALL "CBLSTNNO" USING STN-NO.                                I.960116
+001530     MOVE STN-NO2 TO W-FID2.                                      I.960116
+001540     MOVE W-FID TO WK0064ID.                                      I.970530
+001550*****MOVE W-FID TO WK0085ID.                                      D.970530
+001560*****OPEN        INPUT     SDH  AM  NS-W01  CALNM  TK             D.930914
+001570     OPEN        INPUT     SDH  AM  NS-W01         TK             I.930914
+001580                 I-O       SDI  NS-DNO.                           C.910913
+001590*****            EXTEND    NS-SIW.                                D.910913
+001600     MOVE  "20"            TO   DNO1-KEY  ERR-K.
+001610     READ  NS-DNO          INVALID
+001620           MOVE  "NS-DNO"  TO   ERR-F
+001630           MOVE  "G"       TO   ERR-M
+001640           DISPLAY         ERR-DIS
+001650           DISPLAY         DISP-BUZ-B
+001660           DISPLAY         DISP-MSG-SPACE
+001670           STOP  RUN.
+001680     MOVE  DNO2-05         TO   WDNO2-05.
+001690     MOVE  DNO2-06         TO   WDNO2-06.
+001700     MOVE  "13"            TO   DNO1-KEY  ERR-K.
+001710     READ  NS-DNO          INVALID
+001720           MOVE  "NS-DNO"  TO   ERR-F
+001730           MOVE  "G"       TO   ERR-M
+001740           DISPLAY         ERR-DIS
+001750           DISPLAY         DISP-BUZ-B
+001760           DISPLAY         DISP-MSG-SPACE
+001770           STOP  RUN.
+001780     INITIALIZE  OLD-KEY.
+001790     MOVE 1     TO W-CNT.
+001800 INI-EX.
+001810     EXIT.
+001820*************************
+001830*    更新処理           *
+001840*************************
+001850 UPD-RTN.
+001860     READ  NS-W01          AT END
+001870           MOVE  1         TO   END-SW
+001880           GO  TO  UPD-EX.
+001890     MOVE  W01-01          TO   NEW-KEY1.
+001900     MOVE  W01-03          TO   NEW-KEY3.
+001910     IF  NEW-KEY3   =   2199                                      I.920415
+001920         MOVE  2200            TO   NEW-KEY3.                     I.920415
+001930     IF  W01-01  =  3                                             I.910910
+001940         MOVE  W01-04          TO   NEW-KEY4.
+001950     IF  W01-01  =  1      IF  W01-03  =  2200                    I.910910
+001960         MOVE   2201           TO   NEW-KEY4.                     I.910910
+001970     IF  W01-01  =  1      IF  W01-03  =  3200                    I.910910
+001980         MOVE   3201           TO   NEW-KEY4.                     I.910910
+001990     IF  W01-01  =  2
+002000         MOVE  W01-09      TO   NEW-KEY2
+002010     ELSE
+002020*****    PERFORM CAL-RTN THRU CAL-EX.                             D.930914
+002030         MOVE  W01-02      TO   NEW-KEY2.                         I.930914
+002040     IF  NEW-KEY  NOT =  OLD-KEY
+002050         MOVE  NEW-KEY     TO   OLD-KEY
+002060         MOVE  1           TO   W-CNT.
+002070     IF  W-CNT  =  1
+002080         PERFORM  DNO-RTN  THRU DNO-EX.
+002090     PERFORM  SDI-RTN      THRU SDI-EX.
+002100*****PERFORM  SIW-RTN      THRU SIW-EX.                           D.910913
+002110     IF  W-CNT  NOT =  5
+002120         ADD  1            TO   W-CNT
+002130     ELSE
+002140         MOVE 1            TO   W-CNT.
+002150 UPD-EX.
+002160     EXIT.
+002170*****
+002180*CAL-RTN.                                                         D.930914
+002190*****MOVE W01-02     TO CL-KEY NEW-KEY2.                          D.930914
+002200*****READ CALNM UNLOCK INVALID KEY                                D.930914
+002210*****     GO TO CAL-EX.                                           D.930914
+002220*****IF CL-SJ = 0                                                 D.930914
+002230*****   GO TO CAL-EX.                                             D.930914
+002240*CAL-000.                                                         D.930914
+002250*****READ CALNM NEXT UNLOCK AT END                                D.930914
+002260*****     GO TO CAL-EX.                                           D.930914
+002270*****IF CL-SJ = 0                                                 D.930914
+002280*****   MOVE CL-DATE     TO NEW-KEY2                              D.930914
+002290*****   GO TO CAL-EX.                                             D.930914
+002300*****GO TO CAL-000.                                               D.930914
+002310*CAL-EX.                                                          D.930914
+002320*****EXIT.                                                        D.930914
+002330*************************
+002340*    終了処理           *
+002350*************************
+002360 CLSE-ENT.
+002370*****CLOSE  NS-W01  SDH  SDI  NS-DNO  AM   CALNM  TK.             D.930914
+002380     CLOSE  NS-W01  SDH  SDI  NS-DNO  AM          TK.             I.930914
+002390 CLSE-EXT.
+002400     EXIT.
+002410*************************
+002420*    伝票№Ｆ　更新     *
+002430*************************
+002440 DNO-RTN.
+002450     MOVE  "13"            TO   DNO1-KEY  ERR-K.
+002460     READ  NS-DNO          INVALID
+002470           MOVE  "NS-DNO"  TO   ERR-F
+002480           MOVE  "G"       TO   ERR-M
+002490           PERFORM ERR-ENT THRU ERR-EXT.
+002500 DNO-010.
+002510     IF  DNO1-023  =  DNO1-022
+002520         MOVE  DNO1-021    TO   DNO1-023
+002530     ELSE
+002540         ADD   1           TO   DNO1-023.
+002550     MOVE  NEW-KEY2        TO   SDIYMD.
+002560     MOVE  DNO1-023        TO   SDIJNO.
+002570     MOVE  ZERO            TO   SDILNO.
+002580     START SDI  KEY IS   NOT <  SDI-KEY  INVALID
+002590           GO  TO  DNO-020.
+002600     READ  SDI  NEXT UNLOCK AT  END
+002610           GO  TO  DNO-020.
+002620     IF  (NEW-KEY2  =  SDIYMD) AND (DNO1-023  =  SDIJNO)
+002630         GO  TO  DNO-010.
+002640 DNO-020.
+002650     MOVE  NEW-KEY2        TO   HTRDATE.
+002660     MOVE  DNO1-023        TO   HJUNLNO.
+002670     MOVE  ZERO            TO   HLINENO  HDR-CR.
+002680     START SDH  KEY IS     NOT <  SH-KEY1  INVALID
+002690           GO  TO  DNO-030.
+002700     READ  SDH  NEXT   UNLOCK   AT END
+002710           GO  TO  DNO-030.
+002720     IF  (NEW-KEY2  =  HTRDATE) AND (DNO1-023  =  HJUNLNO)
+002730         GO  TO  DNO-010.
+002740 DNO-030.
+002750     MOVE  DNO1-023        TO   WDNO1-023.
+002760     REWRITE DNO1-R        INVALID
+002770           MOVE  "NS-DNO"  TO   ERR-F
+002780           MOVE  "R"       TO   ERR-M
+002790           PERFORM ERR-ENT      THRU  ERR-EXT.
+002800 DNO-EX.
+002810     EXIT.
+002820**************************
+002830*    仕訳インプット更新  *
+002840**************************
+002850 SDI-RTN.
+002860     MOVE  SPACE           TO   SDI-REC.
+002870     INITIALIZE            SDI-REC.
+002880     MOVE  NEW-KEY2        TO   SDIYMD.
+002890     MOVE  WDNO1-023       TO   SDIJNO.
+002900     MOVE  W-CNT           TO   SDILNO.
+002910     MOVE  WDNO2-05111(NEW-KEY1)
+002920                           TO   KRCDM.
+002930     IF  NEW-KEY1 NOT = 2
+002940         MOVE  WDNO2-05112(NEW-KEY1)
+002950                           TO   KRCDS
+002960     ELSE
+002970         MOVE  W01-03      TO   KRCDS.
+002980     IF  KRCDS         =    2199                                  I.920415
+002990         MOVE  2200        TO   KRCDS.                            I.920415
+003000     MOVE  WDNO2-0611(NEW-KEY1)
+003010                           TO   KRSKN.
+003020     MOVE  W01-08          TO   KRKIN.
+003030     MOVE  KRCDM           TO   AM-KEY.
+003040     READ  AM    UNLOCK    INVALID
+003050           MOVE  ZERO      TO   TEG-BAN.
+003060     MOVE  TEG-BAN         TO   KR-TB.
+003070     MOVE  WDNO2-05121(NEW-KEY1)
+003080                           TO   KSCDM.
+003090     IF  NEW-KEY1  =  1
+003100         MOVE  W01-03      TO   KSCDS
+003110     ELSE
+003120         MOVE  WDNO2-05122(NEW-KEY1)
+003130                           TO   KSCDS.
+003140     MOVE  WDNO2-0612(NEW-KEY1)
+003150                           TO   KSSKN.
+003160     MOVE  W01-08          TO   KSKIN.
+003170     MOVE  KSCDM           TO   AM-KEY.
+003180     READ  AM    UNLOCK    INVALID
+003190           MOVE  ZERO      TO   TEG-BAN.
+003200     MOVE  TEG-BAN         TO   KS-TB.
+003210*****IF  NEW-KEY1  =  1                                           D.910910
+003220*****    ADD  20000  TO  NEW-KEY4  GIVING  SDICUST                D.910910
+003230*****ELSE                                                         D.910910
+003240*****    ADD  10000  TO  NEW-KEY4  GIVING  SDICUST.               D.910910
+003250     IF  NEW-KEY1  =  3                                           I.910910
+003260         GO    TO     SDI-010.                                    I.910910
+003270     ADD  30000  TO  NEW-KEY4  GIVING  SDICUST.                   I.910910
+003280     COMPUTE   WTK-KEY     =    W01-04    +    20000.             I.910910
+003290     MOVE  WTK-KEY         TO   TK-KEY.                           I.910910
+003300     READ  TK    UNLOCK    INVALID                                I.910910
+003310           MOVE  SPACE     TO   TK-NAMEN.                         I.910910
+003320     MOVE  TK-NAMEN        TO   SDITEKI.                          I.910910
+003330     GO    TO         SDI-020.                                    I.910910
+003340 SDI-010.                                                         I.910910
+003350     ADD  10000  TO  NEW-KEY4  GIVING  SDICUST.                   I.910910
+003360*****IF  W01-03    =  2200                                        D.920415
+003370     IF  W01-03    =  2199  OR  2200                              I.920415
+003380         MOVE      NC"割手決済　商工中金"     TO   SDITEKI.       I.910910
+003390     IF  W01-03    =  2422                                        I.920415
+003400         MOVE      NC"割手決済　住友信託"     TO   SDITEKI.       I.920415
+003410     IF  W01-03    =  3200                                        I.910910
+003420         MOVE      NC"割手決済　中国銀行"     TO   SDITEKI.       I.910910
+003430 SDI-020.                                                         I.910910
+003440     MOVE  SDICUST         TO   TK-KEY.                           I.980224
+003450     READ  TK    UNLOCK    INVALID                                I.980224
+003460           MOVE  SPACE     TO   TK-NAMEN.                         I.980224
+003470     MOVE  TK-NAMEN        TO   SDINAMEN.                         I.980224
+003480*
+003490     MOVE  SDI-KEY         TO   ERR-K.
+003500*****MOVE SDI-REC     TO SIW-R.                                   D.910913
+003510     WRITE SDI-REC         INVALID
+003520           MOVE "SDI"      TO   ERR-F
+003530           MOVE  "W"       TO   ERR-M
+003540           PERFORM ERR-ENT THRU ERR-EXT.
+003550     CALL "CBLTCLS" USING SDI.
+003560 SDI-EX.
+003570     EXIT.
+003580*************************
+003590*    仕訳接続ワーク更新 *
+003600*************************
+003610*SIW-RTN.                                                         D.910913
+003620*****IF  NEW-KEY1 = 3                                             D.910913
+003630*****    MOVE  W01-03      TO   SIW-0412.                         D.910913
+003640*****MOVE ZERO     TO SIW-97.                                     D.910913
+003650*****IF  NEW-KEY1  =  1                                           D.910913
+003660*****    MOVE  5           TO   SIW-98.                           D.910913
+003670*****IF  NEW-KEY1  =  2                                           D.910913
+003680*****    MOVE  6           TO   SIW-98.                           D.910913
+003690*****IF  NEW-KEY1  =  3                                           D.910913
+003700*****    MOVE  4           TO   SIW-98.                           D.910913
+003710*****IF  NEW-KEY1  =  1                                           D.910913
+003720*****    MOVE  W01-02      TO   SIW-971.                          D.910913
+003730*****IF  NEW-KEY1  NOT =  1                                       D.910913
+003740*****    MOVE  W01-02      TO   SIW-972.                          D.910913
+003750*****WRITE SIW-R.                                                 D.910913
+003760*****IF  ERR-STAT  NOT =  "00"                                    D.910913
+003770*****    MOVE "NS-SIW"     TO   ERR-F                             D.910913
+003780*****    MOVE  "W"         TO   ERR-M                             D.910913
+003790*****    PERFORM ERR-ENT   THRU ERR-EXT.                          D.910913
+003800*****CALL "CBLTCLS" USING NS-SIW.                                 D.910913
+003810*SIW-EX.                                                          D.910913
+003820*****EXIT.                                                        D.910913
+003830*******
+003840*****COPY    LPMSG.                                               D.960116
+003850     COPY    LPMSGP.                                              I.960116

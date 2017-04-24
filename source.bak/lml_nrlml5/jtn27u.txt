@@ -1,0 +1,358 @@
+000010 IDENTIFICATION   DIVISION.
+000020 PROGRAM-ID.      JTN27U.
+000030 AUTHOR.          ________.
+000040*********************************************************
+000050*    PROGRAM         :  有効在庫ワーク　作成 (生協)     *
+000060*    PRINTER TYPE    :  JIPS                            *
+000070*    DATA WRITTN     :  03/02/21                        *
+000080*    COMPILE TYPE    :  CBL85 (74MODE)                  *
+000090*    JS-SIGN         :  0=生協 , 1=ＶＩＶ , 9=全件      *
+000100*********************************************************
+000110 ENVIRONMENT      DIVISION.
+000120 CONFIGURATION    SECTION.
+000130 SOURCE-COMPUTER. NEAC-SYSTEM3100.
+000140 OBJECT-COMPUTER. NEAC-SYSTEM3100.
+000150 INPUT-OUTPUT     SECTION.
+000160 FILE-CONTROL.
+000170     SELECT  JT-YZAI   ASSIGN  TO  F1-MSD
+000180         FILE  STATUS  ERR-STAT.
+000190     SELECT  NJZAI     ASSIGN  TO  F2-MSD
+000200         ORGANIZATION  IS INDEXED
+000210         ACCESS MODE   IS DYNAMIC
+000220         RECORD KEY    IS NJZAI-KEY.
+000230     SELECT  JMST3     ASSIGN  TO  F3-MSD
+000240         ORGANIZATION  IS INDEXED
+000250         ACCESS MODE   IS DYNAMIC
+000260         RECORD KEY    IS JMST3-KEY.
+000270     SELECT  HSHF      ASSIGN  TO  HSH1-MSD HSH2-MSD HSH3-MSD
+000280         ORGANIZATION  IS INDEXED
+000290         ACCESS MODE   IS DYNAMIC
+000300         RECORD KEY    IS HSH-KEY
+000310         ALTERNATE RECORD KEY    IS HSH-KEY2
+000320         ALTERNATE RECORD KEY    IS HSH-KEY3.
+000330     SELECT  HI-M      ASSIGN  TO  HI1-MSD HI2-MSD
+000340         ORGANIZATION  IS INDEXED
+000350         ACCESS MODE   IS RANDOM
+000360         RECORD KEY    IS HI-KEY
+000370         ALTERNATE RECORD KEY    IS HI-KEY2.
+000380 I-O-CONTROL.
+000390     APPLY SHARED-MODE    ON  NJZAI  JMST3  HI-M  HSHF
+000400     APPLY EXCLUSIVE-MODE ON  JT-YZAI.
+000410 DATA    DIVISION.
+000420 FILE    SECTION.
+000430 COPY   LNJZAI.
+000440 COPY   LJMST3.
+000450 COPY   LIHIM.
+000460     COPY LIHSHF.
+000470 FD  JT-YZAI
+000480     BLOCK    2     RECORDS
+000490     LABEL    RECORD   STANDARD
+000500     VALUE    OF  IDENTIFICATION   WK0128ID.
+000510 01  YZAI-R.
+000520     02   YZAI-HCD            PIC 9(6).                           ﾋﾝﾒｲｺｰﾄﾞ
+000530     02   YZAI-HNA            PIC N(24).
+000540     02   YZAI-KBN            PIC N(03).
+000550     02   YZAI-SIZ            PIC 9(1).                           ｻｲｽﾞｸﾌﾞﾝ
+000560     02   YZAI-ASU.                                               ｻﾞｲｺｽｳ
+000570          03   YZAI-SUD       OCCURS  10.                         ｻｲｽﾞﾍﾞﾂ
+000580              04   YZAI-SU    PIC S9(6).
+000590     02   YZAI-TSU            PIC S9(06).
+000600     02   YZAI-KC             PIC 9(1).
+000610 WORKING-STORAGE  SECTION.
+000620 77  JS-SIGN                  PIC  9(1).                          I.040531
+000630 77  ERR-STAT                 PIC  X(2).
+000640 77  WK0128ID                 PIC  X(009) VALUE SPACE.
+000650 01  STN-NO.
+000660     02  STN-NO1              PIC  X(003).
+000670     02  STN-NO2              PIC  X(003).
+000680 01  W-FID.
+000690     02  W-FID1               PIC  X(006) VALUE "WK0128".
+000700     02  W-FID2               PIC  X(003).
+000710 01  W-SUD.
+000720     02  W-SU                 PIC S9(06)  OCCURS  10.
+000730 01  W-SUT                    PIC  S9(06).
+000740*01  W-GSUD.
+000750*****02  W-GSU                PIC S9(06)  OCCURS  10.
+000760 01  ZERO-SW                  PIC  9(01).
+000770 01  W-AREA.
+000780     02  W-KEY.
+000790         03  W-MHCD           PIC  9(06).
+000800         03  W-HCD            PIC  9(06).
+000810     02  I                    PIC  9(02).
+000820     02  W-SIZ                PIC  9(01).
+000830     02  OKC                  PIC  9(01).                         確認　
+000840 COPY  LWMSG.
+000850 SCREEN      SECTION.
+000860 SD  C-CRT
+000870     END  STATUS  IS  ESTAT.
+000880 01  C-CLEAR.
+000890     02  C-CL     LINE   1  CLEAR SCREEN.
+000900 01  DSP-AREA.
+000910     02  DSP-MID.
+000920       03  LINE  1  COLUMN 27  VALUE
+000930            "                          " REVERSE.
+000940       03  LINE  1  COLUMN 28  VALUE
+000950           NC"生協有効在庫ワーク　抽出".
+000960*****  03  LINE 12  COLUMN 29  VALUE                              D.031218
+000970*****      NC"フロッピー　セット" BLINK.                          D.031218
+000980       03  LINE 23  COLUMN 41  VALUE  "確認(OK=1,NO=9)-->   ﾘﾀｰﾝ".
+000990     02  DSP-MID1.                                                I.040531
+001000       03  LINE  1  COLUMN 27  VALUE                              I.040531
+001010            "                                    " REVERSE.       I.040531
+001020       03  LINE  1  COLUMN 28  VALUE                              I.040531
+001030           NC"ヴィヴェンディ有効在庫ワーク　抽出".                I.040531
+001040       03  LINE 23  COLUMN 41  VALUE  "確認(OK=1,NO=9)-->   ﾘﾀｰﾝ".I.040531
+001050     02  DSP-MID9.                                                I.040608
+001060       03  LINE  1  COLUMN 27  VALUE                              I.040608
+001070            "                                " REVERSE.           I.040608
+001080       03  LINE  1  COLUMN 28  VALUE                              I.040608
+001090           NC"有効在庫ワーク　抽出　（全件）".                    I.040608
+001100       03  LINE 23  COLUMN 41  VALUE  "確認(OK=1,NO=9)-->   ﾘﾀｰﾝ".I.040608
+001110 01  ACP-AREA.
+001120     02  ACP-OKC        LINE 23  COLUMN 61     PIC 9(01)
+001130                        USING OKC       CHECK OVERFLOW NO IFC.
+001140 01  DISP-MSG-SPACE1     LINE 24.
+001150     02  COLUMN 1        PIC X(40)     VALUE " ".
+001160 COPY  LSMSG.
+001170 PROCEDURE   DIVISION.
+001180 MR-RTN.
+001190     PERFORM  INI-RTN     THRU   INI-EX.
+001200     IF  COMPLETION-CODE = 255
+001210         STOP  RUN.
+001220     PERFORM  UPD1-RTN    THRU   UPD1-EX.
+001230     PERFORM  UPD2-RTN    THRU   UPD2-EX.
+001240     IF JS-SIGN  =  0                                             I.040531
+001250        PERFORM  UPD3-RTN    THRU   UPD3-EX.
+001260     PERFORM  END-RTN     THRU   END-EX.
+001270     STOP  RUN.
+001280 INI-RTN.
+001290     ACCEPT  JS-SIGN.                                             I.040531
+001300*****IF JS-SIGN  >  1                                             D.040608
+001310     IF JS-SIGN  NOT  =  0  AND  1  AND  9                        I.040608
+001320         MOVE 255 TO COMPLETION-CODE                              I.040531
+001330         GO  TO  INI-EX.                                          I.040531
+001340     DISPLAY  C-CLEAR.
+001350     IF JS-SIGN = 9                                               I.040608
+001360         DISPLAY  DSP-MID9                                        I.040608
+001370       ELSE                                                       I.040608
+001380         IF JS-SIGN = 1                                           I.040531
+001390             DISPLAY  DSP-MID1                                    I.040531
+001400           ELSE                                                   I.040531
+001410             DISPLAY  DSP-MID.
+001420     INITIALIZE  W-AREA.
+001430 INI-510.
+001440     ACCEPT  ACP-OKC.
+001450     IF  ESTAT  =  "P9"
+001460         MOVE  255     TO  COMPLETION-CODE
+001470         GO  TO  INI-EX.
+001480     IF  ESTAT  NOT =  "01"  AND  "06"
+001490         GO  TO  INI-510.
+001500     DISPLAY  ACP-OKC.
+001510     IF  OKC  NOT =  "1"  AND  "9"
+001520         GO  TO  INI-510.
+001530     IF  OKC  =  "9"
+001540         MOVE  255     TO  COMPLETION-CODE
+001550         GO  TO  INI-EX.
+001560*
+001570     CALL "CBLSTNNO" USING STN-NO.
+001580     MOVE STN-NO2 TO W-FID2.
+001590     MOVE W-FID TO WK0128ID.
+001600*****OPEN  INPUT   NJZAI  JMST3 HSHF HI-M.                        D.040531
+001610     OPEN  INPUT   NJZAI  JMST3  HI-M.                            I.040531
+001620     IF JS-SIGN  = 0                                              I.040531
+001630         OPEN  INPUT  HSHF.                                       I.040531
+001640     OPEN  OUTPUT  JT-YZAI.
+001650 INI-EX.
+001660      EXIT.
+001670 UPD1-RTN.
+001680     INITIALIZE                 NJZAI-KEY.
+001690     MOVE  9                TO  NJZAI-01.
+001700     START  NJZAI  KEY  NOT <  NJZAI-KEY  INVALID
+001710         GO  TO  UPD1-EX.
+001720 UPD1-010.
+001730     READ  NJZAI  NEXT  UNLOCK  AT  END
+001740         GO  TO  UPD1-EX.
+001750     IF NJZAI-02 < 100000                                         I.040531
+001760         GO TO UPD1-010.                                          I.040531
+001770     MOVE  NJZAI-02     TO  HI-MHCD HI-HCD.
+001780     READ  HI-M  UNLOCK  INVALID
+001790         GO TO UPD1-010.
+001800     IF JS-SIGN = 0                                               I.040531
+001810         IF HI-BC1 NOT = 26
+001820             GO TO UPD1-010.
+001830     IF JS-SIGN = 1                                               I.040531
+001840         IF HI-BC1 NOT = 33                                       I.040531
+001850             GO TO UPD1-010.                                      I.040531
+001860 UPD1-020.                                                        I.961108
+001870     PERFORM  ZC1-RTN      THRU  ZC1-EX.
+001880     IF  ZERO-SW  =  0
+001890         GO  TO  UPD1-010.
+001900     MOVE  SPACE     TO  YZAI-R.
+001910     INITIALIZE  YZAI-R.
+001920     MOVE  NJZAI-02  TO  YZAI-HCD.
+001930     MOVE  HI-NAME   TO  YZAI-HNA.
+001940     MOVE NC"在　庫" TO  YZAI-KBN.
+001950     MOVE  NJZAI-03  TO  YZAI-SIZ.
+001960     MOVE  1         TO  YZAI-KC.
+001970     PERFORM  MOV-RTN       THRU  MOV-EX.
+001980     PERFORM  WRI-RTN       THRU  WRI-EX.
+001990     GO  TO  UPD1-010.
+002000 UPD1-EX.
+002010     EXIT.
+002020 UPD2-RTN.
+002030     INITIALIZE                 JMST3-KEY.
+002040     START  JMST3  KEY  NOT <  JMST3-KEY  INVALID
+002050         GO  TO  UPD2-EX.
+002060 UPD2-010.
+002070     READ  JMST3  NEXT  UNLOCK  AT  END
+002080         GO  TO  UPD2-EX.
+002090     IF  JMST3-01  NOT =  5  AND  6
+002100         GO  TO  UPD2-010.
+002110     MOVE  JMST3-03     TO  HI-MHCD HI-HCD.
+002120     READ  HI-M  UNLOCK  INVALID
+002130         GO TO UPD2-010.
+002140     IF JS-SIGN = 0                                               I.040531
+002150         IF HI-BC1 NOT = 26
+002160             GO TO UPD2-010.
+002170     IF JS-SIGN = 1                                               I.040531
+002180         IF HI-BC1 NOT = 33                                       I.040531
+002190             GO TO UPD2-010.                                      I.040531
+002200 UPD2-020.
+002210     PERFORM  ZC2-RTN      THRU  ZC2-EX.
+002220     IF  ZERO-SW  =  0
+002230         GO  TO  UPD2-010.
+002240     MOVE  SPACE     TO  YZAI-R.
+002250     INITIALIZE  YZAI-R.
+002260     MOVE  JMST3-03  TO  YZAI-HCD.
+002270     MOVE  HI-NAME   TO  YZAI-HNA.
+002280     MOVE NC"受注残" TO  YZAI-KBN.
+002290     MOVE  JMST3-09  TO  YZAI-SIZ.
+002300     MOVE  3         TO  YZAI-KC.
+002310     PERFORM  MOV-RTN       THRU  MOV-EX.
+002320     PERFORM  WRI-RTN       THRU  WRI-EX.
+002330     GO  TO  UPD2-010.
+002340 UPD2-EX.
+002350     EXIT.
+002360 UPD3-RTN.
+002370     INITIALIZE                 HSH-KEY.
+002380     START  HSHF  KEY  NOT <  HSH-KEY  INVALID
+002390         GO  TO  UPD3-EX.
+002400 UPD3-010.
+002410     READ  HSHF  NEXT  UNLOCK  AT  END
+002420         GO  TO  UPD3-EX.
+002430     IF  HSH-ENGP NOT =  ZERO
+002440         GO  TO  UPD3-010.
+002450     MOVE 0 TO W-SIZ.
+002460 UPD3-020.
+002470     ADD 1 TO W-SIZ.
+002480     IF W-SIZ = 5
+002490         GO  TO  UPD3-010.
+002500 UPD3-030.
+002510     PERFORM  ZC3-RTN      THRU  ZC3-EX.
+002520     IF  ZERO-SW  =  0
+002530         GO  TO  UPD3-020.
+002540     MOVE  HSH-HCD    TO  HI-HCD.
+002550     READ  HI-M  UNLOCK  INVALID
+002560         GO TO UPD3-010.
+002570     MOVE  HI-MHCD    TO  W-MHCD  W-HCD.
+002580     MOVE  W-KEY      TO  HI-KEY2.
+002590     READ  HI-M  UNLOCK  INVALID
+002600         GO TO UPD3-010.
+002610     MOVE  SPACE     TO  YZAI-R.
+002620     INITIALIZE  YZAI-R.
+002630     MOVE  HI-MHCD TO  YZAI-HCD.
+002640     MOVE  HI-NAME   TO  YZAI-HNA.
+002650     MOVE NC"入庫残" TO  YZAI-KBN.
+002660     MOVE  W-SIZ  TO  YZAI-SIZ.
+002670     MOVE  2         TO  YZAI-KC.
+002680     PERFORM  MOV-RTN       THRU  MOV-EX.
+002690     PERFORM  WRI-RTN       THRU  WRI-EX.
+002700     GO  TO  UPD3-020.
+002710 UPD3-EX.
+002720     EXIT.
+002730 END-RTN.
+002740     CLOSE   JT-YZAI  HI-M.
+002750     CLOSE   NJZAI  JMST3.                                        I.040531
+002760     IF  JS-SIGN  =  0                                            I.040531
+002770         CLOSE   HSHF.                                            I.040531
+002780*****CLOSE   NJZAI  JMST3  HSHF.                                  D.040531
+002790     DISPLAY  C-CLEAR.
+002800 END-EX.
+002810     EXIT.
+002820 WRI-RTN.
+002830     WRITE    YZAI-R.
+002840     IF  ERR-STAT  NOT = "00"
+002850              MOVE  "W"          TO  ERR-M
+002860              MOVE  "WK0128"     TO  ERR-F
+002870              PERFORM  ERR-RTN   THRU  ERR-EX.
+002880 WRI-EX.
+002890     EXIT.
+002900 ZC1-RTN.
+002910*****MOVE  ZERO  TO  W-SUD  W-GSUD.
+002920     MOVE  ZERO  TO  W-SUD.
+002930     MOVE  0     TO  ZERO-SW.
+002940     MOVE  1     TO  I.
+002950 ZC1-010.
+002960     IF  I  >  10
+002970         GO  TO  ZC1-EX.
+002980     COMPUTE  W-SU(I)  =  NJZAI-0411(I)  -  NJZAI-0511(I)
+002990                       +  NJZAI-0611(I)  +  NJZAI-0711(I)
+003000                       -  NJZAI-0811(I)  +  NJZAI-1111(I)
+003010                                         -  NJZAI-0911(I).
+003020*****MOVE W-SU(I) TO  W-GSU(I).
+003030     IF  (ZERO-SW   = 0)  AND  (W-SU(I)  NOT =  ZERO)
+003040         MOVE   1     TO  ZERO-SW.
+003050     ADD  1     TO  I.
+003060     GO  TO  ZC1-010.
+003070 ZC1-EX.
+003080     EXIT.
+003090 ZC2-RTN.
+003100*****MOVE  ZERO  TO  W-SUD  W-GSUD.
+003110     MOVE  ZERO  TO  W-SUD.
+003120     MOVE  0     TO  ZERO-SW.
+003130     MOVE  1     TO  I.
+003140 ZC2-010.
+003150     IF  I  >  10
+003160         GO  TO  ZC2-EX.
+003170     COMPUTE  W-SU(I)  =  JMST3-1111(I)  -  JMST3-1211(I)
+003180                       -  JMST3-141 (I)  -  JMST3-151 (I).
+003190*****COMPUTE  W-GSU(I) =  W-SU(I)  *   -1.
+003200     IF  (ZERO-SW   = 0)  AND  (W-SU(I)  NOT =  ZERO)
+003210         MOVE   1     TO  ZERO-SW.
+003220     ADD  1     TO  I.
+003230     GO  TO  ZC2-010.
+003240 ZC2-EX.
+003250     EXIT.
+003260 ZC3-RTN.
+003270*****MOVE  ZERO  TO  W-SUD  W-GSUD.
+003280     MOVE  ZERO  TO  W-SUD.
+003290     MOVE  0     TO  ZERO-SW.
+003300     MOVE  1     TO  I.
+003310 ZC3-010.
+003320     IF  I  >  10
+003330         GO  TO  ZC3-EX.
+003340     COMPUTE  W-SU(I)  =  HSH-HSU(W-SIZ,I)  -  HSH-NSU(W-SIZ,I)
+003350                       -  HSH-ISU(W-SIZ,I).
+003360*****MOVE W-SU(I) TO  W-GSU(I).
+003370     IF  (ZERO-SW   = 0)  AND  (W-SU(I)  NOT =  ZERO)
+003380         MOVE   1     TO  ZERO-SW.
+003390     ADD  1     TO  I.
+003400     GO  TO  ZC3-010.
+003410 ZC3-EX.
+003420     EXIT.
+003430 MOV-RTN.
+003440     MOVE  ZERO  TO  W-SUT.
+003450     MOVE  1     TO  I.
+003460 MOV-010.
+003470     IF  I  >  10
+003480         GO  TO  MOV-020.
+003490     MOVE   W-SU(I)     TO  YZAI-SU(I).
+003500     ADD    W-SU(I)     TO  W-SUT.
+003510     ADD  1     TO  I.
+003520     GO  TO  MOV-010.
+003530 MOV-020.
+003540     MOVE   W-SUT       TO  YZAI-TSU.
+003550 MOV-EX.
+003560     EXIT.
+003570 COPY  LPMSG.
+

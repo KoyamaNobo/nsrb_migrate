@@ -1,0 +1,276 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. HMG930.
+000030*********************************************************
+000040*    PROGRAM         :  売上値引・入庫伝票ワーク　作成  *
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :  ______                          *
+000070*    COMPILE TYPE    :  COBOL                           *
+000080*    JS-SIGN         :  売上値引=0(月次),入庫=1(問合せ) *
+000090*********************************************************
+000100 ENVIRONMENT DIVISION.
+000110 CONFIGURATION SECTION.
+000120 SOURCE-COMPUTER. SYSTEM3100.
+000130 OBJECT-COMPUTER. SYSTEM3100.
+000140 INPUT-OUTPUT SECTION.
+000150 FILE-CONTROL.
+000160     COPY LIBCSE.
+000170*****SELECT STRAN3 ASSIGN TO STRAN3-MSD.                          D.030529
+000180*****SELECT STRAN3 ASSIGN TO STRAN3-MSD                           D.050718
+000190*****    ORGANIZATION INDEXED                                     D.050718
+000200*****    ACCESS MODE DYNAMIC                                      D.050718
+000210*****    RECORD KEY ST3-KEY                                       D.050718
+000220     SELECT STRAN3 ASSIGN TO STRAN3-RDB                           I.050718
+000230         FILE STATUS ERR-STAT.                                    I.030529
+000240     SELECT STRANYR ASSIGN TO STRANY-MSD.
+000250     SELECT UTRF3 ASSIGN TO UTRF3-MSD.
+000260     SELECT UTRYR ASSIGN TO UTRY-RDB.                             I.040407
+000270*****SELECT UTRYR ASSIGN TO UTRY-MSD.                             D.040407
+000280 I-O-CONTROL.
+000290     APPLY SHARED-MODE ON M-DATE.
+000300 DATA DIVISION.
+000310 FILE SECTION.
+000320     COPY LIBFDD.
+000330 FD  STRAN3
+000340     BLOCK  2 RECORDS
+000350     LABEL RECORD STANDARD
+000360     VALUE OF IDENTIFICATION "STRAN3-RDB".                        I.050718
+000370*****VALUE OF IDENTIFICATION "STRAN-3".                           D.050718
+000380 01  STRAN3-R.                                                    I.030529
+000390     02  ST3-KEY.                                                 I.030529
+000400       03  ST3-DNO         PIC  9(006).                           I.030529
+000410       03  ST3-GNO         PIC  9(001).                           I.030529
+000420     02  F                 PIC  X(121).                           I.030529
+000430*01  STRAN3-R           PIC  X(128).                              D.030529
+000440 FD  STRANYR
+000450     BLOCK  2 RECORDS
+000460     LABEL RECORD STANDARD
+000470     VALUE OF IDENTIFICATION "STRANYR".
+000480 01  STRANY-R.
+000490     02  STRANY-DNO        PIC  9(006).
+000500     02  STRANY-GNO        PIC  9(001).
+000510     02  STRANY-NGP.
+000520       03  STRANY-NG.
+000530         04  STRANY-NEN    PIC  9(004).
+000540         04  STRANY-GET    PIC  9(002).
+000550       03  STRANY-PEY      PIC  9(002).
+000560     02  STRANY-TCD        PIC  9(004).
+000570     02  STRANY-D1         PIC  X(107).
+000580     02  STRANY-D2    REDEFINES STRANY-D1.
+000590       03  STRANY-BIF      PIC  N(010).
+000600       03  STRANY-BIR      PIC  N(010).
+000610       03  F               PIC  X(067).
+000620     02  F                 PIC  X(002).
+000630 FD  UTRF3
+000640     BLOCK  2 RECORDS
+000650     LABEL RECORD STANDARD
+000660     VALUE OF IDENTIFICATION WK0128ID.
+000670 01  UTRF3-R               PIC  X(128).                           I.020517
+000680*01  UTRF3-R.                                                     D.020517
+000690*****02  UTRF3-D           PIC  X(102).                           D.020517
+000700*****02  F                 PIC  X(026).                           D.020517
+000710 FD  UTRYR
+000720*****BLOCK  5 RECORDS                                             D.020517
+000730     BLOCK  2 RECORDS                                             I.020517
+000740     LABEL RECORD STANDARD
+000750     VALUE OF IDENTIFICATION "UTRYR-RDB".                         I.040407
+000760*****VALUE OF IDENTIFICATION "UTRYR".                             D.040407
+000770 01  UTRY-R.
+000780     02  UTRY-DNO          PIC  9(006).
+000790     02  UTRY-GNO          PIC  9(001).
+000800     02  UTRY-NGP.
+000810       03  UTRY-NG.
+000820         04  UTRY-NEN      PIC  9(004).
+000830         04  UTRY-GET      PIC  9(002).
+000840       03  UTRY-PEY        PIC  9(002).
+000850     02  F                 PIC  X(113).                           I.020517
+000860*****02  F                 PIC  X(087).                           D.020517
+000870 WORKING-STORAGE SECTION.
+000880 77  ERR-STAT           PIC  X(002).                              I.030529
+000890 77  W-MSG              PIC  X(040).
+000900 77  JS-SIGN            PIC  9(001).
+000910 77  W-FILE             PIC  X(013) VALUE SPACE.                  I.030529
+000920 77  WK0128ID           PIC  X(009) VALUE SPACE.
+000930 01  STN-NO.
+000940     02  STN-NO1        PIC  X(003).
+000950     02  STN-NO2        PIC  X(003).
+000960 01  W-FID.
+000970     02  W-FID1         PIC  X(006) VALUE "WK0128".
+000980     02  W-FID2         PIC  X(003).
+000990 01  W-DATA.
+001000     02  W-NGP.
+001010       03  W-NEN        PIC  9(004).
+001020       03  W-NEND  REDEFINES W-NEN.
+001030         04  W-NEN1     PIC  9(002).
+001040         04  W-NEN2     PIC  9(002).
+001050       03  W-GET        PIC  9(002).
+001060       03  W-PEY        PIC  9(002).
+001070     02  W-NGPD  REDEFINES W-NGP.
+001080       03  F            PIC  X(002).
+001090       03  W-NGS        PIC  9(004).
+001100       03  F            PIC  X(002).
+001110     02  W-ENGP         PIC  9(008).                              I.100519
+001120 SCREEN SECTION.
+001130 SD  C-CRT
+001140     END STATUS IS ESTAT.
+001150 01  C-CLEAR.
+001160     02  LINE   1  CLEAR SCREEN.
+001170 01  C-MID.
+001180     02  LINE   3  COLUMN  15  PIC  N(023) VALUE
+001190          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001200     02  LINE   4  COLUMN  15  PIC  N(023) VALUE
+001210          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001220     02  LINE   5  COLUMN  15  PIC  N(023) VALUE
+001230          NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+001240*****02  LINE   7  COLUMN  15  PIC  N(023) VALUE                  D.110601
+001250*****     NC"＊＊＊　　　　　（　３ヶ月　）　　　　　＊＊＊".     D.110601
+001260     02  LINE   8  COLUMN  15  PIC  N(023) VALUE
+001270          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001280     02  LINE   9  COLUMN  15  PIC  N(023) VALUE
+001290          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001300 01  C-MID0.
+001310     02  LINE   6  COLUMN  15  PIC  N(023) VALUE
+001320          NC"＊＊＊　　売上・値引伝票ワーク　作成　　＊＊＊".
+001330     02  LINE   7  COLUMN  15  PIC  N(023) VALUE                  I.110601
+001340          NC"＊＊＊　　　　　（　３ヶ月　）　　　　　＊＊＊".     I.110601
+001350 01  C-MID1.
+001360     02  LINE   6  COLUMN  15  PIC  N(023) VALUE
+001370          NC"＊＊＊　　仕上・受入伝票ワーク　作成　　＊＊＊".
+001380     02  LINE   7  COLUMN  15  PIC  N(023) VALUE                  I.110601
+001390          NC"＊＊＊　　　　　（　９ヶ月　）　　　　　＊＊＊".     I.110601
+001400 01  C-ERR.
+001410     02  LINE  24.
+001420       03  E-ME    COLUMN  15  PIC  X(040) FROM  W-MSG.
+001430       03  E-FILE  COLUMN  55  PIC  X(013) FROM  ST3-KEY.         I.030529
+001440       03  E-KEY   COLUMN  68  PIC  X(007) FROM  ST3-KEY.         I.030529
+001450*****  03  E-ME98  COLUMN  75  PIC  X(005) VALUE ""27"J"05"".     D.030529
+001460*****  03  E-ME99  COLUMN  75  PIC  X(005) VALUE ""27"B"05"".     D.030529
+001470*****  03  E-CL    COLUMN  10  PIC  X(050) VALUE                  D.030529
+001480*****       "                                                  ". D.030529
+001490     COPY LSSEM.                                                  I.030529
+001500     COPY LIBSCR.
+001510 PROCEDURE DIVISION.
+001520 M-05.
+001530     ACCEPT JS-SIGN.
+001540     IF JS-SIGN > 1
+001550         STOP RUN.
+001560     DISPLAY C-CLEAR.
+001570     DISPLAY C-MID.
+001580     IF JS-SIGN = 0
+001590         DISPLAY C-MID0
+001600       ELSE
+001610         DISPLAY C-MID1.
+001620     MOVE ZERO TO W-NGP.
+001630     COPY LIBCPR.
+001640     MOVE D-NHNG TO W-NGS.
+001650     IF W-NEN2 >= DATE-NF1 AND <= DATE-NT1
+001660         ADD DATE-NC1 TO W-NEN.
+001670     IF W-NEN2 >= DATE-NF2 AND <= DATE-NT2
+001680         ADD DATE-NC2 TO W-NEN.
+001690     MOVE W-NGP TO W-ENGP.                                        I.100519
+001700     SUBTRACT 1 FROM W-GET.
+001710     IF W-GET = ZERO
+001720         SUBTRACT 1 FROM W-NEN
+001730         MOVE 12 TO W-GET.
+001740     SUBTRACT 1 FROM W-GET.
+001750     IF W-GET = ZERO
+001760         SUBTRACT 1 FROM W-NEN
+001770         MOVE 12 TO W-GET.
+001780     IF JS-SIGN = 0                                               I.110601
+001790         GO TO M-20.                                              I.110601
+001800*****IF JS-SIGN = 1                                               D.110601
+001810     SUBTRACT 1 FROM W-GET.                                       I.110601
+001820     IF W-GET = ZERO                                              I.110601
+001830         SUBTRACT 1 FROM W-NEN                                    I.110601
+001840         MOVE 12 TO W-GET.                                        I.110601
+001850     SUBTRACT 1 FROM W-GET.                                       I.110601
+001860     IF W-GET = ZERO                                              I.110601
+001870         SUBTRACT 1 FROM W-NEN                                    I.110601
+001880         MOVE 12 TO W-GET.                                        I.110601
+001890     SUBTRACT 1 FROM W-GET.                                       I.110601
+001900     IF W-GET = ZERO                                              I.110601
+001910         SUBTRACT 1 FROM W-NEN                                    I.110601
+001920         MOVE 12 TO W-GET.                                        I.110601
+001930     SUBTRACT 1 FROM W-GET.                                       I.110601
+001940     IF W-GET = ZERO                                              I.110601
+001950         SUBTRACT 1 FROM W-NEN                                    I.110601
+001960         MOVE 12 TO W-GET.                                        I.110601
+001970     SUBTRACT 1 FROM W-GET.                                       I.110601
+001980     IF W-GET = ZERO                                              I.110601
+001990         SUBTRACT 1 FROM W-NEN                                    I.110601
+002000         MOVE 12 TO W-GET.                                        I.110601
+002010     SUBTRACT 1 FROM W-GET.                                       I.110601
+002020     IF W-GET = ZERO                                              I.110601
+002030         SUBTRACT 1 FROM W-NEN                                    I.110601
+002040         MOVE 12 TO W-GET.                                        I.110601
+002050     GO TO M-40.
+002060 M-20.                                                            I.110601
+002070     OPEN OUTPUT STRAN3.
+002080     OPEN INPUT STRANYR.
+002090 M-25.
+002100     READ STRANYR AT END
+002110         GO TO M-35.
+002120     IF STRANY-NGP < W-NGP
+002130         GO TO M-25.
+002140     IF STRANY-NGP > W-ENGP                                       I.100519
+002150         GO TO M-25.                                              I.100519
+002160 M-30.                                                            I.030529
+002170     MOVE SPACE TO STRAN3-R.
+002180     MOVE STRANY-R TO STRAN3-R.
+002190     WRITE STRAN3-R.                                              I.050718
+002200*****WRITE STRAN3-R.                                              D.030529
+002210*****WRITE STRAN3-R INVALID KEY                                   D.050718
+002220*****    MOVE SPACE TO W-MSG W-FILE                               D.050718
+002230*****    MOVE "***  WRITE ｴﾗｰ  ***" TO W-MSG                      D.050718
+002240*****    MOVE "STRAN-3" TO W-FILE                                 D.050718
+002250*****    DISPLAY E-STAT E-ME E-FILE E-KEY E-ME99                  D.050718
+002260*****    GO TO M-31.                                              D.050718
+002270     IF ERR-STAT = "00"                                           I.050718
+002280         GO TO M-25.
+002290     MOVE SPACE TO W-MSG W-FILE.                                  I.050718
+002300     MOVE "***  WRITE ｴﾗｰ  ***" TO W-MSG.                         I.050718
+002310     MOVE "STRAN-3" TO W-FILE.                                    I.050718
+002320     DISPLAY E-STAT E-ME E-FILE E-KEY E-ME99.                     I.050718
+002330*M-31.                                                            D.050718
+002340*****IF ERR-STAT = "22"                                           D.050718
+002350*****    DISPLAY E-ME78 E-ME99                                    D.050718
+002360*****    GO TO M-25.                                              D.050718
+002370*****IF ERR-STAT NOT = "24"                                       D.050718
+002380     IF ERR-STAT NOT = "34"                                       I.050718
+002390         MOVE 255 TO COMPLETION-CODE                              I.050718
+002400         DISPLAY E-ME78 E-ME99                                    I.030529
+002410         GO TO M-35.                                              I.030529
+002420     DISPLAY E-CL.                                                I.030529
+002430     CLOSE STRAN3.                                                I.030529
+002440     DISPLAY E-ME71 E-ME98 STOP " ".                              I.030529
+002450     DISPLAY E-CL.                                                I.030529
+002460*****OPEN I-O STRAN3.                                             D.050718
+002470     OPEN EXTEND STRAN3.                                          I.050718
+002480     GO TO M-30.
+002490 M-35.
+002500     CLOSE STRAN3.
+002510     CLOSE STRANYR.
+002520     GO TO M-95.
+002530 M-40.
+002540     CALL "CBLSTNNO" USING STN-NO.
+002550     MOVE STN-NO2 TO W-FID2.
+002560     MOVE W-FID TO WK0128ID.
+002570     OPEN OUTPUT UTRF3.
+002580     OPEN INPUT UTRYR.
+002590     SELECT UTRYR WHERE UTRY-NGP >= W-NGP.                        I.040407
+002600 M-45.
+002610     READ UTRYR AT END
+002620         SCRATCH UTRYR                                            I.040407
+002630         GO TO M-50.
+002640*****IF UTRY-NGP < W-NGP                                          D.040407
+002650*****    GO TO M-45.                                              D.040407
+002660     MOVE SPACE TO UTRF3-R.
+002670     MOVE UTRY-R TO UTRF3-R.                                      I.020517
+002680*****MOVE UTRY-R TO UTRF3-D.                                      D.020517
+002690     WRITE UTRF3-R.
+002700     GO TO M-45.
+002710 M-50.
+002720     CLOSE UTRF3.
+002730     CLOSE UTRYR.
+002740 M-95.
+002750     DISPLAY C-CLEAR.
+002760     STOP RUN.

@@ -1,0 +1,2552 @@
+000010 IDENTIFICATION              DIVISION.
+000020 PROGRAM-ID.                 PRD200.
+000030 AUTHOR.                     OZAKI.
+000040*===============================================================*
+000050*    振替伝票入力（手形・領収書要・売掛金・買掛金関係）         *
+000060*                            --- 90/01/17 ---                   *
+000070*===============================================================*
+000080 ENVIRONMENT                DIVISION.
+000090 CONFIGURATION              SECTION.
+000100 SOURCE-COMPUTER.           NEAC-SYSTEM100.
+000110 OBJECT-COMPUTER.           NEAC-SYSTEM100.
+000120 INPUT-OUTPUT               SECTION.
+000130 FILE-CONTROL.
+000140     COPY LIBCSE.
+000150     SELECT TDT-M ASSIGN TO TDT-MSD
+000160         ORGANIZATION INDEXED
+000170         ACCESS MODE RANDOM
+000180         RECORD KEY TD-KEY
+000190         FILE STATUS IS ERR-STAT.
+000200     SELECT HKBM ASSIGN TO HKB-MSD
+000210         ORGANIZATION INDEXED
+000220         ACCESS MODE RANDOM
+000230         RECORD KEY HKB-KEY
+000240         FILE STATUS IS ERR-STAT.
+000250     SELECT      KNG         ASSIGN  TO      F1-MSD
+000260                             ORGANIZATION    INDEXED
+000270                             ACCESS  MODE    RANDOM
+000280                             RECORD  KEY     KNG-KEY.
+000290     SELECT      AM          ASSIGN  TO      F2-MSD
+000300                             ORGANIZATION    INDEXED
+000310                             ACCESS  MODE    RANDOM
+000320                             RECORD  KEY     AM-KEY.
+000330     SELECT      BNM         ASSIGN  TO      F3-MSD
+000340                             ORGANIZATION    INDEXED
+000350                             ACCESS  MODE    RANDOM
+000360                             RECORD  KEY     BNM-KEY.
+000370     SELECT      BM          ASSIGN  TO      F4-MSD
+000380                             ORGANIZATION    INDEXED
+000390                             ACCESS  MODE    RANDOM
+000400                             RECORD  KEY     BM-KEY.
+000410     SELECT      TK          ASSIGN  TO      F5-MSD
+000420                             ORGANIZATION    INDEXED
+000430                             ACCESS  MODE    RANDOM
+000440                             RECORD  KEY     TK-KEY.
+000450     SELECT      TKI         ASSIGN  TO      F6-MSD
+000460                             ORGANIZATION    INDEXED
+000470                             ACCESS  MODE    RANDOM
+000480                             RECORD  KEY     TKI-KEY.
+000490     SELECT      HH-F        ASSIGN  TO      F7-MSD
+000500                             ORGANIZATION    INDEXED
+000510                             ACCESS  MODE    RANDOM
+000520                             RECORD  KEY     HH-KEY.
+000530     SELECT      GYM         ASSIGN  TO      F10-MSD
+000540                             ORGANIZATION    INDEXED
+000550                             ACCESS  MODE    RANDOM
+000560                             RECORD  KEY     GYM-KEY.
+000570     SELECT      FCTL-F      ASSIGN  TO      F11-MSD
+000580                             ORGANIZATION    INDEXED
+000590                             ACCESS  MODE    RANDOM
+000600                             RECORD  KEY     FCTL-KEY.
+000610     SELECT      SDH         ASSIGN  TO      F12-MSD
+000620                             ORGANIZATION    INDEXED
+000630                             ACCESS  MODE    DYNAMIC
+000640                             RECORD  KEY     SH-KEY1.
+000650     SELECT      SDW         ASSIGN  TO      F14-MSD
+000660                             ORGANIZATION    INDEXED
+000670                             ACCESS  MODE    DYNAMIC
+000680                             RECORD  KEY     SDW-KEY
+000690                             FILE    STATUS  ERR-STAT.
+000700     SELECT      NS-DNO      ASSIGN  TO      F16-MSD
+000710                             ORGANIZATION    INDEXED
+000720                             ACCESS  MODE    RANDOM
+000730                             RECORD  KEY     DNO1-KEY
+000740                             FILE    STATUS  ERR-STAT.
+000750     SELECT TSKF ASSIGN TO TSK-MSD                                I.001102
+000760         ORGANIZATION INDEXED                                     I.001102
+000770         ACCESS MODE RANDOM                                       I.001102
+000780         RECORD KEY TSK-KEY                                       I.001102
+000790         FILE STATUS IS ERR-STAT.                                 I.001102
+000800 I-O-CONTROL.
+000810     APPLY SHARED-MODE ON TSKF                                    I.001102
+000820     APPLY SHARED-MODE ON M-DATE HKBM  KNG AM BNM BM TK TKI HH-F
+000830                          GYM FCTL-F SDH SDW NS-DNO TDT-M.
+000840 DATA                        DIVISION.
+000850 FILE                        SECTION.
+000860     COPY LIBFDD.
+000870 COPY KANGEL.
+000880 COPY ACCUNT.
+000890 COPY BUMONF.
+000900 COPY L-BANK.
+000910 COPY TKLIB.
+000920 COPY LTKI.
+000930 COPY KEIHI.
+000940 COPY LGYM.
+000950 COPY FCTL.
+000960     COPY LITSKF.                                                 I.001102
+000970*
+000980 FD  SDH
+000990     BLOCK CONTAINS 3 RECORDS
+001000     LABEL RECORD STANDARD
+001010     VALUE OF IDENTIFICATION "SIWAKE-H1".
+001020 COPY SIWAKH.
+001030 COPY SIWAIW.
+001040 COPY LNSDNO.
+001050 COPY LIHKBM.
+001060 FD  TDT-M
+001070     BLOCK  3 RECORDS
+001080     LABEL RECORD IS STANDARD
+001090     VALUE OF IDENTIFICATION "TDTM".
+001100 01  TDT-R.
+001110     02  TD-KEY.
+001120       03  TD-TKC.
+001130         04  TD-C1      PIC  9(001).
+001140         04  TD-C2      PIC  9(001).
+001150       03  TD-TNO       PIC  9(004).
+001160     02  TD-TCD         PIC  9(004).
+001170     02  TD-DATE        PIC  9(006).
+001180     02  TD-NGP   REDEFINES TD-DATE.
+001190       03  TD-NG.
+001200         04  TD-NEN     PIC  9(002).
+001210         04  TD-GET     PIC  9(002).
+001220       03  TD-PEY       PIC  9(002).
+001230     02  TD-MND         PIC  9(006).
+001240     02  TD-MNGP  REDEFINES TD-MND.
+001250       03  TD-MNG.
+001260         04  TD-MN      PIC  9(002).
+001270         04  TD-MG      PIC  9(002).
+001280       03  TD-MP        PIC  9(002).
+001290     02  TD-KIN         PIC S9(010).
+001300     02  TD-BKC         PIC  9(004).
+001310     02  TD-FRN         PIC  N(024).
+001320     02  TD-SAD.
+001330       03  TD-S     OCCURS   7  PIC S9(008).
+001340     02  TD-ZSHZ        PIC S9(007).
+001350     02  TD-SSHZ        PIC S9(007).
+001360     02  F              PIC  X(006).
+001370     02  TD-SNEN.
+001380       03  TD-SNEN1     PIC  9(002).
+001390       03  TD-SNEN2     PIC  9(002).
+001400     02  TD-HCR         PIC  9(001).
+001410     02  TD-HCT         PIC  9(001).
+001420     02  TD-HCK         PIC  9(001).
+001430     02  TD-HCZ         PIC  9(001).
+001440     02  TD-PC          PIC  9(001).
+001450     02  TD-RSC         PIC  9(001).
+001460*
+001470 WORKING-STORAGE             SECTION.
+001480 77  ERR-STAT            PIC  X(02).
+001490 77  WKSP                PIC  X(40) VALUE SPACE.
+001500 77  WKNSP               PIC  N(10) VALUE SPACE.
+001510 77  WKZERO              PIC  9(10) VALUE ZERO.
+001520 01  CRT-WK1.
+001530     02  CRT-ITEM    OCCURS  5.
+001540       03  C-SIWAKE.
+001550         04  C-TENO      PIC  9(06).
+001560         04  C-TENOD  REDEFINES C-TENO.
+001570           05  C-TENO1   PIC  9(02).
+001580           05  C-TENO2   PIC  9(04).
+001590         04  C-KARI.
+001600           05  C-KRCDM   PIC  9(04).
+001610           05  C-KRCDS   PIC  9(04).
+001620           05  C-KRSECT  PIC  9(04).
+001630           05  F         PIC  9(03).
+001640           05  C-KRTAX   PIC  X(01).
+001650           05  C-KRKIN   PIC S9(10).
+001660           05  C-KR-TB   PIC  9(02).
+001670         04  C-KR-AREA.
+001680           05  C-KR-HO   PIC  9(01).
+001690           05  C-KR-KH   PIC  9(01).
+001700           05  C-KR-TAX  PIC  X(01).
+001710           05  C-KR-BSPL PIC  9(01).
+001720           05  C-KR-CDMN PIC  N(10).
+001730           05  C-KR-CDSN PIC  N(10).
+001740         04  C-KASI.
+001750           05  C-KSCDM   PIC  9(04).
+001760           05  C-KSCDS   PIC  9(04).
+001770           05  C-KSSECT  PIC  9(04).
+001780           05  F         PIC  9(03).
+001790           05  C-KSTAX   PIC  X(01).
+001800           05  C-KSKIN   PIC S9(10).
+001810           05  C-KS-TB   PIC  9(02).
+001820         04  C-KS-AREA.
+001830           05  C-KS-HO   PIC  9(01).
+001840           05  C-KS-KH   PIC  9(01).
+001850           05  C-KS-TAX  PIC  X(01).
+001860           05  C-KS-BSPL PIC  9(01).
+001870           05  C-KS-CDMN PIC  N(10).
+001880           05  C-KS-CDSN PIC  N(10).
+001890         04  C-TEKICD    PIC  9(03).
+001900         04  C-TEKI      PIC  N(20).
+001910         04  C-TEKI1  REDEFINES C-TEKI.
+001920           05  C-TEKI11  PIC  N(05).
+001930           05  C-TEKI12  PIC  N(07).
+001940           05  C-TEKI13  PIC  N(08).
+001950         04  C-TEKI2  REDEFINES C-TEKI.
+001960           05  C-TEKI21  PIC  N(03).
+001970           05  C-TEKI22  PIC  N(05).
+001980           05  C-TEKI23  PIC  N(12).
+001990         04  C-KRNKCD    PIC  9(02).
+002000         04  C-KRNKCDD  REDEFINES  C-KRNKCD.
+002010           05  C-KRNKCD1 PIC  9(01).
+002020           05  C-KRNKCD2 PIC  9(01).
+002030         04  C-KRNSC     PIC  9(01).
+002040         04  C-KRSKNG    PIC  9(04).
+002050         04  C-KRSKNGD  REDEFINES  C-KRSKNG.
+002060           05  C-KRSKN   PIC  9(02).
+002070           05  C-KRSKG   PIC  9(02).
+002080         04  C-KSNKCD    PIC  9(02).
+002090         04  C-KSNKCDD  REDEFINES  C-KSNKCD.
+002100           05  C-KSNKCD1 PIC  9(01).
+002110           05  C-KSNKCD2 PIC  9(01).
+002120         04  C-KSNSC     PIC  9(01).
+002130         04  C-KSSKNG    PIC  9(04).
+002140         04  C-KSSKNGD  REDEFINES  C-KSSKNG.
+002150           05  C-KSSKN   PIC  9(02).
+002160           05  C-KSSKG   PIC  9(02).
+002170         04  C-TKD.
+002180           05  C-TKDY    PIC  9(04).
+002190           05  C-TKDM    PIC  9(02).
+002200           05  C-TKDD    PIC  9(02).
+002210*****    04  C-HHC       PIC  9(01).                              D.000221
+002220         04  C-ZHC       PIC  9(01).
+002230 01  CRT-WK2.
+002240     02  C-ACT           PIC  9(01).
+002250     02  C-NCD           PIC  9(01).
+002260     02  CRDATE.
+002270       03  CRYM.
+002280         04  CRYY        PIC  9(04).
+002290         04  CRYYL  REDEFINES CRYY.
+002300           05  CRYY1     PIC  9(02).
+002310           05  CRYY2     PIC  9(02).
+002320         04  CRMM        PIC  9(02).
+002330       03  CRDD          PIC  9(02).
+002340     02  C-DNNO          PIC  9(06).
+002350     02  C-TKCD          PIC  9(05).
+002360     02  C-NAMEN         PIC  N(10).
+002370     02  C-TCD           PIC  9(04).
+002380     02  C-OKC           PIC  X(01).
+002390 01  W-WORK.
+002400     02  SOE             PIC  9(02).
+002410     02  I               PIC  9(02).
+002420     02  K               PIC  9(02).
+002430     02  LIN             PIC  9(02).
+002440     02  LIN1            PIC  9(02).
+002450     02  LIN2            PIC  9(02).
+002460     02  SV-I            PIC  9(02).
+002470     02  SV-LIN          PIC  9(02).
+002480     02  SV-LIN1         PIC  9(02).
+002490     02  SV-LIN2         PIC  9(02).
+002500     02  INV-SW          PIC  9(01).
+002510     02  ERR-SW          PIC  9(01).
+002520     02  DRCR-SW         PIC  9(01).
+002530     02  HOJO-SW         PIC  9(01).
+002540     02  C-KRTOT         PIC S9(10).
+002550     02  C-KSTOT         PIC S9(10).
+002560     02  W-NG            PIC  9(06).
+002570     02  W-NGD    REDEFINES W-NG.
+002580       03  W-NEN         PIC  9(04).
+002590       03  W-NENL   REDEFINES W-NEN.
+002600         04  W-NEN1      PIC  9(02).
+002610         04  W-NEN2      PIC  9(02).
+002620       03  W-GET         PIC  9(02).
+002630     02  W-NGL    REDEFINES W-NG.
+002640       03  F             PIC  9(02).
+002650       03  W-NGS         PIC  9(04).
+002660     02  B-CRDATE        PIC  9(08).
+002670     02  B-TKCD          PIC  9(05).
+002680     02  B-NAMEN         PIC  N(10).
+002690     02  B-TENO          PIC  9(06).
+002700     02  W-GPZ.
+002710       03  W-GETZ        PIC  Z(02).
+002720       03  F             PIC  X(01) VALUE "/".
+002730       03  W-PEYZ        PIC  Z(02).
+002740     02  W-GPDZ          PIC  X(05).
+002750     02  W-KIN           PIC S9(10).
+002760     02  W-DC            PIC  9(01).
+002770     02  W-HHC           PIC  9(01).                              I.000221
+002780     02  W-CHK           PIC  9(01).                              I.000221
+002790     02  W-SKDD.                                                  I.000821
+002800       03  W-SKDN        PIC  9(04).                              I.000821
+002810       03  W-SKDG        PIC  9(02).                              I.000821
+002820       03  W-SKDP        PIC  9(02).                              I.000821
+002830     02  W-DTW.                                                   I.000821
+002840       03  W-DTW1        PIC  9(03).                              I.000821
+002850       03  W-DTW2        PIC  9(01).                              I.000821
+002860     02  W-SDATE         PIC  9(08).                              I.001102
+002870     02  W-HNG           PIC  9(06).                              I.010904
+002880     02  W-HNGD  REDEFINES W-HNG.                                 I.010904
+002890       03  W-HNEN        PIC  9(04).                              I.010904
+002900       03  W-HNEND REDEFINES W-HNEN.                              I.010904
+002910         04  W-HNEN1     PIC  9(02).                              I.010904
+002920         04  W-HNEN2     PIC  9(02).                              I.010904
+002930       03  W-HGET        PIC  9(02).                              I.010904
+002940     02  W-HNGPL REDEFINES W-HNG.                                 I.010904
+002950       03  F             PIC  9(02).                              I.010904
+002960       03  W-HNGS        PIC  9(04).                              I.010904
+002970 01  W-BU.
+002980     02  WBU-DATA    OCCURS  5.
+002990       03  WBU-TENO      PIC  9(06).
+003000 01  SAVE-AREA.
+003010     02  WKONYMD.
+003020       03  WKONYY        PIC  9(04).
+003030       03  WKONYYL  REDEFINES WKONYY.
+003040         04  WKONYY1     PIC  9(02).
+003050         04  WKONYY2     PIC  9(02).
+003060       03  WKONMM        PIC  9(02).
+003070       03  WKONDD        PIC  9(02).
+003080     02  WKONYMDR REDEFINES WKONYMD   PIC  9(08).
+003090     02  WKONYMDL REDEFINES WKONYMD.
+003100       03  F             PIC  9(02).
+003110       03  WKONYMDS      PIC  9(06).
+003120     02  WUPDYM          PIC  9(06).
+003130     02  WSUB5           PIC  9(01).
+003140     02  W-KRCDM         PIC  9(04).
+003150     02  W-KSCDM         PIC  9(04).
+003160 COPY LWMSG.
+003170*********
+003180 SCREEN                  SECTION.
+003190 SD  CRT-BF
+003200     END  STATUS    IS   ESTAT.
+003210 01  DISP-C   LINE 01.
+003220     02  DISP-CLE  CLEAR SCREEN.
+003230 01  ACP-AREA.
+003240     02  ACP-ACT     LINE 01   COLUMN 58    PIC 9(01)
+003250         USING C-ACT                  CHECK OVERFLOW  NO IFC.
+003260***
+003270     02  ACP-NCD     LINE 02   COLUMN 11    PIC 9(01)
+003280         USING C-NCD                  CHECK OVERFLOW  NO IFC.
+003290     02  ACP-DNNO    LINE 02   COLUMN 22    PIC 9(06)
+003300         USING C-DNNO                 CHECK OVERFLOW  NO IFC.
+003310     02  ACP-CRDATE  LINE 02.
+003320         03  ACP-CRYY          COLUMN 34    PIC 9(02)
+003330             USING CRYY2                              NO IFC.
+003340         03  ACP-CRMM          COLUMN 37    PIC 9(02)
+003350             USING CRMM                               NO IFC.
+003360         03  ACP-CRDD          COLUMN 40    PIC 9(02)
+003370             USING CRDD               CHECK OVERFLOW  NO IFC.
+003380     02  ACP-TKCD    LINE 02   COLUMN 53    PIC 9(05)
+003390         USING C-TKCD                 CHECK OVERFLOW  NO IFC.
+003400     02  ACP-NAMEN   LINE 02   COLUMN 59    PIC N(10)
+003410         USING C-NAMEN                CHECK OVERFLOW  NO IFC.
+003420***
+003430     02  ACP-HHC     LINE 22   COLUMN 45    PIC 9(01)             I.000221
+003440         USING W-HHC                  CHECK OVERFLOW  NO IFC.     I.000221
+003450***
+003460     02  ACP-SKD     LINE 23   COLUMN 47    PIC 9(08)             I.000821
+003470         USING W-SKDD                 CHECK OVERFLOW  NO IFC.     I.000821
+003480***
+003490     02  ACP-OKC     LINE 24   COLUMN 77    PIC X(01)
+003500         USING C-OKC                  CHECK OVERFLOW  NO IFC.
+003510 01  ACP-AREA1.
+003520     02  ACP-TENO    LINE LIN2 COLUMN  3    PIC 9(06)
+003530         USING C-TENO(I)              CHECK OVERFLOW  NO IFC.
+003540     02  ACP-KRCDM   LINE LIN  COLUMN 02    PIC 9(04)
+003550         USING C-KRCDM(I)             CHECK OVERFLOW  NO IFC.
+003560     02  ACP-KRCDS   LINE LIN1 COLUMN 02    PIC 9(04)
+003570         USING C-KRCDS(I)             CHECK OVERFLOW  NO IFC.
+003580     02  ACP-KRSECT  LINE LIN  COLUMN 23    PIC 9(04)
+003590         USING C-KRSECT(I)            CHECK OVERFLOW  NO IFC.
+003600     02  ACP-KRNKCD  LINE LIN  COLUMN 23    PIC 9(02)
+003610         USING C-KRNKCD(I)            CHECK OVERFLOW  NO IFC.
+003620     02  ACP-KRNSC   LINE LIN  COLUMN 26    PIC 9(01)
+003630         USING C-KRNSC(I)             CHECK OVERFLOW  NO IFC.
+003640     02  ACP-KRSKNG  LINE LIN1 COLUMN 23    PIC 9(04)
+003650         USING C-KRSKNG(I)            CHECK OVERFLOW  NO IFC.
+003660     02  ACP-KRKIN   LINE LIN  COLUMN 28    PIC S9(10)
+003670         USING C-KRKIN(I)             CHECK OVERFLOW  NO IFC.
+003680     02  ACP-KRTAX   LINE LIN1 COLUMN 37    PIC X(01)
+003690         USING C-KRTAX(I)             CHECK OVERFLOW  NO IFC.
+003700***
+003710     02  ACP-KSCDM   LINE LIN  COLUMN 40    PIC 9(04)
+003720         USING C-KSCDM(I)             CHECK OVERFLOW  NO IFC.
+003730     02  ACP-KSCDS   LINE LIN1 COLUMN 40    PIC 9(04)
+003740         USING C-KSCDS(I)             CHECK OVERFLOW  NO IFC.
+003750     02  ACP-KSSECT  LINE LIN  COLUMN 61    PIC 9(04)
+003760         USING C-KSSECT(I)            CHECK OVERFLOW  NO IFC.
+003770     02  ACP-KSNKCD  LINE LIN  COLUMN 61    PIC 9(02)
+003780         USING C-KSNKCD(I)            CHECK OVERFLOW  NO IFC.
+003790     02  ACP-KSNSC   LINE LIN  COLUMN 64    PIC 9(01)
+003800         USING C-KSNSC(I)             CHECK OVERFLOW  NO IFC.
+003810     02  ACP-KSSKNG  LINE LIN1 COLUMN 61    PIC 9(04)
+003820         USING C-KSSKNG(I)            CHECK OVERFLOW  NO IFC.
+003830     02  ACP-KSKIN   LINE LIN  COLUMN 66    PIC S9(10)
+003840         USING C-KSKIN(I)             CHECK OVERFLOW  NO IFC.
+003850     02  ACP-KSTAX   LINE LIN1 COLUMN 75    PIC X(01)
+003860         USING C-KSTAX(I)             CHECK OVERFLOW  NO IFC.
+003870***
+003880     02  ACP-TEKICD  LINE LIN2 COLUMN 40    PIC 9(03)
+003890         USING C-TEKICD(I)            CHECK OVERFLOW  NO IFC.
+003900     02  ACP-TEKI    LINE LIN2 COLUMN 40    PIC N(20)
+003910         USING C-TEKI(I)              CHECK OVERFLOW  NO IFC.
+003920******
+003930 01  DSP-AREA.
+003940     02  DSP-WNK     LINE 01   COLUMN 71    PIC N(04)             I.000217
+003950         VALUE NC"複数入金" BLINK.                                I.000217
+003960     02  DSP-WNKC    LINE 01   COLUMN 71    PIC X(08)             I.000217
+003970         VALUE   "        ".                                      I.000217
+003980     02  DSP-TKNM    LINE 02   COLUMN 59    PIC N(10)
+003990         FROM C-NAMEN.
+004000***
+004010 01  DSP-AREA1.
+004020     02  DSP-TENO    LINE LIN2 COLUMN  3    PIC Z(06)
+004030         FROM C-TENO(I).
+004040     02  DSP-KRCDMN  LINE LIN  COLUMN 02    PIC N(10)
+004050         FROM C-KR-CDMN(I).
+004060     02  DSP-KRCDSN  LINE LIN1 COLUMN 02    PIC N(10)
+004070         FROM C-KR-CDSN(I).
+004080     02  DSP-KRKIN   LINE LIN  COLUMN 28    PIC ZZZZZZZZZZ-
+004090         FROM C-KRKIN(I).
+004100***
+004110     02  DSP-KSCDMN  LINE LIN  COLUMN 40    PIC N(10)
+004120         FROM C-KS-CDMN(I).
+004130     02  DSP-KSCDSN  LINE LIN1 COLUMN 40    PIC N(10)
+004140         FROM C-KS-CDSN(I).
+004150     02  DSP-KSKIN   LINE LIN  COLUMN 66    PIC ZZZZZZZZZZ-
+004160         FROM C-KSKIN(I).
+004170***
+004180 01  DSP-AREA2.
+004190     02  DSP-KRTOT   LINE 22   COLUMN 28    PIC ZZZZZZZZZZ-
+004200         FROM C-KRTOT.
+004210     02  DSP-KSTOT   LINE 22   COLUMN 66    PIC ZZZZZZZZZZ-
+004220         FROM C-KSTOT.
+004230***
+004240 01  CLE-AREA.
+004250     02  CLE-CRDATE  LINE 02.
+004260         03  CLE-CRYY          COLUMN 34    PIC Z(02)
+004270             FROM CRYY2.
+004280         03  CLE-CRMM          COLUMN 37    PIC Z(02)
+004290             FROM CRMM.
+004300         03  CLE-CRDD          COLUMN 40    PIC Z(02)
+004310             FROM CRDD.
+004320     02  CLE-DNNO    LINE 02   COLUMN 22    PIC Z(06)
+004330         FROM C-DNNO.
+004340     02  CLE-TKCD    LINE 02   COLUMN 53    PIC Z(05)
+004350         FROM C-TKCD.
+004360***
+004370 01  CLE-AREA1.
+004380     02  CLE-KRSECT  LINE LIN  COLUMN 23    PIC Z(04)
+004390         FROM C-KRSECT(I).
+004400     02  CLE-KSSECT  LINE LIN  COLUMN 61    PIC Z(04)
+004410         FROM C-KSSECT(I).
+004420***
+004430 01  CLE-AREA2.
+004440     02  CLE-KRNKCD  LINE LIN  COLUMN 23  PIC X(02) VALUE "  ".
+004450     02  CLE-KSNKCD  LINE LIN  COLUMN 61  PIC X(02) VALUE "  ".
+004460     02  CLE-KRNSC   LINE LIN  COLUMN 26  PIC Z(01)
+004470         FROM C-KRNSC(I).
+004480     02  CLE-KSNSC   LINE LIN  COLUMN 64  PIC Z(01)
+004490         FROM C-KSNSC(I).
+004500     02  CLE-KRSKNG  LINE LIN1 COLUMN 23  PIC X(04) VALUE "    ".
+004510     02  CLE-KSSKNG  LINE LIN1 COLUMN 61  PIC X(04) VALUE "    ".
+004520     02  CLE-HHC     LINE 22   COLUMN 45  PIC X(01) VALUE " ".    I.000316
+004530     02  CLE-SKD     LINE 23   COLUMN 47  PIC X(08) VALUE         I.000821
+004540          "        ".                                             I.000821
+004550***
+004560 01  SP-AREA.
+004570     02  CLE-SP20-KR1 LINE LIN  COLUMN 02    PIC X(20)
+004580         FROM WKSP.
+004590     02  CLE-SP20-KR2 LINE LIN1 COLUMN 02    PIC X(20)
+004600         FROM WKSP.
+004610     02  CLE-SP20-KS1 LINE LIN  COLUMN 40    PIC X(20)
+004620         FROM WKSP.
+004630     02  CLE-SP20-KS2 LINE LIN1 COLUMN 40    PIC X(20)
+004640         FROM WKSP.
+004650     02  CLE-SP40     LINE LIN2 COLUMN 40    PIC X(40)
+004660         FROM WKSP.
+004670***
+004680 01  MSG-AREA   LINE 24.
+004690     02  MG-03.
+004700         03  COLUMN 02   PIC N(20) VALUE
+004710             NC"金額アンマッチ　入力不可".
+004720     02  MG-04.
+004730         03  COLUMN 02   PIC N(20) VALUE
+004740             NC"金額バランスエラー　処理不可".
+004750     02  MG-05.
+004760         03  COLUMN 02   PIC N(04) VALUE
+004770             NC"修正不可".
+004780     02  MG-06.
+004790         03  COLUMN 02   PIC N(09) VALUE
+004800             NC"日付・取引先エラー".
+004810     02  MG-07.
+004820         03  COLUMN 02   PIC N(07) VALUE
+004830             NC"手形他№エラー".
+004840     02  MG-08.
+004850         03  COLUMN 02   PIC N(06) VALUE
+004860             NC"必要科目なし".
+004870     02  MG-09.
+004880         03  COLUMN 02   PIC N(08) VALUE
+004890             NC"入金区分チェック".
+004900     02  MG-10.
+004910         03  COLUMN 02   PIC N(14) VALUE
+004920             NC"得意先なし（取引先チェック）".
+004930     02  MG-11.
+004940         03  COLUMN 02   PIC N(20) VALUE
+004950             NC"税区分エラー　処理不可　　　　　　　　　".
+004960     02  MG-12.
+004970         03  COLUMN 02   PIC N(20) VALUE
+004980             NC"取引先マスタ　ＲＥＷＲＩＴＥエラー　　　".
+004990     02  MG-13.
+005000         03  COLUMN 02   PIC N(20) VALUE
+005010             NC"手形・領収書・買掛支払データ　なし　　　".
+005020     02  MG-14.
+005030         03  COLUMN 02   PIC N(20) VALUE
+005040             NC"手形・領収書・買掛支払データ　使用済み　".
+005050     02  MG-15.                                                   I.001102
+005060         03  COLUMN 02   PIC N(20) VALUE                          I.001102
+005070             NC"請求書　発行済み　　　　　　　　　　　　".        I.001102
+005080     02  MG-16.                                                   I.010904
+005090         03  COLUMN 02   PIC N(20) VALUE                          I.010904
+005100             NC"日付　エラー　　　　　　　　　　　　　　".        I.010904
+005110*********
+005120 COPY LSMSG.
+005130     COPY LIBSCR.
+005140 PROCEDURE                   DIVISION.
+005150 MR000.
+005160     PERFORM INI-RTN THRU INI-EX.
+005170     PERFORM OPEN-RTN THRU OPEN-EX.
+005180 MR010.
+005190     PERFORM ACT-RTN THRU ACT-EX.
+005200     IF ESTAT = "P9"
+005210        GO TO MR999.
+005220*
+005230     MOVE 1     TO I.
+005240     PERFORM CRE-RTN THRU CRE-EX.
+005250     MOVE ZERO     TO CRDATE C-DNNO C-TKCD.
+005260     MOVE SPACE    TO C-NAMEN.
+005270     DISPLAY CLE-AREA
+005280             DSP-TKNM  DSP-WNKC.                                  I.000217
+005290*****        DSP-TKNM.                                            D.000217
+005300     PERFORM DISP-000 THRU DISP-EX.
+005310     IF C-ACT NOT = 1
+005320         GO TO MR020.
+005330 MR012.
+005340     PERFORM NCD-RTN THRU NCD-EX.
+005350     IF ESTAT = "09"
+005360        GO TO MR010.
+005370     IF C-ACT NOT = 1
+005380         GO TO MR020.
+005390     IF C-NCD = 1
+005400         GO TO MR020.
+005410     PERFORM GET-RTN THRU GET-EX.
+005420     PERFORM DISP-RTN THRU DISP-EX.
+005430     PERFORM GOKEI-RTN THRU GOKEI-EX.
+005440     GO TO MR027.
+005450 MR020.
+005460     PERFORM DNNO-RTN THRU DNNO-EX.
+005470     IF ESTAT = "09"
+005480        GO TO MR010.
+005490     MOVE 0     TO ERR-SW.
+005500     IF C-ACT NOT = 1
+005510        PERFORM SDWG-RTN THRU SDWG-EX
+005520        IF ERR-SW = 1
+005530           GO TO MR020.
+005540     PERFORM GET-RTN THRU GET-EX.
+005550     PERFORM DISP-RTN THRU DISP-EX.
+005560     PERFORM GOKEI-RTN THRU GOKEI-EX.
+005570     IF C-ACT = 3
+005580        GO TO MR400.
+005590 MR021.
+005600     PERFORM DATE-RTN THRU DATE-EX.
+005610     IF ESTAT = "09"
+005620        GO TO MR010.
+005630 MR025.
+005640     PERFORM TK-RTN THRU TK-EX.
+005650     IF ESTAT = "09"
+005660        GO TO MR021.
+005670 MR027.
+005680     MOVE 7     TO LIN.
+005690     MOVE 8     TO LIN1.
+005700     MOVE 9     TO LIN2.
+005710     MOVE 1     TO I.
+005720     MOVE 0     TO W-DC.
+005730 MR028.
+005740     MOVE C-TENO(I) TO B-TENO.
+005750     PERFORM TENO-RTN THRU TENO-EX.
+005760     IF ESTAT = "04"
+005770        MOVE I     TO SV-I
+005780        MOVE LIN   TO SV-LIN
+005790        MOVE LIN1  TO SV-LIN1
+005800        MOVE LIN2  TO SV-LIN2
+005810        PERFORM CRE-RTN THRU CRE-EX
+005820        MOVE SV-I     TO I
+005830        PERFORM DISP-100 THRU DISP-EX
+005840        GO TO MR300.
+005850     IF ESTAT = "09"
+005860        IF I NOT = 1
+005870           SUBTRACT 3     FROM LIN LIN1 LIN2
+005880           SUBTRACT 1     FROM I
+005890           GO TO MR028
+005900        ELSE
+005910           IF C-NCD = 0
+005920              GO TO MR012
+005930            ELSE
+005940              GO TO MR025.
+005950     IF I     = 1
+005960        MOVE CRDATE   TO B-CRDATE
+005970        MOVE C-TKCD   TO B-TKCD
+005980        MOVE C-NAMEN  TO B-NAMEN.
+005990 MR030.
+006000     PERFORM KRCDM-RTN THRU KRCDM-EX.
+006010     IF ESTAT = "04"
+006020        MOVE I     TO SV-I
+006030        MOVE LIN   TO SV-LIN
+006040        MOVE LIN1  TO SV-LIN1
+006050        MOVE LIN2  TO SV-LIN2
+006060        PERFORM CRE-RTN THRU CRE-EX
+006070        MOVE SV-I     TO I
+006080        PERFORM DISP-100 THRU DISP-EX
+006090        GO TO MR300.
+006100     IF ESTAT = "09"
+006110        GO TO MR028.
+006120 MR035.
+006130     PERFORM KRCDS-RTN THRU KRCDS-EX.
+006140     IF ESTAT = "09"
+006150        GO TO MR030.
+006160     IF C-KRCDM(I) = 0140
+006170         MOVE ZERO TO C-KRSECT(I)
+006180         DISPLAY CLE-KRSECT
+006190         DISPLAY ACP-KRNKCD CLE-KRNSC ACP-KRSKNG
+006200         GO TO MR045.
+006210     MOVE ZERO TO C-KRNKCD(I) C-KRNSC(I) C-KRSKNG(I).
+006220     DISPLAY CLE-KRNKCD CLE-KRNSC CLE-KRSKNG.
+006230 MR040.
+006240     PERFORM KRSECT-RTN THRU KRSECT-EX.
+006250     IF ESTAT = "09"
+006260        GO TO MR035.
+006270     GO TO MR050.
+006280 MR045.
+006290     PERFORM KRNKCD-RTN THRU KRNKCD-EX.
+006300     IF ESTAT = "09"
+006310        GO TO MR035.
+006320     IF C-KRNKCD(I) NOT = 60
+006330         MOVE ZERO TO C-KRNSC(I)
+006340         DISPLAY CLE-KRNSC
+006350         GO TO MR047.
+006360 MR046.
+006370     PERFORM KRNSC-RTN THRU KRNSC-EX.
+006380     IF ESTAT = "09"
+006390        GO TO MR045.
+006400 MR047.
+006410     PERFORM KRSKNG-RTN THRU KRSKNG-EX.
+006420     IF ESTAT = "09"
+006430         IF C-KRNKCD(I) = 60
+006440             GO TO MR046
+006450           ELSE
+006460             GO TO MR045.
+006470 MR050.
+006480     PERFORM KRKIN-RTN THRU KRKIN-EX.
+006490     IF ESTAT = "09"
+006500         IF C-KRCDM(I) = 0140
+006510            GO TO MR047
+006520           ELSE
+006530            GO TO MR040.
+006540 MR055.
+006550     PERFORM KRTAX-RTN THRU KRTAX-EX.
+006560     IF ESTAT = "09"
+006570        GO TO MR050.
+006580 MR100.
+006590     PERFORM KSCDM-RTN THRU KSCDM-EX.
+006600     IF ESTAT = "09"
+006610        GO TO MR055.
+006620 MR105.
+006630     PERFORM KSCDS-RTN THRU KSCDS-EX.
+006640     IF ESTAT = "09"
+006650        GO TO MR100.
+006660     IF (C-KSCDM(I) = 0140) AND (C-KRCDM(I) < 5000 OR > 5999)
+006670         MOVE ZERO TO C-KSSECT(I)                                 I.000208
+006680*****    MOVE ZERO TO C-KRSECT(I)                                 D.000208
+006690*****    DISPLAY CLE-KRSECT                                       D.000208
+006700         DISPLAY ACP-KSNKCD CLE-KSNSC ACP-KSSKNG
+006710         GO TO MR115.
+006720     MOVE ZERO TO C-KSNKCD(I) C-KSNSC(I) C-KSSKNG(I).
+006730     DISPLAY CLE-KSNKCD CLE-KSNSC CLE-KSSKNG.
+006740 MR110.
+006750     PERFORM KSSECT-RTN THRU KSSECT-EX.
+006760     IF ESTAT = "09"
+006770        GO TO MR105.
+006780     GO TO MR120.
+006790 MR115.
+006800     PERFORM KSNKCD-RTN THRU KSNKCD-EX.
+006810     IF ESTAT = "09"
+006820        GO TO MR105.
+006830     IF C-KSNKCD(I) NOT = 60
+006840         MOVE ZERO TO C-KSNSC(I)
+006850         DISPLAY CLE-KSNSC
+006860         GO TO MR117.
+006870 MR116.
+006880     PERFORM KSNSC-RTN THRU KSNSC-EX.
+006890     IF ESTAT = "09"
+006900        GO TO MR115.
+006910 MR117.
+006920     PERFORM KSSKNG-RTN THRU KSSKNG-EX.
+006930     IF ESTAT = "09"
+006940         IF C-KSNKCD(I) = 60
+006950             GO TO MR116
+006960           ELSE
+006970             GO TO MR115.
+006980 MR120.
+006990     PERFORM KSKIN-RTN THRU KSKIN-EX.
+007000     IF ESTAT = "09"
+007010         IF (C-KSCDM(I) = 0140) AND (C-KRCDM(I) < 5000 OR > 5999)
+007020            GO TO MR117
+007030           ELSE
+007040            GO TO MR110.
+007050 MR125.
+007060     PERFORM KSTAX-RTN THRU KSTAX-EX.
+007070     IF ESTAT = "09"
+007080        GO TO MR120.
+007090 MR200.
+007100     PERFORM TEKI-RTN THRU TEKI-EX.
+007110     IF ESTAT = "09"
+007120        GO TO MR125.
+007130     IF I NOT = 5
+007140        ADD 1     TO I
+007150        ADD 3     TO LIN LIN1 LIN2
+007160        GO TO MR028.
+007170     MOVE I     TO SV-I.
+007180     MOVE LIN   TO SV-LIN.
+007190     MOVE LIN1  TO SV-LIN1.
+007200     MOVE LIN2  TO SV-LIN2.
+007210 MR300.
+007220     PERFORM GOKEI-RTN THRU GOKEI-EX.
+007230     IF ERR-SW = 1
+007240        MOVE SV-I     TO I
+007250        MOVE SV-LIN   TO LIN
+007260        MOVE SV-LIN1  TO LIN1
+007270        MOVE SV-LIN2  TO LIN2
+007280        GO TO MR028.
+007290     PERFORM CHK-RTN THRU CHK-EX.
+007300     IF ERR-SW = 1
+007310        MOVE SV-I     TO I
+007320        MOVE SV-LIN   TO LIN
+007330        MOVE SV-LIN1  TO LIN1
+007340        MOVE SV-LIN2  TO LIN2
+007350        GO TO MR028.
+007360*****IF ((W-CHK = 0) OR (TK-WNK NOT = 1)) OR                      D.000316
+007370*****   ((C-ACT = 2) AND (W-HHC = 1 OR 9))                        D.000316
+007380*****   ((C-ACT = 2) AND (W-HHC = 1))                             D.000302
+007390     IF ((C-ACT = 2) AND (W-HHC = 1 OR 9)) OR                     I.000316
+007400        (W-CHK NOT = 1)                                           I.001114
+007410*****   ((W-CHK NOT = 1) AND (TK-WNK NOT = 1))                    D.001114
+007420         GO TO MR310.                                             I.000316
+007430     GO TO MR320.                                                 I.000316
+007440 MR310.                                                           I.000316
+007450     IF C-ACT NOT = 1                                             I.000821
+007460         GO TO MR320.                                             I.000821
+007470*****IF C-ACT = 1                                                 D.000821
+007480*****    MOVE 0 TO W-HHC                                          D.000821
+007490*****    DISPLAY CLE-HHC                                          D.000821
+007500     MOVE 0 TO W-HHC.                                             I.000821
+007510     DISPLAY CLE-HHC.                                             I.000821
+007520*
+007530     IF TK-SS = ZERO OR 99                                        I.000821
+007540         MOVE ZERO TO W-SKDD                                      I.000821
+007550         DISPLAY CLE-SKD                                          I.000821
+007560         GO TO MR400.                                             I.000821
+007570     MOVE TK-TCD TO TSK-KEY.                                      I.001102
+007580     READ TSKF WITH UNLOCK INVALID KEY                            I.001102
+007590         MOVE ZERO TO TSK-R.                                      I.001102
+007600     MOVE TSK-ZNGP(4) TO W-SDATE.                                 I.001102
+007610     IF TSK-ZNGP(5) NOT = ZERO                                    I.001102
+007620         MOVE 99999999 TO W-SDATE                                 I.001102
+007630         MOVE ZERO TO W-SKDD                                      I.001102
+007640         DISPLAY CLE-SKD                                          I.001102
+007650         GO TO MR400.                                             I.001102
+007660     MOVE CRDATE TO W-SKDD.                                       I.000821
+007670 MR312.                                                           I.000821
+007680     IF W-SKDG = 13                                               I.001102
+007690         MOVE 1 TO W-SKDG                                         I.001102
+007700         ADD 1 TO W-SKDN.                                         I.001102
+007710     MOVE TK-SS TO W-SKDP.                                        I.000821
+007720     IF W-SKDP = 30 OR 31                                         I.000821
+007730         IF W-SKDG = 1 OR 3 OR 5 OR 7 OR 8 OR 10 OR 12            I.000821
+007740             MOVE 31 TO W-SKDP                                    I.000821
+007750           ELSE                                                   I.000821
+007760             IF W-SKDG = 4 OR 6 OR 9 OR 11                        I.000821
+007770                 MOVE 30 TO W-SKDP                                I.000821
+007780               ELSE                                               I.000821
+007790                 DIVIDE 4 INTO W-SKDN GIVING W-DTW1               I.000821
+007800                                           REMAINDER W-DTW2       I.000821
+007810                 IF W-DTW2 = 0                                    I.000821
+007820                     MOVE 29 TO W-SKDP                            I.000821
+007830                   ELSE                                           I.000821
+007840                     MOVE 28 TO W-SKDP.                           I.000821
+007850     IF CRDATE > W-SKDD                                           I.000821
+007860         IF CRMM NOT = W-SKDG                                     I.000821
+007870             MOVE ZERO TO W-SKDD                                  I.000821
+007880*****        MOVE TK-SS TO W-SKDP                                 D.001102
+007890             GO TO MR330                                          I.000821
+007900           ELSE                                                   I.000821
+007910             ADD 1 TO W-SKDG                                      I.000821
+007920             GO TO MR312.                                         I.000821
+007930     IF W-SDATE NOT = ZERO                                        I.001102
+007940         IF W-SDATE >= W-SKDD                                     I.001102
+007950             ADD 1 TO W-SKDG                                      I.001102
+007960             GO TO MR312.                                         I.001102
+007970     DISPLAY ACP-SKD.                                             I.000821
+007980     GO TO MR400.                                                 I.000321
+007990 MR320.                                                           I.000221
+008000     PERFORM HHC-RTN THRU HHC-EX.                                 I.000221
+008010     IF ESTAT = "09"                                              I.000221
+008020         MOVE SV-I     TO I                                       I.000221
+008030         MOVE SV-LIN   TO LIN                                     I.000221
+008040         MOVE SV-LIN1  TO LIN1                                    I.000221
+008050         MOVE SV-LIN2  TO LIN2                                    I.000221
+008060         GO TO MR028.                                             I.000221
+008070*****IF W-HHC = 9                                                 D.000904
+008080     IF W-HHC = 8 OR 9                                            I.000904
+008090         MOVE ZERO TO W-SKDD                                      I.000821
+008100         DISPLAY CLE-SKD                                          I.000821
+008110         GO TO MR400.                                             I.000821
+008120 MR330.                                                           I.000821
+008130     PERFORM SKD-RTN THRU SKD-EX.                                 I.000821
+008140     IF ESTAT = "09"                                              I.000821
+008150         GO TO MR320.                                             I.000821
+008160**                                                                確認
+008170 MR400.
+008180     PERFORM OKC-RTN THRU OKC-EX.
+008190     IF ESTAT = "09"
+008200        IF C-ACT = 3
+008210           GO TO MR020
+008220        ELSE
+008230         IF ((C-ACT = 2) AND (W-HHC = 1 OR 9)) OR                 I.000316
+008240            ((W-CHK NOT = 1) AND (TK-WNK NOT = 1))                I.000316
+008250               MOVE SV-I     TO I                                 I.000316
+008260               MOVE SV-LIN   TO LIN                               I.000316
+008270               MOVE SV-LIN1  TO LIN1                              I.000316
+008280               MOVE SV-LIN2  TO LIN2                              I.000316
+008290               GO TO MR028                                        I.000316
+008300*****      IF ((W-CHK = 1) AND (TK-WNK = 1)) AND                  D.000316
+008310*****         ((C-ACT = 1) OR (W-HHC NOT = 1 AND 9))              D.000316
+008320*****         ((C-ACT = 1) OR (W-HHC NOT = 1))                    D.000302
+008330*****          GO TO MR320                                        D.000316
+008340           ELSE                                                   I.000221
+008350               GO TO MR330.                                       I.000821
+008360*****          GO TO MR320.                                       D.000821
+008370*****          MOVE SV-I     TO I                                 D.000316
+008380*****          MOVE SV-LIN   TO LIN                               D.000316
+008390*****          MOVE SV-LIN1  TO LIN1                              D.000316
+008400*****          MOVE SV-LIN2  TO LIN2                              D.000316
+008410*****          GO TO MR028.                                       D.000316
+008420     IF C-OKC = "9"
+008430        GO TO MR500.
+008440**                                                                更新
+008450     IF C-ACT = 1
+008460        PERFORM DNOU-RTN THRU DNOU-EX.
+008470     IF C-ACT = 2 OR 3
+008480        PERFORM SDWDU-RTN THRU SDWDU-EX
+008490        PERFORM TDTDU-RTN THRU TDTDU-EX.
+008500     IF C-ACT NOT = 3
+008510        PERFORM SDWWU-RTN THRU SDWWU-EX
+008520        PERFORM TDTWU-RTN THRU TDTWU-EX.
+008530 MR500.
+008540     MOVE 1     TO I.
+008550     PERFORM CRE-RTN THRU CRE-EX.
+008560*****MOVE ZERO     TO CRDATE C-DNNO C-TKCD.                       D.001114
+008570     MOVE ZERO     TO CRDATE C-DNNO C-TKCD W-SKDD.                I.001114
+008580     MOVE SPACE    TO C-NAMEN.
+008590     IF C-ACT NOT = 1
+008600        PERFORM DISP-RTN THRU DISP-EX
+008610        PERFORM GOKEI-RTN THRU GOKEI-EX.
+008620*
+008630     IF C-OKC = "1"
+008640        DISPLAY OK-01
+008650     ELSE
+008660        DISPLAY CAN-01.
+008670     MOVE SPACE     TO C-OKC.
+008680     DISPLAY ACP-OKC.
+008690     IF C-ACT = 1
+008700         GO TO MR012.
+008710     GO TO MR020.
+008720 MR999.
+008730     PERFORM CLSE-ENT THRU CLSE-EXT.
+008740     STOP RUN.
+008750************************
+008760 INI-RTN.
+008770*****CALL "GR2000".                                               D.000825
+008780     CALL "GRD200".                                               D.000825
+008790     COPY LIBCPR.
+008800     MOVE ZERO            TO W-HNG.                               I.010904
+008810     MOVE D-NHNG          TO W-HNGS.                              I.010904
+008820     IF W-HNEN2 >= DATE-NF1 AND <= DATE-NT1                       I.010904
+008830         ADD DATE-NC1 TO W-HNEN.                                  I.010904
+008840     IF W-HNEN2 >= DATE-NF2 AND <= DATE-NT2                       I.010904
+008850         ADD DATE-NC2 TO W-HNEN.                                  I.010904
+008860     MOVE ZERO            TO WKONYMD.
+008870     ACCEPT WKONYMDS      FROM DATE.
+008880     IF WKONYY2 >= DATE-NF1 AND <= DATE-NT1
+008890         ADD DATE-NC1 TO WKONYY.
+008900     IF WKONYY2 >= DATE-NF2 AND <= DATE-NT2
+008910         ADD DATE-NC2 TO WKONYY.
+008920     OPEN INPUT FCTL-F.
+008930     MOVE "DATE  "     TO FCTL-KEY1 ERR-K.
+008940     READ FCTL-F UNLOCK INVALID KEY
+008950          GO TO INI-ERR.
+008960     MOVE FCTL-UPDYM      TO WUPDYM.
+008970*
+008980     MOVE "SUB   "     TO FCTL-KEY2 ERR-K.
+008990     READ FCTL-F UNLOCK INVALID KEY
+009000          GO TO INI-ERR.
+009010     MOVE FCTL-SUB5     TO WSUB5.
+009020*
+009030     MOVE "TAX   "     TO FCTL-KEY4 ERR-K.
+009040     READ FCTL-F UNLOCK INVALID KEY
+009050          GO TO INI-ERR.
+009060     MOVE TAX-CODE      TO W-KRCDM.
+009070     MOVE TAX-CODE1     TO W-KSCDM.
+009080     CLOSE FCTL-F.
+009090*
+009100     GO TO INI-EX.
+009110 INI-ERR.
+009120     MOVE "FCTL-F"     TO ERR-F.
+009130     MOVE "G"          TO ERR-M.
+009140     DISPLAY ERR-DIS.
+009150     DISPLAY DISP-BUZ-B.
+009160     CLOSE FCTL-F.
+009170     STOP RUN.
+009180 INI-EX.
+009190     EXIT.
+009200*********
+009210 OPEN-RTN.
+009220     OPEN INPUT HKBM KNG AM BNM BM  TKI HH-F GYM SDH.
+009230     OPEN I-O   SDW  TDT-M   NS-DNO  TK.
+009240     OPEN INPUT TSKF.                                             I.001102
+009250 OPEN-EX.
+009260     EXIT.
+009270***
+009280 ACT-RTN.
+009290     ACCEPT ACP-ACT.
+009300     DISPLAY DISP-MSG-SPACE.
+009310     IF ESTAT = "P9"
+009320        GO TO ACT-EX.
+009330     IF ESTAT NOT = "01" AND "06"
+009340        GO TO ACT-RTN.
+009350     IF C-ACT NOT = 1 AND 2 AND 3
+009360        DISPLAY ERR-01
+009370        GO TO ACT-RTN.
+009380 ACT-EX.
+009390     EXIT.
+009400***
+009410 NCD-RTN.
+009420     ACCEPT ACP-NCD.
+009430     DISPLAY DISP-MSG-SPACE.
+009440     IF ESTAT = "09"
+009450        GO TO NCD-EX.
+009460     IF ESTAT NOT = "01" AND "06"
+009470        GO TO NCD-RTN.
+009480     IF C-NCD NOT = 0 AND 1
+009490        GO TO NCD-RTN.
+009500 NCD-EX.
+009510     EXIT.
+009520***
+009530 DATE-RTN.
+009540     ACCEPT ACP-CRDATE.
+009550     DISPLAY DISP-MSG-SPACE.
+009560     IF ESTAT = "09"
+009570        GO TO DATE-EX.
+009580     IF ESTAT NOT = "01" AND "06"
+009590        GO TO DATE-RTN.
+009600     IF CRDATE = ZERO
+009610        MOVE WKONYMD     TO CRDATE
+009620        DISPLAY ACP-CRDATE
+009630        GO TO DATE-EX.
+009640     IF (CRMM < 1 OR > 12) OR
+009650        (CRDD < 1 OR > 31)
+009660        DISPLAY ERR-01
+009670        GO TO DATE-RTN.
+009680     MOVE ZERO TO CRYY1.
+009690     IF CRYY2 >= DATE-NF1 AND <= DATE-NT1
+009700         ADD DATE-NC1 TO CRYY.
+009710     IF CRYY2 >= DATE-NF2 AND <= DATE-NT2
+009720         ADD DATE-NC2 TO CRYY.
+009730     IF (WKONYMD   < CRDATE)  OR  (WUPDYM  >  CRYM)
+009740           GO TO DATE-RTN.
+009750     IF CRYM  <  W-HNG                                            I.010904
+009760        DISPLAY MG-16                                             I.010904
+009770        GO TO DATE-RTN.                                           I.010904
+009780 DATE-EX.
+009790     EXIT.
+009800***
+009810 DNNO-RTN.
+009820     IF C-ACT = 1
+009830        MOVE ZERO     TO C-DNNO
+009840        DISPLAY CLE-DNNO
+009850        GO TO DNNO-EX.
+009860 DNNO-000.
+009870     ACCEPT ACP-DNNO.
+009880     DISPLAY DISP-MSG-SPACE.
+009890     IF ESTAT = "09"
+009900        GO TO DNNO-EX.
+009910     IF ESTAT NOT = "01" AND "06"
+009920        GO TO DNNO-000.
+009930     IF C-DNNO   <  400000  OR  >  599999
+009940        GO TO DNNO-000.
+009950 DNNO-EX.
+009960     EXIT.
+009970*********
+009980 SDWG-RTN.
+009990     MOVE ZERO       TO W-BU.
+010000     MOVE 1     TO I.
+010010     PERFORM CRE-RTN THRU CRE-EX.
+010020     MOVE 1          TO ERR-SW.
+010030     MOVE C-DNNO     TO SDWJNO.
+010040     MOVE ZERO       TO SDWLNO.
+010050     START SDW KEY NOT LESS SDW-KEY INVALID KEY
+010060           GO TO SDWG-999.
+010070 SDWG-000.
+010080     READ SDW NEXT UNLOCK AT END
+010090          GO TO SDWG-999.
+010100     IF C-DNNO NOT = SDWJNO
+010110        GO TO SDWG-999.
+010120     MOVE 0     TO ERR-SW.
+010130*
+010140     IF SDWLNO = 1
+010150        MOVE SDWYMD      TO CRDATE   B-CRDATE
+010160        MOVE SDWCUST     TO C-TKCD   B-TKCD
+010170        MOVE SDWNAMEN    TO C-NAMEN  B-NAMEN.
+010180     MOVE SDWTENO     TO C-TENO(SDWLNO) WBU-TENO(SDWLNO).
+010190     MOVE SDWKARI     TO C-KARI(SDWLNO).
+010200     MOVE SDWKASI     TO C-KASI(SDWLNO).
+010210     MOVE SDWTEKICD   TO C-TEKICD(SDWLNO).
+010220     MOVE SDWTEKI     TO C-TEKI(SDWLNO).
+010230     IF C-KRCDM(SDWLNO) = 0140
+010240         MOVE SDWNKCD     TO C-KRNKCD(SDWLNO)
+010250         MOVE SDWNSC      TO C-KRNSC(SDWLNO)                      I.000209
+010260         MOVE SDWSKNG     TO C-KRSKNG(SDWLNO).
+010270     IF C-KSCDM(SDWLNO) = 0140
+010280         MOVE SDWNKCD     TO C-KSNKCD(SDWLNO)
+010290         MOVE SDWNSC      TO C-KSNSC(SDWLNO)                      I.000209
+010300         MOVE SDWSKNG     TO C-KSSKNG(SDWLNO).
+010310     IF C-KRCDM(SDWLNO) = W-KRCDM OR W-KSCDM
+010320         MOVE SDWETAX    TO C-KRTAX(SDWLNO).
+010330     IF C-KSCDM(SDWLNO) = W-KRCDM OR W-KSCDM
+010340         MOVE SDWETAX    TO C-KSTAX(SDWLNO).
+010350*****MOVE SDWHHC      TO C-HHC(SDWLNO).                           D.000221
+010360     MOVE SDWZHC      TO C-ZHC(SDWLNO).
+010370     MOVE SDWSKD      TO W-SKDD.                                  I.000821
+010380     IF SDWHHC          = 1                                       I.000221
+010390         MOVE 1          TO W-HHC.                                I.000221
+010400     IF SDWHHC          = 9                                       I.000221
+010410        IF W-HHC           = 0                                    I.000221
+010420             MOVE 9          TO W-HHC.                            I.000221
+010430     IF SDWHHC          = 8                                       I.000302
+010440        IF W-HHC           = 0                                    I.000302
+010450             MOVE 8          TO W-HHC.                            I.000302
+010460     GO TO SDWG-000.
+010470 SDWG-999.
+010480     IF ERR-SW = 1
+010490        DISPLAY INV-D01.
+010500 SDWG-EX.
+010510     EXIT.
+010520*********
+010530 GET-RTN.
+010540     MOVE 1     TO I.
+010550 GET-000.
+010560     IF C-KRCDM(I) NOT = ZERO
+010570        MOVE 1     TO DRCR-SW
+010580        PERFORM AMG-RTN THRU AMG-EX
+010590        MOVE 0     TO HOJO-SW
+010600        PERFORM KNGG-RTN THRU KNGG-EX
+010610        IF C-KRCDS(I) NOT = ZERO
+010620           IF C-KR-HO(I) = 1
+010630              MOVE 1     TO HOJO-SW
+010640              PERFORM KNGG-RTN THRU KNGG-EX
+010650           ELSE
+010660              PERFORM BMG-RTN THRU BMG-EX
+010670              MOVE BANKNMN     TO C-KR-CDSN(I).
+010680     IF C-KSCDM(I) NOT = ZERO
+010690        MOVE 2     TO DRCR-SW
+010700        PERFORM AMG-RTN THRU AMG-EX
+010710        MOVE 0     TO HOJO-SW
+010720        PERFORM KNGG-RTN THRU KNGG-EX
+010730        IF C-KSCDS(I) NOT = ZERO
+010740           IF C-KS-HO(I) = 1
+010750              MOVE 1     TO HOJO-SW
+010760              PERFORM KNGG-RTN THRU KNGG-EX
+010770           ELSE
+010780              PERFORM BMG-RTN THRU BMG-EX
+010790              MOVE BANKNMN     TO C-KS-CDSN(I).
+010800     IF I NOT = 5
+010810        ADD 1     TO I
+010820        GO TO GET-000.
+010830 GET-EX.
+010840     EXIT.
+010850*********
+010860 DISP-RTN.
+010870     DISPLAY ACP-CRDATE.
+010880     IF C-TKCD = ZERO
+010890        DISPLAY CLE-TKCD
+010900        DISPLAY DSP-TKNM                                          I.000217
+010910        GO TO DISP-000.                                           I.000217
+010920*****ELSE                                                         D.000217
+010930     DISPLAY ACP-TKCD.
+010940     DISPLAY DSP-TKNM.
+010950     MOVE C-TKCD     TO TK-KEY.                                   I.000217
+010960     PERFORM TKG-RTN THRU TKG-EX.                                 I.000217
+010970     IF INV-SW = 1                                                I.000217
+010980        GO TO DISP-000.                                           I.000217
+010990     IF TK-WNK = 1                                                I.000217
+011000         DISPLAY DSP-WNK                                          I.000217
+011010       ELSE                                                       I.000217
+011020         DISPLAY DSP-WNKC.                                        I.000217
+011030 DISP-000.
+011040     MOVE 1     TO I.
+011050     MOVE 7     TO LIN.
+011060     MOVE 8     TO LIN1.
+011070     MOVE 9     TO LIN2.
+011080 DISP-100.
+011090     DISPLAY DSP-AREA1
+011100             ACP-KRTAX
+011110             ACP-KSTAX
+011120             ACP-TEKI.
+011130     IF 0140 NOT = C-KRCDM(I) AND C-KSCDM(I)
+011140         DISPLAY CLE-KRSECT CLE-KSSECT.                           I.000209
+011150*****    DISPLAY CLE-KRSECT CLE-KSSECT                            D.000209
+011160*****  ELSE                                                       D.000209
+011170     IF C-KSCDM(I) = 0140
+011180         DISPLAY ACP-KSNKCD ACP-KSSKNG
+011190         IF C-KSNKCD(I) = 60                                      I.000209
+011200             DISPLAY ACP-KSNSC                                    I.000209
+011210           ELSE
+011220             DISPLAY CLE-KSNSC.                                   I.000209
+011230     IF C-KRCDM(I) = 0140                                         I.000209
+011240         DISPLAY ACP-KRNKCD ACP-KRSKNG                            I.000209
+011250         IF C-KRNKCD(I) = 60                                      I.000209
+011260             DISPLAY ACP-KRNSC                                    I.000209
+011270           ELSE                                                   I.000209
+011280             DISPLAY CLE-KRNSC.                                   I.000209
+011290*****        DISPLAY ACP-KRNKCD ACP-KRSKNG.                       D.000209
+011300     IF C-KRSKNG(I) = ZERO
+011310         DISPLAY CLE-KRSKNG.
+011320     IF C-KSSKNG(I) = ZERO
+011330         DISPLAY CLE-KSSKNG.
+011340     IF I NOT = 5
+011350        ADD 1     TO I
+011360        ADD 3     TO LIN LIN1 LIN2
+011370        GO TO DISP-100.
+011380     DISPLAY ACP-HHC.                                             I.000821
+011390     IF W-SKDD NOT = ZERO                                         I.000821
+011400         DISPLAY ACP-SKD                                          I.000821
+011410       ELSE                                                       I.000821
+011420         DISPLAY CLE-SKD.                                         I.000821
+011430 DISP-EX.
+011440     EXIT.
+011450***
+011460 TK-RTN.
+011470     ACCEPT ACP-TKCD.
+011480     DISPLAY DISP-MSG-SPACE.
+011490     IF ESTAT = "09"
+011500        GO TO TK-EX.
+011510     IF ESTAT = "P0"
+011520        MOVE 99999 TO C-TKCD
+011530        DISPLAY ACP-TKCD
+011540        GO TO TK-100.
+011550     IF ESTAT NOT = "01" AND "06"
+011560        GO TO TK-RTN.
+011570     IF C-TKCD = 99999
+011580         GO TO TK-100.
+011590     IF C-TKCD = ZERO
+011600        MOVE SPACE     TO C-NAMEN
+011610        GO TO TK-999.
+011620     MOVE C-TKCD     TO TK-KEY.
+011630     PERFORM TKG-RTN THRU TKG-EX.
+011640     IF INV-SW = 1
+011650        DISPLAY INV-M01
+011660        GO TO TK-RTN.
+011670     IF TK-WNK = 1                                                I.000217
+011680         DISPLAY DSP-WNK                                          I.000217
+011690       ELSE                                                       I.000217
+011700         DISPLAY DSP-WNKC.                                        I.000217
+011710     GO TO TK-999.
+011720 TK-100.
+011730     ACCEPT ACP-NAMEN.
+011740     DISPLAY DISP-MSG-SPACE.
+011750     IF ESTAT = "09"
+011760        GO TO TK-RTN.
+011770     IF ESTAT NOT = "01" AND "06"
+011780        GO TO TK-100.
+011790 TK-999.
+011800     DISPLAY DSP-TKNM.
+011810 TK-EX.
+011820     EXIT.
+011830*****
+011840 TENO-RTN.
+011850     DISPLAY DSP-TENO.
+011860     IF W-DC NOT = 0
+011870         GO TO TENO-050.
+011880     ACCEPT ACP-TENO.
+011890     DISPLAY DSP-TENO.
+011900     DISPLAY DISP-MSG-SPACE.
+011910     IF ESTAT = "04"
+011920        IF I = 1
+011930           GO TO TENO-RTN
+011940        ELSE
+011950           GO TO TENO-EX.
+011960     IF ESTAT = "09"
+011970        GO TO TENO-EX.
+011980     IF ESTAT NOT = "01" AND "06"
+011990        GO TO TENO-EX.
+012000     IF C-TENO1(I) NOT = 00 AND 01 AND 02 AND 03 AND 04 AND
+012010*****                    11 AND 12 AND 22 AND                     D.161001
+012020                         11 AND 12 AND 13 AND 22 AND              I.161001
+012030                         30 AND 31 AND 32 AND 33 AND 34
+012040         GO TO TENO-RTN.
+012050*
+012060     IF C-TENO(I) = ZERO
+012070         GO TO TENO-EX.
+012080     IF I = 2
+012090         IF C-TENO(2) NOT = ZERO
+012100             IF C-TENO(2) = C-TENO(1)
+012110                 GO TO TENO-RTN.
+012120     IF I = 3
+012130         IF C-TENO(3) NOT = ZERO
+012140             IF C-TENO(3) = C-TENO(1) OR C-TENO(2)
+012150                 GO TO TENO-RTN.
+012160     IF I = 4
+012170         IF C-TENO(4) NOT = ZERO
+012180             IF C-TENO(4) = C-TENO(1) OR C-TENO(2) OR C-TENO(3)
+012190                 GO TO TENO-RTN.
+012200     IF I = 5
+012210         IF C-TENO(5) NOT = ZERO
+012220             IF C-TENO(5) = C-TENO(1) OR C-TENO(2) OR C-TENO(3)
+012230                                                   OR C-TENO(4)
+012240                 GO TO TENO-RTN.
+012250 TENO-005.
+012260     IF B-TENO NOT = ZERO
+012270         IF C-TENO(I) = B-TENO
+012280             GO TO TENO-EX.
+012290     MOVE C-TENO(I)      TO TD-KEY.
+012300     READ TDT-M  UNLOCK INVALID KEY
+012310         DISPLAY MG-13
+012320         GO TO TENO-RTN.
+012330     IF TD-HCZ NOT = 0
+012340         DISPLAY MG-14
+012350         GO TO TENO-RTN.
+012360     IF CRDATE NOT = ZERO
+012370          GO TO TENO-010.
+012380     MOVE TD-SNEN     TO CRYY.
+012390     MOVE TD-GET      TO CRMM.
+012400     MOVE TD-PEY      TO CRDD.
+012410     MOVE TD-TCD      TO C-TKCD.
+012420     IF TD-C1 < 2
+012430         ADD  10000       TO C-TKCD
+012440       ELSE
+012450         ADD  20000       TO C-TKCD.
+012460     DISPLAY ACP-CRDATE ACP-TKCD.
+012470     MOVE C-TKCD     TO TK-KEY.
+012480     PERFORM TKG-RTN THRU TKG-EX.
+012490     IF INV-SW = 1
+012500         DISPLAY INV-M01
+012510         GO TO TENO-RTN.
+012520     IF TK-WNK = 1                                                I.000217
+012530         DISPLAY DSP-WNK                                          I.000217
+012540       ELSE                                                       I.000217
+012550         DISPLAY DSP-WNKC.                                        I.000217
+012560     DISPLAY DSP-TKNM.
+012570     GO TO TENO-020.
+012580 TENO-010.
+012590     IF (CRDATE NOT = B-CRDATE) OR (C-TKCD NOT = B-TKCD)
+012600         DISPLAY MG-06
+012610         GO TO TENO-RTN.
+012620 TENO-020.
+012630     IF C-TENO1(I) = 00
+012640         MOVE 0110 TO C-KRCDM(I)
+012650         MOVE ZERO TO C-KRCDS(I)
+012660         MOVE TD-KIN TO C-KRKIN(I) C-KSKIN(I)
+012670         DISPLAY ACP-KRCDM DSP-KRKIN DSP-KSKIN
+012680         GO TO TENO-EX.
+012690     IF C-TENO1(I) = 01 OR 02
+012700         MOVE 0120 TO C-KRCDM(I)
+012710         MOVE ZERO TO C-KRCDS(I)
+012720         MOVE TD-KIN TO C-KRKIN(I) C-KSKIN(I)
+012730         DISPLAY ACP-KRCDM DSP-KRKIN DSP-KSKIN
+012740         GO TO TENO-EX.
+012750     IF C-TENO1(I) = 03
+012760         MOVE 2120 TO C-KRCDM(I)
+012770         MOVE ZERO TO C-KRCDS(I)
+012780         MOVE 0140 TO C-KSCDM(I)
+012790         MOVE ZERO TO C-KSCDS(I)
+012800         MOVE TD-KIN TO C-KRKIN(I) C-KSKIN(I)
+012810         MOVE SPACE TO C-TEKI(I)
+012820         MOVE NC"相殺" TO C-TEKI(I)
+012830         DISPLAY ACP-KRCDM ACP-KSCDM DSP-KRKIN DSP-KSKIN ACP-TEKI
+012840         GO TO TENO-EX.
+012850     IF C-TENO1(I) = 04
+012860         MOVE ZERO TO C-KRCDM(I) C-KRCDS(I)
+012870         MOVE 0140 TO C-KSCDM(I)
+012880         MOVE ZERO TO C-KSCDS(I)
+012890         MOVE TD-KIN TO C-KRKIN(I) C-KSKIN(I)
+012900         MOVE SPACE TO C-TEKI(I)
+012910         MOVE NC"相殺" TO C-TEKI(I)
+012920         DISPLAY ACP-KSCDM DSP-KRKIN DSP-KSKIN ACP-TEKI
+012930         GO TO TENO-EX.
+012940     IF C-TENO1(I) = 11
+012950         MOVE 0130 TO C-KRCDM(I)
+012960         MOVE ZERO TO C-KRCDS(I)
+012970         MOVE ZERO TO C-KSCDM(I)
+012980         MOVE ZERO TO C-KSCDS(I)
+012990         MOVE TD-KIN TO C-KRKIN(I) C-KSKIN(I)
+013000         MOVE SPACE TO C-TEKI(I)
+013010         MOVE TD-MG TO W-GETZ
+013020         MOVE TD-MP TO W-PEYZ
+013030         MOVE W-GPZ TO W-GPDZ
+013040         MOVE W-GPDZ TO C-TEKI11(I)
+013050         MOVE NC"約手入　　　　" TO C-TEKI12(I)
+013060         DISPLAY ACP-KSCDM DSP-KRKIN DSP-KSKIN ACP-TEKI
+013070         GO TO TENO-030.
+013080     IF C-TENO1(I) = 12
+013090         MOVE 0130 TO C-KRCDM(I)
+013100         MOVE ZERO TO C-KRCDS(I)
+013110         MOVE ZERO TO C-KSCDM(I)
+013120         MOVE ZERO TO C-KSCDS(I)
+013130         MOVE TD-KIN TO C-KRKIN(I) C-KSKIN(I)
+013140         MOVE SPACE TO C-TEKI(I)
+013150         MOVE TD-MG TO W-GETZ
+013160         MOVE TD-MP TO W-PEYZ
+013170         MOVE W-GPZ TO W-GPDZ
+013180         MOVE W-GPDZ TO C-TEKI11(I)
+013190         MOVE NC"為手入　　　　" TO C-TEKI12(I)
+013200         DISPLAY ACP-KSCDM DSP-KRKIN DSP-KSKIN ACP-TEKI
+013210         GO TO TENO-030.
+013220     IF C-TENO1(I) = 13                                           I.161001
+013230         MOVE 0130 TO C-KRCDM(I)                                  I.161001
+013240         MOVE ZERO TO C-KRCDS(I)                                  I.161001
+013250         MOVE ZERO TO C-KSCDM(I)                                  I.161001
+013260         MOVE ZERO TO C-KSCDS(I)                                  I.161001
+013270         MOVE TD-KIN TO C-KRKIN(I) C-KSKIN(I)                     I.161001
+013280         MOVE SPACE TO C-TEKI(I)                                  I.161001
+013290         MOVE TD-MG TO W-GETZ                                     I.161001
+013300         MOVE TD-MP TO W-PEYZ                                     I.161001
+013310         MOVE W-GPZ TO W-GPDZ                                     I.161001
+013320         MOVE W-GPDZ TO C-TEKI11(I)                               I.161001
+013330         MOVE NC"電債入　　　　" TO C-TEKI12(I)                   I.161001
+013340         DISPLAY ACP-KSCDM DSP-KRKIN DSP-KSKIN ACP-TEKI           I.161001
+013350         GO TO TENO-030.                                          I.161001
+013360     IF C-TENO1(I) = 30
+013370         MOVE 2120 TO C-KRCDM(I)
+013380         MOVE ZERO TO C-KRCDS(I)
+013390         MOVE 0130 TO C-KSCDM(I)
+013400         MOVE ZERO TO C-KSCDS(I)
+013410         COMPUTE W-KIN = TD-S(1) + TD-S(2)
+013420         MOVE W-KIN TO C-KRKIN(I)
+013430         MOVE TD-KIN TO C-KSKIN(I)
+013440         MOVE SPACE TO C-TEKI(I)
+013450         MOVE NC"品代払" TO C-TEKI(I)
+013460         DISPLAY ACP-KRCDM ACP-KSCDM DSP-KRKIN DSP-KSKIN ACP-TEKI
+013470         GO TO TENO-030.
+013480     IF C-TENO1(I) = 31 OR 32
+013490         MOVE 2120 TO C-KRCDM(I)
+013500         MOVE ZERO TO C-KRCDS(I)
+013510         MOVE 0120 TO C-KSCDM(I)
+013520         MOVE ZERO TO C-KSCDS(I)
+013530         COMPUTE W-KIN = TD-S(1) + TD-S(2)
+013540         MOVE W-KIN TO C-KRKIN(I)
+013550         MOVE TD-KIN TO C-KSKIN(I)
+013560         MOVE SPACE TO C-TEKI(I)
+013570         MOVE NC"品代払" TO C-TEKI(I)
+013580         DISPLAY ACP-KRCDM ACP-KSCDM DSP-KRKIN DSP-KSKIN ACP-TEKI
+013590         GO TO TENO-030.
+013600     IF C-TENO1(I) = 33
+013610         MOVE 2120 TO C-KRCDM(I)
+013620         MOVE ZERO TO C-KRCDS(I)
+013630         MOVE 0140 TO C-KSCDM(I)
+013640         MOVE ZERO TO C-KSCDS(I)
+013650         COMPUTE W-KIN = TD-S(1) + TD-S(2)
+013660         MOVE W-KIN TO C-KRKIN(I)
+013670         MOVE TD-KIN TO C-KSKIN(I)
+013680         MOVE SPACE TO C-TEKI(I)
+013690         MOVE NC"相殺" TO C-TEKI(I)
+013700         DISPLAY ACP-KRCDM ACP-KSCDM DSP-KRKIN DSP-KSKIN ACP-TEKI
+013710         GO TO TENO-030.
+013720     IF C-TENO1(I) = 34
+013730         MOVE 2120 TO C-KRCDM(I)
+013740         MOVE ZERO TO C-KRCDS(I)
+013750         MOVE ZERO TO C-KSCDM(I)
+013760         MOVE ZERO TO C-KSCDS(I)
+013770         COMPUTE W-KIN = TD-S(1) + TD-S(2)
+013780         MOVE W-KIN TO C-KRKIN(I)
+013790         MOVE TD-KIN TO C-KSKIN(I)
+013800         MOVE SPACE TO C-TEKI(I)
+013810         MOVE NC"相殺" TO C-TEKI(I)
+013820         DISPLAY ACP-KRCDM DSP-KRKIN DSP-KSKIN ACP-TEKI
+013830         GO TO TENO-030.
+013840     IF C-TENO1(I) NOT = 22
+013850         GO TO TENO-EX.
+013860     COMPUTE W-KIN = TD-S(1) + TD-S(2).
+013870     IF W-KIN = ZERO
+013880         MOVE ZERO TO C-KRCDM(I)
+013890         MOVE SPACE TO C-TEKI21(I)
+013900       ELSE
+013910         MOVE 2120 TO C-KRCDM(I)
+013920         MOVE NC"品代払" TO C-TEKI21(I).
+013930     MOVE ZERO TO C-KRCDS(I).
+013940     MOVE 2110 TO C-KSCDM(I).
+013950     MOVE ZERO TO C-KSCDS(I).
+013960     MOVE W-KIN TO C-KRKIN(I).
+013970     MOVE TD-KIN TO C-KSKIN(I).
+013980     MOVE SPACE TO C-TEKI(I).
+013990     MOVE TD-MG TO W-GETZ.
+014000     MOVE TD-MP TO W-PEYZ.
+014010     MOVE W-GPZ TO W-GPDZ.
+014020     MOVE W-GPDZ TO C-TEKI22(I).
+014030     IF TD-BKC = 2200
+014040         MOVE NC"商工中金　　　　　　　　" TO C-TEKI23(I).
+014050     IF TD-BKC = 3200
+014060         MOVE NC"中国銀行　　　　　　　　" TO C-TEKI23(I).
+014070     DISPLAY ACP-KSCDM DSP-KRKIN DSP-KSKIN ACP-TEKI.
+014080 TENO-030.
+014090     IF TD-MND = ZERO
+014100         GO TO TENO-040.
+014110     MOVE ZERO TO W-NG.
+014120     MOVE TD-MNG TO W-NGS.
+014130     IF W-NEN2 >= DATE-YF1 AND <= DATE-YT1
+014140         ADD DATE-YC1 TO W-NEN
+014150       ELSE
+014160         IF W-NEN2 >= DATE-YF2 AND <= DATE-YT2
+014170             ADD DATE-NC2 TO W-NEN.
+014180     MOVE W-NEN TO C-TKDY(I).
+014190     MOVE TD-MG TO C-TKDM(I).
+014200     MOVE TD-MP TO C-TKDD(I).
+014210     IF C-TENO1(I) < 20
+014220         GO TO TENO-EX.
+014230 TENO-040.
+014240     COMPUTE W-KIN = TD-ZSHZ + TD-SSHZ.
+014250     IF W-KIN NOT = ZERO
+014260         MOVE 1 TO W-DC.
+014270     GO TO TENO-EX.
+014280 TENO-050.
+014290     MOVE ZERO TO C-TENO(I).
+014300     MOVE 2120 TO C-KRCDM(I).
+014310     MOVE ZERO TO C-KRCDS(I).
+014320     MOVE ZERO TO C-KSCDM(I).
+014330     MOVE ZERO TO C-KSCDS(I).
+014340     COMPUTE W-KIN = TD-ZSHZ + TD-SSHZ.
+014350     MOVE W-KIN TO C-KRKIN(I).
+014360     MOVE ZERO TO C-KSKIN(I).
+014370     MOVE SPACE TO C-TEKI(I).
+014380     MOVE NC"消費税額" TO C-TEKI(I).
+014390     DISPLAY DSP-TENO ACP-KRCDM DSP-KRKIN DSP-KSKIN ACP-TEKI.
+014400     MOVE 0     TO W-DC.
+014410 TENO-EX.
+014420     EXIT.
+014430****************** ＜　借方　＞ ******************************************
+014440 KRCDM-RTN.
+014450     DISPLAY CLE-SP20-KR1.
+014460     DISPLAY ACP-KRCDM.
+014470     ACCEPT ACP-KRCDM.
+014480     DISPLAY DISP-MSG-SPACE.
+014490     IF ESTAT = "04"
+014500        IF I = 1
+014510           GO TO KRCDM-RTN
+014520        ELSE
+014530           GO TO KRCDM-999.
+014540     IF ESTAT = "09"
+014550        GO TO KRCDM-999.
+014560     IF ESTAT NOT = "01" AND "06"
+014570        GO TO KRCDM-RTN.
+014580     IF C-KRCDM(I) = ZERO
+014590        INITIALIZE C-KR-CDMN(I)
+014600                   C-KR-TB(I)
+014610                   C-KR-HO(I)
+014620                   C-KR-KH(I)
+014630                   C-KR-TAX(I)
+014640                   C-KR-BSPL(I)
+014650        GO TO KRCDM-999.
+014660     MOVE 1     TO DRCR-SW.
+014670     PERFORM AMG-RTN THRU AMG-EX.
+014680     IF INV-SW = 1
+014690        DISPLAY INV-M01
+014700        GO TO KRCDM-RTN.
+014710     MOVE 1     TO DRCR-SW.
+014720     MOVE 0     TO HOJO-SW.
+014730     PERFORM KNGG-RTN THRU KNGG-EX.
+014740     IF INV-SW = 1
+014750        DISPLAY INV-M01
+014760        GO TO KRCDM-RTN.
+014770 KRCDM-999.
+014780     DISPLAY DSP-KRCDMN.
+014790     IF C-TENO(I) = ZERO
+014800         IF C-KRCDM(I) = 0130 OR 2110
+014810            DISPLAY MG-07
+014820            GO TO KRCDM-RTN.
+014830     IF C-KRCDM(I) = 2120
+014840         IF C-KSCDM(I) = 2110
+014850             IF C-TEKI21(I) = SPACE
+014860                 MOVE NC"品代払" TO C-TEKI21(I)
+014870                 DISPLAY ACP-TEKI.
+014880 KRCDM-EX.
+014890     EXIT.
+014900***
+014910 KRCDS-RTN.
+014920     IF C-KRCDM(I) = ZERO
+014930        GO TO KRCDS-998.
+014940     IF C-KR-HO(I) = 1
+014950        GO TO KRCDS-000.
+014960     IF (C-KR-TB(I) NOT < 01) AND
+014970        (C-KR-TB(I) NOT > 12)
+014980        GO TO KRCDS-000.
+014990     GO TO KRCDS-998.
+015000 KRCDS-000.
+015010     DISPLAY CLE-SP20-KR2.
+015020     DISPLAY ACP-KRCDS.
+015030     ACCEPT ACP-KRCDS.
+015040     DISPLAY DISP-MSG-SPACE.
+015050     IF ESTAT = "09"
+015060        GO TO KRCDS-999.
+015070     IF ESTAT NOT = "01" AND "06"
+015080        GO TO KRCDS-000.
+015090     IF C-KRCDS(I) = ZERO
+015100        DISPLAY ERR-01
+015110        GO TO KRCDS-000.
+015120     MOVE SPACE     TO C-KR-CDSN(I).
+015130     IF C-KR-HO(I) = 1
+015140        MOVE 1     TO DRCR-SW
+015150        MOVE 1     TO HOJO-SW
+015160        PERFORM KNGG-RTN THRU KNGG-EX
+015170        IF INV-SW = 1
+015180           GO TO KRCDS-ERR.
+015190     IF (C-KR-TB(I) NOT < 01) AND
+015200        (C-KR-TB(I) NOT > 12)
+015210        NEXT SENTENCE
+015220     ELSE
+015230        GO TO KRCDS-999.
+015240     MOVE 1     TO DRCR-SW.
+015250     PERFORM BMG-RTN THRU BMG-EX.
+015260     IF INV-SW = 1
+015270        GO TO KRCDS-ERR.
+015280     IF C-KR-HO(I) = 0
+015290        MOVE BANKNMN     TO C-KR-CDSN(I).
+015300     MOVE 1     TO DRCR-SW.
+015310     PERFORM GYMG-RTN THRU GYMG-EX.
+015320     IF INV-SW = 1
+015330        GO TO KRCDS-ERR.
+015340     GO TO KRCDS-999.
+015350 KRCDS-ERR.
+015360     DISPLAY INV-M01.
+015370     GO TO KRCDS-000.
+015380 KRCDS-998.
+015390     INITIALIZE C-KRCDS(I) C-KR-CDSN(I).
+015400 KRCDS-999.
+015410     DISPLAY DSP-KRCDSN.
+015420 KRCDS-EX.
+015430     EXIT.
+015440***
+015450 KRSECT-RTN.
+015460     IF C-KRCDM(I) = ZERO
+015470        GO TO KRSECT-999.
+015480     IF C-KRCDM(I) >= 1110 AND <= 1500                            I.070404
+015490        GO TO KRSECT-000.                                         I.070404
+015500     IF C-KR-KH(I) = 1
+015510        GO TO KRSECT-000.
+015520     IF (C-KR-BSPL(I) = 1) AND
+015530        (WSUB5 = 0)
+015540        GO TO KRSECT-000.
+015550     GO TO KRSECT-999.
+015560 KRSECT-000.
+015570     IF C-ACT = 1
+015580         IF C-KRSECT(I) = ZERO
+015590             IF C-TKCD NOT = ZERO
+015600                 COMPUTE C-KRSECT(I) = TK-BKC * 100.
+015610     DISPLAY ACP-KRSECT.
+015620 KRSECT-010.
+015630     ACCEPT ACP-KRSECT.
+015640     DISPLAY DISP-MSG-SPACE.
+015650     IF ESTAT = "09"
+015660        GO TO KRSECT-EX.
+015670     IF ESTAT NOT = "01" AND "06"
+015680        GO TO KRSECT-010.
+015690     MOVE 1     TO DRCR-SW.
+015700     PERFORM BNMG-RTN THRU BNMG-EX.
+015710     IF INV-SW = 1
+015720        GO TO KRSECT-ERR.
+015730     IF C-KR-KH(I) = 1
+015740        MOVE 1     TO DRCR-SW
+015750        PERFORM HHFG-RTN THRU HHFG-EX
+015760        IF INV-SW = 1
+015770           GO TO KRSECT-ERR.
+015780     GO TO KRSECT-EX.
+015790 KRSECT-ERR.
+015800     DISPLAY INV-M01.
+015810     GO TO KRSECT-010.
+015820 KRSECT-999.
+015830     INITIALIZE C-KRSECT(I).
+015840     DISPLAY CLE-KRSECT.
+015850 KRSECT-EX.
+015860     EXIT.
+015870***
+015880 KRNKCD-RTN.
+015890     ACCEPT ACP-KRNKCD.
+015900     DISPLAY DISP-MSG-SPACE.
+015910     IF ESTAT = "09"
+015920        GO TO KRNKCD-EX.
+015930     IF ESTAT NOT = "01" AND "06"
+015940        GO TO KRNKCD-RTN.
+015950*
+015960     MOVE SPACE TO HKB-KEY.
+015970     MOVE "31" TO HKB-NO.
+015980     MOVE C-KRNKCD1(I) TO HKB-NKC1.
+015990     READ HKBM WITH UNLOCK INVALID KEY
+016000         GO TO KRNKCD-RTN.
+016010*
+016020     IF C-KRNKCD2(I) NOT = 0 AND 8 AND 9
+016030         GO TO KRNKCD-RTN.
+016040     IF C-KRNKCD(I) = "78" OR "98"
+016050         GO TO KRNKCD-RTN.
+016060     IF C-KRNKCD1(I) NOT = 7
+016070         IF C-KRNKCD2(I) = 9
+016080             GO TO KRNKCD-RTN.
+016090 KRNKCD-EX.
+016100     EXIT.
+016110***
+016120 KRNSC-RTN.
+016130     ACCEPT ACP-KRNSC.
+016140     DISPLAY DISP-MSG-SPACE.
+016150     IF ESTAT = "09"
+016160        GO TO KRNSC-EX.
+016170     IF ESTAT NOT = "01" AND "06"
+016180        GO TO KRNSC-RTN.
+016190*
+016200     MOVE SPACE TO HKB-KEY.
+016210     MOVE "32" TO HKB-NO.
+016220     MOVE C-KRNSC(I) TO HKB-NSC.
+016230     READ HKBM WITH UNLOCK INVALID KEY
+016240         GO TO KRNSC-RTN.
+016250 KRNSC-EX.
+016260     EXIT.
+016270***
+016280 KRSKNG-RTN.
+016290     ACCEPT ACP-KRSKNG.
+016300     DISPLAY DISP-MSG-SPACE.
+016310     IF ESTAT = "09"
+016320        GO TO KRSKNG-EX.
+016330     IF ESTAT NOT = "01" AND "06"
+016340        GO TO KRSKNG-RTN.
+016350     IF C-KRSKNG(I) = ZERO
+016360        DISPLAY CLE-KRSKNG
+016370        GO TO KRSKNG-RTN.
+016380     IF C-KRSKG(I) < 1 OR > 12
+016390         GO TO KRSKNG-RTN.
+016400     MOVE ZERO TO W-NG.
+016410     MOVE C-KRSKNG(I) TO W-NGS.
+016420     IF W-NEN2 >= DATE-NF1 AND <= DATE-NT1
+016430         ADD DATE-NC1 TO W-NEN.
+016440     IF W-NEN2 >= DATE-NF2 AND <= DATE-NT2
+016450         ADD DATE-NC2 TO W-NEN.
+016460     IF CRYM < W-NG
+016470         GO TO KRSKNG-RTN.
+016480 KRSKNG-EX.
+016490     EXIT.
+016500***
+016510 KRKIN-RTN.
+016520     IF C-KRCDM(I) = ZERO
+016530        MOVE ZERO     TO C-KRKIN(I)
+016540        GO TO KRKIN-999.
+016550     IF C-KRCDM(I) = 0130
+016560        GO TO KRKIN-999.
+016570 KRKIN-000.
+016580     ACCEPT ACP-KRKIN.
+016590     DISPLAY DISP-MSG-SPACE.
+016600     IF ESTAT = "09"
+016610        GO TO KRKIN-EX.
+016620     IF ESTAT NOT = "01" AND "06"
+016630        GO TO KRKIN-000.
+016640     IF C-KRKIN(I) = ZERO
+016650        DISPLAY ERR-01
+016660        GO TO KRKIN-000.
+016670 KRKIN-999.
+016680     DISPLAY DSP-KRKIN.
+016690 KRKIN-EX.
+016700     EXIT.
+016710***
+016720 KRTAX-RTN.
+016730     IF (C-DNNO    < 300000) OR (C-DNNO > 399999 AND < 600000)
+016740         IF C-KRCDM(I) = W-KRCDM OR W-KSCDM
+016750             GO TO KRTAX-000.
+016760     IF (C-KRCDM(I) = ZERO) OR
+016770        (C-KR-TAX(I) = SPACE)
+016780        MOVE SPACE     TO C-KRTAX(I)
+016790        GO TO KRTAX-999.
+016800     IF C-KR-TAX(I) = "1" OR "3" OR "5" OR "07"
+016810        MOVE C-KR-TAX(I)     TO C-KRTAX(I)
+016820        GO TO KRTAX-999.
+016830 KRTAX-000.
+016840     ACCEPT ACP-KRTAX.
+016850     DISPLAY DISP-MSG-SPACE.
+016860     IF ESTAT = "09"
+016870        GO TO KRTAX-EX.
+016880     IF ESTAT NOT = "01" AND "06"
+016890        GO TO KRTAX-000.
+016900*
+016910     IF C-KR-TAX(I) = "2"
+016920        IF C-KRTAX(I) NOT = " " AND "1" AND "3"
+016930           DISPLAY ERR-01
+016940           GO TO KRTAX-000.
+016950     IF C-KR-TAX(I) = "6"
+016960        IF C-KRTAX(I) NOT = " " AND "5" AND "7"
+016970           DISPLAY ERR-01
+016980           GO TO KRTAX-000.
+016990*
+017000     IF C-KRCDM(I) = W-KRCDM
+017010        IF C-KRTAX(I) NOT = " " AND "1" AND "3"
+017020           DISPLAY ERR-01
+017030           GO TO KRTAX-000.
+017040     IF C-KRCDM(I) = W-KSCDM
+017050        IF C-KRTAX(I) NOT = " " AND "5" AND "7"
+017060           DISPLAY ERR-01
+017070           GO TO KRTAX-000.
+017080 KRTAX-999.
+017090     DISPLAY ACP-KRTAX.
+017100 KRTAX-EX.
+017110     EXIT.
+017120****************** ＜　貸方　＞ ******************************************
+017130 KSCDM-RTN.
+017140     DISPLAY CLE-SP20-KS1.
+017150     DISPLAY ACP-KSCDM.
+017160     ACCEPT ACP-KSCDM.
+017170     DISPLAY DISP-MSG-SPACE.
+017180     IF ESTAT = "09"
+017190        GO TO KSCDM-999.
+017200     IF ESTAT NOT = "01" AND "06"
+017210        GO TO KSCDM-RTN.
+017220     IF C-KSCDM(I) = ZERO
+017230        INITIALIZE C-KS-CDMN(I)
+017240                   C-KS-TB(I)
+017250                   C-KS-HO(I)
+017260                   C-KS-KH(I)
+017270                   C-KS-TAX(I)
+017280                   C-KS-BSPL(I)
+017290        GO TO KSCDM-999.
+017300     MOVE 2     TO DRCR-SW.
+017310     PERFORM AMG-RTN THRU AMG-EX.
+017320     IF INV-SW = 1
+017330        DISPLAY INV-M01
+017340        GO TO KSCDM-RTN.
+017350     MOVE 2     TO DRCR-SW.
+017360     MOVE 0     TO HOJO-SW.
+017370     PERFORM KNGG-RTN THRU KNGG-EX.
+017380     IF INV-SW = 1
+017390        DISPLAY INV-M01
+017400        GO TO KSCDM-RTN.
+017410 KSCDM-999.
+017420     DISPLAY DSP-KSCDMN.
+017430     IF C-TENO(I) = ZERO
+017440         IF C-KSCDM(I) = 0130 OR 2110
+017450            DISPLAY MG-07
+017460            GO TO KSCDM-RTN.
+017470     IF C-KSCDM(I) NOT = 0140
+017480         GO TO KSCDM-EX.
+017490     IF C-KRCDM(I) = 0110
+017500         IF C-TEKI(I) = SPACE
+017510             MOVE NC"品代入" TO C-TEKI(I).
+017520     IF C-KRCDM(I) = 0120
+017530         IF C-TEKI(I) = SPACE
+017540             MOVE NC"小切手取立　品代入　　　" TO C-TEKI(I).
+017550     IF C-KRCDM(I) = 0130
+017560         IF C-TEKI12(I) = NC"約手入　　　　"
+017570             MOVE NC"約手入　品代入" TO C-TEKI12(I).
+017580     IF C-KRCDM(I) = 0130
+017590         IF C-TEKI12(I) = NC"為手入　　　　"
+017600             MOVE NC"為手入　品代入" TO C-TEKI12(I).
+017610     IF C-KRCDM(I) = 0130                                         I.161001
+017620         IF C-TEKI12(I) = NC"電債入　　　　"                      I.161001
+017630             MOVE NC"電債入　品代入" TO C-TEKI12(I).              I.161001
+017640     DISPLAY ACP-TEKI.
+017650 KSCDM-EX.
+017660     EXIT.
+017670***
+017680 KSCDS-RTN.
+017690     IF C-KSCDM(I) = ZERO
+017700        GO TO KSCDS-998.
+017710     IF C-KS-HO(I) = 1
+017720        GO TO KSCDS-000.
+017730     IF (C-KS-TB(I) NOT < 01) AND
+017740        (C-KS-TB(I) NOT > 12)
+017750        GO TO KSCDS-000.
+017760     IF C-KS-TB(I) = 22 OR 23
+017770        GO TO KSCDS-000.
+017780     GO TO KSCDS-998.
+017790 KSCDS-000.
+017800     DISPLAY CLE-SP20-KS2.
+017810     DISPLAY ACP-KSCDS.
+017820     ACCEPT ACP-KSCDS.
+017830     DISPLAY DISP-MSG-SPACE.
+017840     IF ESTAT = "09"
+017850        GO TO KSCDS-999.
+017860     IF ESTAT NOT = "01" AND "06"
+017870        GO TO KSCDS-000.
+017880     IF C-KSCDS(I) = ZERO
+017890        DISPLAY ERR-01
+017900        GO TO KSCDS-000.
+017910     MOVE SPACE     TO C-KS-CDSN(I).
+017920     IF C-KS-HO(I) = 1
+017930        MOVE 2     TO DRCR-SW
+017940        MOVE 1     TO HOJO-SW
+017950        PERFORM KNGG-RTN THRU KNGG-EX
+017960        IF INV-SW = 1
+017970           GO TO KSCDS-ERR.
+017980     IF C-KS-TB(I) = 22 OR 23
+017990        GO TO KSCDS-100.
+018000     IF (C-KS-TB(I) NOT < 01) AND
+018010        (C-KS-TB(I) NOT > 12)
+018020        GO TO KSCDS-100.
+018030     GO TO KSCDS-999.
+018040 KSCDS-100.
+018050     MOVE 2     TO DRCR-SW.
+018060     PERFORM BMG-RTN THRU BMG-EX.
+018070     IF INV-SW = 1
+018080        GO TO KSCDS-ERR.
+018090     IF C-KS-HO(I) = 0
+018100        MOVE BANKNMN     TO C-KS-CDSN(I).
+018110     IF C-KS-TB(I) = 22 OR 23
+018120        GO TO KSCDS-999.
+018130 KSCDS-200.
+018140     MOVE 2     TO DRCR-SW.
+018150     PERFORM GYMG-RTN THRU GYMG-EX.
+018160     IF INV-SW = 1
+018170        GO TO KSCDS-ERR.
+018180     GO TO KSCDS-999.
+018190 KSCDS-ERR.
+018200     DISPLAY INV-M01.
+018210     GO TO KSCDS-000.
+018220 KSCDS-998.
+018230     INITIALIZE C-KSCDS(I) C-KS-CDSN(I).
+018240 KSCDS-999.
+018250     DISPLAY DSP-KSCDSN.
+018260 KSCDS-EX.
+018270     EXIT.
+018280***
+018290 KSSECT-RTN.
+018300     IF C-KSCDM(I) = ZERO
+018310        GO TO KSSECT-999.
+018320     IF C-KSCDM(I) >= 1110 AND <= 1500                            I.070404
+018330        GO TO KSSECT-000.                                         I.070404
+018340     IF C-KS-KH(I) = 1
+018350        GO TO KSSECT-000.
+018360     IF (C-KS-BSPL(I) = 1) AND
+018370        (WSUB5 = 0)
+018380        GO TO KSSECT-000.
+018390     GO TO KSSECT-999.
+018400 KSSECT-000.
+018410     IF C-ACT = 1
+018420         IF C-KSSECT(I) = ZERO
+018430             IF C-TKCD NOT = ZERO
+018440                 COMPUTE C-KSSECT(I) = TK-BKC * 100.
+018450     DISPLAY ACP-KSSECT.
+018460 KSSECT-010.
+018470     ACCEPT ACP-KSSECT.
+018480     DISPLAY DISP-MSG-SPACE.
+018490     IF ESTAT = "09"
+018500        GO TO KSSECT-EX.
+018510     IF ESTAT NOT = "01" AND "06"
+018520        GO TO KSSECT-010.
+018530     MOVE 2     TO DRCR-SW.
+018540     PERFORM BNMG-RTN THRU BNMG-EX.
+018550     IF INV-SW = 1
+018560        GO TO KSSECT-ERR.
+018570     IF C-KS-KH(I) = 1
+018580        MOVE 2     TO DRCR-SW
+018590        PERFORM HHFG-RTN THRU HHFG-EX
+018600        IF INV-SW = 1
+018610           GO TO KSSECT-ERR.
+018620     GO TO KSSECT-EX.
+018630 KSSECT-ERR.
+018640     DISPLAY INV-M01.
+018650     GO TO KSSECT-010.
+018660 KSSECT-999.
+018670     INITIALIZE C-KSSECT(I).
+018680     DISPLAY CLE-KSSECT.
+018690 KSSECT-EX.
+018700     EXIT.
+018710***
+018720 KSNKCD-RTN.
+018730     IF C-KRNKCD(I) NOT = ZERO
+018740         MOVE ZERO TO C-KSNKCD(I) C-KSNSC(I) C-KSSKNG(I)
+018750         DISPLAY CLE-KSNKCD CLE-KSNSC CLE-KSSKNG
+018760         GO TO KSNKCD-EX.
+018770 KSNKCD-000.
+018780     ACCEPT ACP-KSNKCD.
+018790     DISPLAY DISP-MSG-SPACE.
+018800     IF ESTAT = "09"
+018810        GO TO KSNKCD-EX.
+018820     IF ESTAT NOT = "01" AND "06"
+018830        GO TO KSNKCD-000.
+018840*
+018850     MOVE SPACE TO HKB-KEY.
+018860     MOVE "31" TO HKB-NO.
+018870     MOVE C-KSNKCD1(I) TO HKB-NKC1.
+018880     READ HKBM WITH UNLOCK INVALID KEY
+018890         GO TO KSNKCD-000.
+018900*
+018910     IF C-KSNKCD2(I) NOT = 0 AND 8 AND 9
+018920         GO TO KSNKCD-000.
+018930     IF C-KSNKCD(I) = "78" OR "98"
+018940         GO TO KSNKCD-000.
+018950     IF C-KSNKCD1(I) NOT = 7
+018960         IF C-KSNKCD2(I) = 9
+018970             GO TO KSNKCD-000.
+018980     IF C-KRCDM(I) = 0110
+018990         IF C-KSNKCD1(I) NOT = 0
+019000             DISPLAY MG-09.
+019010     IF C-KRCDM(I) = 0120
+019020         IF C-KSNKCD1(I) NOT = 1 AND 2
+019030             DISPLAY MG-09.
+019040     IF C-KRCDM(I) = 0130
+019050         IF C-KSNKCD1(I) NOT = 3 AND 4
+019060             DISPLAY MG-09.
+019070 KSNKCD-EX.
+019080     EXIT.
+019090***
+019100 KSNSC-RTN.
+019110     ACCEPT ACP-KSNSC.
+019120     DISPLAY DISP-MSG-SPACE.
+019130     IF ESTAT = "09"
+019140        GO TO KSNSC-EX.
+019150     IF ESTAT NOT = "01" AND "06"
+019160        GO TO KSNSC-RTN.
+019170*
+019180     MOVE SPACE TO HKB-KEY.
+019190     MOVE "32" TO HKB-NO.
+019200     MOVE C-KSNSC(I) TO HKB-NSC.
+019210     READ HKBM WITH UNLOCK INVALID KEY
+019220         GO TO KSNSC-RTN.
+019230*
+019240     IF C-KSNSC(I) = 1 OR 2
+019250         IF C-KRCDM(I) NOT = 7119
+019260             GO TO KSNSC-RTN
+019270           ELSE
+019280             IF C-KRCDS(I) NOT = 0001
+019290                 GO TO KSNSC-RTN.
+019300     IF C-KSNSC(I) = 3
+019310         IF C-KRCDM(I) NOT = 8202
+019320             GO TO KSNSC-RTN.
+019330     IF C-KSNSC(I) = 4
+019340         IF C-KRCDM(I) NOT = 7119
+019350             GO TO KSNSC-RTN
+019360           ELSE
+019370             IF C-KRCDS(I) NOT = 0003
+019380                 GO TO KSNSC-RTN.
+019390     IF C-KSNSC(I) = 5
+019400         IF C-KRCDM(I) NOT = 7119
+019410             GO TO KSNSC-RTN
+019420           ELSE
+019430             IF C-KRCDS(I) NOT = 0002
+019440                 GO TO KSNSC-RTN.
+019450     IF C-KSNSC(I) = 6
+019460         IF C-KRCDM(I) NOT = 7130
+019470             GO TO KSNSC-RTN.
+019480     IF C-TEKI(I)  = SPACE                                        I.000209
+019490         MOVE HKB-NSNA TO C-TEKI(I)                               I.000209
+019500         DISPLAY ACP-TEKI.                                        I.000209
+019510 KSNSC-EX.
+019520     EXIT.
+019530***
+019540 KSSKNG-RTN.
+019550     IF C-KRSKNG(I) NOT = ZERO
+019560         DISPLAY CLE-KSSKNG
+019570         GO TO KSSKNG-EX.
+019580 KSSKNG-000.
+019590     ACCEPT ACP-KSSKNG.
+019600     DISPLAY DISP-MSG-SPACE.
+019610     IF ESTAT = "09"
+019620        GO TO KSSKNG-EX.
+019630     IF ESTAT NOT = "01" AND "06"
+019640        GO TO KSSKNG-000.
+019650     IF C-KSSKNG(I) = ZERO
+019660        DISPLAY CLE-KSSKNG
+019670        GO TO KSSKNG-EX.
+019680     IF C-KSSKG(I) < 1 OR > 12
+019690         GO TO KSSKNG-000.
+019700     MOVE ZERO TO W-NG.
+019710     MOVE C-KSSKNG(I) TO W-NGS.
+019720     IF W-NEN2 >= DATE-NF1 AND <= DATE-NT1
+019730         ADD DATE-NC1 TO W-NEN.
+019740     IF W-NEN2 >= DATE-NF2 AND <= DATE-NT2
+019750         ADD DATE-NC2 TO W-NEN.
+019760     IF CRYM < W-NG
+019770         GO TO KSSKNG-000.
+019780 KSSKNG-EX.
+019790     EXIT.
+019800***
+019810 KSKIN-RTN.
+019820     IF C-KSCDM(I) = ZERO
+019830        MOVE ZERO     TO C-KSKIN(I)
+019840        GO TO KSKIN-999.
+019850     IF C-KSCDM(I) = 2110
+019860        GO TO KSKIN-999.
+019870 KSKIN-000.
+019880     ACCEPT ACP-KSKIN.
+019890     DISPLAY DISP-MSG-SPACE.
+019900     IF ESTAT = "09"
+019910        GO TO KSKIN-EX.
+019920     IF ESTAT NOT = "01" AND "06"
+019930        GO TO KSKIN-000.
+019940     IF C-KSKIN(I) = ZERO
+019950        DISPLAY ERR-01
+019960        GO TO KSKIN-000.
+019970 KSKIN-999.
+019980     DISPLAY DSP-KSKIN.
+019990 KSKIN-EX.
+020000     EXIT.
+020010***
+020020 KSTAX-RTN.
+020030     IF (C-DNNO    < 300000) OR (C-DNNO > 399999 AND < 600000)
+020040         IF C-KSCDM(I) = W-KRCDM OR W-KSCDM
+020050             GO TO KSTAX-000.
+020060     IF (C-KSCDM(I) = ZERO) OR
+020070        (C-KS-TAX(I) = SPACE)
+020080        MOVE SPACE     TO C-KSTAX(I)
+020090        GO TO KSTAX-999.
+020100     IF C-KS-TAX(I) = "1" OR "3" OR "5" OR "7"
+020110        MOVE C-KS-TAX(I)     TO C-KSTAX(I)
+020120        GO TO KSTAX-999.
+020130 KSTAX-000.
+020140     ACCEPT ACP-KSTAX.
+020150     DISPLAY DISP-MSG-SPACE.
+020160     IF ESTAT = "09"
+020170        GO TO KSTAX-EX.
+020180     IF ESTAT NOT = "01" AND "06"
+020190        GO TO KSTAX-000.
+020200*
+020210     IF C-KS-TAX(I) = "2"
+020220        IF C-KSTAX(I) NOT = " " AND "1" AND "3"
+020230           DISPLAY ERR-01
+020240           GO TO KSTAX-000.
+020250     IF C-KS-TAX(I) = "6"
+020260        IF C-KSTAX(I) NOT = " " AND "5" AND "7"
+020270           DISPLAY ERR-01
+020280           GO TO KSTAX-000.
+020290*
+020300     IF C-KSCDM(I) = W-KRCDM
+020310        IF C-KSTAX(I) NOT = " " AND "1" AND "3"
+020320           DISPLAY ERR-01
+020330           GO TO KSTAX-000.
+020340     IF C-KSCDM(I) = W-KSCDM
+020350        IF C-KSTAX(I) NOT = " " AND "5" AND "7"
+020360           DISPLAY ERR-01
+020370           GO TO KSTAX-000.
+020380 KSTAX-999.
+020390     DISPLAY ACP-KSTAX.
+020400 KSTAX-EX.
+020410     EXIT.
+020420*********
+020430 TEKI-RTN.
+020440     IF (C-KRCDM(I) = ZERO) AND
+020450        (C-KSCDM(I) = ZERO)
+020460        INITIALIZE C-TEKICD(I) C-TEKI(I)
+020470        GO TO TEKI-999.
+020480 TEKI-000.
+020490     DISPLAY CLE-SP40.
+020500     DISPLAY ACP-TEKICD.
+020510     ACCEPT ACP-TEKICD.
+020520     DISPLAY DISP-MSG-SPACE.
+020530     IF ESTAT = "09"
+020540        GO TO TEKI-999.
+020550     IF ESTAT NOT = "01" AND "06"
+020560        GO TO TEKI-000.
+020570     IF C-TEKICD(I) = ZERO
+020580        GO TO TEKI-500.
+020590     PERFORM TKIG-RTN THRU TKIG-EX.
+020600     IF INV-SW = 1
+020610        DISPLAY INV-M01
+020620        GO TO TEKI-000.
+020630     MOVE ZERO     TO C-TEKICD(I).
+020640 TEKI-500.
+020650     DISPLAY ACP-TEKI.
+020660     ACCEPT ACP-TEKI.
+020670     DISPLAY DISP-MSG-SPACE.
+020680     IF ESTAT = "09"
+020690        GO TO TEKI-000.
+020700     IF ESTAT NOT = "01" AND "06"
+020710        GO TO TEKI-500.
+020720     GO TO TEKI-EX.
+020730 TEKI-999.
+020740     DISPLAY ACP-TEKI.
+020750 TEKI-EX.
+020760     EXIT.
+020770***
+020780 GOKEI-RTN.
+020790     MOVE ZERO     TO C-KRTOT C-KSTOT ERR-SW.
+020800     MOVE 1        TO SOE.
+020810 GOKEI-000.
+020820     ADD C-KRKIN(SOE)     TO C-KRTOT.
+020830     ADD C-KSKIN(SOE)     TO C-KSTOT.
+020840     IF C-KRCDM(SOE) = W-KRCDM OR W-KSCDM
+020850         IF C-KRTAX(SOE) NOT = " "
+020860             IF C-KS-TAX(SOE) = " "
+020870                 MOVE 1 TO ERR-SW
+020880                 DISPLAY MG-11
+020890                 GO TO GOKEI-EX.
+020900     IF C-KSCDM(SOE) = W-KRCDM OR W-KSCDM
+020910         IF C-KSTAX(SOE) NOT = " "
+020920             IF C-KR-TAX(SOE) = " "
+020930                 MOVE 1 TO ERR-SW
+020940                 DISPLAY MG-11
+020950                 GO TO GOKEI-EX.
+020960     IF SOE NOT = 5
+020970        ADD 1     TO SOE
+020980        GO TO GOKEI-000.
+020990     DISPLAY DSP-AREA2.
+021000     IF C-KRTOT NOT = C-KSTOT
+021010        MOVE 1     TO ERR-SW
+021020        DISPLAY MG-04.
+021030 GOKEI-EX.
+021040     EXIT.
+021050*****
+021060 CHK-RTN.
+021070     MOVE 0        TO ERR-SW.
+021080     MOVE 1        TO SOE.
+021090 CHK-010.
+021100     IF C-KRCDM(SOE) = 0110 OR 0120 OR 0130 OR 0140 OR
+021110                       2110 OR 2120
+021120         GO TO CHK-020.
+021130     IF C-KSCDM(SOE) = 0130 OR 0140 OR 2110 OR 2120
+021140         GO TO CHK-020.
+021150     IF SOE NOT = 5
+021160        ADD 1     TO SOE
+021170        GO TO CHK-010.
+021180     DISPLAY MG-08.
+021190     MOVE 1        TO ERR-SW.
+021200     GO TO CHK-EX.
+021210 CHK-020.
+021220*****MOVE ZERO     TO SOE C-TCD.                                  D.000221
+021230     MOVE ZERO     TO SOE C-TCD W-CHK.                            I.000221
+021240 CHK-030.
+021250     ADD 1     TO SOE.
+021260     IF SOE = 6
+021270        GO TO CHK-EX.
+021280     IF (C-KRCDM(SOE) NOT = 0140) OR
+021290        (C-KSCDM(SOE) > 4999 AND < 6000)
+021300         GO TO CHK-040.
+021310     IF C-TKCD > 09999 AND < 20000
+021320         MOVE C-TKCD TO C-TCD
+021330         GO TO CHK-EX.
+021340     IF C-TKCD > 29999
+021350         IF TK-TCD NOT = ZERO
+021360             MOVE TK-TCD TO C-TCD
+021370             MOVE 1 TO W-CHK                                      I.000221
+021380             GO TO CHK-EX.
+021390     GO TO CHK-050.
+021400 CHK-040.
+021410     IF (C-KSCDM(SOE) NOT = 0140) OR
+021420        (C-KRCDM(SOE) > 4999 AND < 6000)
+021430         GO TO CHK-030.
+021440     IF C-TKCD > 09999 AND < 20000
+021450         MOVE C-TKCD TO C-TCD
+021460         GO TO CHK-EX.
+021470     IF C-TKCD > 29999
+021480*****    IF TK-TCD NOT = ZERO                                     D.000316
+021490         IF TK-TCD NOT = TK-CD2                                   I.000316
+021500             MOVE 1 TO W-CHK                                      I.000221
+021510             MOVE TK-TCD TO C-TCD
+021520             GO TO CHK-EX.
+021530 CHK-050.
+021540     DISPLAY MG-10.
+021550     MOVE 1        TO ERR-SW.
+021560 CHK-EX.
+021570     EXIT.
+021580***
+021590 HHC-RTN.                                                         I.000221
+021600     ACCEPT ACP-HHC.                                              I.000221
+021610     DISPLAY DISP-MSG-SPACE.                                      I.000221
+021620     IF ESTAT = "09"                                              I.000221
+021630        GO TO HHC-EX.                                             I.000221
+021640     IF ESTAT NOT = "01" AND "06"                                 I.000221
+021650        GO TO HHC-RTN.                                            I.000221
+021660*****IF W-HHC NOT = 0 AND 9                                       D.000302
+021670     IF W-HHC NOT = 0 AND 8                                       I.000302
+021680        GO TO HHC-RTN.                                            I.000221
+021690 HHC-EX.                                                          I.000221
+021700     EXIT.                                                        I.000221
+021710***
+021720 SKD-RTN.                                                         I.000821
+021730     ACCEPT ACP-SKD.                                              I.000821
+021740     DISPLAY DISP-MSG-SPACE.                                      I.000821
+021750     IF ESTAT = "09"                                              I.000821
+021760        GO TO SKD-EX.                                             I.000821
+021770     IF ESTAT NOT = "01" AND "06"                                 I.000821
+021780        GO TO SKD-RTN.                                            I.000821
+021790     IF W-SKDD NOT = ZERO                                         I.000821
+021800         IF W-SKDG < 1 OR > 12                                    I.000821
+021810             GO TO SKD-RTN.                                       I.000821
+021820     IF W-SKDD NOT = ZERO                                         I.000821
+021830         IF W-SKDP < 1 OR > 31                                    I.000821
+021840             GO TO SKD-RTN.                                       I.000821
+021850     IF W-SKDD NOT = ZERO                                         I.000821
+021860         IF CRDATE > W-SKDD                                       I.000821
+021870             GO TO SKD-RTN.                                       I.000821
+021880     IF W-SDATE NOT = ZERO                                        I.001102
+021890         IF W-SDATE >= W-SKDD                                     I.001102
+021900             GO TO SKD-RTN.                                       I.001102
+021910 SKD-EX.                                                          I.000821
+021920     EXIT.                                                        I.000821
+021930***
+021940 OKC-RTN.
+021950     ACCEPT ACP-OKC.
+021960     DISPLAY DISP-MSG-SPACE.
+021970     IF ESTAT = "09"
+021980        GO TO OKC-EX.
+021990     IF ESTAT NOT = "01" AND "06"
+022000        GO TO OKC-RTN.
+022010     IF C-OKC NOT = "1" AND "9"
+022020        DISPLAY ERR-01
+022030        GO TO OKC-RTN.
+022040 OKC-EX.
+022050     EXIT.
+022060***
+022070 CRE-RTN.
+022080     INITIALIZE CRT-ITEM(I).
+022090     IF I NOT = 5
+022100        ADD 1     TO I
+022110        GO TO CRE-RTN.
+022120     MOVE 0 TO W-HHC.                                             I.000221
+022130 CRE-EX.
+022140     EXIT.
+022150*********
+022160 DNOU-RTN.
+022170     MOVE "11"     TO DNO1-KEY ERR-K.
+022180     READ NS-DNO INVALID KEY
+022190          MOVE "NS-DNO"     TO ERR-F
+022200          MOVE "G"          TO ERR-M
+022210          PERFORM ERR-ENT THRU ERR-EXT.
+022220 DNOU-000.
+022230     IF DNO1-023 = DNO1-022
+022240        MOVE DNO1-021     TO DNO1-023
+022250     ELSE
+022260        ADD 1     TO DNO1-023.
+022270*
+022280*****MOVE CRDATE     TO SDWYMD.
+022290     MOVE DNO1-023   TO SDWJNO.
+022300     MOVE ZERO       TO SDWLNO.
+022310     START SDW KEY NOT LESS SDW-KEY INVALID KEY
+022320           GO TO DNOU-100.
+022330     READ SDW NEXT UNLOCK AT END
+022340          GO TO DNOU-100.
+022350*****IF (CRDATE = SDWYMD) AND
+022360*****   (DNO1-023 = SDWJNO)
+022370     IF DNO1-023 = SDWJNO
+022380        GO TO DNOU-000.
+022390 DNOU-100.
+022400     MOVE CRDATE     TO HTRDATE.
+022410     MOVE DNO1-023   TO HJUNLNO.
+022420     MOVE ZERO       TO HLINENO HDR-CR.
+022430     START SDH KEY NOT LESS SH-KEY1 INVALID KEY
+022440           GO TO DNOU-999.
+022450     READ SDH NEXT UNLOCK AT END
+022460          GO TO DNOU-999.
+022470     IF (CRDATE = HTRDATE) AND
+022480        (DNO1-023 = HJUNLNO)
+022490        GO TO DNOU-000.
+022500 DNOU-999.
+022510     MOVE DNO1-023     TO C-DNNO.
+022520     REWRITE DNO1-R INVALID KEY
+022530          MOVE "NS-DNO"     TO ERR-F
+022540          MOVE "R"          TO ERR-M
+022550          PERFORM ERR-ENT THRU ERR-EXT.
+022560 DNOU-EX.
+022570     EXIT.
+022580***
+022590 SDWDU-RTN.
+022600*****MOVE CRDATE     TO SDWYMD.
+022610     MOVE C-DNNO     TO SDWJNO.
+022620     MOVE ZERO       TO SDWLNO.
+022630     START SDW KEY NOT LESS SDW-KEY INVALID KEY
+022640           GO TO SDWDU-EX.
+022650 SDWDU-000.
+022660     READ SDW NEXT AT END
+022670          GO TO SDWDU-999.
+022680*****IF CRDATE NOT = SDWYMD
+022690*****   GO TO SDWDU-999.
+022700     IF C-DNNO NOT = SDWJNO
+022710        GO TO SDWDU-999.
+022720     MOVE SDW-KEY     TO ERR-K.
+022730     DELETE SDW INVALID KEY
+022740            MOVE "SDW"     TO ERR-F
+022750            MOVE "D"       TO ERR-M
+022760            PERFORM ERR-ENT THRU ERR-EXT.
+022770     CALL "CBLTCLS" USING SDW.
+022780     GO TO SDWDU-000.
+022790 SDWDU-999.
+022800     MOVE LOW-VALUE     TO SDW-KEY.
+022810     START SDW KEY NOT LESS SDW-KEY INVALID KEY
+022820           GO TO SDWDU-EX.
+022830     READ SDW NEXT UNLOCK AT END
+022840          GO TO SDWDU-EX.
+022850 SDWDU-EX.
+022860     EXIT.
+022870***
+022880 SDWWU-RTN.
+022890     MOVE 1     TO I.
+022900 SDWWU-000.
+022910     IF (C-KRCDM(I) = ZERO) AND
+022920        (C-KSCDM(I) = ZERO)
+022930        GO TO SDWWU-999.
+022940     MOVE SPACE     TO SDW-REC.
+022950     INITIALIZE SDW-REC.
+022960     MOVE CRDATE          TO SDWYMD.
+022970     MOVE C-DNNO          TO SDWJNO.
+022980     MOVE I               TO SDWLNO.
+022990     MOVE C-KARI(I)       TO SDWKARI.
+023000     MOVE C-KASI(I)       TO SDWKASI.
+023010     MOVE C-TKCD          TO SDWCUST.
+023020     MOVE C-NAMEN         TO SDWNAMEN.
+023030     MOVE C-TEKICD(I)     TO SDWTEKICD.
+023040     MOVE C-TEKI(I)       TO SDWTEKI.
+023050     IF C-KRCDM(I) = 0140
+023060         MOVE C-KRNKCD(I)     TO SDWNKCD
+023070         MOVE C-KRNSC(I)      TO SDWNSC.
+023080         MOVE C-KRSKNG(I)     TO SDWSKNG.
+023090     IF C-KSCDM(I) = 0140
+023100         MOVE C-KSNKCD(I)     TO SDWNKCD
+023110         MOVE C-KSNSC(I)      TO SDWNSC.
+023120         MOVE C-KSSKNG(I)     TO SDWSKNG.
+023130     MOVE C-TKD(I)        TO SDWTKD.
+023140     IF C-KRCDM(I) = W-KRCDM OR W-KSCDM
+023150         MOVE C-KRTAX(I)  TO SDWETAX
+023160         MOVE " " TO KRTAXW.
+023170*****MOVE C-HHC(I)        TO SDWHHC.                              D.000221
+023180     MOVE W-SKDD          TO SDWSKD.                              I.000821
+023190     MOVE W-HHC           TO SDWHHC.                              I.000221
+023200     MOVE C-ZHC(I)        TO SDWZHC.
+023210*****IF SDWHHC NOT = 9                                            D.000302
+023220     IF SDWHHC NOT = 1 AND 9                                      I.000302
+023230         IF 0140 NOT = C-KRCDM(I) AND C-KSCDM(I)
+023240*****        MOVE 1           TO SDWHHC                           D.000221
+023250*****        MOVE 9           TO SDWHHC                           D.000302
+023260             MOVE 8           TO SDWHHC                           I.000302
+023270           ELSE
+023280             IF (C-KRCDM(I) > 4999 AND < 6000) OR
+023290                (C-KSCDM(I) > 4999 AND < 6000)
+023300                 MOVE 8          TO SDWHHC.                       I.000302
+023310*****            MOVE 9          TO SDWHHC.                       D.000302
+023320*****            MOVE 1          TO SDWHHC.                       D.000221
+023330*****IF C-TKCD  NOT = ZERO                                        D.000221
+023340*****    IF  TK-WNK   = 1                                         D.000221
+023350*****        MOVE 1          TO SDWHHC.                           D.000221
+023360     IF C-KSCDM(I) = W-KRCDM OR W-KSCDM
+023370         MOVE C-KSTAX(I)  TO SDWETAX
+023380         MOVE " "         TO KSTAXW.
+023390     MOVE C-TENO(I)       TO SDWTENO.
+023400     MOVE C-TCD           TO SDWTCD.
+023410     MOVE SPACE           TO SDWSIN.
+023420     MOVE SDW-KEY         TO ERR-K.
+023430     WRITE SDW-REC INVALID KEY
+023440           MOVE "SDW"     TO ERR-F
+023450           MOVE "W"       TO ERR-M
+023460           PERFORM ERR-ENT THRU ERR-EXT.
+023470     CALL "CBLTCLS" USING SDW.
+023480 SDWWU-999.
+023490     IF I NOT = 5
+023500        ADD 1     TO I
+023510        GO TO SDWWU-000.
+023520     IF C-TKCD = ZERO OR 99999                                    I.000209
+023530         GO TO SDWWU-EX.                                          I.000209
+023540     MOVE ZERO TO W-NG.
+023550     MOVE TK-NG TO W-NGS.
+023560     IF W-NEN2 >= DATE-NF1 AND <= DATE-NT1
+023570         ADD DATE-NC1 TO W-NEN.
+023580     IF W-NEN2 >= DATE-NF2 AND <= DATE-NT2
+023590         ADD DATE-NC2 TO W-NEN.
+023600     IF CRYM > W-NG
+023610         MOVE CRYM TO W-NG
+023620         MOVE W-NGS TO TK-NG
+023630         REWRITE TK-REC INVALID KEY
+023640             DISPLAY MG-12 DISP-BUZ-B
+023650             DISPLAY DISP-MSG-SPACE.
+023660 SDWWU-EX.
+023670     EXIT.
+023680***
+023690 TDTDU-RTN.
+023700     MOVE 1     TO I.
+023710 TDTDU-000.
+023720     IF WBU-TENO(I) = ZERO
+023730         GO TO TDTDU-999.
+023740     MOVE WBU-TENO(I) TO TD-KEY.
+023750     READ TDT-M INVALID KEY
+023760          GO TO TDTDU-999.
+023770     IF TD-HCZ = 0
+023780        GO TO TDTDU-999.
+023790     MOVE 0           TO TD-HCZ.
+023800     REWRITE TDT-R INVALID KEY
+023810            MOVE "TDTM"    TO ERR-F
+023820            MOVE "R"       TO ERR-M
+023830            PERFORM ERR-ENT THRU ERR-EXT.
+023840 TDTDU-999.
+023850     IF I     NOT =  5
+023860        ADD  1  TO  I
+023870        GO TO TDTDU-000.
+023880 TDTDU-EX.
+023890     EXIT.
+023900***
+023910 TDTWU-RTN.
+023920     MOVE 1     TO I.
+023930 TDTWU-000.
+023940     IF C-TENO(I) = ZERO
+023950         GO TO TDTWU-999.
+023960     MOVE C-TENO(I) TO TD-KEY.
+023970     READ TDT-M INVALID KEY
+023980          GO TO TDTWU-999.
+023990     IF TD-HCZ = 1 OR 9                                           I.991209
+024000*****IF TD-HCZ = 1                                                D.991209
+024010        GO TO TDTDU-999.
+024020     MOVE 1           TO TD-HCZ.
+024030     REWRITE TDT-R INVALID KEY
+024040            MOVE "TDTM"    TO ERR-F
+024050            MOVE "R"       TO ERR-M
+024060            PERFORM ERR-ENT THRU ERR-EXT.
+024070 TDTWU-999.
+024080     IF I     NOT =  5
+024090        ADD  1  TO  I
+024100        GO TO TDTWU-000.
+024110 TDTWU-EX.
+024120     EXIT.
+024130***
+024140 CLSE-ENT.
+024150     CLOSE HKBM KNG AM BNM BM TK TKI HH-F GYM SDH.
+024160     CLOSE SDW TDT-M NS-DNO.
+024170     CLOSE TSKF.                                                  I.001102
+024180     DISPLAY DISP-C.
+024190 CLSE-EXT.
+024200     EXIT.
+024210*********
+024220 AMG-RTN.
+024230     MOVE 0     TO INV-SW.
+024240     IF DRCR-SW = 1
+024250        MOVE C-KRCDM(I)     TO AM-KEY
+024260     ELSE
+024270        MOVE C-KSCDM(I)     TO AM-KEY.
+024280     READ AM UNLOCK INVALID KEY
+024290          MOVE 1     TO INV-SW
+024300          GO TO AMG-EX.
+024310     IF DRCR-SW = 1
+024320        MOVE TEG-BAN     TO C-KR-TB(I)
+024330        MOVE HOJYO       TO C-KR-HO(I)
+024340        MOVE KEIHI       TO C-KR-KH(I)
+024350        MOVE BS-PL       TO C-KR-BSPL(I)
+024360     ELSE
+024370        MOVE TEG-BAN     TO C-KS-TB(I)
+024380        MOVE HOJYO       TO C-KS-HO(I)
+024390        MOVE KEIHI       TO C-KS-KH(I)
+024400        MOVE BS-PL       TO C-KS-BSPL(I).
+024410 AMG-EX.
+024420     EXIT.
+024430***
+024440 KNGG-RTN.
+024450     MOVE 0     TO INV-SW.
+024460     IF DRCR-SW = 1
+024470        MOVE C-KRCDM(I)     TO K-ACCD
+024480        IF HOJO-SW = 0
+024490           MOVE ZERO           TO K-HOCD
+024500        ELSE
+024510           MOVE C-KRCDS(I)     TO K-HOCD
+024520     ELSE
+024530        MOVE C-KSCDM(I)     TO K-ACCD
+024540        IF HOJO-SW = 0
+024550           MOVE ZERO           TO K-HOCD
+024560        ELSE
+024570           MOVE C-KSCDS(I)     TO K-HOCD.
+024580     READ KNG UNLOCK INVALID KEY
+024590          MOVE 1     TO INV-SW
+024600          GO TO KNGG-EX.
+024610     IF DRCR-SW = 1
+024620        MOVE KNGTAX     TO C-KR-TAX(I)
+024630        IF HOJO-SW = 0
+024640           MOVE KNGNMN     TO C-KR-CDMN(I)
+024650        ELSE
+024660           MOVE KNGNMN     TO C-KR-CDSN(I)
+024670     ELSE
+024680        MOVE KNGTAX     TO C-KS-TAX(I)
+024690        IF HOJO-SW = 0
+024700           MOVE KNGNMN     TO C-KS-CDMN(I)
+024710        ELSE
+024720           MOVE KNGNMN     TO C-KS-CDSN(I).
+024730 KNGG-EX.
+024740     EXIT.
+024750***
+024760 TKG-RTN.
+024770     MOVE 0     TO INV-SW.
+024780     READ TK INVALID KEY
+024790          MOVE SPACE     TO TK-NAMEN
+024800          MOVE 0         TO TK-SS                                 I.000821
+024810          MOVE 1         TO INV-SW.
+024820     MOVE TK-NAMEN TO C-NAMEN.
+024830 TKG-EX.
+024840     EXIT.
+024850***
+024860 BMG-RTN.
+024870     MOVE 0     TO INV-SW.
+024880     IF DRCR-SW = 1
+024890        MOVE C-KRCDS(I)     TO BM-KEY
+024900     ELSE
+024910        MOVE C-KSCDS(I)     TO BM-KEY.
+024920     READ BM UNLOCK INVALID KEY
+024930          MOVE SPACE     TO BANKNMN
+024940          MOVE 1     TO INV-SW.
+024950 BMG-EX.
+024960     EXIT.
+024970***
+024980 GYMG-RTN.
+024990     MOVE 0     TO INV-SW.
+025000     IF DRCR-SW = 1
+025010        MOVE C-KRCDM(I)     TO GYM-011
+025020        MOVE C-KRCDS(I)     TO GYM-012
+025030     ELSE
+025040        MOVE C-KSCDM(I)     TO GYM-011
+025050        MOVE C-KSCDS(I)     TO GYM-012.
+025060     READ GYM UNLOCK INVALID KEY
+025070          MOVE 1     TO INV-SW.
+025080 GYMG-EX.
+025090     EXIT.
+025100***
+025110 BNMG-RTN.
+025120     MOVE 0     TO INV-SW.
+025130     IF DRCR-SW = 1
+025140        MOVE C-KRSECT(I)     TO BNM-KEY
+025150     ELSE
+025160        MOVE C-KSSECT(I)     TO BNM-KEY.
+025170     READ BNM UNLOCK INVALID KEY
+025180          MOVE 1     TO INV-SW
+025190          GO TO BNMG-EX.
+025200     IF BNM-BUMONKBN = 1
+025210        MOVE 1     TO INV-SW.
+025220 BNMG-EX.
+025230     EXIT.
+025240***
+025250 HHFG-RTN.
+025260     MOVE 0     TO INV-SW.
+025270     IF DRCR-SW = 1
+025280        MOVE C-KRSECT(I)     TO HH-BUCD
+025290        MOVE C-KRCDM(I)      TO HH-KACD
+025300        MOVE C-KRCDS(I)      TO HH-HOCD
+025310     ELSE
+025320        MOVE C-KSSECT(I)     TO HH-BUCD
+025330        MOVE C-KSCDM(I)      TO HH-KACD
+025340        MOVE C-KSCDS(I)      TO HH-HOCD.
+025350     READ HH-F UNLOCK INVALID KEY
+025360          MOVE 1     TO INV-SW.
+025370 HHFG-EX.
+025380     EXIT.
+025390***
+025400 TKIG-RTN.
+025410     MOVE 0     TO INV-SW.
+025420     MOVE C-TEKICD(I)     TO TKI-KEY.
+025430     READ TKI UNLOCK INVALID KEY
+025440          MOVE SPACE     TO TKI-02
+025450          MOVE 1         TO INV-SW.
+025460     MOVE TKI-02     TO C-TEKI(I).
+025470 TKIG-EX.
+025480     EXIT.
+025490*********
+025500 COPY LPMSG.
+025510*********
+

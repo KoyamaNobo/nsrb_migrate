@@ -1,0 +1,724 @@
+000010 IDENTIFICATION  DIVISION.
+000020 PROGRAM-ID.     PRG050.
+000030*********************************************
+000040*    財務残高表                             *
+000050*    DATE  :  92/11/25                      *
+000060*********************************************
+000070 ENVIRONMENT         DIVISION.
+000080 CONFIGURATION       SECTION.
+000090 SOURCE-COMPUTER.    NEAC-SYSTEM3100.
+000100 OBJECT-COMPUTER.    NEAC-SYSTEM3100.
+000110 INPUT-OUTPUT        SECTION.
+000120 FILE-CONTROL.
+000130     SELECT  ZAN-K  ASSIGN  TO  ZAN-MSD
+000140       ORGANIZATION  IS  INDEXED
+000150       ACCESS  MODE  IS  SEQUENTIAL
+000160       RECORD  KEY   IS  ZAN-KEY.
+000170     SELECT  AM  ASSIGN  TO  KAMOKUK-MSD
+000180       ORGANIZATION  IS  INDEXED
+000190       ACCESS  MODE  IS  RANDOM
+000200       RECORD  KEY   IS  AM-KEY.
+000210     SELECT  KZM-F  ASSIGN  TO  F0-MSD
+000220       ORGANIZATION  IS  INDEXED
+000230       ACCESS  MODE  IS  RANDOM
+000240       RECORD  KEY   IS  KZM-KEY.
+000250     SELECT  HZM-F  ASSIGN  TO  F1-MSD
+000260       ORGANIZATION  IS  INDEXED
+000270       ACCESS  MODE  IS  RANDOM
+000280       RECORD  KEY   IS  HZM-KEY.
+000290     SELECT  KNG ASSIGN  TO  F2-MSD
+000300       ORGANIZATION      INDEXED
+000310       ACCESS    MODE    RANDOM
+000320       RECORD    KEY     KNG-KEY.
+000330     SELECT  FCTL-F ASSIGN  TO  F3-MSD                            580625
+000340       ORGANIZATION      INDEXED
+000350       ACCESS    MODE    RANDOM
+000360       RECORD    KEY     FCTL-KEY.                                580626
+000370*****SELECT  F5  ASSIGN  TO  SPOUT1-PRN999.                       D.960527
+000380     SELECT  F5  ASSIGN  TO  SPOUT1-PRN999-FPG010.                I.960527
+000390 I-O-CONTROL.                                                     580707
+000400     APPLY    SHARED-MODE    ON    ZAN-K
+000410     APPLY    SHARED-MODE    ON    AM
+000420     APPLY    SHARED-MODE    ON    KZM-F
+000430     APPLY    SHARED-MODE    ON    HZM-F
+000440     APPLY    SHARED-MODE    ON    KNG
+000450     APPLY    SHARED-MODE    ON    FCTL-F                         580707
+000460     APPLY    SHIFT-CODE     ON    F5.
+000470 DATA            DIVISION.
+000480 FILE            SECTION.
+000490 COPY    ACCUNT.
+000500 COPY    LKAZAN.
+000510 COPY    LHOZAN.
+000520 COPY    KANGEL.
+000530 COPY    FCTL.                                                    580626
+000540 FD  ZAN-K
+000550     BLOCK  8 RECORDS
+000560     LABEL RECORD IS STANDARD
+000570     VALUE OF IDENTIFICATION "ZAN-K".
+000580 01  ZAN-R.
+000590     02  ZAN-KEY.
+000600       03  ZAN-NO        PIC 9(02).
+000610       03  ZAN-KAK       PIC 9(04).
+000620       03  ZAN-DATA1.
+000630         04  ZAN-KAK1    PIC 9(04).
+000640         04  ZAN-HOK1    PIC 9(04).
+000650       03  ZAN-DATA2.
+000660         04  ZAN-KAK2    PIC 9(04).
+000670         04  ZAN-HOK2    PIC 9(04).
+000680     02  F               PIC X(10).
+000690 FD  F5  LABEL   RECORD  OMITTED
+000700         LINAGE  IS  66.
+000710 01  F5-REC.
+000720     02  FILLER          PIC X(200).
+000730 WORKING-STORAGE SECTION.
+000740 77  ERR-STAT            PIC X(02).
+000750 01  W-20K               PIC X(5)    VALUE ""3FE04FE080"".
+000760 01  HEAD1.
+000770     02  W-15K           PIC X(5)    VALUE ""3FE04F40A0"".
+000780*****02  FILLER          PIC X(24)   VALUE SPACE.                 D.960527
+000790     02  FILLER          PIC X(34)   VALUE SPACE.                 I.960527
+000800     02  FILLER          PIC N(12)   VALUE
+000810                         NC"【　　残高　明細表　　】".
+000820*****02  FILLER          PIC X(17)   VALUE SPACE.                 D.960527
+000830*****02  FILLER          PIC X(16)   VALUE SPACE.                 D.020625
+000840     02  FILLER          PIC X(19)   VALUE SPACE.                 I.020625
+000850     02  FILLER          PIC X(02)   VALUE "P.".
+000860     02  H-PAGE          PIC Z9.
+000870 01  HEAD2.
+000880*****02  FILLER          PIC X(24)   VALUE SPACE.                 D.960527
+000890     02  FILLER          PIC X(33)   VALUE SPACE.                 I.960527
+000900     02  FILLER          PIC X(01)   VALUE "(".
+000910     02  H-DATE          PIC N(12).
+000920     02  FILLER          PIC X(01)   VALUE ")".
+000930     02  FILLER          PIC X(22)   VALUE SPACE.                 I.020625
+000940*****02  FILLER          PIC X(19)   VALUE SPACE.                 D.020625
+000950 01  HEAD3.
+000960*****02  FILLER          PIC X(05)   VALUE SPACE.                 D.960527
+000970*****02  FILLER          PIC X(06)   VALUE "(ｺｰﾄﾞ)".              D.960527
+000980*****02  FILLER          PIC X(01)   VALUE SPACE.                 D.960527
+000990     02  FILLER          PIC X(14)   VALUE SPACE.                 I.960527
+001000     02  FILLER          PIC X(07)   VALUE "ｺｰﾄﾞ   ".             I.960527
+001010     02  FILLER          PIC N(06)   VALUE NC"名　　　称　".
+001020*****02  FILLER          PIC X(36)   VALUE SPACE.                 D.020625
+001030     02  FILLER          PIC X(39)   VALUE SPACE.                 I.020625
+001040     02  FILLER          PIC N(04)   VALUE NC"金　　額".
+001050*01  H6.
+001060*****02  FILLER          PIC X(6)    VALUE ""3F93"".
+001070*****02  FILLER          PIC X(30)   VALUE ""3F93"".
+001080*****02  FILLER          PIC X(17)   VALUE ""3F93"".
+001090*****02  FILLER          PIC X(17)   VALUE ""3F93"".
+001100*****02  FILLER          PIC X(17)   VALUE ""3F93"".
+001110*****02  FILLER          PIC X(17)   VALUE ""3F93"".
+001120*****02  FILLER          PIC X(17)   VALUE ""3F93"".
+001130*****02  FILLER          PIC X(16)   VALUE ""3F93"".
+001140*****02  FILLER          PIC X(16)   VALUE ""3F93"".
+001150*****02  FILLER          PIC X(2)    VALUE ""3F93"".
+001160*****02  FILLER          PIC X(5)    VALUE ""3FE04F40A0"".
+001170*****02  FILLER          PIC N(1)    VALUE NC"�@".
+001180*****02  FILLER          PIC X(5)    VALUE ""3FE04FE080"".
+001190 01  W-P1.
+001200*****02  FILLER          PIC X(05).                               D.960527
+001210     02  FILLER          PIC X(14).                               I.960527
+001220     02  P1-15K          PIC X(05).
+001230*****02  P1-F            PIC X(01).                               D.960527
+001240     02  P1-KAK          PIC 9(04).
+001250*****02  P1-R            PIC X(01).                               D.960527
+001260*****02  F               PIC X(01).                               D.960527
+001270     02  F               PIC X(03).                               I.960527
+001280     02  P1-KNGNM        PIC N(10).
+001290*****02  F               PIC X(22).                               D.020625
+001300     02  F               PIC X(25).                               I.020625
+001310     02  P1-KIN          PIC --,---,---,--9.
+001320     02  P1-20K          PIC X(05).
+001330 01  W-P2.
+001340*****02  FILLER          PIC X(11).                               D.960527
+001350     02  FILLER          PIC X(20).                               I.960527
+001360     02  P2-15K          PIC X(05).
+001370     02  P2-F            PIC X(01).
+001380     02  P2-KAK1         PIC 9(04).
+001390     02  P2-V            PIC X(01).
+001400     02  P2-HOK1         PIC 9(04).
+001410     02  P2-R            PIC X(01).
+001420     02  F               PIC X(01).
+001430     02  P2-KNGNM        PIC N(10).
+001440*****02  F               PIC X(11).                               D.020625
+001450     02  F               PIC X(14).                               I.020625
+001460     02  P2-KIN          PIC --,---,---,--9.
+001470     02  P2-20K          PIC X(05).
+001480 01  W-P3.
+001490*****02  FILLER          PIC X(22).                               D.960527
+001500     02  FILLER          PIC X(29).                               I.960527
+001510     02  P3-15K          PIC X(05).
+001520     02  P3-F            PIC X(01).
+001530     02  P3-KAK2         PIC 9(04).
+001540     02  P3-V            PIC X(01).
+001550     02  P3-HOK2         PIC 9(04).
+001560     02  P3-R            PIC X(01).
+001570     02  F               PIC X(01).
+001580     02  P3-KNGNM        PIC N(10).
+001590*****02  F               PIC X(02).                               D.020625
+001600     02  F               PIC X(05).                               I.020625
+001610     02  P3-KIN          PIC --,---,---,--9.
+001620     02  P3-20K          PIC X(05).
+001630 01  W-MR.
+001640     02  W-MZAN          PIC  S9(10).
+001650     02  W-MTJ.
+001660       03  W-MTJIS      OCCURS  15.
+001670         04  W-MTJKR     PIC  S9(11).
+001680         04  W-MTJKS     PIC  S9(11).
+001690 01  W-DATA.
+001700     02  W-DATEM         PIC N(12).
+001710     02  W-NGPM.
+001720       03  W-NENM        PIC N(02).
+001730       03  F             PIC N(01)  VALUE NC"年".
+001740       03  W-GETM        PIC N(02).
+001750       03  F             PIC N(01)  VALUE NC"月".
+001760       03  W-PEYM        PIC N(02).
+001770       03  F             PIC N(04)  VALUE NC"日　現在".
+001780     02  W-NGP.
+001790*****  03  W-NEN         PIC Z(2).                                D.971114
+001800       03  W-GET         PIC Z(2).
+001810       03  W-PEY         PIC Z(2).
+001820     02  W-KAK           PIC 9(4).
+001830     02  W-KEYD.
+001840       03  W-KAKD        PIC 9(4).
+001850       03  W-HOKD        PIC 9(4).
+001860     02  W-KEYDD         PIC 9(8).
+001870     02  PCNT            PIC 9(2)    VALUE  ZERO.
+001880     02  DCNT            PIC 9(2).
+001890     02  W-TPC           PIC X(1).
+001900     02  W-KAKU          PIC X(1).
+001910     02  W-ED            PIC 9(1)    VALUE  0.
+001920     02  W-POC           PIC 9(1)    VALUE  0.
+001930     02  SET-WORK.
+001940       03  W-ZENKI       PIC S9(10).                              前期末残
+001950       03  W-ZAN         PIC S9(10).                              前月末残
+001960       03  W-KARI        PIC S9(11).                              当期借方
+001970       03  W-KASI        PIC S9(11).                              当期貸方
+001980     02  SOE             PIC  9(02).
+001990     02  FI              PIC  9(02).
+002000     02  TI              PIC  9(02).
+002010     02  W-DCD           PIC  9(01).
+002020     02  W-DC            PIC  9(01).
+002030     02  W-MC            PIC  9(01).
+002040     02  W-NO            PIC  9(02).
+002050     02  W-AZAN          PIC S9(10).
+002060     02  W-SZAN          PIC S9(10).
+002070     02  CHK.
+002080       03  CHK1          PIC  9(01).
+002090       03  CHK2          PIC  9(01).
+002100     02  W-SC            PIC  9(01).
+002110*
+002120*
+002130     COPY  LWMSG.
+002140*
+002150 SCREEN          SECTION.
+002160 SD  SCR-D
+002170     END  STATUS  IS  ESTAT.
+002180 01  DSP-CLR.
+002190     02  LINE 01  CLEAR  SCREEN.
+002200 01  DSP-AREA.
+002210     02  LINE    01.
+002220         03      COLUMN  04  PIC  N(01)  VALUE  NC"年".
+002230         03      COLUMN  08  PIC  N(02)  VALUE  NC"月度".
+002240*****    03      COLUMN  02  PIC  9(02)  FROM  Z-GEMYY.           D.971114
+002250         03      COLUMN  02  PIC  9(02)  FROM  Z-GEMYY2.          I.971114
+002260         03      COLUMN  06  PIC  9(02)  FROM  Z-GEMMM.
+002270     02  LINE 01  COLUMN 33  VALUE  "  残高明細表  " REVERSE.
+002280     02  LINE 10  COLUMN 40  VALUE  "０９ X １１  白紙 セット".
+002290     02  LINE 15  COLUMN 40  VALUE  "TEST PRINT  ｽﾙ=9 ｼﾅｲ=1 ... ".
+002300     02  LINE 24  COLUMN 61  VALUE  "確認 OK=1,NO=9 ( )".
+002310 01  ACP-AREA.
+002320     02  ACP-TPC   LINE 15  COLUMN 66  PIC 9(01)
+002330                   INTO  W-TPC   CHECK OVERFLOW NO IFC.
+002340     02  ACP-KAKU  LINE 24  COLUMN 77  PIC X(01)
+002350                   INTO  W-KAKU  CHECK OVERFLOW NO IFC.
+002360*
+002370 01  DSP-ERR.
+002380     02  LINE  24.
+002390       03  ERR-MSG1    COLUMN  15   PIC  X(11) VALUE
+002400                       "KAMOKU-K ﾅｼ".
+002410       03  ERR-KEY     COLUMN  40   PIC  9(04) FROM  ZAN-KAK.
+002420     COPY  LSMSG.
+002430********************
+002440********************
+002450 PROCEDURE       DIVISION.
+002460 ST.
+002470*
+002480     OPEN       INPUT        ZAN-K  AM  KZM-F  HZM-F  KNG.
+002490     OPEN       OUTPUT       F5.
+002500*
+002510     OPEN   INPUT   FCTL-F.                                       580626
+002520     MOVE   "DATE  "    TO   FCTL-KEY1.                           580626
+002530     READ  FCTL-F  UNLOCK  INVALID
+002540         DISPLAY  INV-MCT  DISP-BUZ-B
+002550         CLOSE  FCTL-F
+002560         GO  TO  END-99.
+002570     MOVE  FCTL-REC       TO  Z-R.
+002580     CLOSE  FCTL-F.
+002590*
+002600*****MOVE  Z-KONYY     TO  W-NEN.                                 D.971114
+002610     MOVE  Z-KONMM     TO  W-GET.
+002620     MOVE  Z-KONDD     TO  W-PEY.
+002630*****MOVE  W-NEN       TO  W-NENM.                                D.971114
+002640     MOVE  Z-KONYY2    TO  W-NENM.                                I.971114
+002650     MOVE  W-GET       TO  W-GETM.
+002660     MOVE  W-PEY       TO  W-PEYM.
+002670     MOVE  W-NGPM      TO  W-DATEM.
+002680     MOVE  W-DATEM     TO  H-DATE.
+002690*
+002700     DISPLAY  DSP-CLR  DSP-AREA.
+002710     PERFORM TEST-RTN  THRU  TEST-EX.
+002720     IF         W-POC        =      5
+002730          MOVE     0            TO     W-POC
+002740          MOVE     SPACE        TO     F5-REC
+002750          WRITE    F5-REC       AFTER  PAGE
+002760          MOVE     ZERO         TO     PCNT.
+002770 ST-05.
+002780     ACCEPT  ACP-KAKU.
+002790     IF  ESTAT = "P9"
+002800         GO  TO  END-99.
+002810     IF  W-KAKU NOT = "1" AND "9"
+002820         GO  TO  ST-05.
+002830     IF  ESTAT NOT = "01"
+002840         GO  TO  ST-05.
+002850     IF  W-KAKU = "9"
+002860         GO  TO  END-99.
+002870*
+002880     MOVE  Z-KONYMD     TO  ZYMD.                                 今回日付
+002890     PERFORM  Z-RTN     THRU  Z-EXT.
+002900     IF ZI > 15
+002910        GO TO END-99.
+002920     MOVE ZI     TO TI.
+002930     IF TI > 12
+002940        MOVE 13     TO FI
+002950     ELSE
+002960        IF Z-KSMM = 12
+002970           MOVE 1     TO FI
+002980        ELSE
+002990           COMPUTE FI = Z-KSMM + 1.
+003000*
+003010 ST-10.
+003020     READ ZAN-K NEXT UNLOCK AT END
+003030          GO TO END-99.
+003040     MOVE ZERO     TO SET-WORK.
+003050     IF   ZAN-KAK2   =  ZERO
+003060          MOVE 1        TO W-DCD
+003070          MOVE ZAN-DATA1 TO W-KEYD
+003080          MOVE W-KAKD   TO AM-KEY
+003090       ELSE
+003100          MOVE 2        TO W-DCD
+003110          MOVE ZAN-DATA2 TO W-KEYD
+003120          MOVE W-KAKD    TO AM-KEY.
+003130     READ AM UNLOCK INVALID
+003140          DISPLAY  ERR-MSG1  ERR-KEY  DISP-BUZ-B
+003150          DISPLAY  DISP-MSG-SPACE
+003160          GO  TO  ST-10.
+003170     IF W-HOKD = ZERO
+003180          PERFORM  MR1-SET-RTN  THRU  MR1-SET-EX
+003190        ELSE
+003200          PERFORM  MR2-SET-RTN  THRU  MR2-SET-EX.
+003210     PERFORM ZAN-SET-RTN THRU ZAN-SET-EX.
+003220     IF W-ZAN = ZERO
+003230          GO  TO  ST-10.
+003240     MOVE 1        TO W-ED.
+003250 ST-20.
+003260     MOVE ZAN-NO   TO W-NO.
+003270     MOVE ZERO     TO W-MC.
+003280 ST-30.
+003290     MOVE ZAN-KAK  TO W-KAK.
+003300     MOVE ZERO     TO CHK   W-AZAN.
+003310     MOVE ZERO     TO KNG-KEY.
+003320     MOVE W-KAK    TO K-ACCD.
+003330     READ       KNG   UNLOCK  INVALID KEY
+003340       MOVE     SPACE        TO     KNGNMN.
+003350     MOVE SPACE    TO W-P1.
+003360     MOVE W-15K    TO P1-15K.
+003370     MOVE W-20K    TO P1-20K.
+003380*****MOVE "("      TO P1-F.                                       D.960527
+003390*****MOVE ")"      TO P1-R.                                       D.960527
+003400     MOVE W-KAK    TO P1-KAK.
+003410     MOVE KNGNMN   TO P1-KNGNM.
+003420 ST-40.
+003430     MOVE ZERO     TO CHK2   W-SC    W-SZAN.
+003440     MOVE ZAN-DATA1  TO KNG-KEY.
+003450     READ       KNG   UNLOCK  INVALID KEY
+003460       MOVE     SPACE        TO     KNGNMN.
+003470     MOVE SPACE    TO W-P2.
+003480     MOVE W-15K    TO P2-15K.
+003490     MOVE W-20K    TO P2-20K.
+003500     MOVE "("      TO P2-F.
+003510     MOVE ")"      TO P2-R.
+003520     MOVE ZAN-KAK1 TO P2-KAK1.
+003530     MOVE "-"      TO P2-V.
+003540     MOVE ZAN-HOK1 TO P2-HOK1.
+003550     MOVE KNGNMN   TO P2-KNGNM.
+003560     IF   W-DCD     =   1
+003570          MOVE W-ZAN     TO  P2-KIN
+003580          GO   TO    ST-60.
+003590 ST-50.
+003600     MOVE ZAN-DATA2  TO KNG-KEY.
+003610     READ       KNG   UNLOCK    INVALID KEY
+003620       MOVE     SPACE        TO     KNGNMN.
+003630     MOVE SPACE    TO W-P3.
+003640     MOVE W-15K    TO P3-15K.
+003650     MOVE W-20K    TO P3-20K.
+003660     MOVE "("      TO P3-F.
+003670     MOVE ")"      TO P3-R.
+003680     MOVE ZAN-KAK2 TO P3-KAK2.
+003690     MOVE "-"      TO P3-V.
+003700     MOVE ZAN-HOK2 TO P3-HOK2.
+003710     MOVE KNGNMN   TO P3-KNGNM.
+003720     MOVE W-ZAN    TO P3-KIN.
+003730     IF   W-SC       =  5
+003740          MOVE 9          TO W-SC.
+003750     IF   W-SC       =  0
+003760          MOVE 5          TO W-SC.
+003770 ST-60.
+003780     PERFORM  PRI-RTN   THRU  PRI-EX.
+003790     MOVE W-DCD    TO W-DC.
+003800     IF   W-DC       =  2
+003810          MOVE ZAN-DATA1  TO W-KEYDD.
+003820 ST-70.
+003830     READ ZAN-K NEXT UNLOCK AT END
+003840          GO TO END-99.
+003850     MOVE ZERO     TO SET-WORK.
+003860     IF   ZAN-KAK2   =  ZERO
+003870          MOVE 1        TO W-DCD
+003880          MOVE ZAN-DATA1 TO W-KEYD
+003890          MOVE W-KAKD   TO AM-KEY
+003900       ELSE
+003910          MOVE 2        TO W-DCD
+003920          MOVE ZAN-DATA2 TO W-KEYD
+003930          MOVE W-KAKD    TO AM-KEY.
+003940     READ AM UNLOCK INVALID
+003950          DISPLAY  ERR-MSG1  ERR-KEY  DISP-BUZ-B
+003960          DISPLAY  DISP-MSG-SPACE
+003970          GO  TO  ST-70.
+003980     IF W-HOKD = ZERO
+003990          PERFORM  MR1-SET-RTN  THRU  MR1-SET-EX
+004000        ELSE
+004010          PERFORM  MR2-SET-RTN  THRU  MR2-SET-EX.
+004020     PERFORM ZAN-SET-RTN THRU ZAN-SET-EX.
+004030     IF W-ZAN  = ZERO
+004040          GO  TO  ST-70.
+004050     IF ZAN-NO   NOT =  W-NO
+004060          GO  TO  ST-90.
+004070     IF ZAN-KAK  NOT =  W-KAK
+004080          GO  TO  ST-80.
+004090     IF W-DC         =  2
+004100          IF ZAN-DATA1      =  W-KEYDD
+004110               GO  TO  ST-50.
+004120     IF W-DC         =  2
+004130          IF ZAN-DATA1  NOT =  W-KEYDD
+004140               IF W-SC           =  9
+004150                     PERFORM SPRI-RTN    THRU SPRI-EX.
+004160     GO  TO  ST-40.
+004170 ST-80.
+004180     IF W-DC         =  2
+004190          IF W-SC           =  9
+004200                PERFORM SPRI-RTN    THRU SPRI-EX.
+004210     PERFORM APRI-RTN    THRU APRI-EX.
+004220*****IF    LINAGE-COUNTER  >  59                                  D.960527
+004230     IF    LINAGE-COUNTER  >  63                                  I.960527
+004240           PERFORM  HEAD-RTN  THRU  HEAD-EX.
+004250     MOVE       SPACE        TO     F5-REC.
+004260     WRITE      F5-REC       AFTER  1.
+004270*****IF    LINAGE-COUNTER  >  59                                  D.960527
+004280     IF    LINAGE-COUNTER  >  63                                  I.960527
+004290           PERFORM  HEAD-RTN  THRU  HEAD-EX.
+004300     WRITE      F5-REC       AFTER  1.
+004310     GO  TO  ST-30.
+004320 ST-90.
+004330     IF W-DC         =  2
+004340          IF W-SC           =  9
+004350               PERFORM SPRI-RTN    THRU SPRI-EX.
+004360     PERFORM APRI-RTN    THRU APRI-EX.
+004370     PERFORM  HEAD-RTN  THRU  HEAD-EX.
+004380     GO  TO  ST-20.
+004390 CLSE-ENT.
+004400 END-99.
+004410     IF W-ED    NOT  = 0
+004420          IF W-DC         =  2
+004430              IF W-SC           =  9
+004440                    PERFORM SPRI-RTN    THRU SPRI-EX.
+004450     IF W-ED    NOT  = 0
+004460          PERFORM APRI-RTN    THRU APRI-EX.
+004470     CLOSE      AM  KZM-F  KNG  F5.
+004480     STOP       RUN.
+004490 CLSE-EXT.
+004500*****
+004510 HEAD-RTN.
+004520     IF         W-POC        =      0
+004530       MOVE     5            TO     W-POC
+004540       GO   TO  HEAD-100.
+004550     MOVE     SPACE        TO     F5-REC
+004560     WRITE    F5-REC       AFTER  PAGE.
+004570 HEAD-100.
+004580     ADD  1     TO  PCNT.
+004590     MOVE  PCNT     TO  H-PAGE.
+004600*
+004610     MOVE       SPACE        TO     F5-REC.
+004620     MOVE       HEAD1        TO     F5-REC.
+004630*****WRITE      F5-REC       AFTER  4.                            D.960527
+004640     WRITE      F5-REC       AFTER  5.                            I.960527
+004650     MOVE       SPACE        TO     F5-REC.
+004660     MOVE       HEAD2        TO     F5-REC.
+004670     WRITE      F5-REC       AFTER  1.
+004680     MOVE       SPACE        TO     F5-REC.
+004690     MOVE       HEAD3        TO     F5-REC.
+004700     WRITE      F5-REC       AFTER  1.
+004710     MOVE       SPACE        TO     F5-REC.
+004720 HEAD-EX.
+004730     EXIT.
+004740*****
+004750 ZAN-SET-RTN.
+004760     IF TI > 12     GO TO ZAN-SET-500.
+004770     MOVE W-MZAN     TO W-ZENKI.
+004780     MOVE FI          TO SOE.
+004790 ZAN-SET-000.
+004800     ADD W-MTJKR(SOE)     TO W-KARI.
+004810     ADD W-MTJKS(SOE)     TO W-KASI.
+004820     IF SOE = TI
+004830        GO TO ZAN-SET-900.
+004840     IF SOE = 12
+004850        MOVE 1     TO SOE
+004860        GO TO ZAN-SET-000.
+004870     ADD 1     TO SOE.
+004880     GO TO ZAN-SET-000.
+004890 ZAN-SET-500.
+004900     IF BS-PL = 0
+004910        MOVE 1      TO SOE
+004920     ELSE
+004930        MOVE 13     TO SOE.
+004940 ZAN-SET-600.
+004950     ADD W-MTJKR(SOE)     TO W-KARI.
+004960     ADD W-MTJKS(SOE)     TO W-KASI.
+004970     IF SOE = 12
+004980        IF DR-CR = 1
+004990           COMPUTE W-ZENKI = W-MZAN + W-KARI - W-KASI
+005000        ELSE
+005010           COMPUTE W-ZENKI = W-MZAN + W-KASI - W-KARI.
+005020     IF SOE = 12                                                  I.920706
+005030        MOVE W-ZENKI     TO W-MZAN                                I.920706
+005040        MOVE ZERO        TO W-KARI W-KASI.                        I.920706
+005050     IF SOE = TI
+005060        GO TO ZAN-SET-900.
+005070     IF SOE = 15
+005080        GO TO ZAN-SET-900.
+005090     ADD 1     TO SOE.
+005100     GO TO ZAN-SET-600.
+005110 ZAN-SET-900.
+005120     IF DR-CR = 1
+005130*****   COMPUTE W-ZAN = W-MZAN + (W-KARI - W-MTJKR(TI)) -
+005140*****                   ( W-KASI - W-MTJKS(TI))
+005150        COMPUTE W-ZAN = W-MZAN + W-KARI - W-KASI
+005160     ELSE
+005170*****   COMPUTE W-ZAN = W-MZAN + (W-KASI - W-MTJKS(TI)) -
+005180*****                   ( W-KARI - W-MTJKR(TI)).
+005190        COMPUTE W-ZAN = W-MZAN - W-KARI + W-KASI.
+005200 ZAN-SET-EX.
+005210     EXIT.
+005220*********
+005230 MR1-SET-RTN.
+005240     MOVE W-KAKD   TO KZM-KEY.
+005250     READ KZM-F UNLOCK INVALID
+005260          INITIALIZE KZM-R.
+005270     MOVE ZERO           TO   W-MR  DCNT.
+005280     MOVE KZM-ZAN        TO   W-MZAN.
+005290 MR1-SET-000.
+005300     ADD      1          TO   DCNT.
+005310     IF    DCNT      >   15
+005320           GO   TO   MR1-SET-EX.
+005330     MOVE KZM-TJKR(DCNT) TO   W-MTJKR(DCNT).
+005340     MOVE KZM-TJKS(DCNT) TO   W-MTJKS(DCNT).
+005350     GO   TO   MR1-SET-000.
+005360 MR1-SET-EX.
+005370     EXIT.
+005380*********
+005390 MR2-SET-RTN.
+005400     MOVE W-KEYD   TO HZM-KEY.
+005410     READ HZM-F UNLOCK INVALID
+005420          INITIALIZE HZM-R.
+005430     MOVE ZERO           TO   W-MR  DCNT.
+005440     MOVE HZM-ZAN        TO   W-MZAN.
+005450 MR2-SET-000.
+005460     ADD      1          TO   DCNT.
+005470     IF    DCNT      >   15
+005480           GO   TO   MR2-SET-EX.
+005490     MOVE HZM-TJKR(DCNT) TO   W-MTJKR(DCNT).
+005500     MOVE HZM-TJKS(DCNT) TO   W-MTJKS(DCNT).
+005510     GO   TO   MR2-SET-000.
+005520 MR2-SET-EX.
+005530     EXIT.
+005540*********
+005550 PRI-RTN.
+005560     IF   W-POC    =  0
+005570          MOVE       0            TO     CHK1
+005580          PERFORM  HEAD-RTN  THRU  HEAD-EX.
+005590     IF   CHK1     NOT  =  0
+005600          GO    TO   PRI-10.
+005610     IF   W-DCD    =  2
+005620          IF    CHK2         =   0
+005630*****           IF    LINAGE-COUNTER  >  57                       D.960527
+005640                IF    LINAGE-COUNTER  >  61                       I.960527
+005650                      MOVE       0            TO     CHK
+005660                      PERFORM  HEAD-RTN  THRU  HEAD-EX.
+005670     IF    LINAGE-COUNTER  >  58
+005680                MOVE       0            TO     CHK
+005690                PERFORM  HEAD-RTN  THRU  HEAD-EX.
+005700     MOVE       1            TO     CHK1.
+005710     MOVE       SPACE        TO     F5-REC.
+005720     MOVE       W-P1         TO     F5-REC.
+005730     WRITE      F5-REC       AFTER  1.
+005740     MOVE       SPACE        TO     F5-REC.
+005750 PRI-10.
+005760     IF   W-DCD   =  2
+005770          GO    TO   PRI-20.
+005780*****IF    LINAGE-COUNTER  >  59                                  D.960527
+005790     IF    LINAGE-COUNTER  >  63                                  I.960527
+005800                MOVE       0            TO     CHK
+005810                GO   TO   PRI-RTN.
+005820     MOVE       1            TO     CHK2.
+005830     MOVE       SPACE        TO     F5-REC.
+005840     MOVE       W-P2         TO     F5-REC.
+005850     WRITE      F5-REC       AFTER  1.
+005860     MOVE       SPACE        TO     F5-REC.
+005870     ADD        W-ZAN        TO     W-AZAN.
+005880     GO    TO   PRI-EX.
+005890 PRI-20.
+005900     IF   CHK2     =  1
+005910          GO    TO   PRI-30.
+005920*****IF    LINAGE-COUNTER  >  58                                  D.960527
+005930     IF    LINAGE-COUNTER  >  62                                  I.960527
+005940                MOVE       0            TO     CHK
+005950                GO   TO   PRI-RTN.
+005960     MOVE       1            TO     CHK2.
+005970     MOVE       SPACE        TO     F5-REC.
+005980     MOVE       W-P2         TO     F5-REC.
+005990     WRITE      F5-REC       AFTER  1.
+006000     MOVE       SPACE        TO     F5-REC.
+006010 PRI-30.
+006020*****IF    LINAGE-COUNTER  >  59                                  D.960527
+006030     IF    LINAGE-COUNTER  >  63                                  I.960527
+006040                MOVE       0            TO     CHK
+006050                GO   TO   PRI-RTN.
+006060     MOVE       SPACE        TO     F5-REC.
+006070     MOVE       W-P3         TO     F5-REC.
+006080     WRITE      F5-REC       AFTER  1.
+006090     MOVE       SPACE        TO     F5-REC.
+006100     ADD        W-ZAN        TO     W-SZAN    W-AZAN.
+006110 PRI-EX.
+006120     EXIT.
+006130*********
+006140 SPRI-RTN.
+006150     MOVE SPACE    TO W-P3.
+006160     MOVE W-15K    TO P3-15K.
+006170     MOVE W-20K    TO P3-20K.
+006180     MOVE NC"　（　小計　）　　　"  TO P3-KNGNM.
+006190     MOVE W-SZAN   TO P3-KIN.
+006200 SPRI-10.
+006210     IF   CHK1     NOT  =  0
+006220          GO    TO   SPRI-20.
+006230     IF    CHK2         =   0
+006240*****      IF    LINAGE-COUNTER  >  57                            D.960527
+006250           IF    LINAGE-COUNTER  >  61                            I.960527
+006260                 MOVE       0            TO     CHK
+006270                 PERFORM  HEAD-RTN  THRU  HEAD-EX.
+006280*****IF    LINAGE-COUNTER  >  58                                  D.960527
+006290     IF    LINAGE-COUNTER  >  62                                  I.960527
+006300                MOVE       0            TO     CHK
+006310                PERFORM  HEAD-RTN  THRU  HEAD-EX.
+006320     MOVE       1            TO     CHK1.
+006330     MOVE       SPACE        TO     F5-REC.
+006340     MOVE       W-P1         TO     F5-REC.
+006350     WRITE      F5-REC       AFTER  1.
+006360     MOVE       SPACE        TO     F5-REC.
+006370 SPRI-20.
+006380     IF   CHK2     =  1
+006390          GO    TO   SPRI-30.
+006400*****IF    LINAGE-COUNTER  >  58                                  D.960527
+006410     IF    LINAGE-COUNTER  >  62                                  I.960527
+006420                MOVE       0            TO     CHK
+006430                GO   TO   SPRI-10.
+006440     MOVE       1            TO     CHK2.
+006450     MOVE       SPACE        TO     F5-REC.
+006460     MOVE       W-P2         TO     F5-REC.
+006470     WRITE      F5-REC       AFTER  1.
+006480     MOVE       SPACE        TO     F5-REC.
+006490 SPRI-30.
+006500*****IF    LINAGE-COUNTER  >  59                                  D.960527
+006510     IF    LINAGE-COUNTER  >  63                                  I.960527
+006520                MOVE       0            TO     CHK
+006530                GO   TO   SPRI-10.
+006540     MOVE       SPACE        TO     F5-REC.
+006550     MOVE       W-P3         TO     F5-REC.
+006560     WRITE      F5-REC       AFTER  1.
+006570     MOVE       SPACE        TO     F5-REC.
+006580 SPRI-EX.
+006590     EXIT.
+006600*********
+006610 APRI-RTN.
+006620     MOVE SPACE    TO W-P2.
+006630     MOVE W-15K    TO P2-15K.
+006640     MOVE W-20K    TO P2-20K.
+006650     MOVE NC"　【　合　計　】　　"  TO P2-KNGNM.
+006660     MOVE W-AZAN   TO P2-KIN.
+006670 APRI-10.
+006680     IF   CHK1     NOT  =  0
+006690          GO    TO   APRI-20.
+006700*****IF    LINAGE-COUNTER  >  58                                  D.960527
+006710     IF    LINAGE-COUNTER  >  62                                  I.960527
+006720                MOVE       0            TO     CHK
+006730                PERFORM  HEAD-RTN  THRU  HEAD-EX.
+006740     MOVE       1            TO     CHK1.
+006750     MOVE       SPACE        TO     F5-REC.
+006760     MOVE       W-P1         TO     F5-REC.
+006770     WRITE      F5-REC       AFTER  1.
+006780     MOVE       SPACE        TO     F5-REC.
+006790 APRI-20.
+006800*****IF    LINAGE-COUNTER  >  59                                  D.960527
+006810     IF    LINAGE-COUNTER  >  63                                  I.960527
+006820                MOVE       0            TO     CHK
+006830                GO   TO   APRI-RTN.
+006840     MOVE       1            TO     CHK2.
+006850     MOVE       SPACE        TO     F5-REC.
+006860     MOVE       W-P2         TO     F5-REC.
+006870     WRITE      F5-REC       AFTER  1.
+006880     MOVE       SPACE        TO     F5-REC.
+006890 APRI-EX.
+006900     EXIT.
+006910*********
+006920 TEST-RTN.
+006930     MOVE SPACE    TO W-P1.
+006940     MOVE W-15K    TO P1-15K.
+006950     MOVE W-20K    TO P1-20K.
+006960*****MOVE "("      TO P1-F.                                       D.960527
+006970*****MOVE ")"      TO P1-R.                                       D.960527
+006980     MOVE 9999     TO P1-KAK.
+006990     MOVE ALL NC"Ｎ" TO P1-KNGNM.
+007000     MOVE 9999999999 TO P1-KIN.
+007010 TEST-10.
+007020     ACCEPT  ACP-TPC.
+007030     IF  ESTAT NOT = "01" AND "06"
+007040         GO  TO  TEST-10.
+007050     IF  W-TPC NOT = 1 AND 9
+007060         GO  TO  TEST-10.
+007070     IF  W-TPC  = 1
+007080         GO  TO  TEST-EX.
+007090     IF   W-POC    =  0
+007100          PERFORM  HEAD-RTN  THRU  HEAD-EX.
+007110*****IF    LINAGE-COUNTER  >  59                                  D.960527
+007120     IF    LINAGE-COUNTER  >  63                                  I.960527
+007130          PERFORM  HEAD-RTN  THRU  HEAD-EX.
+007140     MOVE       SPACE        TO     F5-REC.
+007150     MOVE       W-P1         TO     F5-REC.
+007160     WRITE      F5-REC       AFTER  1.
+007170     MOVE       SPACE        TO     F5-REC.
+007180     GO    TO   TEST-10.
+007190 TEST-EX.
+007200     EXIT.
+007210*********
+007220     COPY  LPMSG.
+007230*
+007240 END

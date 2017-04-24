@@ -1,0 +1,507 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. HMN620.
+000030*********************************************************
+000040*    PROGRAM         :  履物分類別棚卸誤差表            *
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :  ******                          *
+000070*    COMPILE TYPE    :  COBOL                           *
+000080*********************************************************
+000090 ENVIRONMENT DIVISION.
+000100 CONFIGURATION SECTION.
+000110 SOURCE-COMPUTER. SYSTEM3100.
+000120 OBJECT-COMPUTER. SYSTEM3100.
+000130 INPUT-OUTPUT SECTION.
+000140 FILE-CONTROL.
+000150     COPY LIBCSE.
+000160     SELECT TSW-F ASSIGN TO TSW-MSD
+000170         FILE STATUS IS ERR-STAT.
+000180     SELECT HKBM ASSIGN TO HKB-MSD
+000190         ORGANIZATION INDEXED
+000200         RECORD KEY HKB-KEY
+000210         ACCESS MODE RANDOM
+000220         FILE STATUS IS ERR-STAT.
+000230     SELECT EXLF ASSIGN TO EXL-MSD.                               I.090227
+000240     SELECT SP-F ASSIGN TO P-PRN999.
+000250 I-O-CONTROL.
+000260     APPLY SHARED-MODE ON M-DATE
+000270     APPLY SHARED-MODE ON HKBM
+000280     APPLY SHIFT-CODE  ON SP-F.
+000290 DATA DIVISION.
+000300 FILE SECTION.
+000310     COPY LIBFDD.
+000320     COPY LIHKBM.
+000330     COPY LSPF.
+000340 FD  TSW-F
+000350     BLOCK  4 RECORDS
+000360     LABEL RECORD IS STANDARD
+000370     VALUE OF IDENTIFICATION WK0064ID.
+000380 01  TSW-R.
+000390     02  TSW-HCD        PIC  9(006).
+000400     02  TSW-CSU        PIC S9(006).
+000410     02  TSW-JSU        PIC S9(006).
+000420     02  TSW-FT         PIC  9(005).
+000430     02  TSW-BC1        PIC  9(002).
+000440     02  TSW-BC2        PIC  9(002).
+000450     02  TSW-BC3        PIC  9(002).
+000460     02  TSW-BMC        PIC  9(002).
+000470     02  TSW-BMNO       PIC  9(001).
+000480     02  F              PIC  X(032).
+000490 FD  EXLF                                                         I.090227
+000500     BLOCK  2 RECORDS                                             I.090227
+000510     LABEL RECORD IS STANDARD                                     I.090227
+000520     VALUE OF IDENTIFICATION "WK0128000".                         I.090227
+000530 01  EXL-R.                                                       I.090227
+000540     02  EXL-M0         PIC  N(003).                              I.090227
+000550     02  EXL-M1         PIC  N(003).                              I.090227
+000560     02  EXL-M2         PIC  N(008).                              I.090227
+000570     02  EXL-CSU        PIC S9(007).                              I.090227
+000580     02  EXL-CKIN       PIC S9(009).                              I.090227
+000590     02  EXL-JSU        PIC S9(007).                              I.090227
+000600     02  EXL-JKIN       PIC S9(009).                              I.090227
+000610     02  EXL-KSU        PIC S9(007).                              I.090227
+000620     02  EXL-KKIN       PIC S9(009).                              I.090227
+000630     02  F              PIC  X(052).                              I.090227
+000640 WORKING-STORAGE SECTION.
+000650 77  JS-SIGN            PIC  9(001).                              I.090227
+000660 77  W-15K              PIC  X(005) VALUE ""3FE04F40A0"".
+000670 77  WK0064ID           PIC  X(009) VALUE SPACE.
+000680 01  STN-NO.
+000690     02  STN-NO1        PIC  X(003).
+000700     02  STN-NO2        PIC  X(003).
+000710 01  W-FID1.
+000720     02  W-FID11        PIC  X(006) VALUE "WK0064".
+000730     02  W-FID12        PIC  X(003).
+000740 01  HEAD1.
+000750     02  W-20K          PIC  X(005) VALUE ""3FE04FE080"".
+000760     02  F              PIC  X(030) VALUE SPACE.
+000770     02  F              PIC  N(021) VALUE
+000780          NC"＊＊＊　　履物　分類　棚卸誤差表　　＊＊＊".
+000790     02  F              PIC  X(023) VALUE SPACE.
+000800     02  F              PIC  X(005) VALUE "DATE ".
+000810     02  H-DATE         PIC 99B99B99.
+000820 01  HEAD2.
+000830     02  F              PIC  X(038) VALUE SPACE.
+000840     02  F              PIC  X(008) VALUE "I-----  ".
+000850     02  F              PIC  N(003) VALUE NC"帳　簿".
+000860     02  F              PIC  X(019) VALUE "  ------I  I-----  ".
+000870     02  F              PIC  N(003) VALUE NC"棚　卸".
+000880     02  F              PIC  X(018) VALUE "  ------I  I----  ".
+000890     02  F              PIC  N(003) VALUE NC"誤　差".
+000900     02  F              PIC  X(007) VALUE "  ----I".
+000910 01  HEAD3.
+000920     02  F              PIC  X(041) VALUE SPACE.
+000930     02  F              PIC  N(003) VALUE NC"数　量".
+000940     02  F              PIC  X(008) VALUE SPACE.
+000950     02  F              PIC  N(003) VALUE NC"金　額".
+000960     02  F              PIC  X(005) VALUE SPACE.
+000970     02  F              PIC  N(003) VALUE NC"数　量".
+000980     02  F              PIC  X(008) VALUE SPACE.
+000990     02  F              PIC  N(003) VALUE NC"金　額".
+001000     02  F              PIC  X(004) VALUE SPACE.
+001010     02  F              PIC  N(003) VALUE NC"数　量".
+001020     02  F              PIC  X(006) VALUE SPACE.
+001030     02  F              PIC  N(003) VALUE NC"金　額".
+001040 01  W-P.
+001050     02  P-M0           PIC  N(003).
+001060     02  F              PIC  X(004).
+001070     02  P-TM           PIC  N(013).
+001080     02  P-MD    REDEFINES P-TM.
+001090       03  P-M1         PIC  N(003).
+001100       03  F            PIC  X(004).
+001110       03  P-M2         PIC  N(008).
+001120     02  P-CSU          PIC ---,---,--9.
+001130     02  P-CKIN         PIC --,---,---,--9.
+001140     02  P-JSU          PIC ---,---,--9.
+001150     02  P-JKIN         PIC --,---,---,--9.
+001160     02  P-KSU          PIC --,---,--9.
+001170     02  P-KKIN         PIC ----,---,--9.
+001180 01  W-DATA.
+001190     02  W-DMM          PIC  9(001).
+001200     02  W-BC3          PIC  9(002).
+001210     02  W-BMC          PIC  9(002).
+001220     02  W-BC1          PIC  9(002).
+001230     02  W-BN3          PIC  N(003).
+001240     02  W-BMN          PIC  N(003).
+001250     02  CHK.
+001260       03  CHK1         PIC  9(001).
+001270       03  CHK2         PIC  9(001).
+001280     02  CNT            PIC  9(001).
+001290 01  W-TD.
+001300     02  WT-CSU         PIC S9(007).
+001310     02  WT-CKIN        PIC S9(010).
+001320     02  WT-JSU         PIC S9(007).
+001330     02  WT-JKIN        PIC S9(010).
+001340     02  WT-KSU         PIC S9(007).
+001350     02  WT-KKIN        PIC S9(009).
+001360 01  W-GD.
+001370     02  WG-CSU         PIC S9(007).
+001380     02  WG-CKIN        PIC S9(010).
+001390     02  WG-JSU         PIC S9(007).
+001400     02  WG-JKIN        PIC S9(010).
+001410     02  WG-KSU         PIC S9(007).
+001420     02  WG-KKIN        PIC S9(009).
+001430 01  W-SD.
+001440     02  WS-CSU         PIC S9(007).
+001450     02  WS-CKIN        PIC S9(010).
+001460     02  WS-JSU         PIC S9(007).
+001470     02  WS-JKIN        PIC S9(010).
+001480     02  WS-KSU         PIC S9(007).
+001490     02  WS-KKIN        PIC S9(009).
+001500 01  W-AD.
+001510     02  WA-CSU         PIC S9(007).
+001520     02  WA-CKIN        PIC S9(010).
+001530     02  WA-JSU         PIC S9(007).
+001540     02  WA-JKIN        PIC S9(010).
+001550     02  WA-KSU         PIC S9(007).
+001560     02  WA-KKIN        PIC S9(009).
+001570 01  ERR-STAT           PIC  X(002).
+001580     COPY LSTAT.
+001590 SCREEN SECTION.
+001600 SD  C-CRT
+001610     END STATUS IS ESTAT.
+001620 01  C-CLEAR.
+001630     02  LINE   1  CLEAR SCREEN.
+001640 01  C-MID.
+001650     02  LINE   3  COLUMN  10  PIC  N(023) VALUE
+001660          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001670     02  LINE   4  COLUMN  10  PIC  N(023) VALUE
+001680          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001690     02  LINE   5  COLUMN  10  PIC  N(023) VALUE
+001700          NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+001710     02  LINE   6  COLUMN  10  PIC  N(023) VALUE
+001720          NC"＊＊＊　　　履物　分類　棚卸誤差表　　　＊＊＊".
+001730     02  LINE   7  COLUMN  10  PIC  N(023) VALUE
+001740          NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+001750     02  LINE   8  COLUMN  10  PIC  N(023) VALUE
+001760          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001770     02  LINE   9  COLUMN  10  PIC  N(023) VALUE
+001780          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001790     02  LINE  22  COLUMN  22  PIC  X(022) VALUE
+001800          "確認  OK=1 NO=9   ﾘﾀｰﾝ".
+001810 01  C-ACP.
+001820     02  A-DMM   LINE  22  COLUMN  39  PIC  9(001)
+001830          USING W-DMM   CHECK OVERFLOW NO IFC.
+001840 01  C-DSP.                                                       I.090227
+001850     02  D-EXL   LINE  12  COLUMN  21  PIC  N(012) VALUE          I.090227
+001860          NC"（　Ｅｘｃｅｌ　変換　）".                           I.090227
+001870 01  C-ERR.
+001880     02  LINE  24.
+001890       03  E-ME1   COLUMN  15  PIC  X(017) VALUE
+001900            "***  DATA ﾅｼ  ***".
+001910       03  E-ME2   COLUMN  15  PIC  X(017) VALUE
+001920            "***  HKBM ﾅｼ  ***".
+001930       03  E-ME98  COLUMN  75  PIC  X(005) VALUE ""27"J"05"".
+001940       03  E-ME99  COLUMN  75  PIC  X(005) VALUE ""27"B"05"".
+001950       03  E-STAT  COLUMN  10  PIC  X(002) FROM  ERR-STAT.
+001960     COPY LIBSCR.
+001970 PROCEDURE DIVISION.
+001980 M-05.
+001990     ACCEPT JS-SIGN.                                              I.090227
+002000     IF JS-SIGN > 1                                               I.090227
+002010         STOP RUN.                                                I.090227
+002020     COPY LIBCPR.
+002030     DISPLAY C-CLEAR.
+002040     DISPLAY C-MID.
+002050     IF JS-SIGN = 1                                               I.090227
+002060         DISPLAY D-EXL.                                           I.090227
+002070 M-10.
+002080     ACCEPT A-DMM.
+002090     IF ESTAT = PF9
+002100         GO TO M-95.
+002110     IF ESTAT NOT = HTB AND SKP
+002120         GO TO M-10.
+002130     IF W-DMM = 9
+002140         GO TO M-95.
+002150     IF W-DMM NOT = 1
+002160         GO TO M-10.
+002170*
+002180     DISPLAY C-CLEAR.                                             I.090227
+002190     DISPLAY C-MID.                                               I.090227
+002200     IF JS-SIGN = 1                                               I.090227
+002210         DISPLAY D-EXL.                                           I.090227
+002220     CALL "CBLSTNNO" USING STN-NO.
+002230     MOVE STN-NO2 TO W-FID12.
+002240     MOVE W-FID1 TO WK0064ID.
+002250     OPEN INPUT TSW-F.
+002260     OPEN INPUT HKBM.
+002270     IF JS-SIGN = 1                                               I.090227
+002280         OPEN OUTPUT EXLF                                         I.090227
+002290         GO TO M-15.                                              I.090227
+002300     OPEN OUTPUT SP-F.
+002310     MOVE DATE-02R TO H-DATE.
+002320     MOVE ZERO TO W-AD.
+002330 M-15.
+002340     READ TSW-F AT END
+002350         DISPLAY E-ME1 E-ME99
+002360         GO TO M-90.
+002370     IF ZERO = TSW-CSU AND TSW-JSU
+002380         GO TO M-15.
+002390     IF JS-SIGN = 0                                               I.090227
+002400         PERFORM MID-020 THRU MID-EX.
+002410 M-20.
+002420     MOVE TSW-BC3 TO W-BC3.
+002430     MOVE ZERO TO W-SD CHK.
+002440     MOVE SPACE TO HKB-KEY.
+002450     MOVE "14" TO HKB-NO.
+002460     MOVE W-BC3 TO HKB-BR3.
+002470     READ HKBM WITH UNLOCK INVALID KEY
+002480         DISPLAY E-ME2 E-ME99
+002490         MOVE SPACE TO HKB-BRN3.
+002500     MOVE HKB-BRN3 TO W-BN3.
+002510 M-25.
+002520     MOVE TSW-BMC TO W-BMC.
+002530     MOVE ZERO TO W-GD CHK2 CNT.
+002540     MOVE SPACE TO HKB-KEY.
+002550     MOVE "16" TO HKB-NO.
+002560     MOVE W-BMC TO HKB-BMC.
+002570     READ HKBM WITH UNLOCK INVALID KEY
+002580         DISPLAY E-ME2 E-ME99
+002590         MOVE SPACE TO HKB-BMN.
+002600     MOVE HKB-BMN TO W-BMN.
+002610 M-30.
+002620     MOVE TSW-BC1 TO W-BC1.
+002630     MOVE ZERO TO W-TD.
+002640     MOVE SPACE TO HKB-KEY.
+002650     MOVE "11" TO HKB-NO.
+002660     MOVE W-BC1 TO HKB-BR1.
+002670     READ HKBM WITH UNLOCK INVALID KEY
+002680         DISPLAY E-ME2 E-ME99
+002690         MOVE SPACE TO HKB-BRN1.
+002700 M-35.
+002710     ADD TSW-CSU TO WT-CSU.
+002720     COMPUTE WT-CKIN = WT-CKIN + (TSW-CSU * TSW-FT).
+002730     ADD TSW-JSU TO WT-JSU.
+002740     COMPUTE WT-JKIN = WT-JKIN + (TSW-JSU * TSW-FT).
+002750     COMPUTE WT-KSU = WT-JSU - WT-CSU.
+002760     COMPUTE WT-KKIN = WT-JKIN - WT-CKIN.
+002770 M-40.
+002780     READ TSW-F AT END
+002790         GO TO M-85.
+002800     IF ZERO = TSW-CSU AND TSW-JSU
+002810         GO TO M-40.
+002820     IF TSW-BC3 NOT = W-BC3
+002830         GO TO M-50.
+002840     IF TSW-BMC NOT = W-BMC
+002850         GO TO M-45.
+002860     IF TSW-BC1 = W-BC1
+002870         GO TO M-35.
+002880*
+002890     PERFORM MEI-RTN THRU MEI-EX.
+002900     GO TO M-30.
+002910 M-45.
+002920     PERFORM MEI-RTN THRU MEI-EX.
+002930     PERFORM KEI1-RTN THRU KEI1-EX.
+002940     GO TO M-25.
+002950 M-50.
+002960     PERFORM MEI-RTN THRU MEI-EX.
+002970     PERFORM KEI1-RTN THRU KEI1-EX.
+002980     PERFORM KEI2-RTN THRU KEI2-EX.
+002990     GO TO M-20.
+003000 M-85.
+003010     PERFORM MEI-RTN THRU MEI-EX.
+003020     PERFORM KEI1-RTN THRU KEI1-EX.
+003030     PERFORM KEI2-RTN THRU KEI2-EX.
+003040     PERFORM KEI3-RTN THRU KEI3-EX.
+003050 M-90.
+003060     CLOSE HKBM.
+003070     CLOSE TSW-F.
+003080     IF JS-SIGN = 1                                               I.090227
+003090         CLOSE EXLF                                               I.090227
+003100       ELSE                                                       I.090227
+003110         CLOSE SP-F.
+003120 M-95.
+003130     DISPLAY C-CLEAR.
+003140     STOP RUN.
+003150 MID-RTN.
+003160     MOVE SPACE TO SP-R.
+003170     WRITE SP-R AFTER PAGE.
+003180 MID-020.
+003190     MOVE SPACE TO SP-R.
+003200     MOVE HEAD1 TO SP-R.
+003210     WRITE SP-R.
+003220     MOVE SPACE TO SP-R.
+003230     MOVE HEAD2 TO SP-R.
+003240     WRITE SP-R AFTER 2.
+003250     MOVE SPACE TO SP-R.
+003260     MOVE HEAD3 TO SP-R.
+003270     WRITE SP-R.
+003280     MOVE SPACE TO SP-R.
+003290 MID-EX.
+003300     EXIT.
+003310 MEI-RTN.
+003320     IF ZERO = WT-CSU AND WT-CKIN AND WT-JSU AND WT-JKIN AND
+003330               WT-KSU AND WT-KKIN
+003340         GO TO MEI-EX.
+003350     IF JS-SIGN = 1                                               I.090227
+003360         GO TO MEI-010.                                           I.090227
+003370*
+003380     MOVE SPACE TO W-P.
+003390     MOVE ALL NX"2121" TO P-M0 P-TM.
+003400     IF CHK1 = 0
+003410         MOVE 1 TO CHK1
+003420         MOVE W-BN3 TO P-M0
+003430         MOVE W-BMN TO P-M1.
+003440     IF CHK2 = 0
+003450         MOVE 1 TO CHK2
+003460         MOVE W-BMN TO P-M1.
+003470     MOVE HKB-BRN1 TO P-M2.
+003480     MOVE WT-CSU TO P-CSU.
+003490     MOVE WT-CKIN TO P-CKIN.
+003500     MOVE WT-JSU TO P-JSU.
+003510     MOVE WT-JKIN TO P-JKIN.
+003520     MOVE WT-KSU TO P-KSU.
+003530     MOVE WT-KKIN TO P-KKIN.
+003540*****IF LINAGE-COUNTER > 59                                       D.070205
+003550     IF LINAGE-COUNTER > 61                                       I.070205
+003560         PERFORM MID-RTN THRU MID-EX.
+003570     MOVE SPACE TO SP-R.
+003580     MOVE W-P TO SP-R.
+003590     WRITE SP-R.
+003600     MOVE SPACE TO SP-R.
+003610     GO TO MEI-050.                                               I.090227
+003620 MEI-010.                                                         I.090227
+003630     INITIALIZE EXL-R.                                            I.090227
+003640     MOVE ALL NX"2121" TO EXL-M0 EXL-M1 EXL-M2.                   I.090227
+003650     IF CHK1 = 0                                                  I.090227
+003660         MOVE 1 TO CHK1                                           I.090227
+003670         MOVE W-BN3 TO EXL-M0                                     I.090227
+003680         MOVE W-BMN TO EXL-M1.                                    I.090227
+003690     IF CHK2 = 0                                                  I.090227
+003700         MOVE 1 TO CHK2                                           I.090227
+003710         MOVE W-BMN TO EXL-M1.                                    I.090227
+003720     MOVE HKB-BRN1 TO EXL-M2.                                     I.090227
+003730     MOVE WT-CSU TO EXL-CSU.                                      I.090227
+003740     MOVE WT-CKIN TO EXL-CKIN.                                    I.090227
+003750     MOVE WT-JSU TO EXL-JSU.                                      I.090227
+003760     MOVE WT-JKIN TO EXL-JKIN.                                    I.090227
+003770     MOVE WT-KSU TO EXL-KSU.                                      I.090227
+003780     MOVE WT-KKIN TO EXL-KKIN.                                    I.090227
+003790     WRITE EXL-R.                                                 I.090227
+003800 MEI-050.                                                         I.090227
+003810     ADD WT-CSU TO WG-CSU.
+003820     ADD WT-CKIN TO WG-CKIN.
+003830     ADD WT-JSU TO WG-JSU.
+003840     ADD WT-JKIN TO WG-JKIN.
+003850     ADD WT-KSU TO WG-KSU.
+003860     ADD WT-KKIN TO WG-KKIN.
+003870     IF CNT = 5
+003880         MOVE 9 TO CNT.
+003890     IF CNT = 0
+003900         MOVE 5 TO CNT.
+003910 MEI-EX.
+003920     EXIT.
+003930 KEI1-RTN.
+003940     IF JS-SIGN = 1                                               I.090227
+003950         GO TO KEI1-030.                                          I.090227
+003960     IF CNT NOT = 9
+003970         MOVE SPACE TO SP-R
+003980         GO TO KEI1-020.
+003990     MOVE SPACE TO W-P.
+004000     MOVE ALL NX"2121" TO P-M0 P-TM.
+004010     MOVE NC"　　　　　　　　（　計　）" TO P-TM.
+004020     MOVE WG-CSU TO P-CSU.
+004030     MOVE WG-CKIN TO P-CKIN.
+004040     MOVE WG-JSU TO P-JSU.
+004050     MOVE WG-JKIN TO P-JKIN.
+004060     MOVE WG-KSU TO P-KSU.
+004070     MOVE WG-KKIN TO P-KKIN.
+004080*****IF LINAGE-COUNTER > 59                                       I.070205
+004090     IF LINAGE-COUNTER > 61                                       I.070205
+004100         PERFORM MID-RTN THRU MID-EX.
+004110     MOVE SPACE TO SP-R.
+004120     MOVE W-P TO SP-R.
+004130     WRITE SP-R.
+004140     MOVE SPACE TO SP-R.
+004150 KEI1-020.
+004160     WRITE SP-R.
+004170     GO TO KEI1-050.                                              I.090227
+004180 KEI1-030.                                                        I.090227
+004190     INITIALIZE EXL-R.                                            I.090227
+004200     MOVE ALL NX"2121" TO EXL-M0 EXL-M1 EXL-M2.                   I.090227
+004210     MOVE NC"　　　（　計　）" TO EXL-M2.                         I.090227
+004220     MOVE WG-CSU TO EXL-CSU.                                      I.090227
+004230     MOVE WG-CKIN TO EXL-CKIN.                                    I.090227
+004240     MOVE WG-JSU TO EXL-JSU.                                      I.090227
+004250     MOVE WG-JKIN TO EXL-JKIN.                                    I.090227
+004260     MOVE WG-KSU TO EXL-KSU.                                      I.090227
+004270     MOVE WG-KKIN TO EXL-KKIN.                                    I.090227
+004280     WRITE EXL-R.                                                 I.090227
+004290 KEI1-050.                                                        I.090227
+004300     ADD WG-CSU TO WS-CSU.
+004310     ADD WG-CKIN TO WS-CKIN.
+004320     ADD WG-JSU TO WS-JSU.
+004330     ADD WG-JKIN TO WS-JKIN.
+004340     ADD WG-KSU TO WS-KSU.
+004350     ADD WG-KKIN TO WS-KKIN.
+004360 KEI1-EX.
+004370     EXIT.
+004380 KEI2-RTN.
+004390     IF JS-SIGN = 1                                               I.090227
+004400         GO TO KEI2-030.                                          I.090227
+004410     MOVE SPACE TO W-P.
+004420     MOVE ALL NX"2121" TO P-M0 P-TM.
+004430     MOVE NC"　　　［　小　計　］　　　" TO P-TM.
+004440     MOVE WS-CSU TO P-CSU.
+004450     MOVE WS-CKIN TO P-CKIN.
+004460     MOVE WS-JSU TO P-JSU.
+004470     MOVE WS-JKIN TO P-JKIN.
+004480     MOVE WS-KSU TO P-KSU.
+004490     MOVE WS-KKIN TO P-KKIN.
+004500*****IF LINAGE-COUNTER > 59                                       D.070205
+004510     IF LINAGE-COUNTER > 61                                       I.070205
+004520         PERFORM MID-RTN THRU MID-EX.
+004530     MOVE SPACE TO SP-R.
+004540     MOVE W-P TO SP-R.
+004550     WRITE SP-R.
+004560     MOVE SPACE TO SP-R.
+004570     WRITE SP-R.
+004580     GO TO KEI2-050.                                              I.090227
+004590 KEI2-030.                                                        I.090227
+004600     INITIALIZE EXL-R.                                            I.090227
+004610     MOVE ALL NX"2121" TO EXL-M0 EXL-M1 EXL-M2.                   I.090227
+004620     MOVE NC"　［　小　計　］" TO EXL-M2.                         I.090227
+004630     MOVE WS-CSU TO EXL-CSU.                                      I.090227
+004640     MOVE WS-CKIN TO EXL-CKIN.                                    I.090227
+004650     MOVE WS-JSU TO EXL-JSU.                                      I.090227
+004660     MOVE WS-JKIN TO EXL-JKIN.                                    I.090227
+004670     MOVE WS-KSU TO EXL-KSU.                                      I.090227
+004680     MOVE WS-KKIN TO EXL-KKIN.                                    I.090227
+004690     WRITE EXL-R.                                                 I.090227
+004700 KEI2-050.                                                        I.090227
+004710     ADD WS-CSU TO WA-CSU.
+004720     ADD WS-CKIN TO WA-CKIN.
+004730     ADD WS-JSU TO WA-JSU.
+004740     ADD WS-JKIN TO WA-JKIN.
+004750     ADD WS-KSU TO WA-KSU.
+004760     ADD WS-KKIN TO WA-KKIN.
+004770 KEI2-EX.
+004780     EXIT.
+004790 KEI3-RTN.
+004800     IF JS-SIGN = 1                                               I.090227
+004810         GO TO KEI3-030.                                          I.090227
+004820     MOVE SPACE TO W-P.
+004830     MOVE ALL NX"2121" TO P-M0 P-TM.
+004840     MOVE NC"【　　合　計　　】　　　　" TO P-TM.
+004850     MOVE WA-CSU TO P-CSU.
+004860     MOVE WA-CKIN TO P-CKIN.
+004870     MOVE WA-JSU TO P-JSU.
+004880     MOVE WA-JKIN TO P-JKIN.
+004890     MOVE WA-KSU TO P-KSU.
+004900     MOVE WA-KKIN TO P-KKIN.
+004910     MOVE SPACE TO SP-R.
+004920     MOVE W-P TO SP-R.
+004930     WRITE SP-R.
+004940     GO TO KEI3-EX.                                               I.090227
+004950 KEI3-030.                                                        I.090227
+004960     INITIALIZE EXL-R.                                            I.090227
+004970     MOVE ALL NX"2121" TO EXL-M0 EXL-M1 EXL-M2.                   I.090227
+004980     MOVE NC"【　合　計　】　" TO EXL-M2.
+004990     MOVE WA-CSU TO EXL-CSU.                                      I.090227
+005000     MOVE WA-CKIN TO EXL-CKIN.                                    I.090227
+005010     MOVE WA-JSU TO EXL-JSU.                                      I.090227
+005020     MOVE WA-JKIN TO EXL-JKIN.                                    I.090227
+005030     MOVE WA-KSU TO EXL-KSU.                                      I.090227
+005040     MOVE WA-KKIN TO EXL-KKIN.                                    I.090227
+005050     WRITE EXL-R.                                                 I.090227
+005060 KEI3-EX.
+005070     EXIT.

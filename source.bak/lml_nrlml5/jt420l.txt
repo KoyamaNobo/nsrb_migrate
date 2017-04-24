@@ -1,0 +1,710 @@
+000010 IDENTIFICATION   DIVISION.
+000020 PROGRAM-ID.      JT420L.
+000030 AUTHOR.          MAYUMI.I.
+000040*********************************************************
+000050*    PROGRAM         :  品名別出荷日報　　　　　　　　　*
+000060*    PRINTER TYPE    :  JIPS                            *
+000070*    BASE PROGRAM    :  JT530L                          *
+000080*    DATA WRITTN     :  91/09/17                        *
+000090*    COMPILE TYPE    :  CBL85 (74MODE)                  *
+000100*********************************************************
+000110 ENVIRONMENT      DIVISION.
+000120 CONFIGURATION    SECTION.
+000130 SOURCE-COMPUTER. NEAC-SYSTEM3100.
+000140 OBJECT-COMPUTER. NEAC-SYSTEM3100.
+000150 INPUT-OUTPUT     SECTION.
+000160 FILE-CONTROL.
+000170***  ワークファイル　　　         (256/1)
+000180     SELECT  JT-WK03  ASSIGN  TO  WK03-MSD
+000190         ORGANIZATION  IS SEQUENTIAL
+000200         ACCESS MODE   IS SEQUENTIAL
+000210         FILE STATUS   IS ERR-STAT.
+000220***  直送先マスタ
+000230     SELECT  TC-M     ASSIGN  TO  TCM-MSD
+000240         ORGANIZATION  IS INDEXED
+000250         ACCESS MODE   IS RANDOM
+000260         RECORD KEY    IS TC-KEY
+000270         FILE STATUS IS ERR-STAT.
+000280***  品名マスタ
+000290*****SELECT  SHM      ASSIGN  TO  SHM-MSD                         D.010808
+000300     SELECT  HI2-M    ASSIGN  TO  HI2-MSD                         I.010808
+000310         ORGANIZATION  IS INDEXED
+000320         ACCESS MODE   IS RANDOM
+000330         RECORD KEY    IS HI-KEY2                                 I.010808
+000340*****    RECORD KEY    IS SHM-KEY                                 D.010808
+000350         FILE STATUS IS ERR-STAT.
+000360     SELECT  JCON     ASSIGN  TO  JCON-MSD                        I.970925
+000370         ORGANIZATION  INDEXED                                    I.970925
+000380         ACCESS MODE   RANDOM                                     I.970925
+000390         RECORD KEY    JCON3-KEY.                                 I.970925
+000400     SELECT  P-F ASSIGN TO P-PRN999.
+000410 I-O-CONTROL.
+000420*****APPLY SHARED-MODE ON  JT-WK03  TC-M  SHM                     D.970925
+000430*****APPLY SHARED-MODE ON  JT-WK03  TC-M  SHM  JCON               D.010808
+000440     APPLY SHARED-MODE ON  JT-WK03  TC-M  HI2-M  JCON             I.010808
+000450     APPLY SHIFT-CODE  ON  P-F.
+000460 DATA    DIVISION.
+000470 FILE    SECTION.
+000480 COPY   LTWK03.
+000490 COPY   LITCM.
+000500 COPY   LIHIM2.                                                   I.010808
+000510*COPY   L-SHM.                                                    D.010808
+000520 COPY   L-JCON.                                                   I.970925
+000530 FD  P-F
+000540     LABEL RECORD IS OMITTED
+000550     LINAGE IS 66 LINES.
+000560 01  P-R                    PIC X(250).
+000570*
+000580 WORKING-STORAGE  SECTION.
+000590 77  ERR-STAT               PIC X(2).
+000600 77  20K                    PIC X(05)  VALUE  ""3FE04FE080"".
+000610 77  15K                    PIC X(05)  VALUE  ""3FE04F40A0"".
+000620 77  W-PC                   PIC 9(01).
+000630 77  W-DC                   PIC 9(01).
+000640*77  OKC                    PIC 9(01).                            D.030724
+000650 77  WK0256ID           PIC  X(009) VALUE SPACE.                  I.960208
+000660 01  STN-NO.                                                      I.960208
+000670     02  STN-NO1        PIC  X(003).                              I.960208
+000680     02  STN-NO2        PIC  X(003).                              I.960208
+000690 01  W-FID.                                                       I.960208
+000700     02  W-FID1         PIC  X(006) VALUE "WK0256".               I.960208
+000710     02  W-FID2         PIC  X(003).                              I.960208
+000720 01  W-JS                   PIC 9(01).
+000730 01  W-JSD                  PIC 9(01).                            I.070416
+000740*01  W-JSP                  PIC 9(01).                            I.930803
+000750 01  W-JS-MEI               PIC N(03).
+000760*
+000770*01  JT-OWS256ID            PIC X(17).                            D.960208
+000780*01  JT-OWS256IDR  REDEFINES  JT-OWS256ID.                        D.960208
+000790*****02  W-ID               PIC X(10).                            D.960208
+000800*
+000810 01  PRN-AREA.
+000820     02  LCNT               PIC  9(02) VALUE  90.
+000830     02  PCNT               PIC  9(03) VALUE  ZERO.
+000840     02  OLD-KEY1           PIC  9(06).
+000850     02  OLD-KEY2           PIC  9(04).
+000860     02  N                  PIC  9(01).                           添字　
+000870     02  I                  PIC  9(02).                           添字　
+000880     02  GOUKEI             PIC S9(06).
+000890     02  W-ZCD.                                                   *I 92/09
+000900         03  W-ZC           PIC  9(01)  OCCURS  4.                *I 92/09
+000910***  STATION-NUMBER の取り込み　ワーク  ********************
+000920*01  STN-NO.                                                      D.960208
+000930*****02  STN-NO1                   PIC X(03).                     D.960208
+000940*****02  STN-NO2                   PIC X(03).                     D.960208
+000950*01  JT-IWS256ID                   PIC X(17) VALUE "JT-IWS256".   D.960208
+000960*01  JT-IWS256IDR  REDEFINES  JT-IWS256ID.                        D.960208
+000970*****02  W-ID1                     PIC X(09).                     D.960208
+000980*****02  W-ID2                     PIC X(03).                     D.960208
+000990*************************************************************
+001000 01  WORK-AREA.
+001010     02  HIZUKE.
+001020         03  HI-YY          PIC 9(02).
+001030         03  HI-MM          PIC 9(02).
+001040         03  HI-DD          PIC 9(02).
+001050     02  W-NGP              PIC 9(08).                            I.970925
+001060     02  W-NGPD    REDEFINES   W-NGP.                             I.970925
+001070         03  F              PIC 9(02).                            I.970925
+001080         03  W-NEN          PIC 9(02).                            I.970925
+001090         03  W-GET          PIC 9(02).                            I.970925
+001100         03  W-PEY          PIC 9(02).                            I.970925
+001110*****   明細　取り込み　ワーク  ********************
+001120 01  W-ASU.
+001130     02  W-SUD    OCCURS   4.
+001140         03  W-SU           PIC S9(05)  OCCURS  10.
+001150*****   合計　取り込み　ワーク  ********************
+001160 01  W-AKEI.
+001170     02  W-KEID   OCCURS   4.
+001180         03  W-KEI          PIC S9(05)  OCCURS  10.
+001190**
+001200 01  MID1.
+001210     02  F              PIC X(05) VALUE ""3FE04FE080"".
+001220*****02  F              PIC X(04) VALUE SPACE.                    D.970925
+001230     02  M-01           PIC N(05).
+001240*****02  F              PIC X(23) VALUE SPACE.                    D.970925
+001250     02  F              PIC X(03) VALUE SPACE.                    I.970925
+001260     02  F              PIC N(02)  VALUE NC"《　".                I.970925
+001270     02  M-NEN          PIC 9(02).                                I.970925
+001280     02  F              PIC N(01)  VALUE NC"年".                  I.970925
+001290     02  F              PIC X(01)  VALUE SPACE.                   I.970925
+001300     02  M-GET          PIC Z(02).                                I.970925
+001310     02  F              PIC N(01)  VALUE NC"月".                  I.970925
+001320     02  F              PIC X(01)  VALUE SPACE.                   I.970925
+001330     02  M-PEY          PIC Z(02).                                I.970925
+001340     02  F              PIC N(04)  VALUE NC"日分　》".            I.970925
+001350     02  F              PIC X(08) VALUE SPACE.                    I.020418
+001360*****02  F              PIC X(05) VALUE SPACE.                    D.020418
+001370     02  F              PIC N(24) VALUE
+001380         NC"＊＊＊　　出荷日報　（品名・得意先別）　　＊＊＊".
+001390*****02  F              PIC X(22) VALUE SPACE.                    D.970925
+001400     02  F              PIC X(17) VALUE SPACE.                    I.970925
+001410     02  F              PIC X(5) VALUE "DATE.".
+001420     02  M-YY           PIC Z9.
+001430     02  F              PIC X    VALUE "/".
+001440     02  M-MM           PIC Z9.
+001450     02  F              PIC X    VALUE "/".
+001460     02  M-DD           PIC Z9.
+001470     02  F              PIC X(7) VALUE SPACE.
+001480     02  F              PIC X(2) VALUE "P.".
+001490     02  WPCNT          PIC ZZ9.
+001500 01  MID2.
+001510     02  F              PIC X(05) VALUE ""3FE04F40A0"".
+001520     02  F              PIC X(07) VALUE " ｺｰﾄﾞ  ".
+001530     02  F              PIC N(08) VALUE NC"品　　　　　名　".
+001540     02  F              PIC X(116) VALUE SPACE.                   I.020418
+001550*****02  F              PIC X(113) VALUE SPACE.                   D.020418
+001560 01  MID3.
+001570     02  F              PIC X(11) VALUE  SPACE.
+001580     02  F              PIC X(05) VALUE  "ｺｰﾄﾞ ".
+001590     02  F              PIC N(08) VALUE  NC"得　意　先　名　".
+001600     02  F              PIC X(28) VALUE  SPACE.                   I.020418
+001610*****02  F              PIC X(25) VALUE  SPACE.                   D.020418
+001620     02  F              PIC X(01) VALUE  "1".
+001630     02  F              PIC X(04) VALUE  SPACE.
+001640     02  F              PIC N(02) VALUE  NC"３号".
+001650     02  F              PIC X(04) VALUE  SPACE.
+001660     02  F              PIC N(02) VALUE  NC"２号".
+001670     02  F              PIC X(04) VALUE  SPACE.
+001680     02  F              PIC N(02) VALUE  NC"１号".
+001690     02  F              PIC X(04) VALUE  SPACE.
+001700     02  F              PIC N(02) VALUE  NC"０号".
+001710     02  F              PIC X(04) VALUE  SPACE.
+001720     02  F              PIC N(02) VALUE  NC"　中".
+001730     02  F              PIC X(04) VALUE  SPACE.
+001740     02  F              PIC N(02) VALUE  NC"　大".
+001750     02  F              PIC X(04) VALUE  SPACE.
+001760     02  F              PIC N(02) VALUE  NC"特大".
+001770     02  F              PIC X(03) VALUE  SPACE.
+001780     02  F              PIC X(04) VALUE  "28.0".
+001790     02  F              PIC X(03) VALUE  SPACE.
+001800     02  F              PIC X(04) VALUE  "29.0".
+001810     02  F              PIC X(03) VALUE  SPACE.
+001820     02  F              PIC X(04) VALUE  "30.0".
+001830     02  F              PIC X(08) VALUE  SPACE.
+001840 01  MID4.
+001850*****02  F              PIC X(53) VALUE  SPACE.                   D.020418
+001860     02  F              PIC X(56) VALUE  SPACE.                   I.020418
+001870     02  F              PIC X(01) VALUE  "2".
+001880     02  F              PIC X(03) VALUE  SPACE.
+001890     02  F              PIC X(04) VALUE  "12.5".
+001900     02  F              PIC X(03) VALUE  SPACE.
+001910     02  F              PIC X(04) VALUE  "13.0".
+001920     02  F              PIC X(03) VALUE  SPACE.
+001930     02  F              PIC X(04) VALUE  "13.5".
+001940     02  F              PIC X(03) VALUE  SPACE.
+001950     02  F              PIC X(04) VALUE  "14.0".
+001960     02  F              PIC X(03) VALUE  SPACE.
+001970     02  F              PIC X(04) VALUE  "15.0".
+001980     02  F              PIC X(03) VALUE  SPACE.
+001990     02  F              PIC X(04) VALUE  "16.0".
+002000     02  F              PIC X(03) VALUE  SPACE.
+002010     02  F              PIC X(04) VALUE  "17.0".
+002020     02  F              PIC X(03) VALUE  SPACE.
+002030     02  F              PIC X(04) VALUE  "18.0".
+002040     02  F              PIC X(03) VALUE  SPACE.
+002050     02  F              PIC X(04) VALUE  "19.0".
+002060     02  F              PIC X(03) VALUE  SPACE.
+002070     02  F              PIC X(04) VALUE  "20.0".
+002080     02  F              PIC X(08) VALUE  SPACE.
+002090 01  MID5.
+002100*****02  F              PIC X(53) VALUE  SPACE.                   D.020418
+002110     02  F              PIC X(56) VALUE  SPACE.                   I.020418
+002120     02  F              PIC X(01) VALUE  "3".
+002130     02  F              PIC X(03) VALUE  SPACE.
+002140     02  F              PIC X(04) VALUE  "21.0".
+002150     02  F              PIC X(03) VALUE  SPACE.
+002160     02  F              PIC X(04) VALUE  "21.5".
+002170     02  F              PIC X(03) VALUE  SPACE.
+002180     02  F              PIC X(04) VALUE  "22.0".
+002190     02  F              PIC X(03) VALUE  SPACE.
+002200     02  F              PIC X(04) VALUE  "22.5".
+002210     02  F              PIC X(03) VALUE  SPACE.
+002220     02  F              PIC X(04) VALUE  "23.0".
+002230     02  F              PIC X(03) VALUE  SPACE.
+002240     02  F              PIC X(04) VALUE  "23.5".
+002250     02  F              PIC X(03) VALUE  SPACE.
+002260     02  F              PIC X(04) VALUE  "24.0".
+002270     02  F              PIC X(03) VALUE  SPACE.
+002280     02  F              PIC X(04) VALUE  "24.5".
+002290     02  F              PIC X(03) VALUE  SPACE.
+002300     02  F              PIC X(04) VALUE  "25.0".
+002310     02  F              PIC X(15) VALUE  SPACE.
+002320 01  MID6.
+002330*****02  F              PIC X(53) VALUE  SPACE.                   D.020418
+002340     02  F              PIC X(56) VALUE  SPACE.                   I.020418
+002350     02  F              PIC X(01) VALUE  "4".
+002360     02  F              PIC X(03) VALUE  SPACE.
+002370     02  F              PIC X(04) VALUE  "24.0".
+002380     02  F              PIC X(03) VALUE  SPACE.
+002390     02  F              PIC X(04) VALUE  "24.5".
+002400     02  F              PIC X(03) VALUE  SPACE.
+002410     02  F              PIC X(04) VALUE  "25.0".
+002420     02  F              PIC X(03) VALUE  SPACE.
+002430     02  F              PIC X(04) VALUE  "25.5".
+002440     02  F              PIC X(03) VALUE  SPACE.
+002450     02  F              PIC X(04) VALUE  "26.0".
+002460     02  F              PIC X(03) VALUE  SPACE.
+002470     02  F              PIC X(04) VALUE  "26.5".
+002480     02  F              PIC X(03) VALUE  SPACE.
+002490     02  F              PIC X(04) VALUE  "27.0".
+002500     02  F              PIC X(03) VALUE  SPACE.
+002510     02  F              PIC X(04) VALUE  "27.5".
+002520     02  F              PIC X(16) VALUE  SPACE.
+002530     02  F              PIC N(04) VALUE  NC"　合　計".
+002540***
+002550 01  P-R1.
+002560     02  P1-01              PIC 9(06).
+002570     02  FILLER             PIC X(01).
+002580     02  P1-02              PIC N(24).
+002590     02  FILLER             PIC X(92).                            I.020418
+002600*****02  FILLER             PIC X(89).                            D.020418
+002610 01  P-R2.
+002620     02  F                  PIC X(11).
+002630     02  P2-01              PIC 9(04).
+002640     02  F                  PIC X(01).
+002650     02  P2-02              PIC N(26).                            I.020418
+002660*****02  P2-02              PIC N(24).                            D.020418
+002670     02  F                  PIC X(01).
+002680     02  P2-03              PIC 9(01).
+002690     02  P2-04     OCCURS 10.
+002700         03  P2-041         PIC ---,---.
+002710     02  P2-05              PIC ----,--9.
+002720 01  P-R3.
+002730     02  F                  PIC X(09).
+002740     02  P3-02              PIC N(24).
+002750*****02  F                  PIC X(08).                            D.020418
+002760     02  F                  PIC X(11).                            I.020418
+002770     02  P3-03              PIC 9(01).
+002780     02  P3-04     OCCURS 10.
+002790         03  P3-041         PIC ---,---.
+002800     02  P3-05              PIC ----,--9.
+002810***
+002820 COPY  LWMSG.
+002830***
+002840 SCREEN      SECTION.
+002850 SD  C-CRT
+002860     END  STATUS  IS  ESTAT.
+002870 01  C-CLEAR.
+002880     02  C-CL     LINE   1  CLEAR SCREEN.
+002890***
+002900 01  DSP-AREA.
+002910     02  DSP-01         LINE  1.
+002920         03  COLUMN 20  VALUE  " 品名別出荷日報 "  REVERSE.
+002930         03  COLUMN 1   VALUE  "〔".
+002940         03  COLUMN 9   VALUE  "〕".
+002950     02  DSP-01A        LINE  1.                                  I.030724
+002960         03  COLUMN 3   PIC N(03)   FROM  W-JS-MEI.
+002970*****02  DSP-02         LINE  1.
+002980*****    03  LINE  7  COLUMN 24  VALUE  NC"０".
+002990*****    03  LINE  7  COLUMN 27  VALUE  NC"教　育".
+003000*****    03  LINE  9  COLUMN 24  VALUE  NC"１".
+003010*****    03  LINE  9  COLUMN 27  VALUE  NC"一　般".
+003020*****    03  LINE 11  COLUMN 24  VALUE  NC"２".
+003030*****    03  LINE 11  COLUMN 27  VALUE  NC"全　件".
+003040*****    03  LINE 13  COLUMN 35  VALUE  NC"選択".
+003050*****    03  LINE 13  COLUMN 40  VALUE  "[ ]".
+003060*****02  DSP-03         LINE 24.                                  D.030724
+003070*****    03  COLUMN 41  VALUE  NC"確認（".                        D.030724
+003080*****    03  COLUMN 47  VALUE  "OK=1,NO=9".                       D.030724
+003090*****    03  COLUMN 56  VALUE  NC"）".                            D.030724
+003100 01  DSP-ERR.
+003110     02  ERR-1    LINE 24  COLUMN 01   VALUE
+003120                                       "ＪＳ－ＳＩＧＮ　エラー".
+003130*01  ACP-AREA.                                                    D.030724
+003140*****02  ACP-OKC  LINE 24  COLUMN 62   PIC 9(01)                  D.030724
+003150*****       USING OKC   CHECK  OVERFLOW  NO IFC.                  D.030724
+003160***
+003170 COPY  LSMSG.
+003180***
+003190 PROCEDURE   DIVISION.
+003200****************************
+003210***  ﾒ ｲ ﾝ  R T N        ***
+003220****************************
+003230**
+003240 MR-RTN.
+003250     PERFORM  INI-RTN     THRU   INI-EX.
+003260*****IF  W-JS  NOT =  ZERO  AND  1                                D.030707
+003270*****IF  W-JS  NOT =  ZERO  AND  1  AND  2                        D.070419
+003280     IF  W-JS  NOT =  ZERO  AND  1                                I.070419
+003290         STOP  RUN.
+003300**
+003310 MR-010.
+003320     READ  JT-WK03  NEXT  UNLOCK  AT  END
+003330         GO  TO  MR-900.
+003340 MR-020.
+003350     MOVE  W03-09      TO  OLD-KEY1.
+003360     MOVE  OLD-KEY1     TO  HI-MHCD HI-HCD.                       I.010808
+003370     READ  HI2-M  UNLOCK  INVALID                                 I.010808
+003380         MOVE  SPACE     TO  HI-NAME.                             I.010808
+003390*****MOVE  OLD-KEY1     TO  SHM-KEY.                              D.010808
+003400*****READ  SHM  UNLOCK  INVALID                                   D.010808
+003410*****    MOVE  SPACE     TO  SHM-02.                              D.010808
+003420     MOVE  ZERO        TO  W-AKEI  W-PC  W-DC.
+003430 MR-030.
+003440     MOVE  W03-061     TO  OLD-KEY2.
+003450     PERFORM  TCM-READ-RTN     THRU  TCM-READ-EX.
+003460     MOVE  ZERO        TO  W-ASU.
+003470 MR-040.
+003480     PERFORM  MEI-RTN     THRU  MEI-EX.
+003490     READ  JT-WK03  NEXT  UNLOCK  AT  END
+003500         PERFORM  PRI-RTN        THRU  PRI-EX
+003510         PERFORM  SHOKEI-RTN     THRU SHOKEI-EX
+003520         GO  TO  MR-900.
+003530     IF  W03-09  NOT =  OLD-KEY1
+003540         PERFORM  PRI-RTN        THRU  PRI-EX
+003550         PERFORM  SHOKEI-RTN     THRU  SHOKEI-EX
+003560         GO  TO  MR-020.
+003570     IF  W03-061 NOT =  OLD-KEY2
+003580         PERFORM  PRI-RTN        THRU  PRI-EX
+003590         GO  TO  MR-030.
+003600     GO  TO  MR-040.
+003610 MR-900.
+003620     PERFORM  END-RTN     THRU   END-EX.
+003630     STOP  RUN.
+003640*
+003650*********************************
+003660***   ｲﾆｼｬﾙ   R T N           ***
+003670*********************************
+003680**
+003690 INI-RTN.
+003700*****ACCEPT  W-JS.                                                D.030724
+003710*****ACCEPT  W-JSP.                                               D.930803
+003720     DISPLAY  C-CLEAR.
+003730     DISPLAY  DSP-01.                                             I.030724
+003740*****IF (W-JS  NOT =  ZERO  AND  1)  OR                           D.930803
+003750*****   (W-JSP NOT =  ZERO  AND  1)                               D.930803
+003760*****IF  W-JS  NOT =  ZERO  AND  1                                D.030707
+003770*****IF  W-JS  NOT =  ZERO  AND  1 AND  2                         D.030724
+003780*****    DISPLAY  ERR-1  DISP-BUZ-B                               D.030724
+003790*****    GO  TO  INI-EX.                                          D.030724
+003800*****IF  W-JSP =  ZERO                                            D.930803
+003810*****    DISPLAY  DSP-AREA0                                       D.930803
+003820*****    MOVE  W-MID0   TO  M-02.                                 D.930803
+003830*****IF  W-JSP =  1                                               D.930803
+003840*****    DISPLAY  DSP-AREA1                                       D.930803
+003850*****    MOVE  W-MID1   TO  M-02.                                 D.930803
+003860*****IF  W-JS  =  ZERO                                            D.030724
+003870*****    MOVE  "JT-OWS256"    TO W-ID                             D.960208
+003880*****    MOVE  NC"教　育"     TO  W-JS-MEI.                       D.030724
+003890*****IF  W-JS  =  1                                               D.030724
+003900*****    MOVE  NC"ワーク"     TO  W-JS-MEI.                       D.030724
+003910*****IF  W-JS  =  2                                               D.030724
+003920*****    MOVE  NC"カジュ"     TO  W-JS-MEI.                       D.030724
+003930*****    MOVE  "JT-OWS256I"   TO W-ID                             D.960208
+003940*****    MOVE  NC"一　般"     TO  W-JS-MEI.                       D.030707
+003950*****DISPLAY  DSP-AREA.                                           D.030724
+003960*INI-010.                                                         D.030724
+003970*****ACCEPT   ACP-OKC.                                            D.030724
+003980*****IF  ESTAT        =  "P9"           DISPLAY  C-CLEAR          D.030724
+003990*****                                   STOP  RUN.                D.030724
+004000*****IF  ESTAT   NOT  =  "01"           GO   TO   INI-010.        D.030724
+004010*****IF  OKC          =  9              DISPLAY  C-CLEAR          D.030724
+004020*****                                   STOP  RUN.                D.030724
+004030*****IF  OKC     NOT  =  1              GO   TO   INI-010.        D.030724
+004040*
+004050*****DISPLAY  DSP-AREA  ACP-OKC.                                  D.030724
+004060     CALL  "CBLSTNNO"  USING  STN-NO.
+004070*****MOVE STN-NO2      TO W-ID2.                                  D.960208
+004080     MOVE STN-NO2 TO W-FID2.                                      I.960208
+004090     MOVE W-FID TO WK0256ID.                                      I.960208
+004100*
+004110*****OPEN  INPUT  JT-WK03  SHM  TC-M.                             D.010808
+004120     OPEN  INPUT  JT-WK03  HI2-M  TC-M.                           I.010808
+004130     OPEN  OUTPUT  P-F.
+004140     ACCEPT   HIZUKE  FROM  DATE.
+004150     MOVE  HI-YY     TO  M-YY.
+004160     MOVE  HI-MM     TO  M-MM.
+004170     MOVE  HI-DD     TO  M-DD.
+004180*
+004190     OPEN  INPUT    JCON.                                         I.970925
+004200     MOVE  SPACE    TO  JCON6-KEY.                                I.970925
+004210     MOVE  6        TO  JCON6-01.                                 I.970925
+004220     READ  JCON     UNLOCK  INVALID                               I.970925
+004230         MOVE  ZERO      TO  JCON6-08  JCON6-09.                  I.030724
+004240*****    MOVE  ZERO      TO  JCON6-09.                            D.030724
+004250     MOVE  JCON6-08    TO  W-JS.                                  I.030724
+004260     MOVE  JCON6-09    TO  W-NGP.                                 I.970925
+004270     CLOSE          JCON.                                         I.970925
+004280     IF  W-JS  =  0                                               I.030724
+004290         MOVE  NC"教　育"     TO  W-JS-MEI.                       I.030724
+004300     IF  W-JS  =  1                                               I.030724
+004310         MOVE  NC"一　般"     TO  W-JS-MEI.                       I.070419
+004320*****    MOVE  NC"ワーク"     TO  W-JS-MEI.                       D.070419
+004330*****IF  W-JS  =  2                                               D.070419
+004340*****    MOVE  NC"カジュ"     TO  W-JS-MEI.                       D.070419
+004350     DISPLAY  DSP-01A.                                            I.030724
+004360     MOVE  W-NEN       TO  M-NEN.                                 I.970925
+004370     MOVE  W-GET       TO  M-GET.                                 I.970925
+004380     MOVE  W-PEY       TO  M-PEY.                                 I.970925
+004390 INI-EX.
+004400      EXIT.
+004410*
+004420***************************
+004430***  H I M -  R T N     ***
+004440***************************
+004450*SHM-RTN.                                                         D.010808
+004460 HIM-RTN.                                                         I.010808
+004470     IF  LCNT  NOT <  61
+004480         PERFORM  MID-RTN     THRU  MID-EX.
+004490     MOVE  SPACE        TO  P-R1.
+004500     MOVE  OLD-KEY1     TO  P1-01.
+004510     MOVE  HI-NAME      TO  P1-02.                                I.010808
+004520*****MOVE  SHM-02       TO  P1-02.                                D.010808
+004530*
+004540     MOVE  SPACE     TO  P-R.
+004550     MOVE  P-R1      TO  P-R.
+004560     WRITE  P-R  AFTER 1.
+004570     MOVE  SPACE     TO  P-R.
+004580     ADD  1      TO  LCNT.
+004590*SHM-EX.                                                          D.010808
+004600 HIM-EX.                                                          I.010808
+004610     EXIT.
+004620*
+004630*****************************
+004640***    M E I   R T N      ***
+004650*****************************
+004660 MEI-RTN.
+004670     MOVE  1            TO  I.
+004680 MEI-010.
+004690     IF  I  >  10
+004700         GO  TO  MEI-EX.
+004710     MOVE  W03-1211(I)  TO  W-SU(W03-10,I).                       A 911205
+004720     ADD   1            TO  I.
+004730     GO  TO  MEI-010.
+004740 MEI-EX.
+004750     EXIT.
+004760*
+004770********************************
+004780***  P R I N T     R T N     ***
+004790********************************
+004800 PRI-RTN.
+004810     IF  W-ASU     =  ZERO
+004820         GO  TO  PRI-EX.
+004830     IF  W-PC      =  ZERO
+004840         MOVE  5            TO  W-PC
+004850         PERFORM   HIM-RTN    THRU  HIM-EX.                       I.010808
+004860*****    PERFORM   SHM-RTN    THRU  SHM-EX.                       D.010808
+004870     MOVE  ZERO         TO  GOUKEI.
+004880     MOVE  1111         TO  W-ZCD.
+004890     MOVE  0            TO  N.
+004900 PRI-010.
+004910     IF  W-ZCD     =  ZERO
+004920         GO  TO  PRI-EX.
+004930     ADD  1             TO  N.
+004940     IF  N     =  5
+004950         MOVE  0            TO  N
+004960         GO  TO  PRI-020.
+004970     IF ZERO = W-SU(N,1) AND W-SU(N,2) AND W-SU(N,3) AND
+004980               W-SU(N,4) AND W-SU(N,5) AND W-SU(N,6) AND
+004990          W-SU(N,7) AND W-SU(N,8) AND W-SU(N,9) AND W-SU(N,10)
+005000         MOVE  0            TO  W-ZC(N).
+005010     IF  W-ZC(N)  =  1
+005020         COMPUTE GOUKEI = W-SU(N,1) + W-SU(N,2) + W-SU(N,3) +
+005030              W-SU(N,4) + W-SU(N,5) + W-SU(N,6) + W-SU(N,7) +
+005040              W-SU(N,8) + W-SU(N,9) + W-SU(N,10) + GOUKEI.
+005050     GO  TO  PRI-010.
+005060 PRI-020.
+005070     ADD  1             TO  N.
+005080     IF  N     =  5
+005090         GO  TO  PRI-090.
+005100     IF  W-ZC(N) = 0
+005110         GO  TO  PRI-020.
+005120     MOVE  SPACE        TO  P-R2.
+005130     MOVE  SPACE        TO  P2-02.
+005140     IF  N     =  1
+005150         MOVE  OLD-KEY2     TO  P2-01
+005160         MOVE  TC-NAME      TO  P2-02.
+005170     IF  N     =  2
+005180         IF  0      =  W-ZC(1)
+005190             MOVE  OLD-KEY2     TO  P2-01
+005200             MOVE  TC-NAME      TO  P2-02.
+005210     IF  N     =  3
+005220         IF  0      =  W-ZC(1)  AND  W-ZC(2)
+005230             MOVE  OLD-KEY2     TO  P2-01
+005240             MOVE  TC-NAME      TO  P2-02.
+005250     IF  N     =  4
+005260         IF  0      =  W-ZC(1)  AND  W-ZC(2)  AND  W-ZC(3)
+005270             MOVE  OLD-KEY2     TO  P2-01
+005280             MOVE  TC-NAME      TO  P2-02.
+005290     MOVE  N            TO  P2-03.
+005300     MOVE  ZERO         TO  I.
+005310 PRI-030.
+005320     ADD  1             TO  I.
+005330     IF  I     NOT  =  11
+005340         MOVE  W-SU(N,I)   TO  P2-041(I)
+005350         ADD   W-SU(N,I)   TO  W-KEI(N,I)
+005360         GO  TO  PRI-030.
+005370     IF  N     =  4
+005380         MOVE  GOUKEI  TO  P2-05.
+005390     IF  N     =  3
+005400         IF  0      =  W-ZC(4)
+005410             MOVE  GOUKEI  TO  P2-05.
+005420     IF  N     =  2
+005430         IF  0      =  W-ZC(4)  AND  W-ZC(3)
+005440             MOVE  GOUKEI  TO  P2-05.
+005450     IF  N     =  1
+005460         IF  0      =  W-ZC(4)  AND  W-ZC(3)  AND  W-ZC(2)
+005470             MOVE  GOUKEI  TO  P2-05.
+005480     IF  LCNT  NOT <  61
+005490         PERFORM  MID-RTN     THRU  MID-EX
+005500*****    PERFORM  SHM-RTN      THRU  SHM-EX                       D.010808
+005510         PERFORM  HIM-RTN      THRU  HIM-EX                       I.010808
+005520         MOVE  OLD-KEY2     TO  P2-01
+005530         MOVE  TC-NAME      TO  P2-02.
+005540     MOVE  SPACE        TO  P-R.
+005550     MOVE  P-R2         TO  P-R.
+005560     WRITE  P-R  AFTER 1.
+005570     MOVE  SPACE        TO  P-R.
+005580     ADD  1             TO  LCNT.
+005590     GO  TO  PRI-020.
+005600 PRI-090.
+005610     IF  W-DC  =  5                   MOVE  9   TO  W-DC.
+005620     IF  W-DC  =  0                   MOVE  5   TO  W-DC.
+005630 PRI-EX.
+005640     EXIT.
+005650*
+005660********************************
+005670***  S H O K E I   R T N     ***
+005680********************************
+005690 SHOKEI-RTN.
+005700     IF  W-DC   NOT =  9
+005710         GO  TO  SHOKEI-EX.
+005720     IF  W-AKEI    =  ZERO
+005730         GO  TO  SHOKEI-EX.
+005740     MOVE  ZERO         TO  GOUKEI.
+005750     MOVE  1111         TO  W-ZCD.
+005760     MOVE  0            TO  N.
+005770 SHOKEI-010.
+005780     ADD  1             TO  N.
+005790     IF  N     =  5
+005800         MOVE  0            TO  N
+005810         GO  TO  SHOKEI-020.
+005820     IF ZERO = W-KEI(N,1) AND W-KEI(N,2) AND W-KEI(N,3) AND
+005830               W-KEI(N,4) AND W-KEI(N,5) AND W-KEI(N,6) AND
+005840          W-KEI(N,7) AND W-KEI(N,8) AND W-KEI(N,9) AND W-KEI(N,10)
+005850         MOVE  0            TO  W-ZC(N).
+005860     IF  W-ZC(N)  =  1
+005870         COMPUTE GOUKEI = W-KEI(N,1) + W-KEI(N,2) + W-KEI(N,3) +
+005880             W-KEI(N,4) + W-KEI(N,5) + W-KEI(N,6) + W-KEI(N,7) +
+005890             W-KEI(N,8) + W-KEI(N,9) + W-KEI(N,10) + GOUKEI.
+005900     GO  TO  SHOKEI-010.
+005910 SHOKEI-020.
+005920     ADD  1             TO  N.
+005930     IF  N     =  5
+005940         GO  TO  SHOKEI-EX.
+005950     IF  W-ZC(N) = 0
+005960         GO  TO  SHOKEI-020.
+005970     MOVE  SPACE        TO  P-R3.
+005980     MOVE  SPACE        TO  P3-02.
+005990     IF  N     =  1
+006000         MOVE  NC"　［　　合　計　　］　　　　　"  TO  P3-02.
+006010     IF  N     =  2
+006020         IF  0      =  W-ZC(1)
+006030             MOVE  NC"　［　　合　計　　］　　　　　"  TO  P3-02.
+006040     IF  N     =  3
+006050         IF  0      =  W-ZC(1)  AND  W-ZC(2)
+006060             MOVE  NC"　［　　合　計　　］　　　　　"  TO  P3-02.
+006070     IF  N     =  4
+006080         IF  0      =  W-ZC(1)  AND  W-ZC(2)  AND  W-ZC(3)
+006090             MOVE  NC"　［　　合　計　　］　　　　　"  TO  P3-02.
+006100     MOVE  N            TO  P3-03.
+006110     MOVE  ZERO         TO  I.
+006120 SHOKEI-030.
+006130     ADD  1             TO  I.
+006140     IF  I     NOT  =  11
+006150         MOVE  W-KEI(N,I)   TO  P3-041(I)
+006160         GO  TO  SHOKEI-030.
+006170     IF  N     =  4
+006180         MOVE  GOUKEI  TO  P3-05.
+006190     IF  N     =  3
+006200         IF  0      =  W-ZC(4)
+006210             MOVE  GOUKEI  TO  P3-05.
+006220     IF  N     =  2
+006230         IF  0      =  W-ZC(4)  AND  W-ZC(3)
+006240             MOVE  GOUKEI  TO  P3-05.
+006250     IF  N     =  1
+006260         IF  0      =  W-ZC(4)  AND  W-ZC(3)  AND  W-ZC(2)
+006270             MOVE  GOUKEI  TO  P3-05.
+006280     IF  LCNT  NOT <  61
+006290         PERFORM  MID-RTN     THRU  MID-EX
+006300         PERFORM  HIM-RTN      THRU  HIM-EX                       I.010808
+006310*****    PERFORM  SHM-RTN      THRU  SHM-EX                       D.010808
+006320         MOVE  NC"　［　　合　計　　］　　　　　"  TO  P3-02.
+006330     MOVE  SPACE        TO  P-R.
+006340     MOVE  P-R3         TO  P-R.
+006350     WRITE  P-R  AFTER 1.
+006360     MOVE  SPACE        TO  P-R.
+006370     ADD  1             TO  LCNT.
+006380     GO  TO  SHOKEI-020.
+006390 SHOKEI-EX.
+006400     EXIT.
+006410*
+006420*****************************
+006430***   R E A D   T C M     ***
+006440*****************************
+006450 TCM-READ-RTN.
+006460***  直送先マスタ　ＲＥＡＤ
+006470     MOVE  OLD-KEY2      TO  TC-TCD.
+006480     MOVE  "001"         TO  TC-CCD.
+006490     READ  TC-M  UNLOCK  INVALID
+006500         MOVE  SPACE     TO  TC-NAME.
+006510 TCM-READ-EX.
+006520     EXIT.
+006530*
+006540*****************************
+006550***    ﾐ ﾀﾞ ｼ  R T N      ***
+006560*****************************
+006570**
+006580 MID-RTN.
+006590     IF  LCNT   <  90
+006600          MOVE   SPACE   TO   P-R
+006610          WRITE  P-R     AFTER  PAGE.
+006620*
+006630     ADD   1   TO    PCNT.
+006640     MOVE  PCNT  TO  WPCNT.
+006650     IF  W-JS  =  ZERO
+006660         MOVE  NC"【教　育】"     TO  M-01.
+006670     IF  W-JS  =  1
+006680         MOVE  NC"【一　般】"     TO  M-01.                       I.070419
+006690*****    MOVE  NC"【ワーク】"     TO  M-01.                       D.070419
+006700*****IF  W-JS  =  2                                               D.070419
+006710*****    MOVE  NC"【カジュ】"     TO  M-01.                       D.070419
+006720*****    MOVE  NC"【一　般】"     TO  M-01.                       D.030707
+006730*
+006740     MOVE   MID1    TO    P-R.
+006750     WRITE  P-R      AFTER  1.
+006760     MOVE   SPACE    TO     P-R.
+006770     MOVE   MID2    TO    P-R.
+006780     WRITE  P-R      AFTER  2.
+006790     MOVE   SPACE   TO     P-R.
+006800     MOVE   MID3    TO    P-R.
+006810     WRITE  P-R      AFTER  1.
+006820     MOVE   SPACE    TO     P-R.
+006830     MOVE   MID4    TO    P-R.
+006840     WRITE  P-R      AFTER  1.
+006850     MOVE   SPACE    TO     P-R.
+006860     MOVE   MID5    TO    P-R.
+006870     WRITE  P-R      AFTER  1.
+006880     MOVE   SPACE    TO     P-R.
+006890     MOVE   MID6    TO    P-R.
+006900     WRITE  P-R      AFTER  1.
+006910     MOVE   SPACE    TO     P-R.
+006920*
+006930     MOVE  8     TO  LCNT.
+006940 MID-EX.
+006950     EXIT.
+006960*
+006970**************************
+006980***  ﾌ ｧ ｲ ﾙ  CLOSE    ***
+006990**************************
+007000**
+007010 END-RTN.
+007020*****CLOSE   JT-WK03  TC-M  SHM  P-F.                             D.010808
+007030     CLOSE   JT-WK03  TC-M  HI2-M  P-F.                           I.010808
+007040     DISPLAY  C-CLEAR.
+007050 END-EX.
+007060     EXIT.
+007070***
+007080 COPY  LPMSG.
+007090***
+

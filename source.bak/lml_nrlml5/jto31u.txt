@@ -1,0 +1,380 @@
+000010 IDENTIFICATION    DIVISION.
+000020 PROGRAM-ID.       JTO31U.
+000030****************************************************************
+000040*    Ｏ／Ｌ受信データ（更新）更新                              *
+000050*                              90/ 5/ 8           IKUMI.N      *
+000060****************************************************************
+000070 ENVIRONMENT       DIVISION.
+000080 CONFIGURATION     SECTION.
+000090 SOURCE-COMPUTER.  SYSTEM3100.
+000100 OBJECT-COMPUTER.  SYSTEM3100.
+000110 INPUT-OUTPUT      SECTION.
+000120 FILE-CONTROL.
+000130*----<Ｏ／Ｌ受信実績Ｆ>----*
+000140     SELECT    JOLJF     ASSIGN    TO    JOL-MSD
+000150                         ORGANIZATION    SEQUENTIAL
+000160                         FILE  STATUS    ERR-STAT.
+000170*----<出荷実績ファイル>----*
+000180     SELECT    JSJD      ASSIGN    TO    JSJ1-MSD  JSJ2-MSD
+000190                         ORGANIZATION    INDEXED
+000200                         ACCESS  MODE    DYNAMIC
+000210                         RECORD   KEY    JSJD-KEY
+000220              ALTERNATE  RECORD   KEY    JSJD-KEY2
+000230                         FILE  STATUS    ERR-STAT.
+000240*----<出荷指図トラン>----*
+000250     SELECT    JSTR      ASSIGN    TO    JST-MSD
+000260                         ORGANIZATION    INDEXED
+000270                         ACCESS  MODE    RANDOM
+000280                         RECORD   KEY    JSTR-KEY
+000290                         FILE  STATUS    ERR-STAT.
+000300*----<倉別在庫マスタ>----*
+000310     SELECT    NJZAI     ASSIGN    TO    NJZ-MSD                  I.940929
+000320                         ORGANIZATION    INDEXED                  I.940929
+000330                         ACCESS  MODE    DYNAMIC                  I.940929
+000340                         RECORD   KEY    NJZAI-KEY                I.940929
+000350                         FILE  STATUS    ERR-STAT.                I.940929
+000360 I-O-CONTROL.
+000370     APPLY  SHARED-MODE  ON  JSJD  JSTR  NJZAI.                   I.940929
+000380*****APPLY  SHARED-MODE  ON  JSJD  JSTR.                          D.940929
+000390*
+000400 DATA              DIVISION.
+000410*
+000420 FILE              SECTION.
+000430     COPY    LJOLJF.
+000440     COPY    L-JSJD.
+000450     COPY    L-JSTR.
+000460     COPY    LNJZAI.                                              I.940929
+000470*
+000480 WORKING-STORAGE   SECTION.
+000490*----< ﾜｰｸ ｴﾘｱ >----*
+000500 77  ERR-STAT      PIC X(02).
+000510 77  END-SW        PIC 9(01)   VALUE  0.
+000520 77  WRI-SW        PIC 9(01).                                     I.940929
+000530 01  WK-NO         PIC 9(06)   VALUE  0.                          I.911120
+000540 01  ERR-SW        PIC 9(01)   VALUE  0.                          I.911120
+000550*-------------------*
+000560     COPY    LWMSG.
+000570*
+000580 SCREEN            SECTION.
+000590 SD  GAMEN    END  STATUS  END-STS.
+000600 01  DSP-CLR  LINE  1.
+000610     02  CLEAR  SCREEN.
+000620 01  DSP-HYOJI.
+000630     02  LINE  1     COLUMN 20   PIC N(20)  VALUE
+000640           NC"＊＊　Ｏ／Ｌ受信データ（実績）更新　＊＊".
+000650 01  EMSG-AREA.
+000660     02  EMSG-01   LINE  24.
+000670         03  COLUMN  1  PIC  N(14)
+000680                        VALUE  NC"出荷実績二重更新　指図№＝".
+000690         03  EMSG-011   COLUMN  27 PIC  9(06)  FROM  JSJD-03.
+000700         03  COLUMN  35 PIC  N(11)
+000710                        VALUE  NC"リセットにて続行します".
+000720*-------------------*
+000730     COPY    LSERR.                                               R.900411
+000740*
+000750*==============================================================*
+000760 PROCEDURE         DIVISION.
+000770*--------------------------------------------------------------*
+000780*    ﾒ ｲ ﾝ  ﾙ ｰ ﾁ ﾝ                                            *
+000790*--------------------------------------------------------------*
+000800 MAINLINE-ROUTINE.
+000810     PERFORM  INIT-RTN  THRU  INIT-RTN-EXIT.
+000820     PERFORM  READ-RTN  THRU  READ-RTN-EXIT.
+000830     PERFORM  PROC-RTN  THRU  PROC-RTN-EXIT
+000840         UNTIL  END-SW  =  9.
+000850     PERFORM  CLSE-RTN  THRU  CLSE-RTN-EXIT.
+000860     PERFORM  ENDR-RTN  THRU  ENDR-RTN-EXIT.
+000870 MAINLINE-END.
+000880     STOP RUN.
+000890*--------------------------------------------------------------*
+000900*    P R O C  -  R T N                                         *
+000910*--------------------------------------------------------------*
+000920 PROC-RTN.
+000930     IF  JOLJF11-01  NOT =  11
+000940                         GO  TO  PROC-090.
+000950     IF  ERR-SW          =  1    AND    JOLJF11-02  =  WK-NO      I.911120
+000960                         GO  TO  PROC-090.                        I.911120
+000970     IF  JOLJF11-02  NOT =  WK-NO                                 I.911120
+000980           PERFORM  CHK-RTN  THRU  CHK-EX                         I.911120
+000990           IF  ERR-SW    NOT =  0            GO  TO  PROC-080.    I.911120
+001000     MOVE  JOLJF11-08    TO  JSJD-01.
+001010     MOVE  JOLJF11-07    TO  JSJD-02.
+001020     MOVE  JOLJF11-02    TO  JSJD-03.
+001030     MOVE  JOLJF11-03    TO  JSJD-04.
+001040     READ  JSJD   INVALID
+001050           MOVE  SPACE         TO  JSJD-REC
+001060           INITIALIZE              JSJD-REC
+001070           GO  TO  PROC-010.
+001080     GO    TO    PROC-090.
+001090 PROC-010.
+001100     MOVE  JOLJF11-08    TO  JSJD-01.
+001110     MOVE  JOLJF11-07    TO  JSJD-02.
+001120     MOVE  JOLJF11-02    TO  JSJD-03.
+001130     MOVE  JOLJF11-03    TO  JSJD-04.
+001140     MOVE  JOLJF11-04    TO  JSJD-05.
+001150     MOVE  JOLJF11-05    TO  JSJD-06.
+001160     MOVE  JOLJF11-06    TO  JSJD-07.
+001170     MOVE  JOLJF11-09    TO  JSJD-08.
+001180     MOVE  JOLJF11-10    TO  JSJD-09.
+001190     MOVE  JOLJF11-11    TO  JSJD-10.
+001200     MOVE  JOLJF11-12    TO  JSJD-11.
+001210     MOVE  JOLJF11-13    TO  JSJD-12.
+001220     MOVE  JOLJF11-14    TO  JSJD-13.
+001230     MOVE  JOLJF11-15    TO  JSJD-14.
+001240     MOVE  JOLJF11-15A   TO  JSJD-14A.
+001250     MOVE  JOLJF11-15B   TO  JSJD-14B.
+001260     MOVE  JOLJF11-15C   TO  JSJD-14C.
+001270*****MOVE  JOLJF11-99    TO  JSJD-99.                             D.980930
+001280     MOVE  JOLJF11-15D   TO  JSJD-14D.
+001290     MOVE  JOLJF11-16    TO  JSJD-15.
+001300     MOVE  JOLJF11-16A   TO  JSJD-15A.
+001310     MOVE  JOLJF11-20    TO  JSJD-20.                             I.981019
+001320*****MOVE  JOLJF11-18A   TO  JSJD-18.                             D.980930
+001330     MOVE  JOLJF11-19    TO  JSJD-19.                             *I 92/05
+001340     MOVE  0             TO  JSJD-158.
+001350     IF    (JOLJF11-1311(01) = ZERO)                              A 920808
+001360       AND (JOLJF11-1311(02) = ZERO)                              A    :
+001370       AND (JOLJF11-1311(03) = ZERO)                              A    :
+001380       AND (JOLJF11-1311(04) = ZERO)                              A    :
+001390       AND (JOLJF11-1311(05) = ZERO)                              A    :
+001400       AND (JOLJF11-1311(06) = ZERO)                              A    :
+001410       AND (JOLJF11-1311(07) = ZERO)                              A    :
+001420       AND (JOLJF11-1311(08) = ZERO)                              A    :
+001430       AND (JOLJF11-1311(09) = ZERO)                              A    :
+001440       AND (JOLJF11-1311(10) = ZERO)                              A    :
+001450            MOVE  1      TO  JSJD-158.                            A 920808
+001460     MOVE  JOLJF11-17    TO  JSJD-16.
+001470     MOVE  9             TO  JSJD-17.                             R.911120
+001480     WRITE  JSJD-REC  INVALID
+001490            MOVE   "JSJD"    TO   ERR-F
+001500            MOVE   "W"       TO   ERR-M
+001510            MOVE   JSJD-KEY  TO   ERR-K
+001520            PERFORM  ERR-RTN  THRU  ERR-EX.
+001530     CALL   "CBLTCLS"   USING     JSJD.
+001540****
+001550     MOVE  JOLJF11-KEYW  TO  JSTR-KEY.
+001560     READ  JSTR   INVALID
+001570           MOVE  SPACE         TO  JSTR-R
+001580           INITIALIZE              JSTR-R
+001590           MOVE  LOW-VALUE     TO  JSTR-KEY.
+001600*
+001610     MOVE  JOLJF11-04    TO  JSTR-03.
+001620     MOVE  JOLJF11-05    TO  JSTR-04.
+001630     MOVE  JOLJF11-06    TO  JSTR-05.
+001640     MOVE  JOLJF11-07    TO  JSTR-06.
+001650     MOVE  JOLJF11-08    TO  JSTR-07.
+001660     MOVE  JOLJF11-09    TO  JSTR-08.
+001670     MOVE  JOLJF11-10    TO  JSTR-09.
+001680     MOVE  JOLJF11-11    TO  JSTR-10.
+001690     MOVE  JOLJF11-12    TO  JSTR-11.
+001700     MOVE  JOLJF11-13    TO  JSTR-12.
+001710     MOVE  JOLJF11-14    TO  JSTR-13.
+001720     MOVE  JOLJF11-15    TO  JSTR-14.
+001730     MOVE  JOLJF11-15A   TO  JSTR-14A.
+001740     MOVE  JOLJF11-15B   TO  JSTR-14B.
+001750     MOVE  JOLJF11-15C   TO  JSTR-14C.
+001760*****MOVE  JOLJF11-99    TO  JSTR-99.                             D.980930
+001770     MOVE  JOLJF11-15D   TO  JSTR-14D.
+001780     MOVE  JOLJF11-16    TO  JSTR-15.
+001790     MOVE  JOLJF11-16A   TO  JSTR-15A.
+001800     MOVE  JOLJF11-20    TO  JSTR-20.                             I.981019
+001810*****MOVE  JOLJF11-18A   TO  JSJD-18.                             D.980930
+001820     MOVE  JOLJF11-19    TO  JSTR-19.                             *I 92/05
+001830     MOVE  JOLJF11-168   TO  JSTR-158.
+001840     MOVE  JOLJF11-17    TO  JSTR-16.
+001850     MOVE  9             TO  JSTR-17.                             R.911120
+001860     IF  JSTR-KEY     NOT =  LOW-VALUE       GO  TO  PROC-070.
+001870     MOVE  JOLJF11-KEYW      TO   JSTR-KEY.
+001880     WRITE  JSTR-R    INVALID
+001890            MOVE   "JSTR"    TO   ERR-F
+001900            MOVE   "W"       TO   ERR-M
+001910            MOVE   JSTR-KEY  TO   ERR-K
+001920            PERFORM  ERR-RTN  THRU  ERR-EX.
+001930     CALL   "CBLTCLS"   USING     JSTR.
+001940*****GO  TO  PROC-080.                                            D.940929
+001950     GO  TO  PROC-075.                                            I.940929
+001960 PROC-070.
+001970     REWRITE  JSTR-R    INVALID
+001980            MOVE   "JSTR"    TO   ERR-F
+001990            MOVE   "R"       TO   ERR-M
+002000            MOVE   JSTR-KEY  TO   ERR-K
+002010            PERFORM  ERR-RTN  THRU  ERR-EX.
+002020*****
+002030 PROC-075.                                                        I.940929
+002040     IF  (JSTR-111(01)  =  JSTR-121(01))  AND                     I.940929
+002050         (JSTR-111(02)  =  JSTR-121(02))  AND                     I.940929
+002060         (JSTR-111(03)  =  JSTR-121(03))  AND                     I.940929
+002070         (JSTR-111(04)  =  JSTR-121(04))  AND                     I.940929
+002080         (JSTR-111(05)  =  JSTR-121(05))  AND                     I.940929
+002090         (JSTR-111(06)  =  JSTR-121(06))  AND                     I.940929
+002100         (JSTR-111(07)  =  JSTR-121(07))  AND                     I.940929
+002110         (JSTR-111(08)  =  JSTR-121(08))  AND                     I.940929
+002120         (JSTR-111(09)  =  JSTR-121(09))  AND                     I.940929
+002130         (JSTR-111(10)  =  JSTR-121(10))       GO  TO  PROC-080.  I.940929
+002140*
+002150 PROC-076.                                                        I.940929
+002160     MOVE  JSTR-07       TO  NJZAI-01.                            I.940929
+002170     MOVE  JSTR-09       TO  NJZAI-02.                            I.940929
+002180     MOVE  JSTR-10       TO  NJZAI-03.                            I.940929
+002190     READ  NJZAI  INVALID                                         I.940929
+002200           MOVE  SPACE         TO  NJZAI-R                        I.940929
+002210           INITIALIZE              NJZAI-R                        I.940929
+002220           MOVE  LOW-VALUE     TO  NJZAI-KEY.                     I.940929
+002230*
+002240     PERFORM  NJS-RTN   THRU  NJS-EX.                             I.940929
+002250*
+002260     IF  NJZAI-KEY    NOT =  LOW-VALUE       GO  TO  PROC-077.    I.940929
+002270     MOVE  JSTR-07       TO  NJZAI-01.                            I.940929
+002280     MOVE  JSTR-09       TO  NJZAI-02.                            I.940929
+002290     MOVE  JSTR-10       TO  NJZAI-03.                            I.940929
+002300     PERFORM  NJW-RTN   THRU  NJW-EX.                             I.940929
+002310     IF  WRI-SW           =  1               GO  TO  PROC-076.    I.940929
+002320     GO  TO  PROC-078.                                            I.940929
+002330 PROC-077.                                                        I.940929
+002340     PERFORM  NJR-RTN   THRU  NJR-EX.                             I.940929
+002350 PROC-078.                                                        I.940929
+002360     MOVE  9             TO  NJZAI-01.                            I.940929
+002370     MOVE  JSTR-09       TO  NJZAI-02.                            I.940929
+002380     MOVE  JSTR-10       TO  NJZAI-03.                            I.940929
+002390     READ  NJZAI  INVALID                                         I.940929
+002400           MOVE  SPACE         TO  NJZAI-R                        I.940929
+002410           INITIALIZE              NJZAI-R                        I.940929
+002420           MOVE  LOW-VALUE     TO  NJZAI-KEY.                     I.940929
+002430*
+002440     PERFORM  NJS-RTN   THRU  NJS-EX.                             I.940929
+002450*
+002460     IF  NJZAI-KEY    NOT =  LOW-VALUE       GO  TO  PROC-079.    I.940929
+002470     MOVE  9             TO  NJZAI-01.                            I.940929
+002480     MOVE  JSTR-09       TO  NJZAI-02.                            I.940929
+002490     MOVE  JSTR-10       TO  NJZAI-03.                            I.940929
+002500     PERFORM  NJW-RTN   THRU  NJW-EX.                             I.940929
+002510     IF  WRI-SW           =  1               GO  TO  PROC-078.    I.940929
+002520     GO  TO  PROC-080.                                            I.940929
+002530 PROC-079.                                                        I.940929
+002540     PERFORM  NJR-RTN   THRU  NJR-EX.                             I.940929
+002550*****
+002560 PROC-080.                                                        I.911120
+002570     MOVE  JOLJF11-02   TO  WK-NO.                                I.911120
+002580 PROC-090.
+002590     PERFORM  READ-RTN  THRU  READ-RTN-EXIT.
+002600 PROC-RTN-EXIT.
+002610     EXIT.
+002620*--------------------------------------------------------------*
+002630*    I N I T  -  R T N                                         *
+002640*--------------------------------------------------------------*
+002650 INIT-RTN.
+002660     DISPLAY  DSP-CLR.
+002670     DISPLAY  DSP-HYOJI.
+002680** ﾌｧｲﾙ OPEN **
+002690     OPEN   INPUT  JOLJF
+002700            I-O    JSJD  JSTR  NJZAI.                             I.940929
+002710*****       I-O    JSJD  JSTR.                                    D.940929
+002720 INIT-RTN-EXIT.
+002730     EXIT.
+002740*--------------------------------------------------------------*
+002750*    R E A D  -  R T N                                         *
+002760*--------------------------------------------------------------*
+002770 READ-RTN.
+002780     READ    JOLJF     AT  END   MOVE  9  TO  END-SW.
+002790 READ-RTN-EXIT.
+002800     EXIT.
+002810*--------------------------------------------------------------*
+002820*    E N D R  -  R T N                                         *
+002830*--------------------------------------------------------------*
+002840 ENDR-RTN.
+002850     OPEN  OUTPUT  JOLJF.
+002860     CLOSE         JOLJF.
+002870 ENDR-RTN-EXIT.
+002880     EXIT.
+002890*--------------------------------------------------------------*
+002900*    C L S E  -  R T N                                         *
+002910*--------------------------------------------------------------*
+002920 CLSE-RTN.
+002930     CLOSE  JOLJF  JSJD  JSTR  NJZAI.                             I.940929
+002940*****CLOSE  JOLJF  JSJD  JSTR.                                    D.940929
+002950 CLSE-RTN-EXIT.
+002960     EXIT.
+002970*----------------------------*
+002980*    ＣＨＫ－ＲＴＮ          *
+002990*----------------------------*
+003000 CHK-RTN.
+003010     MOVE  0             TO  ERR-SW.
+003020     MOVE  JOLJF11-02    TO  JSJD-03.
+003030     MOVE  0             TO  JSJD-04.
+003040     START  JSJD    KEY   NOT <  JSJD-KEY2
+003050                         INVALID             GO  TO  CHK-EX.
+003060 CHK-010.
+003070     READ  JSJD    NEXT  AT  END             GO  TO  CHK-EX.
+003080     IF  JOLJF11-02   NOT =  JSJD-03         GO  TO  CHK-EX.
+003090     DISPLAY  EMSG-01.
+003100     DISPLAY  DISP-BUZ-B.
+003110     DISPLAY  DISP-MSG-SPACE.
+003120     MOVE  1             TO  ERR-SW.
+003130 CHK-EX.
+003140     EXIT.
+003150*----------------------------*
+003160*    NJZAI ｽｳﾘｮｳ ｹｲｻﾝ        *
+003170*----------------------------*
+003180 NJS-RTN.                                                         I.940929
+003190     COMPUTE  NJZAI-0911(01)  =  NJZAI-0911(01)  -  JSTR-1111(01) I.940929
+003200                                                 +  JSTR-1211(01).I.940929
+003210     COMPUTE  NJZAI-0911(02)  =  NJZAI-0911(02)  -  JSTR-1111(02) I.940929
+003220                                                 +  JSTR-1211(02).I.940929
+003230     COMPUTE  NJZAI-0911(03)  =  NJZAI-0911(03)  -  JSTR-1111(03) I.940929
+003240                                                 +  JSTR-1211(03).I.940929
+003250     COMPUTE  NJZAI-0911(04)  =  NJZAI-0911(04)  -  JSTR-1111(04) I.940929
+003260                                                 +  JSTR-1211(04).I.940929
+003270     COMPUTE  NJZAI-0911(05)  =  NJZAI-0911(05)  -  JSTR-1111(05) I.940929
+003280                                                 +  JSTR-1211(05).I.940929
+003290     COMPUTE  NJZAI-0911(06)  =  NJZAI-0911(06)  -  JSTR-1111(06) I.940929
+003300                                                 +  JSTR-1211(06).I.940929
+003310     COMPUTE  NJZAI-0911(07)  =  NJZAI-0911(07)  -  JSTR-1111(07) I.940929
+003320                                                 +  JSTR-1211(07).I.940929
+003330     COMPUTE  NJZAI-0911(08)  =  NJZAI-0911(08)  -  JSTR-1111(08) I.940929
+003340                                                 +  JSTR-1211(08).I.940929
+003350     COMPUTE  NJZAI-0911(09)  =  NJZAI-0911(09)  -  JSTR-1111(09) I.940929
+003360                                                 +  JSTR-1211(09).I.940929
+003370     COMPUTE  NJZAI-0911(10)  =  NJZAI-0911(10)  -  JSTR-1111(10) I.940929
+003380                                                 +  JSTR-1211(10).I.940929
+003390 NJS-EX.                                                          I.940929
+003400     EXIT.                                                        I.940929
+003410*----------------------------*
+003420*    NJZAI WRITE RTN         *
+003430*----------------------------*
+003440 NJW-RTN.                                                         I.940929
+003450     MOVE     0            TO   WRI-SW.                           I.940929
+003460     WRITE    NJZAI-R      INVALID               GO  TO  NJW-010. I.940929
+003470     CALL    "CBLTCLS"     USING   NJZAI.                         I.940929
+003480     GO  TO  NJW-EX.                                              I.940929
+003490 NJW-010.                                                         I.940929
+003500     MOVE    "W"           TO   ERR-M.                            I.940929
+003510     MOVE    "NJZAI"       TO   ERR-F.                            I.940929
+003520     MOVE     NJZAI-KEY    TO   ERR-K.                            I.940929
+003530     IF  ERR-STAT          =  "24"                                I.940929
+003540              MOVE     ERR-STAT    TO   ERR-FLG                   I.940929
+003550              DISPLAY  ERR-DIS     DISP-BUZ-B                     I.940929
+003560              CLOSE    NJZAI                                      I.940929
+003570              STOP    "ｴﾘｱ ｶｸﾁｮｳｺﾞ､ｻｲｶｲｷｰ ｦ ｵｽ!"                  I.940929
+003580              DISPLAY  DISP-MSG-SPACE                             I.940929
+003590              OPEN     I-O         NJZAI                          I.940929
+003600              MOVE     1           TO   WRI-SW                    I.940929
+003610              GO  TO  NJW-EX.                                     I.940929
+003620     IF  ERR-STAT     NOT  =  "00"                                I.940929
+003630              MOVE     2           TO   WRI-SW                    I.940929
+003640              PERFORM  ERR-RTN   THRU  ERR-EX.                    I.940929
+003650 NJW-EX.                                                          I.940929
+003660     EXIT.                                                        I.940929
+003670*------------------------------*
+003680*    NJZAI REWRITE RTN         *
+003690*------------------------------*
+003700 NJR-RTN.                                                         I.940929
+003710     REWRITE  NJZAI-R      INVALID                                I.940929
+003720              MOVE    "R"           TO   ERR-M                    I.940929
+003730              MOVE    "NJZAI"       TO   ERR-F                    I.940929
+003740              MOVE     NJZAI-KEY    TO   ERR-K                    I.940929
+003750              PERFORM  ERR-RTN   THRU  ERR-EX.                    I.940929
+003760 NJR-EX.                                                          I.940929
+003770     EXIT.                                                        I.940929
+003780*--------------------------------------------------------------*
+003790     COPY    LPERR.
+

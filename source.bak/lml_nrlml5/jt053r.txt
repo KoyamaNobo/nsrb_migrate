@@ -1,0 +1,421 @@
+000010 IDENTIFICATION                 DIVISION.
+000020 PROGRAM-ID.                    JT053R.
+000030 AUTHOR.                        M-OOSAKO.
+000040***************************************************
+000050*    PROGRAM        : 送り状問合せ （運送業者別） *
+000060*    DATA WRITTEN   : 88/09/29                    *
+000070*    SCREEN USED    : SJ053R                      *
+000080*    FORM   USED    : UNUSED                      *
+000090*    COMPILE TYPE   : COBOL                       *
+000100***************************************************
+000110 ENVIRONMENT                    DIVISION.
+000120 CONFIGURATION                  SECTION.
+000130 SOURCE-COMPUTER.               SYSTEM150.
+000140 OBJECT-COMPUTER.               SYSTEM150.
+000150 INPUT-OUTPUT                   SECTION.
+000160 FILE-CONTROL.
+000170     SELECT   OKJF      ASSIGN  F1-MSD
+000180                        ORGANIZATION  INDEXED
+000190                        ACCESS MODE   DYNAMIC
+000200                        RECORD KEY    OKJF-KEY.
+000210     SELECT   TC-M      ASSIGN  F2-MSD
+000220                        ORGANIZATION  INDEXED
+000230                        ACCESS MODE   RANDOM
+000240                        RECORD KEY    TC-KEY.
+000250     SELECT   JCON      ASSIGN  F3-MSD
+000260                        ORGANIZATION  INDEXED
+000270                        ACCESS MODE   RANDOM
+000280                        RECORD KEY    JCON2-KEY.
+000290 I-O-CONTROL.
+000300     APPLY   SHARED-MODE ON     OKJF   JCON   TC-M.
+000310*
+000320 DATA                       DIVISION.
+000330 FILE                       SECTION.
+000340     COPY      LOKJF.
+000350     COPY      L-JCON.
+000360     COPY      LITCM.
+000370 WORKING-STORAGE            SECTION.
+000380 77  ERR-STAT                  PIC X(02)    VALUE SPACE.
+000390 77  END-SW                    PIC 9(01)    VALUE 0.              OPN/CLOS
+000400 77  DSP-SW                    PIC 9(01)    VALUE 0.              LIN3見出
+000410 77  REC-CNT                   PIC X(02).                         表示ｱﾘ
+000420 77  JS-SIGN                   PIC X(01).                         I.890828
+000430 01  WORK-AREA.
+000440     02  INP-WORK.
+000450         03  W-KUBUN           PIC 9(01).                         区分
+000460         03  W-OKC             PIC 9(01).                         確認
+000470         03  W-CD              PIC 9(02).                         運送業者
+000480     02  MAISU-WORK.
+000490         03  W-MAISU        OCCURS     9.
+000500             04  W-MAISU1      PIC 9(04).                         未発行
+000510             04  W-MAISU2      PIC 9(04).                         発行
+000520             04  W-MAISUKEI    PIC 9(04).                         総枚数
+000530         03  W-KEI1            PIC 9(04).                         未発行
+000540         03  W-KEI2            PIC 9(04).                         発行
+000550         03  W-KEI3            PIC 9(04).                         総枚数
+000560     02  MEISAI-WORK.
+000570         03  W-YMD             PIC 9(06).                         年月日
+000580         03  W-YMDR     REDEFINES    W-YMD.
+000590             04  W-YY          PIC 9(02).
+000600             04  W-MM          PIC 9(02).
+000610             04  W-DD          PIC 9(02).
+000620         03  W-INJI            PIC N(01).                         印字ｻｲﾝ
+000630     02  SOEJI.
+000640         03  W-L               PIC 9(02).                         行
+000650* * * * * * * * * *
+000660 COPY    LWMSG.
+000670* * * * * * * * * *
+000680 SCREEN                  SECTION.
+000690 SD  CRT-X
+000700     END STATUS  IS  ESTAT.
+000710 01  CLE-01      LINE  1.
+000720     02  CLEAR   SCREEN.
+000730 01  CLE-AREA.
+000740     02  CLE-02      LINE   02      CLEAR   DATA.
+000750     02  CLE-03      LINE   03      CLEAR   DATA.
+000760     02  CLE-04      LINE   04      CLEAR   DATA   TO    23.
+000770     02  CLE-05      LINE   24      COLUMN   64    VALUE " ".
+000780     02  CLE-06      LINE   02.
+000790         03  COLUMN   12    PIC  X(01)      VALUE   " ".
+000800         03  COLUMN   15    PIC  N(09)      VALUE NC"　".
+000810     02  CLE-07      LINE   01      COLUMN   74    VALUE " ".
+000820 01  DSP-AREA.
+000830     02  DSP-01      LINE   02.
+000840         03  COLUMN  02     VALUE   NC"運送業者".
+000850         03  COLUMN  10     VALUE     "=".
+000860         03  COLUMN  14     VALUE     "(".
+000870         03  COLUMN  33     VALUE     ")".
+000880     02  DSP-02      LINE   03.
+000890         03  COLUMN  11     VALUE     "業者C".
+000900         03  COLUMN  21     VALUE   NC"運送業者名".
+000910         03  COLUMN  41     VALUE   NC"未発行枚数".
+000920         03  COLUMN  56     VALUE   NC"発行枚数".
+000930         03  COLUMN  71     VALUE   NC"総枚数".
+000940     02  DSP-03      LINE   03.
+000950         03  COLUMN  02     VALUE   NC"送り状".
+000960         03  COLUMN  09     VALUE     "年 月 日".
+000970         03  COLUMN  18     VALUE   NC"直　送　先　名".
+000980         03  COLUMN  39     VALUE   NC"配　達　日".
+000990         03  COLUMN  58     VALUE   NC"倉　　庫".
+001000         03  COLUMN  71     VALUE   NC"個数".
+001010         03  COLUMN  77     VALUE   NC"発行".
+001020     02  DSP-04      LINE   W-L.
+001030         03  COLUMN  13     PIC  9(01)   FROM     W-CD.
+001040         03  COLUMN  21     PIC  N(09)   FROM     JCON2-03.
+001050         03  COLUMN  47     PIC  ZZZ9    FROM   W-MAISU1(W-CD).
+001060         03  COLUMN  60     PIC  ZZZ9    FROM   W-MAISU2(W-CD).
+001070         03  COLUMN  73     PIC  ZZZ9    FROM   W-MAISUKEI(W-CD).
+001080     02  DSP-05      LINE   15.
+001090         03  COLUMN  25     VALUE   NC"計".
+001100         03  COLUMN  47     PIC  ZZZ9    FROM     W-KEI1.
+001110         03  COLUMN  60     PIC  ZZZ9    FROM     W-KEI2.
+001120         03  COLUMN  73     PIC  ZZZ9    FROM     W-KEI3.
+001130     02  DSP-06      LINE   02      COLUMN   15
+001140                            PIC  N(09)   FROM  JCON2-03.
+001150     02  DSP-07      LINE   W-L.
+001160         03  COLUMN  02     PIC  9(06)   FROM     OKJF-01.
+001170         03  COLUMN  09     PIC  Z9      FROM     W-YY.
+001180         03  COLUMN  11     VALUE     "/".
+001190         03  COLUMN  12     PIC  Z9      FROM     W-MM.
+001200         03  COLUMN  14     VALUE     "/".
+001210         03  COLUMN  15     PIC  Z9      FROM     W-DD.
+001220         03  COLUMN  18     PIC  N(10)   FROM     TC-NAME.
+001230         03  COLUMN  39     PIC  N(09)   FROM     OKJF-06.
+001240         03  COLUMN  58     PIC  N(06)   FROM     JCON3-03.
+001250         03  COLUMN  72     PIC  ZZ9     FROM     OKJF-07.
+001260         03  COLUMN  78     PIC  N(01)   FROM     W-INJI.
+001270     02  DSP-ERR.
+001280         03  INV-01  LINE   24      COLUMN   01   VALUE
+001290                               NC"＊　業者未登録　＊".
+001300         03  INV-02  LINE   24      COLUMN   01   VALUE
+001310                               NC"＊　該当データなし　＊".
+001320 01  ACP-AREA.
+001330     02  ACP-KUBUN   LINE 1  COLUMN  74  PIC 9(01)
+001340                 USING  W-KUBUN   CHECK  OVERFLOW  NO  IFC.
+001350     02  ACP-CD      LINE 2  COLUMN  12  PIC 9(01)
+001360                 USING  W-CD      CHECK  OVERFLOW  NO  IFC.
+001370     02  ACP-OKC     LINE 24 COLUMN  64  PIC 9(01)
+001380                 INTO  W-OKC     CHECK  OVERFLOW  NO  IFC.
+001390 COPY    LSMSG.                                                   I.980122
+001400* * * * * * * * * *
+001410*COPY    LSMSG.                                                   D.900416
+001420**
+001430**   MESSEGE  AREA                                                61.04.23
+001440**
+001450*01  DISP-ERR-AREA LINE 24.                                       D.980122
+001460*****02  DISP-MSG-01.                                             D.980122
+001470*****    03  COLUMN  1        PIC X(60) FROM ERR-MSGX.            D.980122
+001480*****02  DISP-MSG-SPACE.                                          D.980122
+001490*****    03  COLUMN  1        PIC X(40) FROM ERR-SPACE.           D.980122
+001500*****02  DISP-BUZ-B.                                              D.980122
+001510*****    03  COLUMN  80       PIC X(05) VALUE ""27"B"10"".        D.980122
+001520*****02  DISP-BUZ-J.                                              D.980122
+001530*****    03  COLUMN  80       PIC X(05) VALUE ""27"J"01"".        D.980122
+001540*****02  NOR-M01.                                                 D.980122
+001550*****    03  COLUMN  1        VALUE                               D.980122
+001560*****    NX"21762121255E2539253F2121".                            D.980122
+001570*           *       ﾏ   ｽ   ﾀ
+001580*****    03  COLUMN  13       VALUE                               D.980122
+001590*****    NX"45504F3F3A5121212176".                                D.980122
+001600*           ﾄｳ  ﾛｸ  ｽﾞﾐ     *
+001610*****02  NOR-D01.                                                 D.980122
+001620*****    03  COLUMN  1        VALUE                               D.980122
+001630*****    NX"217621212547213D253F2121".                            D.980122
+001640*           *       ﾃﾞ  ｰ   ﾀ
+001650*****    03  COLUMN  13       VALUE                               D.980122
+001660*****    NX"45504F3F3A5121212176".                                D.980122
+001670*           ﾄｳ  ﾛｸ  ｽﾞﾐ     *
+001680*****02  INV-M01.                                                 D.980122
+001690*****    03  COLUMN  1        VALUE                               D.980122
+001700*****    NX"21762121255E2539253F2121".                            D.980122
+001710*           *       ﾏ   ｽ   ﾀ
+001720*****    03  COLUMN  13       VALUE                               D.980122
+001730*****    NX"4C2445504F3F21212176".                                D.980122
+001740*           ﾐ   ﾄｳ  ﾛｸ      *
+001750*****02  INV-D01.                                                 D.980122
+001760*****    03  COLUMN  1        VALUE                               D.980122
+001770*****    NX"217621212547213D253F2121".                            D.980122
+001780*           *       ﾃﾞ  ｰ   ﾀ
+001790*****    03  COLUMN  13       VALUE                               D.980122
+001800*****    NX"4C2445504F3F21212176".                                D.980122
+001810*           ﾐ   ﾄｳ  ﾛｸ      *
+001820*****02  OK-01.                                                   D.980122
+001830*****    03  COLUMN   1       VALUE                               D.980122
+001840*****    NX"21762121234F2121234B21212176".                        D.980122
+001850*           *       O       K       *
+001860*****02  CAN-01.                                                  D.980122
+001870*****    03  COLUMN   1       VALUE                               D.980122
+001880*****    NX"21762121252D25632573".                                D.980122
+001890*           *       ｷ   ｬ   ﾝ
+001900*****    03  COLUMN  11       VALUE                               D.980122
+001910*****    NX"253B256B21212176".                                    D.980122
+001920*           ｾ   ﾙ       *
+001930*****02  ERR-01.                                                  D.980122
+001940*****    03  COLUMN  1        VALUE                               D.980122
+001950*****    NX"21762121467E4E4F2528".                                D.980122
+001960*           *       ﾆｭｳ ﾘｮｸ ｴ
+001970*****    03  COLUMN  11       VALUE                               D.980122
+001980*****    NX"2569213D21212176".                                    D.980122
+001990*           ﾗ   ｰ       *
+002000*****02  ERR-02.                                                  D.980122
+002010*****    03  COLUMN  1        VALUE                               D.980122
+002020*****    NC"＊　データ　なし　　＊".                              D.980122
+002030*****02  ERR-DIS.                                                 D.980122
+002040*****    03  COLUMN 2         VALUE                               D.980122
+002050*****    "<<<  ".                                                 D.980122
+002060*****    03  COLUMN 7         PIC X(12)   FROM ERR-F.             D.980122
+002070*****    03  COLUMN 19        PIC X(01)   FROM ERR-M.             D.980122
+002080*****    03  COLUMN 20        VALUE                               D.980122
+002090*****    "ｴﾗｰ STATUS=".                                           D.980122
+002100*****    03  COLUMN 31        PIC X(02)   FROM ERR-FLG.           D.980122
+002110*****    03  COLUMN 33        VALUE                               D.980122
+002120*****    "  >>>".                                                 D.980122
+002130*****    03  COLUMN 38        VALUE                               D.980122
+002140*****    " KEY=".                                                 D.980122
+002150*****    03  COLUMN 43        PIC X(30)   FROM ERR-K.             D.980122
+002160**
+002170* * * * * * * * * *
+002180 PROCEDURE               DIVISION.
+002190************************************
+002200*    メイン　ルーチン              *
+002210************************************
+002220 HAJIME.
+002230     PERFORM   INI-RTN   THRU  INI-EX.
+002240     GO  TO    PRO-010.
+002250 PRO-000.
+002260     DISPLAY       CLE-04   CLE-05   CLE-06   CLE-07.
+002270 PRO-010.
+002280     ACCEPT        ACP-KUBUN.                                     区分
+002290     DISPLAY       DISP-MSG-SPACES.                               I.980122
+002300*****DISPLAY       DISP-MSG-SPACE.                                D.980122
+002310     IF  ESTAT  =  "P9"                          GO  TO  OWARI.
+002320     IF  ESTAT  NOT  =  "01"   AND    "06"       GO  TO  PRO-000.
+002330     IF  W-KUBUN  NOT  =   1   AND     2         GO  TO  PRO-000.
+002340     DISPLAY       ACP-KUBUN.
+002350     IF  W-KUBUN    =    1
+002360                    PERFORM    MAI-RTN    THRU    MAI-EX
+002370                    GO  TO     PRO-000.
+002380     IF  DSP-SW     =    1
+002390                    DISPLAY    CLE-03
+002400                    DISPLAY    DSP-01
+002410                    DISPLAY    DSP-03
+002420                    MOVE   2   TO   DSP-SW.
+002430 PRO-020.
+002440     ACCEPT       ACP-CD.                                         運送業者
+002450     DISPLAY      DISP-MSG-SPACES.                                I.980122
+002460*****DISPLAY      DISP-MSG-SPACE.                                 D.980122
+002470     IF  ESTAT  =  "09"                          GO  TO  PRO-000.
+002480     IF  ESTAT  NOT  =  "01"   AND    "06"       GO  TO  PRO-020.
+002490     DISPLAY      ACP-CD.
+002500*
+002510     MOVE    2     TO     JCON2-01.
+002520     MOVE    W-CD  TO     JCON2-02.
+002530     READ    JCON    UNLOCK    INVALID
+002540                     DISPLAY   INV-01
+002550                     GO  TO    PRO-020.
+002560     DISPLAY      DSP-06.
+002570 PRO-030.
+002580     PERFORM    MEI-RTN    THRU    MEI-EX.
+002590 PRO-040.
+002600     IF  REC-CNT  =  "ON"
+002610                 DISPLAY  INV-02.
+002620     ACCEPT      ACP-OKC.                                         確認
+002630     DISPLAY      DISP-MSG-SPACES.                                I.980122
+002640*****DISPLAY      DISP-MSG-SPACE.                                 D.980122
+002650     IF  ESTAT  =  "09"
+002660                          CLOSE      OKJF
+002670                                                 GO  TO  PRO-020.
+002680     IF  ESTAT  NOT  =  "01"   AND    "06"       GO  TO  PRO-040.
+002690     IF  W-OKC  NOT  =   1     AND     9         GO  TO  PRO-040.
+002700     DISPLAY      ACP-OKC.
+002710     IF  END-SW NOT  =   1
+002720         IF  W-OKC   =   1
+002730                PERFORM    MEI-000    THRU    MEI-EX
+002740                GO  TO  PRO-040.
+002750*
+002760     CLOSE        OKJF.
+002770*
+002780     MOVE     0    TO    END-SW.
+002790     GO  TO   PRO-000.
+002800 OWARI.
+002810     PERFORM     END-RTN    THRU   END-EX.
+002820     STOP  RUN.
+002830*********************************************
+002840*    ＩＮＴ－ＲＴＮ                         *
+002850*********************************************
+002860 INI-RTN.
+002870     ACCEPT         JS-SIGN.                                      I.890828
+002880*
+002890     INITIALIZE     WORK-AREA.
+002900     DISPLAY        CLE-01.
+002910     CALL  "SJ053R".
+002920     DISPLAY        DSP-02.
+002930     OPEN  INPUT    TC-M   JCON.
+002940     MOVE  1        TO     DSP-SW.
+002950 INI-EX.
+002960     EXIT.
+002970*********************************************
+002980*    ＥＮＤ－ＲＴＮ                         *
+002990*********************************************
+003000 END-RTN.
+003010     CLOSE        TC-M   JCON.
+003020     DISPLAY CLE-01.
+003030 END-EX.
+003040     EXIT.
+003050***************
+003060*  区分 枚数  *
+003070***************
+003080 MAI-RTN.
+003090     OPEN           INPUT       OKJF.
+003100     INITIALIZE     MAISU-WORK.
+003110     IF  DSP-SW     =    2
+003120                    DISPLAY    CLE-02
+003130                    DISPLAY    CLE-03
+003140                    DISPLAY    DSP-02
+003150                    MOVE   1   TO   DSP-SW.
+003160 MAI-000.                                                         足し込み
+003170     READ    OKJF   NEXT    UNLOCK    AT   END
+003180                                  GO  TO    MAI-010.
+003190     IF      JS-SIGN     =     1                                  I.890828
+003200             AND    OKJF-04    NOT =  2 AND 3    GO  TO  MAI-000. I.890828
+003210     IF      JS-SIGN     =     2                                  I.900411
+003220             AND    OKJF-04    NOT =  5  AND  6  GO  TO  MAI-000. *R 92/05
+003230     IF      JS-SIGN     =     3                                  I.950206
+003240             AND    OKJF-04    NOT =  2  AND  3  AND  5  AND  6   I.950206
+003250                                                 GO  TO  MAI-000. I.950206
+003260     IF      JS-SIGN     =     4                                  I.980122
+003270             AND    OKJF-04    NOT =  7          GO  TO  MAI-000. I.980122
+003280     IF        (OKJF-10   NOT   =   1)  OR                        更新ﾌﾗｸﾞ
+003290               (OKJF-07   NOT   >   0)           GO  TO  MAI-000. 個数
+003300     MOVE     OKJF-02    TO    W-CD.                              運送CD
+003310     IF  OKJF-08    =    0                                        印字ｻｲﾝ
+003320                    ADD     1    TO    W-MAISU1(W-CD).
+003330     IF  OKJF-08    =    1
+003340                    ADD     1    TO    W-MAISU2(W-CD).
+003350     GO  TO   MAI-000.
+003360 MAI-010.
+003370     MOVE     5    TO    W-L.
+003380     MOVE     1    TO    W-CD.
+003390 MAI-020.                                                         表示
+003400     IF  W-CD   >   9
+003410                    GO  TO    MAI-030.
+003420     COMPUTE    W-MAISUKEI(W-CD)  =   W-MAISU1(W-CD)
+003430                                              +  W-MAISU2(W-CD).
+003440     IF  W-MAISUKEI(W-CD)   =   ZERO                              合計
+003450                    ADD     1    TO    W-CD
+003460                    GO  TO    MAI-020.
+003470*                                                                 業者名
+003480     MOVE     2    TO    JCON2-01.
+003490     MOVE    W-CD  TO    JCON2-02.
+003500     READ    JCON    UNLOCK     INVALID
+003510                     MOVE    ALL NX"2121"   TO   JCON2-03.
+003520     DISPLAY        DSP-04.
+003530     ADD     W-MAISU1(W-CD)   TO     W-KEI1.
+003540     ADD     W-MAISU2(W-CD)   TO     W-KEI2.
+003550     ADD     W-MAISUKEI(W-CD) TO     W-KEI3.
+003560     ADD     1          TO     W-L    W-CD.
+003570     GO  TO   MAI-020.
+003580 MAI-030.
+003590     IF  W-KEI3  =  ZERO
+003600               DISPLAY  INV-02
+003610     ELSE
+003620               DISPLAY  DSP-05.
+003630     ACCEPT    ACP-OKC.
+003640     DISPLAY   DISP-MSG-SPACES.                                   I.980122
+003650*****DISPLAY   DISP-MSG-SPACE.                                    D.980122
+003660     IF  ESTAT   NOT   =   "01" AND "06"         GO  TO  MAI-030.
+003670*
+003680     CLOSE      OKJF.
+003690 MAI-EX.
+003700     EXIT.
+003710***************
+003720*  区分 明細  *
+003730***************
+003740 MEI-RTN.
+003750     OPEN           INPUT       OKJF.
+003760     MOVE     "ON"  TO   REC-CNT.
+003770 MEI-000.
+003780     DISPLAY      CLE-04   CLE-05.
+003790     MOVE      4    TO   W-L.
+003800 MEI-010.
+003810     READ    OKJF   NEXT    UNLOCK    AT   END
+003820                                  MOVE      1    TO   END-SW
+003830                                  GO  TO    MEI-EX.
+003840     IF        (W-CD      NOT   =    OKJF-02)                     運送CD
+003850           OR  (OKJF-10   NOT   =   1)                            更新ﾌﾗｸﾞ
+003860           OR  (OKJF-07   NOT   >   0)           GO  TO  MEI-010. 個数
+003870     IF      JS-SIGN     =     1                                  I.890828
+003880             IF     OKJF-04    NOT =  2 AND 3    GO  TO  MEI-010. I.890828
+003890     IF      JS-SIGN     =     2                                  I.900411
+003900             IF     OKJF-04    NOT =  5 AND 6    GO  TO  MEI-010. *R 92/05
+003910     IF      JS-SIGN     =     3                                  I.950206
+003920             IF     OKJF-04    NOT =  2 AND 3 AND 5 AND 6         I.950206
+003930                                                 GO  TO  MEI-010. I.950206
+003940     IF      JS-SIGN     =     4                                  I.980122
+003950             IF     OKJF-04    NOT =  7          GO  TO  MEI-010. I.980122
+003960     MOVE     "OF"  TO   REC-CNT.                                 ﾃﾞｰﾀｦﾋﾄﾂ
+003970     INITIALIZE     MEISAI-WORK.                                  ﾃﾞﾓﾋｮｳｼﾞ
+003980     MOVE     OKJF-03    TO    W-YMD.
+003990     IF  OKJF-08   =   0
+004000                       MOVE    NC"未"   TO   W-INJI.
+004010     IF  OKJF-08   =   1
+004020                       MOVE    NC"済"   TO   W-INJI.
+004030*
+004040     MOVE     OKJF-05    TO    TC-KEY.                            直送先名
+004050     READ     TC-M    UNLOCK    INVALID
+004060                       MOVE    ALL NX"2121"   TO    TC-NAME.
+004070*
+004080     MOVE       3        TO    JCON3-01.                          倉名
+004090     MOVE     OKJF-04    TO    JCON3-02.
+004100     READ     JCON    UNLOCK    INVALID
+004110                       MOVE    ALL NX"2121"   TO    JCON3-03.
+004120     DISPLAY       DSP-07.
+004130*
+004140     ADD     1   TO   W-L.
+004150     IF  W-L   <   24                            GO  TO  MEI-010.
+004160 MEI-EX.
+004170     EXIT.
+004180* * * * * * * * * *
+004190 COPY LPMSG.
+004200* * * * * * * * * *
+

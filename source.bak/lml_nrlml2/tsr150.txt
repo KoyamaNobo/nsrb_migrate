@@ -1,0 +1,116 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. TSR150.
+000030************************************************
+000040*****     領収書ファイル　累積・クリア     *****
+000050************************************************
+000060 AUTHOR. S-NAKAO.
+000070 DATE-WRITTEN. '78-03-29.
+000080 ENVIRONMENT DIVISION.
+000090 CONFIGURATION SECTION.
+000100 SOURCE-COMPUTER. SYSTEM3100.
+000110 OBJECT-COMPUTER. SYSTEM3100.
+000120 INPUT-OUTPUT SECTION.
+000130 FILE-CONTROL.
+000140     SELECT RSR-F ASSIGN TO RSR-MSD                               C.940303
+000150         FILE STATUS ERR-STAT.                                    I.940303
+000160     SELECT TNK-F ASSIGN TO TNK-MSD.
+000170     SELECT RS-F ASSIGN TO RS-MSD.
+000180 DATA DIVISION.
+000190 FILE SECTION.
+000200 FD  RSR-F
+000210     BLOCK  4 RECORDS
+000220     LABEL RECORD IS STANDARD
+000230     VALUE OF IDENTIFICATION "RSRF".
+000240 01  RSR-R            PIC  X(064).
+000250 FD  RS-F
+000260     BLOCK  4 RECORDS
+000270     LABEL RECORD IS STANDARD
+000280     VALUE OF IDENTIFICATION "RSF".
+000290 01  RS-R             PIC  X(064).
+000300 FD  TNK-F
+000310     BLOCK  8 RECORDS
+000320     LABEL RECORD IS STANDARD
+000330     VALUE OF IDENTIFICATION "TNKF".
+000340 01  TNK-R            PIC  X(032).
+000350 WORKING-STORAGE SECTION.
+000360 01  W-DATA.
+000370     02  W-CHK        PIC  9(001).
+000380     02  W-DMM        PIC  9(001).
+000390     02  W-FILE       PIC  X(013).                                I.940303
+000400 01  ERR-STAT         PIC  X(002).
+000410 SCREEN            SECTION.
+000420 SD  C-CRT
+000430     END STATUS IS ESTAT.
+000440 01  C-CLEAR.
+000450     02  LINE   1  CLEAR SCREEN.
+000460 01  C-MID.
+000470     02  LINE   3  COLUMN  10  PIC  N(024) VALUE
+000480          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+000490     02  LINE   4  COLUMN  10  PIC  N(024) VALUE
+000500          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+000510     02  LINE   5  COLUMN  10  PIC  N(024) VALUE
+000520          NC"＊＊＊　　　　　　　　　　　　　　　　　　＊＊＊".
+000530     02  LINE   6  COLUMN  10  PIC  N(024) VALUE
+000540          NC"＊＊＊　　領収書ファイル　累積・クリア　　＊＊＊".
+000550     02  LINE   7  COLUMN  10  PIC  N(024) VALUE
+000560          NC"＊＊＊　　　　　　　　　　　　　　　　　　＊＊＊".
+000570     02  LINE   8  COLUMN  10  PIC  N(024) VALUE
+000580          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+000590     02  LINE   9  COLUMN  10  PIC  N(024) VALUE
+000600          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+000610 01  C-ERR.
+000620     02  LINE 24.
+000630       03  E-STAT  COLUMN  10  PIC  X(002) FROM  ERR-STAT.
+000640       03  E-ME1   COLUMN  15  PIC  X(024) VALUE
+000650            "***  RSRF WRITE ｴﾗｰ  ***".
+000660       03  E-ME71.                                                I.940303
+000670         04  COLUMN   1  PIC  X(013) FROM  W-FILE.                I.940303
+000680         04  COLUMN  21  PIC  N(021) VALUE                        I.940303
+000690              NC"オーバーフロー、領域を拡張し、ＦＮＣ＋再開".     I.940303
+000700       03  E-ME78  COLUMN   5  PIC  N(002) VALUE NC"連絡".        I.940303
+000710       03  E-ME98  COLUMN  75  PIC  X(005) VALUE ""27"J"05"".
+000720       03  E-ME99  COLUMN  75  PIC  X(005) VALUE ""27"B"05"".
+000730       03  E-CL.                                                  I.940303
+000740         04  COLUMN   1  PIC  X(040) VALUE                        I.940303
+000750              "                                        ".         I.940303
+000760         04  COLUMN  41  PIC  X(040) VALUE                        I.940303
+000770              "                                        ".         I.940303
+000780 PROCEDURE DIVISION.
+000790 M-05.
+000800     DISPLAY C-CLEAR.
+000810     DISPLAY C-MID.
+000820     OPEN INPUT RS-F.
+000830     OPEN EXTEND RSR-F.
+000840 M-10.
+000850     READ RS-F AT END
+000860         GO TO M-20.
+000870 M-15.
+000880     MOVE RS-R TO RSR-R.
+000890     WRITE RSR-R.
+000900     IF ERR-STAT = "00"                                           I.940303
+000910         CALL "CBLTCLS" USING RSR-F                               C.940303
+000920         GO TO M-10.
+000930     DISPLAY E-STAT E-ME1 E-ME99.                                 I.940303
+000940     IF ERR-STAT NOT = "34"                                       I.940303
+000950         DISPLAY E-ME78 E-ME99                                    I.940303
+000960         CLOSE RSR-F                                              I.940303
+000970         CLOSE RS-F                                               I.940303
+000980         GO TO M-95.                                              I.940303
+000990     DISPLAY E-CL.                                                I.940303
+001000     CLOSE RSR-F.                                                 I.940303
+001010     MOVE "RSRF         " TO W-FILE.                              I.940303
+001020     DISPLAY E-ME71 E-ME98 STOP " ".                              I.940303
+001030     DISPLAY E-CL.                                                I.940303
+001040     OPEN EXTEND RSR-F.                                           I.940303
+001050     GO TO M-15.                                                  I.940303
+001060 M-20.
+001070     CLOSE RSR-F.
+001080     CLOSE RS-F.
+001090*
+001100     OPEN OUTPUT RS-F.
+001110     OPEN OUTPUT TNK-F.
+001120     CLOSE RS-F.
+001130     CLOSE TNK-F.
+001140 M-95.
+001150     DISPLAY C-CLEAR.
+001160     STOP RUN.

@@ -1,0 +1,622 @@
+000010 IDENTIFICATION      DIVISION.
+000020 PROGRAM-ID.         TSM010.
+000030 AUTHOR.             KAMASAKA    1995-10-12.
+000040**********************************************
+000050******    銀行マスター　メンテナンス    ******
+000060******       ( SCREEN : SCTM01 )        ******
+000070**********************************************
+000080 ENVIRONMENT         DIVISION.
+000090 CONFIGURATION       SECTION.
+000100 SOURCE-COMPUTER.    SYSTEM3100.
+000110 OBJECT-COMPUTER.    SYSTEM3100.
+000120 INPUT-OUTPUT        SECTION.
+000130 FILE-CONTROL.
+000140     SELECT  BANK-M  ASSIGN  TO  MK-MSD
+000150             ORGANIZATION  INDEXED
+000160             ACCESS  MODE  DYNAMIC
+000170             RECORD  KEY   B-KEY
+000180             FILE  STATUS  IS  ERR-STAT.
+000190     SELECT  UKET-M  ASSIGN  TO  UKET-MSD
+000200             ORGANIZATION  INDEXED
+000210             ACCESS  MODE  DYNAMIC
+000220             RECORD  KEY   UT-KEY
+000230             FILE  STATUS  IS  ERR-STAT.
+000240     SELECT  SHIT-M  ASSIGN  TO  SHIT-MSD
+000250             ORGANIZATION  INDEXED
+000260             ACCESS  MODE  DYNAMIC
+000270             RECORD  KEY   ST-KEY
+000280             FILE  STATUS  IS  ERR-STAT.
+000290     SELECT  SP-F    ASSIGN  TO  P-PRN999.
+000300 I-O-CONTROL.
+000310     APPLY  SHARED-MODE  ON  BANK-M  UKET-M  SHIT-M
+000320     APPLY  SHIFT-CODE   ON  SP-F.
+000330 DATA                DIVISION.
+000340 FILE                SECTION.
+000350     COPY LIBANK.
+000360     COPY LIUKET.
+000370     COPY LISHIT.
+000380     COPY LSPF.
+000390 WORKING-STORAGE     SECTION.
+000400 01  ERR-STAT                PIC X(02).
+000410 01  HEAD1.
+000420     02  F               PIC X(05)    VALUE  ""3FE04FE080"".
+000430     02  F               PIC X(34)    VALUE  SPACE.
+000440     02  F               PIC N(24)    VALUE
+000450           NC"＊＊＊　　銀行マスター　プルーフリスト　　＊＊＊".
+000460     02  F               PIC X(23)    VALUE  SPACE.
+000470     02  F               PIC X(05)    VALUE  "DATE ".
+000480     02  H-DATE          PIC 99B99B99.
+000490     02  F               PIC X(07)    VALUE  "     P.".
+000500     02  H-PAGE          PIC Z9.
+000510 01 HEAD2.
+000520     02  F               PIC X(05)    VALUE  ""3FE04F40A0"".
+000530     02  F               PIC X(05)    VALUE  "ｺｰﾄﾞ ".
+000540     02  F               PIC N(06)    VALUE  NC"銀　行　名　".
+000550     02  F               PIC X(04)    VALUE  SPACE.
+000560     02  F               PIC N(08)    VALUE  NC"本　支　店　名　".
+000570     02  F               PIC X(01)    VALUE  SPACE.
+000580     02  F               PIC N(02)    VALUE  NC"割引".
+000590     02  F               PIC X(07)    VALUE  SPACE.
+000600     02  F               PIC N(04)    VALUE  NC"割引残高".
+000610     02  F               PIC X(01)    VALUE  SPACE.
+000620     02  F               PIC N(02)    VALUE  NC"作表".
+000630     02  F               PIC X(01)    VALUE  SPACE.
+000640     02  F               PIC N(02)    VALUE  NC"使用".
+000650     02  F               PIC N(04)    VALUE  NC"　年　月".
+000660     02  F               PIC X(02)    VALUE  SPACE.
+000670     02  F               PIC X(01)    VALUE  ":".
+000680     02  F               PIC X(02)    VALUE  SPACE.
+000690     02  F               PIC X(05)    VALUE  "ｺｰﾄﾞ ".
+000700     02  F               PIC N(06)    VALUE  NC"銀　行　名　".
+000710     02  F               PIC X(04)    VALUE  SPACE.
+000720     02  F               PIC N(08)    VALUE  NC"本　支　店　名　".
+000730     02  F               PIC X(01)    VALUE  SPACE.
+000740     02  F               PIC N(02)    VALUE  NC"割引".
+000750     02  F               PIC X(07)    VALUE  SPACE.
+000760     02  F               PIC N(04)    VALUE  NC"割引残高".
+000770     02  F               PIC X(01)    VALUE  SPACE.
+000780     02  F               PIC N(02)    VALUE  NC"作表".
+000790     02  F               PIC X(01)    VALUE  SPACE.
+000800     02  F               PIC N(02)    VALUE  NC"使用".
+000810     02  F               PIC N(04)    VALUE  NC"　年　月".
+000820 01  W-P.
+000830     02  W-PD        OCCURS  58.
+000840         03  P-KEY1         PIC 9(04).
+000850         03  F              PIC X(01).
+000860         03  P-BNA1         PIC N(08).
+000870         03  F              PIC X(01).
+000880         03  P-SNA1         PIC N(08).
+000890         03  F              PIC X(02).
+000900         03  P-YBC1         PIC 9(01).
+000910         03  P-YBZ1         PIC --,---,---,---.
+000920         03  F              PIC X(02).
+000930         03  P-PRC1         PIC 9(02).
+000940         03  F              PIC X(02).
+000950         03  P-SC1          PIC Z.
+000960         03  F              PIC X(02).
+000970         03  P-NG1          PIC 99/99.
+000980         03  F              PIC X(02).
+000990         03  P-X            PIC X(01).
+001000         03  F              PIC X(02).
+001010         03  P-KEY2         PIC 9(04).
+001020         03  F              PIC X(01).
+001030         03  P-BNA2         PIC N(08).
+001040         03  F              PIC X(01).
+001050         03  P-SNA2         PIC N(08).
+001060         03  F              PIC X(02).
+001070         03  P-YBC2         PIC 9(01).
+001080         03  P-YBZ2         PIC --,---,---,---.
+001090         03  F              PIC X(02).
+001100         03  P-PRC2         PIC 9(02).
+001110         03  F              PIC X(02).
+001120         03  P-SC2          PIC Z.
+001130         03  F              PIC X(02).
+001140         03  P-NG2          PIC 99/99.
+001150 01  W-R.
+001160     02  W-KEY               PIC 9(04).
+001170     02  W-BNA               PIC N(08).
+001180     02  W-BNAD          REDEFINES    W-BNA    PIC X(16).
+001190     02  W-SNA               PIC N(08).
+001200     02  W-SNAD          REDEFINES    W-SNA    PIC X(16).
+001210     02  F                   PIC X(20).
+001220     02  W-YBZ               PIC 9(10).
+001230     02  W-YBC               PIC 9(01).
+001240     02  F                   PIC X(11).
+001250     02  W-SC                PIC 9(01).
+001260     02  W-NG                PIC 9(04).
+001270     02  W-PRC               PIC 9(02).
+001280 01  W-DATA.
+001290     02  W-PAGE              PIC 9(02).
+001300     02  W-PC                PIC 9(01).
+001310     02  W-DMMD              PIC 9(01).
+001320     02  W-CHK               PIC 9(01).
+001330     02  W-ACT               PIC 9(01).
+001340     02  W-L                 PIC 9(02).
+001350     02  W-DMM               PIC 9(01).
+001360     02  W-SKEY              PIC 9(04).
+001370     02  W-EKEY              PIC 9(04) VALUE 9999.                I.151106
+001380*****02  W-EKEY              PIC 9(04).                           D.151106
+001390     02  W-NA                PIC X(16).
+001400     02  W-NAAD          REDEFINES     W-NA.
+001410         03  W-NAD       OCCURS  16    PIC X(01).
+001420     02  CNT                 PIC 9(02).
+001430     02  W-EC                PIC 9(01).
+001440     02  W-ATBLD             PIC X(50)    VALUE
+001450             "ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔ ﾕ ﾖﾗﾘﾙﾚﾛﾜ   ﾝ".
+001460     02  W-ATBL          REDEFINES     W-ATBLD.
+001470         03  W-TBLD      OCCURS  50    PIC X(01).
+001480     02  W-APRCD.
+001490         03  F               PIC X(50)    VALUE
+001500             "01020304051112131415212223242531323334354142434445".
+001510         03  F               PIC X(50)    VALUE
+001520             "5152535455616263646571  73  75818283848591      99".
+001530     02  W-APRC          REDEFINES     W-APRCD.
+001540         03  W-PRCD      OCCURS  50    PIC 9(02).
+001550     02  W-LD                PIC 9(02).
+001560     02  W-CD                PIC 9(01).
+001570     02  W-FILE              PIC X(13).
+001580     COPY LSTAT.
+001590 SCREEN              SECTION.
+001600 SD  C-CRT
+001610     END  STATUS  IS  ESTAT.
+001620 01  C-CLEAR.
+001630     02  LINE  1  CLEAR  SCREEN.
+001640 01  C-ACP.
+001650     02  LINE  W-L.
+001660         03  A-ACT     COLUMN   3    PIC 9(01)
+001670               USING  W-ACT   CHECK  OVERFLOW  NO  IFC.
+001680         03  A-KEY     COLUMN   6    PIC 9(04)
+001690               USING  W-KEY   CHECK  OVERFLOW  NO  IFC.
+001700         03  A-BNA     COLUMN  11    PIC N(08)
+001710               USING  W-BNA   CHECK  OVERFLOW  NO  IFC.
+001720         03  A-SNA     COLUMN  28    PIC N(08)
+001730               USING  W-SNA   CHECK  OVERFLOW  NO  IFC.
+001740         03  A-YBC     COLUMN  49    PIC 9(01)
+001750               USING  W-YBC   CHECK  OVERFLOW  NO  IFC.
+001760         03  A-YBZ     COLUMN  54    PIC 9(10)
+001770               USING  W-YBZ   CHECK  OVERFLOW  NO  IFC.
+001780         03  A-PRC     COLUMN  67    PIC 9(02)
+001790               USING  W-PRC   CHECK  OVERFLOW  NO  IFC.
+001800         03  A-DMM     COLUMN  76    PIC 9(01)
+001810               USING  W-DMM   CHECK  OVERFLOW  NO  IFC.
+001820     02  LINE  22.
+001830         03  A-CHK     COLUMN  23    PIC 9(01)
+001840               USING  W-CHK   CHECK  OVERFLOW  NO  IFC.
+001850         03  A-SKEY    COLUMN  36    PIC 9(04)
+001860               USING  W-SKEY  CHECK  OVERFLOW  NO  IFC.
+001870         03  A-EKEY    COLUMN  44    PIC 9(04)
+001880               USING  W-EKEY  CHECK  OVERFLOW  NO  IFC.
+001890         03  A-DMMD    COLUMN  50    PIC 9(01)
+001900               USING  W-DMMD  CHECK  OVERFLOW  NO  IFC.
+001910 01  C-DSP.
+001920     02  LINE  W-L.
+001930         03  D-BNA   COLUMN  11    PIC N(08)   FROM  W-BNA.
+001940         03  D-SNA   COLUMN  28    PIC N(08)   FROM  W-SNA.
+001950         03  D-YBC   COLUMN  49    PIC 9(01)   FROM  W-YBC.
+001960         03  D-YBZ   COLUMN  54    PIC Z(10)   FROM  W-YBZ.
+001970         03  D-PRC   COLUMN  67    PIC 9(02)   FROM  W-PRC.
+001980         03  D-PRM   COLUMN  71    PIC X(01)   FROM  W-TBLD(CNT).
+001990         03  D-PRMC  COLUMN  71    PIC X(01)   VALUE  " ".
+002000     02  LINE  22.
+002010         03  D-PM     COLUMN   1    PIC X(54)    VALUE
+002020         "使用ﾁｪｯｸ  OK=1 NO=9  [ ]  銀行ｺｰﾄﾞ 0000 ～ 9999   ﾘﾀｰﾝ".
+002030         03  D-PMC    COLUMN   1    PIC X(54)    VALUE
+002040         "                                                      ".
+002050 01  C-ERR.
+002060     02  LINE  24.
+002070         03  E-STAT    COLUMN  10    PIC X(02)    FROM   ERR-STAT.
+002080         03  E-ME1     COLUMN  15    PIC X(18)    VALUE
+002090               "***  BANKM ﾅｼ  ***".
+002100         03  E-ME2     COLUMN  15    PIC X(23)    VALUE
+002110               "***  BANKM ﾄｳﾛｸｽﾞﾐ  ***".
+002120         03  E-ME3     COLUMN  15    PIC X(26)    VALUE
+002130               "***  BANKM WRITE ｴﾗｰ  ***".
+002140         03  E-ME4     COLUMN  15    PIC X(28)    VALUE
+002150               "***  BANKM REWRITE ｴﾗｰ  ***".
+002160         03  E-ME5     COLUMN  15    PIC X(27)    VALUE
+002170               "***  BANKM DELETE ｴﾗｰ  ***".
+002180         03  E-ME6     COLUMN  15    PIC X(30)    VALUE
+002190               "***  ｺﾓｼﾞﾉ ｽﾍﾟｰｽｶﾞﾊｲｯﾃｲﾙ  ***".
+002200         03  E-ME71.
+002210             04  COLUMN   1    PIC X(13)    FROM  W-FILE.
+002220             04  COLUMN  15    PIC N(21)    VALUE
+002230                   NC"オーバーフロー、領域を拡張後、ＦＮＣ＋再開".
+002240         03  E-ME78  COLUMN   5  PIC N(02)    VALUE  NC"連絡".
+002250         03  E-ME98  COLUMN  75  PIC X(05)    VALUE  ""27"J"05"".
+002260         03  E-ME99  COLUMN  75  PIC X(05)    VALUE  ""27"B"05"".
+002270         03  E-CL.
+002280             04  COLUMN   1    PIC X(40)    VALUE
+002290                   "                                       ".
+002300             04  COLUMN  41    PIC X(40)    VALUE
+002310                   "                                       ".
+002320 PROCEDURE           DIVISION.
+002330 M-020.
+002340     DISPLAY  C-CLEAR.
+002350     OPEN  I-O  BANK-M.
+002360     CALL  "SCTM01".
+002370     MOVE  5  TO  W-L.
+002380     ACCEPT  H-DATE  FROM  DATE.
+002390 M-040.
+002400     ACCEPT  A-ACT.
+002410     IF  ESTAT NOT = HTB AND SKP
+002420         GO TO M-040.
+002430     IF  W-ACT = 9
+002440         GO  TO  M-980.
+002450     IF  W-ACT = 4
+002460         DISPLAY  D-PM
+002470         GO  TO  M-500.
+002480     IF  W-ACT NOT = 1 AND 2 AND 3
+002490         GO  TO  M-040.
+002500 M-100.
+002510     DISPLAY  A-ACT.
+002520     MOVE  ZERO  TO  W-R.
+002530     MOVE  ALL  NX"2121"  TO  W-BNA  W-SNA.
+002540     ACCEPT  A-KEY.
+002550     DISPLAY  E-CL.
+002560     IF  ESTAT = BTB
+002570         GO  TO  M-040.
+002580     IF  ESTAT NOT = HTB AND SKP
+002590         GO  TO  M-100.
+002600     MOVE  W-KEY  TO  B-KEY.
+002610     READ  BANK-M  INVALID  KEY
+002620         GO  TO  M-120.
+002630     MOVE  BANK-R  TO  W-R.
+002640     PERFORM  S-80  THRU  S-90.
+002650     DISPLAY  D-BNA  D-SNA  D-YBC  D-YBZ  D-PRC  D-PRM.
+002660     IF  W-ACT = 1
+002670         DISPLAY  E-ME2  E-ME98
+002680         GO  TO  M-100.
+002690     IF  W-ACT = 2
+002700         GO  TO  M-140.
+002710     IF  W-ACT = 3
+002720         GO  TO  M-280.
+002730     IF  W-YBC = ZERO
+002740         MOVE  ZERO  TO  B-YBZ
+002750         GO  TO  M-220.
+002760     IF  W-PRC = ZERO
+002770         MOVE  5  TO  W-EC
+002780     ELSE
+002790         PERFORM  S-80  THRU  S-90.
+002800     IF  W-EC = ZERO
+002810         DISPLAY  D-PRM
+002820     ELSE
+002830         DISPLAY  D-PRMC.
+002840     GO  TO  M-140.
+002850 M-120.
+002860     IF  W-ACT NOT = 1
+002870         DISPLAY  E-ME1  E-ME98
+002880         GO  TO  M-100.
+002890 M-140.
+002900     ACCEPT  A-BNA.
+002910     IF  ESTAT = BTB
+002920         GO  TO  M-100.
+002930     IF  ESTAT NOT = HTB AND SKP
+002940         GO  TO  M-140.
+002950     MOVE  W-BNAD  TO  W-NA.
+002960     IF  SPACE = W-NAD(1) OR W-NAD(3) OR W-NAD(5) OR W-NAD(7) OR
+002970                 W-NAD(9) OR W-NAD(11) OR W-NAD(13) OR W-NAD(15)
+002980         DISPLAY  E-ME6  E-ME98
+002990         GO  TO  M-140.
+003000     DISPLAY  D-BNA.
+003010 M-160.
+003020     ACCEPT  A-SNA.
+003030     IF  ESTAT = BTB
+003040         GO  TO  M-140.
+003050     IF  ESTAT NOT = HTB AND SKP
+003060         GO  TO  M-160.
+003070     MOVE  W-SNAD  TO  W-NA.
+003080     IF  SPACE = W-NAD(1) OR W-NAD(3) OR W-NAD(5) OR W-NAD(7) OR
+003090                 W-NAD(9) OR W-NAD(11) OR W-NAD(13) OR W-NAD(15)
+003100         DISPLAY  E-ME6  E-ME98
+003110         GO  TO  M-160.
+003120     DISPLAY  D-SNA.
+003130 M-180.
+003140     ACCEPT  A-YBC.
+003150     IF  ESTAT = BTB
+003160         GO  TO  M-160.
+003170     IF  ESTAT NOT = HTB AND SKP
+003180         GO  TO  M-180.
+003190     IF  W-YBC = ZERO
+003200         MOVE  ZERO  TO  W-YBZ
+003210         GO  TO  M-220.
+003220     IF  W-YBC NOT = 1
+003230         GO  TO  M-180.
+003240     DISPLAY  D-YBC.
+003250 M-200.
+003260     ACCEPT  A-YBZ.
+003270     IF  ESTAT = BTB
+003280         GO  TO  M-180.
+003290     IF  ESTAT NOT = HTB AND SKP
+003300         GO  TO  M-200.
+003310 M-220.
+003320     DISPLAY  D-YBZ.
+003330     ACCEPT  A-PRC.
+003340     IF  ESTAT = BTB
+003350         IF  W-YBC = ZERO
+003360             GO  TO  M-180
+003370         ELSE
+003380             GO  TO  M-200.
+003390     IF  ESTAT NOT = HTB AND SKP
+003400         GO  TO  M-220.
+003410     IF  W-PRC = ZERO
+003420         DISPLAY  D-PRMC
+003430         GO  TO  M-280.
+003440     PERFORM  S-80  THRU  S-90.
+003450     IF  W-EC NOT = ZERO
+003460         GO  TO  M-220.
+003470     DISPLAY  D-PRC  D-PRM.
+003480 M-280.
+003490     ACCEPT  A-DMM.
+003500     IF  ESTAT = BTB
+003510         IF  W-ACT = 3
+003520             GO  TO  M-100
+003530         ELSE
+003540             GO  TO  M-220.
+003550     IF  ESTAT NOT = HTB AND SKP
+003560         GO  TO  M-280.
+003570     IF  W-DMM = 9
+003580         GO  TO  M-100.
+003590     IF  W-DMM NOT = 1
+003600         GO  TO  M-280.
+003610     IF  W-ACT = 2
+003620         GO  TO  M-360.
+003630     IF  W-ACT = 3
+003640         GO  TO  M-380.
+003650 M-320.
+003660     MOVE  W-R  TO  BANK-R.
+003670     WRITE  BANK-R  INVALID  KEY
+003680         GO  TO  M-340.
+003690     GO  TO  M-400.
+003700 M-340.
+003710     DISPLAY  E-STAT  E-ME3  E-ME99.
+003720     IF  ERR-STAT NOT = "24"
+003730         DISPLAY  E-ME78  E-ME99
+003740         GO  TO  M-980.
+003750     CLOSE  BANK-M.
+003760     MOVE  "BANK         "  TO  W-FILE.
+003770     DISPLAY  E-CL.
+003780     DISPLAY  E-ME71  E-ME98  STOP  " ".
+003790     DISPLAY  E-CL.
+003800     OPEN  I-O  BANK-M.
+003810     GO  TO  M-320.
+003820 M-360.
+003830     MOVE  ZERO  TO  BANK-R.
+003840     MOVE  W-R   TO  BANK-R.
+003850     REWRITE  BANK-R  INVALID  KEY
+003860         DISPLAY  E-ME78  E-STAT  E-ME4  E-ME99
+003870         GO  TO  M-100.
+003880     GO  TO  M-400.
+003890 M-380.
+003900     DELETE  BANK-M  INVALID  KEY
+003910         DISPLAY  E-ME78  E-STAT  E-ME5  E-ME99
+003920         GO  TO  M-100.
+003930 M-400.
+003940     ADD  1  TO  W-L.
+003950     IF  W-L = 21
+003960         CALL  "SCTM01"
+003970         MOVE  5  TO  W-L.
+003980     GO  TO  M-100.
+003990 M-500.
+004000     ACCEPT  A-CHK.
+004010     IF ESTAT = BTB
+004020         DISPLAY  D-PMC
+004030         GO  TO  M-040.
+004040     IF ESTAT NOT = HTB AND SKP
+004050         GO TO M-500.
+004060     IF W-CHK NOT = 1 AND 9
+004070         GO TO M-500.
+004080 M-520.
+004090     ACCEPT  A-SKEY.
+004100     DISPLAY  E-CL.
+004110     IF  ESTAT = BTB
+004120         GO  TO  M-500.
+004130     IF  ESTAT NOT = HTB AND SKP
+004140         GO  TO  M-520.
+004150 M-540.
+004160     ACCEPT  A-EKEY.
+004170     IF  ESTAT = BTB
+004180         GO  TO  M-520.
+004190     IF  ESTAT NOT = HTB AND SKP
+004200         GO  TO  M-540.
+004210     IF  W-EKEY < W-SKEY
+004220         GO  TO  M-520.
+004230 M-560.
+004240     ACCEPT  A-DMMD.
+004250     IF  ESTAT = BTB
+004260         GO  TO  M-540.
+004270     IF  ESTAT NOT = HTB AND SKP
+004280         GO  TO  M-560.
+004290     IF  W-DMMD = 9
+004300         DISPLAY  D-PMC
+004310         GO  TO  M-040.
+004320     IF  W-DMMD NOT = 1
+004330         GO  TO  M-560.
+004340*
+004350     IF W-CHK = 9
+004360         GO TO M-800.
+004370     MOVE  ZERO TO  B-KEY.
+004380     START  BANK-M KEY NOT < B-KEY INVALID KEY
+004390         GO  TO  M-800.
+004400 M-580.
+004410     READ  BANK-M  NEXT  RECORD  AT  END
+004420         GO  TO  M-600.
+004430     MOVE 0 TO B-SC.
+004440     REWRITE  BANK-R  INVALID  KEY
+004450         DISPLAY  E-ME78  E-STAT  E-ME4  E-ME99
+004460         GO  TO  M-800.
+004470     GO TO M-580.
+004480 M-600.
+004490     OPEN INPUT UKET-M.
+004500 M-620.
+004510     READ UKET-M NEXT RECORD WITH UNLOCK AT END
+004520         GO TO M-660.                                             .
+004530     MOVE UT-BCD TO B-KEY.
+004540     READ BANK-M INVALID KEY
+004550         GO TO M-640.
+004560     IF B-SC = 1
+004570         GO TO M-640.                                             .
+004580     MOVE 1 TO B-SC.
+004590     REWRITE  BANK-R  INVALID  KEY
+004600         DISPLAY  E-ME78  E-STAT  E-ME4  E-ME99
+004610         CLOSE UKET-M
+004620         GO  TO  M-800.
+004630 M-640.
+004640     IF UT-SBC = ZERO
+004650         GO TO M-620.
+004660     MOVE UT-SBC TO B-KEY.
+004670     READ BANK-M INVALID KEY
+004680         GO TO M-620.
+004690     IF B-SC = 1
+004700         GO TO M-620.                                             .
+004710     MOVE 1 TO B-SC.
+004720     REWRITE  BANK-R  INVALID  KEY
+004730         DISPLAY  E-ME78  E-STAT  E-ME4  E-ME99
+004740         CLOSE UKET-M
+004750         GO  TO  M-800.
+004760     GO TO M-620.
+004770 M-660.
+004780     CLOSE UKET-M.
+004790     OPEN INPUT SHIT-M.
+004800 M-680.
+004810     READ SHIT-M NEXT RECORD WITH UNLOCK AT END
+004820         GO TO M-700.
+004830     MOVE ST-BCD TO B-KEY.
+004840     READ BANK-M INVALID KEY
+004850         GO TO M-680.
+004860     IF B-SC = 1
+004870         GO TO M-680.
+004880     MOVE 1 TO B-SC.
+004890     REWRITE  BANK-R  INVALID  KEY
+004900         DISPLAY  E-ME78  E-STAT  E-ME4  E-ME99
+004910         CLOSE SHIT-M
+004920         GO  TO  M-800.
+004930     GO TO M-680.
+004940 M-700.
+004950     CLOSE SHIT-M.
+004960 M-800.
+004970     MOVE  W-SKEY  TO  B-KEY.
+004980     START  BANK-M KEY NOT < B-KEY INVALID KEY
+004990         DISPLAY  E-ME1  E-ME98
+005000         GO  TO  M-520.
+005010     READ  BANK-M  NEXT  RECORD  WITH  UNLOCK  AT  END
+005020         DISPLAY  E-ME1  E-ME98
+005030         GO  TO  M-520.
+005040     IF  B-KEY > W-EKEY
+005050         DISPLAY  E-ME1  E-ME98
+005060         GO  TO  M-520.
+005070     PERFORM  S-20  THRU  S-35.
+005080     GO  TO  M-040.
+005090 M-980.
+005100     CLOSE  BANK-M.
+005110     DISPLAY  C-CLEAR.
+005120     STOP  RUN.
+005130 S-05.
+005140     MOVE   SPACE  TO     SP-R.
+005150     WRITE  SP-R   AFTER  PAGE.
+005160 S-10.
+005170     ADD    1       TO  W-PAGE.
+005180     MOVE   W-PAGE  TO  H-PAGE.
+005190     MOVE   SPACE   TO  SP-R.
+005200     MOVE   HEAD1   TO  SP-R.
+005210     WRITE  SP-R.
+005220     MOVE   SPACE   TO  SP-R.
+005230     MOVE   HEAD2   TO  SP-R.
+005240     WRITE  SP-R    AFTER  2.
+005250 S-15.
+005260     EXIT.
+005270 S-20.
+005280     PERFORM  S-40  THRU  S-50.
+005290     MOVE  ZERO  TO  W-PC  W-LD  W-CD.
+005300 S-25.
+005310     PERFORM  S-55  THRU  S-60.
+005320     IF  W-CD = ZERO
+005330         MOVE  B-KEY  TO  P-KEY1(W-LD)
+005340         MOVE  B-BNA  TO  P-BNA1(W-LD)
+005350         MOVE  B-SNA  TO  P-SNA1(W-LD)
+005360         MOVE  B-YBC  TO  P-YBC1(W-LD)
+005370         MOVE  B-YBZ  TO  P-YBZ1(W-LD)
+005380         MOVE  B-PRC  TO  P-PRC1(W-LD)
+005390         MOVE  B-SC   TO  P-SC1(W-LD)
+005400         MOVE  ":"    TO  P-X(W-LD)
+005410         IF B-NG NOT = ZERO
+005420            MOVE  B-NG   TO  P-NG1(W-LD).
+005430     IF  W-CD NOT = ZERO
+005440         MOVE  B-KEY  TO  P-KEY2(W-LD)
+005450         MOVE  B-BNA  TO  P-BNA2(W-LD)
+005460         MOVE  B-SNA  TO  P-SNA2(W-LD)
+005470         MOVE  B-YBC  TO  P-YBC2(W-LD)
+005480         MOVE  B-YBZ  TO  P-YBZ2(W-LD)
+005490         MOVE  B-PRC  TO  P-PRC2(W-LD)
+005500         MOVE  B-SC   TO  P-SC2(W-LD)
+005510         IF B-NG NOT = ZERO
+005520            MOVE  B-NG   TO  P-NG2(W-LD).
+005530*
+005540     READ  BANK-M  NEXT  RECORD  WITH  UNLOCK  AT  END
+005550         GO  TO  S-30.
+005560     IF  B-KEY NOT > W-EKEY
+005570         GO  TO  S-25.
+005580 S-30.
+005590     PERFORM  S-65  THRU  S-75.
+005600     CLOSE  SP-F.
+005610     DISPLAY  D-PMC.
+005620 S-35.
+005630     EXIT.
+005640 S-40.
+005650     MOVE  SPACE  TO  W-P.
+005660     MOVE  ZERO   TO  W-LD.
+005670 S-45.
+005680     ADD  1  TO  W-LD.
+005690     IF  W-LD NOT = 59
+005700         MOVE  SPACE  TO  P-BNA1(W-LD)  P-SNA1(W-LD)
+005710                          P-BNA2(W-LD)  P-SNA2(W-LD)
+005720         GO  TO  S-45.
+005730 S-50.
+005740     EXIT.
+005750 S-55.
+005760     ADD  1  TO  W-LD.
+005770     IF  W-LD NOT = 59
+005780         GO  TO  S-60.
+005790     IF  W-CD = ZERO
+005800         MOVE  5     TO  W-CD
+005810         MOVE  ZERO  TO  W-LD
+005820         GO  TO  S-55.
+005830     PERFORM  S-65  THRU  S-75.
+005840     PERFORM  S-40  THRU  S-50.
+005850     MOVE  ZERO  TO  W-LD  W-CD.
+005860     GO  TO  S-55.
+005870 S-60.
+005880     EXIT.
+005890 S-65.
+005900     IF  W-PC = ZERO
+005910         MOVE  5  TO  W-PC
+005920         OPEN  OUTPUT  SP-F
+005930         PERFORM  S-10  THRU  S-15
+005940     ELSE
+005950         PERFORM  S-05  THRU  S-15.
+005960     MOVE  ZERO  TO  W-LD.
+005970 S-70.
+005980     ADD  1  TO  W-LD.
+005990     IF  W-LD = 59
+006000         GO  TO  S-75.
+006010     IF  SPACE = P-BNA1(W-LD) AND P-SNA1(W-LD) AND
+006020                 P-BNA2(W-LD) AND P-SNA2(W-LD)
+006030         GO  TO  S-75.
+006040     MOVE   SPACE       TO  SP-R.
+006050     MOVE   W-PD(W-LD)  TO  SP-R.
+006060     WRITE  SP-R.
+006070     MOVE   SPACE       TO  SP-R.
+006080     GO  TO  S-70.
+006090 S-75.
+006100     EXIT.
+006110 S-80.
+006120     MOVE  ZERO  TO  CNT  W-EC.
+006130 S-85.
+006140     ADD  1  TO  CNT.
+006150     IF  CNT > 50
+006160         MOVE  9  TO  W-EC
+006170         GO  TO  S-90.
+006180     IF  W-PRC NOT = W-PRCD(CNT)
+006190         GO  TO  S-85.
+006200 S-90.
+006210     EXIT.
+

@@ -1,0 +1,160 @@
+000010 IDENTIFICATION      DIVISION.
+000020 PROGRAM-ID.         PR810U.
+000030*
+000040 ENVIRONMENT         DIVISION.
+000050 CONFIGURATION       SECTION.
+000060 SOURCE-COMPUTER.    SYSTEM100.
+000070 OBJECT-COMPUTER.    SYSTEM100.
+000080 INPUT-OUTPUT        SECTION.
+000090 FILE-CONTROL.
+000100*
+000110     SELECT  BZM-F   ASSIGN    TO  F1-MSD
+000120                     ORGANIZATION  INDEXED
+000130                     ACCESS  MODE  DYNAMIC
+000140                     RECORD   KEY  BZM-KEY
+000150                     FILE  STATUS  IS  ERR-STAT.
+000160*
+000170     SELECT  FCTL-F  ASSIGN    TO  FCTL-MSD
+000180                     ORGANIZATION  INDEXED
+000190                     ACCESS  MODE  RANDOM
+000200                     RECORD   KEY  FCTL-KEY
+000210                     FILE  STATUS  IS  ERR-STAT.
+000220 I-O-CONTROL.
+000230     APPLY   EXCLUSIVE-MODE   ON   BZM-F
+000240     APPLY   SHARED-MODE      ON   FCTL-F.
+000250 DATA                DIVISION.
+000260 FILE                SECTION.
+000270*
+000280     COPY    LBUZAN.
+000290     COPY    FCTL.
+000300**********************************
+000310 WORKING-STORAGE     SECTION.
+000320**********************************
+000330 77  ERR-STAT        PIC  X(02).
+000340 77  ZERO-SW         PIC  9(01).
+000350 01  SOEJI.
+000360     02  I           PIC  9(02).
+000370     02  SOE         PIC  9(02).
+000380*****
+000390 COPY  LWMSG.
+000400**********************************
+000410 SCREEN          SECTION.
+000420**********************************
+000430 SD  SCR-D
+000440     END STATUS  IS    ESTAT.
+000450 COPY  LSMSG.
+000460**********************************
+000470 PROCEDURE           DIVISION.
+000480**********************************
+000490 ST.
+000500*
+000510     PERFORM  INI-RTN     THRU     INI-EX.
+000520*
+000530     OPEN  I-O    BZM-F.
+000540*
+000550     PERFORM  UPD-RTN     THRU     UPD-EX.
+000560*
+000570     PERFORM  CLSE-ENT    THRU     CLSE-EXT.
+000580 ED.
+000590     STOP     RUN.
+000600**********************************
+000610*    初期　処理                  *
+000620**********************************
+000630 INI-RTN.
+000640     OPEN INPUT FCTL-F.
+000650     MOVE   "DATE  "      TO  FCTL-KEY1.
+000660     READ   FCTL-F   UNLOCK   INVALID
+000670            MOVE     255      TO    COMPLETION-CODE
+000680            DISPLAY  INV-CON  DISP-BUZ-B
+000690            CLOSE FCTL-F
+000700            STOP     RUN.
+000710     MOVE FCTL-REC1     TO Z-R.
+000720     CLOSE FCTL-F.
+000730 INI-EX.
+000740     EXIT.
+000750**********************************
+000760*    更新　処理                  *
+000770**********************************
+000780 UPD-RTN.
+000790     READ   BZM-F    NEXT AT  END
+000800            GO  TO   UPD-EX.
+000810     MOVE BZM-KEY     TO ERR-K.
+000820*
+000830     PERFORM  ZENKI-RTN   THRU     ZENKI-EX
+000840              VARYING     I   FROM  1  BY  1
+000850              UNTIL       I   >    12.
+000860*
+000870     MOVE 13     TO I.
+000880 UPD-000.
+000890     COMPUTE SOE = Z-KSMM + ( I - 12 ).
+000900     IF SOE > 12
+000910        COMPUTE SOE = SOE - 12.
+000920     MOVE BZM-TJIS(I)     TO BZM-TJIS(SOE).
+000930     IF I NOT = 15
+000940        ADD  1     TO I
+000950        GO TO UPD-000.
+000960*
+000970     INITIALIZE  BZM-TJIS(13).
+000980     INITIALIZE  BZM-TJIS(14).
+000990     INITIALIZE  BZM-TJIS(15).
+001000*
+001010     PERFORM  ZERO-RTN   THRU     ZERO-EX.
+001020     IF ZERO-SW = 0
+001030        GO TO UPD-999.
+001040*
+001050     REWRITE   BZM-REC    INVALID
+001060               MOVE  "BZM-F"   TO   ERR-F
+001070               MOVE  "R"       TO   ERR-M
+001080               PERFORM  ERR-ENT     THRU     ERR-EXT.
+001090     GO TO UPD-RTN.
+001100 UPD-999.
+001110     DELETE BZM-F         INVALID
+001120               MOVE  "BZM-F"   TO   ERR-F
+001130               MOVE  "D"       TO   ERR-M
+001140               PERFORM  ERR-ENT     THRU     ERR-EXT.
+001150     CALL "CBLTCLS" USING BZM-F.
+001160     GO TO UPD-RTN.
+001170 UPD-EX.
+001180     EXIT.
+001190**********************************
+001200*    終了　処理                  *
+001210**********************************
+001220 CLSE-ENT.
+001230     CLOSE  BZM-F.
+001240 CLSE-EXT.
+001250     EXIT.
+001260**
+001270**********************************
+001280*    当期　→　前期              *
+001290**********************************
+001300 ZENKI-RTN.
+001310     MOVE   BZM-TJIS(I)   TO  BZM-ZJIS(I).
+001320     INITIALIZE  BZM-TJIS(I).
+001330 ZENKI-EX.
+001340     EXIT.
+001350*****
+001360 ZERO-RTN.
+001370     MOVE 1     TO I ZERO-SW.
+001380 ZERO-000.
+001390     IF BZM-TJKR(I) NOT = ZERO
+001400        GO TO ZERO-EX.
+001410     IF BZM-TJKS(I) NOT = ZERO
+001420        GO TO ZERO-EX.
+001430     IF I NOT = 15
+001440        ADD  1     TO I
+001450        GO TO ZERO-000.
+001460     MOVE 1     TO I.
+001470 ZERO-100.
+001480     IF BZM-ZJKR(I) NOT = ZERO
+001490        GO TO ZERO-EX.
+001500     IF BZM-ZJKS(I) NOT = ZERO
+001510        GO TO ZERO-EX.
+001520     IF I NOT = 12
+001530        ADD  1     TO I
+001540        GO TO ZERO-100.
+001550     MOVE 0     TO ZERO-SW.
+001560 ZERO-EX.
+001570     EXIT.
+001580*****
+001590 COPY  LPMSG.
+001600*****

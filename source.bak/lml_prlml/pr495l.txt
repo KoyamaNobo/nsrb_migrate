@@ -1,0 +1,751 @@
+000010 IDENTIFICATION                     DIVISION.
+000020 PROGRAM-ID.                        PR495L.
+000030*>=========================================================<*
+000040*>                                                         <*
+000050*>       USER     NAME.....                                <*
+000060*>       PROGRAM  NAME.....PR495L                          <*
+000070*>       PROGRAM  TITLE....部門別損益管理表（期末）        <*
+000080*>       AUTHOR   .........                                <*
+000090*>       DATE     WRITTEN.. 91/01/14                       <*
+000100*>                                                         <*
+000110*>=========================================================<*
+000120*
+000130 ENVIRONMENT                        DIVISION.
+000140 CONFIGURATION                      SECTION.
+000150 SOURCE-COMPUTER.                   SYSTEM100.
+000160 OBJECT-COMPUTER.                   SYSTEM100.
+000170 INPUT-OUTPUT                       SECTION.
+000180*
+000190 FILE-CONTROL.
+000200*
+000210***********************[ ﾌﾞﾓﾝﾍﾞﾂｿﾝｴｷ ﾌｧｲﾙ    ]
+000220     SELECT            BU-F         ASSIGN   TO   BUP-MSD
+000230                       ORGANIZATION          INDEXED
+000240                       ACCESS    MODE        SEQUENTIAL
+000250                       RECORD    KEY         BU-KEY
+000260                       FILE   STATUS   IS    ERR-STAT.
+000270*
+000280***********************[ ﾌﾞ ﾓ ﾝ ﾒ ｲ      ﾏ ｽ ﾀ ]
+000290     SELECT            BNM          ASSIGN   TO   BNM-MSD
+000300                       ORGANIZATION          INDEXED
+000310                       ACCESS    MODE        RANDOM
+000320                       RECORD    KEY         BNM-KEY
+000330                       FILE   STATUS   IS    ERR-STAT.
+000340*
+000350***********************[ ﾌﾞﾓﾝﾍﾞﾂ ｿﾝｴｷ ﾊｲﾚﾂﾏｽﾀ ]
+000360     SELECT            BPLHAI       ASSIGN   TO   BPLHAI-MSD
+000370                       ORGANIZATION          INDEXED
+000380                       ACCESS    MODE        RANDOM
+000390                       RECORD    KEY         BPLHAI-KEY
+000400                       FILE   STATUS   IS    ERR-STAT.
+000410*
+000420***********************[ ｺ ﾝ ﾄ ﾛ ｰ ﾙ ﾌ ｧ ｲ ﾙ ]
+000430     SELECT            FCTL-F       ASSIGN   TO   FCTLF-MSD
+000440                       ORGANIZATION          INDEXED
+000450                       ACCESS    MODE        RANDOM
+000460                       RECORD    KEY         FCTL-KEY
+000470                       FILE   STATUS   IS    ERR-STAT.
+000480*
+000490***********************[ ﾌﾟﾘﾝﾀ ]
+000500     SELECT            PR-F         ASSIGN   TO   PR-PRN999.
+000510*
+000520***********************[ ﾌﾞﾓﾝﾍﾞﾂｿﾝｴｷｻｸﾋｮｳﾌｧｲﾙ ]
+000530     SELECT            BPLPRN       ASSIGN   TO   BPLPRN-MSD
+000540                       ORGANIZATION          INDEXED
+000550                       ACCESS    MODE        DYNAMIC
+000560                       RECORD    KEY         BPLPRN-KEY
+000570                       FILE   STATUS   IS    ERR-STAT.
+000580*
+000590***********************[ ｿﾝｴｷ ﾌｧｲﾙ ]
+000600     SELECT            PL           ASSIGN   TO   PL-MSD
+000610                       ORGANIZATION          INDEXED
+000620                       ACCESS    MODE        DYNAMIC
+000630                       RECORD    KEY         PL-KEY
+000640                       FILE   STATUS   IS    ERR-STAT.
+000650*
+000660 I-O-CONTROL.
+000670     APPLY  SHARED-MODE   ON  BU-F BNM BPLHAI FCTL-F PL
+000680     APPLY  SHIFT-CODE    ON  PR-F.
+000690 DATA                  DIVISION.
+000700*
+000710 FILE                  SECTION.
+000720*
+000730     COPY              BUPL.
+000740*
+000750     COPY              BUMONF.
+000760*
+000770     COPY              BPLHAI.
+000780*
+000790     COPY              FCTL.
+000800*
+000810 FD  PR-F
+000820     LABEL             RECORD          OMITTED
+000830     LINAGE            66              LINES.
+000840 01  PR-REC            PIC X(250).
+000850*
+000860     COPY              BPLPRN.
+000870*
+000880     COPY              PL-LIB.
+000890*
+000900******************************************************
+000910 WORKING-STORAGE                SECTION.
+000920******************************************************
+000930*
+000940 77  ERR-STAT          PIC X(02).
+000950 01  FLG.
+000960     02  SYORI-FLG     PIC 9(01).
+000970     02  READ-FLG      PIC 9(01).
+000980     02  WRITE-FLG     PIC 9(01).
+000990     02  INIT-FLG      PIC 9(01).
+001000 01  W1.
+001010     02  W-EDIT.
+001020       03  W-EDIT-YMD.
+001030*****    04  W-EDIT-YY PIC Z(02).                                 D.971114
+001040         04  W-EDIT-MM PIC Z(02).
+001050         04  W-EDIT-DD PIC Z(02).
+001060       03  W-EDIT-PAGE PIC Z(04).
+001070     02  W-YMD.
+001080       03  W-YY        PIC 9(02).
+001090       03  W-MM        PIC 9(02).
+001100       03  W-DD        PIC 9(02).
+001110     02  W-PAGE        PIC 9(04).
+001120     02  W-PRKBN.
+001130       03  W-PRSIN     PIC 9(01)
+001140           OCCURS      5   TIMES.
+001150     02  L-CNT         PIC 9(02).
+001160     02  IX1           PIC 9(02).
+001170     02  IX2           PIC 9(02).
+001180     02  MSG-IT.
+001190       03  ERR-MSG     PIC X(30).
+001200       03  ERR-CD      PIC X(10).
+001210       03  ERR-ACT     PIC X(01).
+001220     02  W-KEY.
+001230       03  W-NEWKEY    PIC 9(02).
+001240       03  W-OLDKEY    PIC 9(02).
+001250 01  I                 PIC 9(02).
+001260 01  H1.
+001270     02  FILLER        PIC X(05)   VALUE  ""3FE04FE080"".
+001280     02  FILLER        PIC X(02).
+001290     02  H1-YY         PIC N(02).
+001300     02  FILLER        PIC N(01)   VALUE   NC"年".
+001310     02  H1-MM         PIC N(02).
+001320     02  FILLER        PIC N(01)   VALUE   NC"月".
+001330     02  H1-DD         PIC N(02).
+001340     02  FILLER        PIC N(03)   VALUE   NC"日作成".
+001350     02  FILLER        PIC X(16)   VALUE   SPACE.
+001360     02  FILLER        PIC X(02)   VALUE   ""3F91"".
+001370     02  FILLER        PIC N(22)   VALUE
+001380               NC"　部　門　別　損　益　計　算　書　（期末）　".
+001390     02  FILLER        PIC X(03)   VALUE   ""3F92"".
+001400     02  FILLER        PIC N(07)   VALUE  NC"　〈部門管理〉".
+001410     02  FILLER        PIC X(23)   VALUE  SPACE.
+001420     02  H1-PAGE       PIC N(04).
+001430     02  FILLER        PIC N(01)   VALUE   NC"頁".
+001440 01  H2.
+001450     02  FILLER        PIC X(52)   VALUE   SPACE.
+001460     02  FILLER        PIC N(01)   VALUE   NC"（".
+001470     02  H2-YY         PIC N(02).
+001480     02  FILLER        PIC N(01)   VALUE   NC"年".
+001490     02  H2-MM         PIC N(02).
+001500     02  FILLER        PIC N(03)   VALUE   NC"月分）".
+001510 01  H3.
+001520     02  FILLER        PIC X(135)  VALUE   ""3F91"".
+001530     02  FILLER        PIC X(02)   VALUE   ""3F92"".
+001540 01  H4.
+001550     02  FILLER        PIC X(25)   VALUE   ""3F93"".
+001560     02  FILLER        PIC X(05)   VALUE   ""3F913F93"".
+001570     02  H4-BNM1       PIC X(21).
+001580     02  FILLER        PIC X(03)   VALUE   ""3F93"".
+001590     02  H4-BNM2       PIC X(21).
+001600     02  FILLER        PIC X(03)   VALUE   ""3F93"".
+001610     02  H4-BNM3       PIC X(21).
+001620     02  FILLER        PIC X(03)   VALUE   ""3F93"".
+001630     02  H4-BNM4       PIC X(21).
+001640     02  FILLER        PIC X(03)   VALUE   ""3F93"".
+001650     02  H4-BNM5       PIC X(21).
+001660     02  FILLER        PIC X(04)   VALUE   ""3F923F93"".
+001670     02  FILLER        PIC N(01)   VALUE   NC"�@".
+001680 01  H4-A    REDEFINES     H4.
+001690     02  FILLER        PIC X(30).
+001700     02  H4-BNMIT-A  OCCURS  5     TIMES.
+001710       03  H4-BNM-A    PIC X(20).
+001720       03  FILLER      PIC X(04).
+001730     02  FILLER        PIC X(04).
+001740 01  H5.
+001750     02  FILLER        PIC X(09)   VALUE   ""3F933F91"".
+001760     02  FILLER        PIC N(01)   VALUE   NC"項".
+001770     02  FILLER        PIC X(03)   VALUE   SPACE.
+001780     02  FILLER        PIC N(01)   VALUE   NC"目".
+001790     02  FILLER        PIC X(03)   VALUE   SPACE.
+001800     02  FILLER        PIC N(01)   VALUE   NC"名".
+001810     02  FILLER        PIC X(06)   VALUE   SPACE.
+001820     02  FILLER        PIC X(05)   VALUE   ""3F93"".
+001830     02  FILLER        PIC N(01)   VALUE   NC"金".
+001840     02  FILLER        PIC X(05)   VALUE   SPACE.
+001850     02  FILLER        PIC N(01)   VALUE   NC"額".
+001860     02  FILLER        PIC X(03)   VALUE   SPACE.
+001870     02  FILLER        PIC X(03)   VALUE   ""3F93"".
+001880     02  FILLER        PIC X(05)   VALUE   ""3FE04F40A0"".
+001890     02  FILLER        PIC N(04)   VALUE   NC"部門比　".
+001900     02  FILLER        PIC X(05)   VALUE   ""3F93"".
+001910     02  FILLER        PIC X(05)   VALUE   ""3FE04FE080"".
+001920     02  FILLER        PIC N(01)   VALUE   NC"金".
+001930     02  FILLER        PIC X(05)   VALUE   SPACE.
+001940     02  FILLER        PIC N(01)   VALUE   NC"額".
+001950     02  FILLER        PIC X(03)   VALUE   SPACE.
+001960     02  FILLER        PIC X(03)   VALUE   ""3F93"".
+001970     02  FILLER        PIC X(05)   VALUE   ""3FE04F40A0"".
+001980     02  FILLER        PIC N(04)   VALUE   NC"部門比　".
+001990     02  FILLER        PIC X(05)   VALUE   ""3F93"".
+002000     02  FILLER        PIC X(05)   VALUE   ""3FE04FE080"".
+002010     02  FILLER        PIC N(01)   VALUE   NC"金".
+002020     02  FILLER        PIC X(05)   VALUE   SPACE.
+002030     02  FILLER        PIC N(01)   VALUE   NC"額".
+002040     02  FILLER        PIC X(03)   VALUE   SPACE.
+002050     02  FILLER        PIC X(03)   VALUE   ""3F93"".
+002060     02  FILLER        PIC X(05)   VALUE   ""3FE04F40A0"".
+002070     02  FILLER        PIC N(04)   VALUE   NC"部門比　".
+002080     02  FILLER        PIC X(05)   VALUE   ""3F93"".
+002090     02  FILLER        PIC X(05)   VALUE   ""3FE04FE080"".
+002100     02  FILLER        PIC N(01)   VALUE   NC"金".
+002110     02  FILLER        PIC X(05)   VALUE   SPACE.
+002120     02  FILLER        PIC N(01)   VALUE   NC"額".
+002130     02  FILLER        PIC X(03)   VALUE   SPACE.
+002140     02  FILLER        PIC X(03)   VALUE   ""3F93"".
+002150     02  FILLER        PIC X(05)   VALUE   ""3FE04F40A0"".
+002160     02  FILLER        PIC N(04)   VALUE   NC"部門比　".
+002170     02  FILLER        PIC X(05)   VALUE   ""3F93"".
+002180     02  FILLER        PIC X(05)   VALUE   ""3FE04FE080"".
+002190     02  FILLER        PIC N(01)   VALUE   NC"金".
+002200     02  FILLER        PIC X(05)   VALUE   SPACE.
+002210     02  FILLER        PIC N(01)   VALUE   NC"額".
+002220     02  FILLER        PIC X(03)   VALUE   SPACE.
+002230     02  FILLER        PIC X(03)   VALUE   ""3F93"".
+002240     02  FILLER        PIC X(05)   VALUE   ""3FE04F40A0"".
+002250     02  FILLER        PIC N(04)   VALUE   NC"部門比　".
+002260     02  FILLER        PIC X(07)   VALUE   ""3F933FE04FE080"".
+002270     02  FILLER        PIC X(02)   VALUE   ""3F92"".
+002280     02  FILLER        PIC N(01)   VALUE   NC"�@".
+002290 01  H6.
+002300     02  FILLER        PIC X(08)   VALUE   ""3F933FE04F40A0"".
+002310     02  FILLER        PIC N(14)   VALUE   ALL NC"　".
+002320     02  FILLER        PIC X(01)   VALUE   SPACE.
+002330     02  FILLER        PIC X(22)   VALUE   ""3FE04FE0803F93"".
+002340     02  FILLER        PIC X(09)   VALUE   ""3F93"".
+002350     02  FILLER        PIC X(17)   VALUE   ""3F93"".
+002360     02  FILLER        PIC X(09)   VALUE   ""3F93"".
+002370     02  FILLER        PIC X(17)   VALUE   ""3F93"".
+002380     02  FILLER        PIC X(09)   VALUE   ""3F93"".
+002390     02  FILLER        PIC X(17)   VALUE   ""3F93"".
+002400     02  FILLER        PIC X(09)   VALUE   ""3F93"".
+002410     02  FILLER        PIC X(17)   VALUE   ""3F93"".
+002420     02  FILLER        PIC X(09)   VALUE   ""3F93"".
+002430     02  FILLER        PIC X(02)   VALUE   ""3F93"".
+002440     02  FILLER        PIC N(01)   VALUE   NC"�@".
+002450 01  H7.
+002460     02  FILLER        PIC X(27)   VALUE   ""3F913F93"".
+002470     02  FILLER        PIC X(17)   VALUE   ""3F93"".
+002480     02  FILLER        PIC X(09)   VALUE   ""3F93"".
+002490     02  FILLER        PIC X(17)   VALUE   ""3F93"".
+002500     02  FILLER        PIC X(09)   VALUE   ""3F93"".
+002510     02  FILLER        PIC X(17)   VALUE   ""3F93"".
+002520     02  FILLER        PIC X(09)   VALUE   ""3F93"".
+002530     02  FILLER        PIC X(17)   VALUE   ""3F93"".
+002540     02  FILLER        PIC X(09)   VALUE   ""3F93"".
+002550     02  FILLER        PIC X(17)   VALUE   ""3F93"".
+002560     02  FILLER        PIC X(09)   VALUE   ""3F93"".
+002570     02  FILLER        PIC X(04)   VALUE   ""3F923F93"".
+002580     02  FILLER        PIC N(01)   VALUE   NC"�@".
+002590 01  ME1.
+002600     02  FILLER        PIC X(08).
+002610     02  ME1-NMIT1.
+002620       03  ME1-NM1     PIC N(10).
+002630       03  FILLER      PIC X(08).
+002640     02  ME1-NMIT2   REDEFINES   ME1-NMIT1.
+002650       03  FILLER      PIC X(02).
+002660       03  ME1-NM2     PIC N(10).
+002670       03  FILLER      PIC X(06).
+002680     02  ME1-NMIT3   REDEFINES   ME1-NMIT1.
+002690       03  FILLER      PIC X(04).
+002700       03  ME1-NM3     PIC N(10).
+002710       03  FILLER      PIC X(04).
+002720     02  ME1-NMIT4   REDEFINES   ME1-NMIT1.
+002730       03  FILLER      PIC X(06).
+002740       03  ME1-NM4     PIC N(10).
+002750       03  FILLER      PIC X(02).
+002760     02  ME1-NMIT5   REDEFINES   ME1-NMIT1.
+002770       03  FILLER      PIC X(08).
+002780       03  ME1-NM5     PIC N(10).
+002790     02  FILLER        PIC X(06).
+002800     02  ME1-AMTIT   OCCURS  5   TIMES.
+002810       03  FILLER      PIC X(02).
+002820       03  ME1-AMT     PIC ---,---,---,--9.
+002830       03  FILLER      PIC X(02).
+002840       03  ME1-AMTRT   PIC ----.99.
+002850     02  FILLER        PIC X(04).
+002860 COPY  LWMSG.
+002870*
+002880 SCREEN          SECTION.
+002890 SD  SCR-D
+002900     END STATUS  IS    ESTAT.
+002910 01  DISP-BUZZER    LINE  24.
+002920     02  DISP-BUZ-J-05    COLUMN  80  PIC X(05) VALUE ""27"J"05"".
+002930 01  DSP-AREA.
+002940     03  DSP-010    LINE  1.
+002950         05  DSP-011    COLUMN  1  PIC  X(01) VALUE "(".
+002960         05  DSP-012    COLUMN  2  PIC  X(10) FROM  ERR-CD.
+002970         05  DSP-013    COLUMN 12  PIC  X(04) VALUE ")   ".
+002980         05  DSP-014    COLUMN 16  PIC  X(30) FROM  ERR-MSG.
+002990 01  ACP-AREA.
+003000     03  ACP-010        LINE    1.
+003010         05  ACP-011    COLUMN  50 PIC  X(01)
+003020                        INTO    ERR-ACT  CHECK OVERFLOW NO IFC.
+003030 COPY  LSMSG.
+003040*
+003050******************************************************
+003060 PROCEDURE                      DIVISION.
+003070******************************************************
+003080*
+003090*------------[  ｲﾘｸﾞﾁ ｼｮﾘ   ]
+003100*
+003110 ENTRY-RTN                      SECTION.
+003120   ENTRY-000.
+003130     PERFORM INIT-RTN.
+003140     PERFORM MAIN-RTN        UNTIL   SYORI-FLG   =   0   OR  3.
+003150     PERFORM CLSE-ENT        THRU    CLSE-EXT.
+003160     STOP    RUN.
+003170   ENTRY-999.
+003180     EXIT.
+003190*
+003200*------------[  ｼｮｷ ｼｮﾘ  ]
+003210*
+003220 INIT-RTN                    SECTION.
+003230   INIT-000.
+003240     INITIALIZE      W1.
+003250     OPEN    OUTPUT  BPLPRN.
+003260     CLOSE   BPLPRN.
+003270     OPEN    I-O     PL.
+003280     MOVE    0       TO      READ-FLG.
+003290     PERFORM PLCLR-RTN       UNTIL   READ-FLG    =   1.
+003300     CLOSE   PL.
+003310     OPEN    INPUT   BU-F    BNM     BPLHAI  FCTL-F.
+003320     OPEN    I-O     BPLPRN  PL.
+003330     OPEN    OUTPUT  PR-F.
+003340     IF      WRITE-FLG   =   1
+003350         PERFORM ERR-RTN
+003360         GO  TO  INIT-999.
+003370     PERFORM FCTL-READ-RTN.
+003380     MOVE    FCTL-REC1       TO    Z-R.
+003390     MOVE    Z-KONYMD        TO    ZYMD.
+003400     PERFORM Z-RTN           THRU  Z-EXT.
+003410     MOVE    ZI              TO    I.
+003420     IF  I  >  15
+003430         CLOSE  FCTL-F
+003440         PERFORM  CLSE-ENT   THRU  CLSE-EXT
+003450         MOVE  255   TO      COMPLETION-CODE
+003460         DISPLAY  INV-CON  DISP-BUZ-B
+003470         STOP  RUN.
+003480     CLOSE  FCTL-F.
+003490     ACCEPT  W-YMD   FROM    DATE.
+003500     MOVE    99      TO      L-CNT.
+003510     MOVE    0       TO      W-PAGE.
+003520     MOVE    1       TO      SYORI-FLG.
+003530     MOVE    1       TO      INIT-FLG.
+003540   INIT-999.
+003550     EXIT.
+003560*
+003570*------------[ ｿﾝｴｷ ﾌｧｲﾙ ｸﾘｱ ｼｮﾘ ]
+003580*
+003590 PLCLR-RTN                   SECTION.
+003600   PLCLR-000.
+003610     READ    PL      NEXT    AT  END
+003620         MOVE    1   TO      READ-FLG
+003630         GO  TO  PLCLR-999.
+003640     MOVE    ZERO    TO      PL-YY   PL-MM.
+003650     REWRITE PL-REC  INVALID KEY
+003660         MOVE    "PL-K REWRITE ﾌﾉｳ"  TO  ERR-MSG
+003670         MOVE    PL-KEY      TO   ERR-CD
+003680         MOVE    1      TO   WRITE-FLG   READ-FLG.
+003690   PLCLR-999.
+003700     EXIT.
+003710*
+003720*-------------[ FCONTRL READ ]
+003730*
+003740 FCTL-READ-RTN               SECTION.
+003750   FCTL-READ-000.
+003760     MOVE    "DATE  "    TO  FCTL-KEY.
+003770     READ    FCTL-F      INVALID KEY
+003780         CLOSE   FCTL-F
+003790         PERFORM CLSE-ENT   THRU      CLSE-EXT
+003800         MOVE    255        TO        COMPLETION-CODE
+003810         DISPLAY INV-CON    DISP-BUZ-B
+003820         STOP  RUN.
+003830   FCTL-READ-999.
+003840     EXIT.
+003850*
+003860*--------[ MAIN ｼｮﾘ ]
+003870*
+003880 MAIN-RTN                    SECTION.
+003890   MAIN-000.
+003900     PERFORM INP-RTN.
+003910     PERFORM OUT-RTN.
+003920   MAIN-999.
+003930     EXIT.
+003940*
+003950*-------[ ﾆｭｳﾘｮｸ ｼｮﾘ ]
+003960*
+003970 INP-RTN                     SECTION.
+003980   INP-000.
+003990     IF      SYORI-FLG   =   1
+004000         PERFORM BUPL-READ-RTN.
+004010     IF      SYORI-FLG   =   2
+004020         PERFORM BPRN-SREAD-RTN.
+004030   INP-999.
+004040     EXIT.
+004050*
+004060*-------------[ ﾌﾞﾓﾝﾍﾞﾂ ｿﾝｴｷ ﾌｧｲﾙ ﾆｭｳﾘｮｸ ]
+004070*
+004080 BUPL-READ-RTN               SECTION.
+004090   BUPL-READ-000.
+004100     READ    BU-F    AT  END
+004110         MOVE    2      TO   SYORI-FLG
+004120         PERFORM BPRN-START-RTN.
+004130   BUPL-READ-999.
+004140     EXIT.
+004150*
+004160*-------------[ ﾌﾞﾓﾝﾍﾞﾂｻｸﾋｮｳﾌｧｲﾙ ｾｯﾄ ]
+004170*
+004180 BPRN-START-RTN              SECTION.
+004190   BPRN-START-000.
+004200     MOVE    LOW-VALUE  TO   BPLPRN-KEY.
+004210     START   BPLPRN     KEY  NOT <  BPLPRN-KEY
+004220         INVALID  KEY
+004230         MOVE  "ｻｸﾋｮｳ ﾌｧｲﾙ START INVALID" TO ERR-MSG
+004240         MOVE  SPACE    TO   ERR-CD
+004250         PERFORM ERR-RTN
+004260         MOVE  0        TO   SYORI-FLG.
+004270   BPRN-START-999.
+004280     EXIT.
+004290*
+004300*-------------[ ﾌﾞﾓﾝﾍﾞﾂ ｻｸﾋｮｳﾌｧｲﾙ ﾆｭｳﾘｮｸ ]
+004310*
+004320 BPRN-SREAD-RTN              SECTION.
+004330   BPRN-SREAD-000.
+004340     READ    BPLPRN  NEXT    AT  END
+004350         MOVE    3   TO  SYORI-FLG.
+004360     MOVE    BPLPRN-PG   TO      W-NEWKEY.
+004370   BPRN-SREAD-999.
+004380     EXIT.
+004390*
+004400*-------------[ ｼｭﾂﾘｮｸ ｼｮﾘ ]
+004410*
+004420 OUT-RTN                     SECTION.
+004430   OUT-000.
+004440     IF      SYORI-FLG   =  1
+004450         PERFORM UPDATE-RTN.
+004460     IF      SYORI-FLG   =  2
+004470         PERFORM LIST-RTN.
+004480     IF      SYORI-FLG   =  3
+004490         IF      L-CNT   NOT =  99
+004500             WRITE    PR-REC    FROM  H7  AFTER  1.
+004510   OUT-999.
+004520     EXIT.
+004530*
+004540*-------------[ ｺｳｼﾝ ｼｮﾘ ]
+004550*
+004560 UPDATE-RTN                  SECTION.
+004570   UPDATE-000.
+004580     PERFORM PL-UP-RTN.
+004590     IF      WRITE-FLG       =   2
+004600         MOVE    3       TO  SYORI-FLG
+004610         GO  TO  UPDATE-999.
+004620     MOVE    BU-BUMN     TO  BNM-KEY.
+004630     PERFORM BNM-READ-RTN.
+004640     IF      READ-FLG   =    1
+004650         GO  TO  UPDATE-999.
+004660     PERFORM BPRN-UP-RTN     VARYING  IX1 FROM 1 BY 1
+004670             UNTIL IX1  >    3.
+004680   UPDATE-999.
+004690     EXIT.
+004700*
+004710*----------[ ｿﾝｴｷ ﾌｧｲﾙ ｺｳｼﾝ ｼｮﾘ ]
+004720*
+004730 PL-UP-RTN                   SECTION.
+004740   PL-UP-000.
+004750     MOVE  0            TO   READ-FLG WRITE-FLG.
+004760     MOVE  BU-LINNO     TO   PL-KEY.
+004770     READ  PL      INVALID   KEY
+004780         MOVE  "ｿﾝｴｷ ﾌｧｲﾙ INVALID" TO  ERR-MSG
+004790         MOVE  PL-KEY   TO   ERR-CD
+004800         PERFORM ERR-RTN
+004810         MOVE 2         TO   READ-FLG
+004820         GO  TO  PL-UP-999.
+004830     ADD   BU-TOUKI     TO   PL-TOUKI.
+004840     REWRITE  PL-REC    INVALID KEY
+004850         MOVE "ｿﾝｴｷ ﾌｧｲﾙ REWRIT ﾌﾉｳ" TO  ERR-MSG
+004860         MOVE  PL-KEY   TO   ERR-CD
+004870         PERFORM ERR-RTN
+004880         MOVE  2        TO   WRITE-FLG.
+004890 PL-UP-999.
+004900     EXIT.
+004910*
+004920*----------[ ﾌﾞﾓﾝﾒｲ ﾏｽﾀ ﾆｭｳﾘｮｸ ]
+004930*
+004940 BNM-READ-RTN                SECTION.
+004950   BNM-READ-000.
+004960     MOVE     0         TO   READ-FLG.
+004970     READ     BNM       INVALID KEY
+004980         MOVE  1        TO   READ-FLG.
+004990   BNM-READ-999.
+005000     EXIT.
+005010*
+005020*-----------[ ﾌﾞﾓﾝﾍﾞﾂｻｸﾋｮｳﾌｧｲﾙ ｺｳｼﾝ ]
+005030*
+005040 BPRN-UP-RTN                 SECTION.
+005050   BPRN-UP-000.
+005060     IF      BNM-PLPG (IX1)  NOT =  ZERO
+005070             PERFORM BPRN-RREAD-RTN
+005080             PERFORM BPRN-EDIT-RTN
+005090             PERFORM BPRN-OUT-RTN.
+005100   BPRN-UP-999.
+005110     EXIT.
+005120*
+005130*-----------[ ﾌﾞﾓﾝﾍﾞﾂｻｸﾋｮｳﾌｧｲﾙ READ ]
+005140*
+005150 BPRN-RREAD-RTN              SECTION.
+005160   BPRN-RREAD-000.
+005170     MOVE     0         TO   READ-FLG.
+005180     MOVE     BNM-PLPG (IX1) TO  BPLPRN-PG.
+005190     MOVE     BU-LINNO       TO  BPLPRN-LNO.
+005200     READ     BPLPRN    INVALID  KEY
+005210         MOVE    1   TO  READ-FLG.
+005220   BPRN-RREAD-999.
+005230     EXIT.
+005240*
+005250*----------[ ﾌﾞﾓﾝﾍﾞﾂｻｸﾋｮｳﾌｧｲﾙ EDIT ]
+005260*
+005270 BPRN-EDIT-RTN               SECTION.
+005280   BPRN-EDIT-000.
+005290     IF      READ-FLG    =   1
+005300         INITIALIZE  BPLPRN-REC
+005310         MOVE    BNM-PLPG (IX1)  TO  BPLPRN-PG
+005320         MOVE    BU-LINNO        TO  BPLPRN-LNO
+005330         MOVE    BU-KAIP         TO  BPLPRN-GYO
+005340         MOVE    BU-GOKBN        TO  BPLPRN-GKB
+005350         MOVE    BU-KMKNM        TO  BPLPRN-NM
+005360         MOVE    BU-URKBN        TO  BPLPRN-UKB
+005370         MOVE    BU-PRKBN        TO  BPLPRN-IKB.
+005380     MOVE    BNM-PLLN (IX1) TO  IX2.
+005390     ADD     BU-TOUKI    TO  BPLPRN-AM (IX2).
+005400   BPRN-EDIT-999.
+005410     EXIT.
+005420*
+005430*---------[ ﾌﾞﾓﾝﾍﾞｻｸﾋｮｳﾌｧｲﾙ OUT ]
+005440*
+005450 BPRN-OUT-RTN                SECTION.
+005460   BPRN-OUT-000.
+005470     IF      READ-FLG    =   1
+005480         PERFORM BPRN-WR-RTN
+005490       ELSE
+005500         PERFORM BPRN-RWR-RTN.
+005510   BPRN-OUT-999.
+005520     EXIT.
+005530*
+005540*--------[ ﾌﾞﾓﾝﾍﾞﾂｻｸﾋｮｳﾌｧｲﾙ WRITE ]
+005550*
+005560 BPRN-WR-RTN                SECTION.
+005570   BPRN-WR-000.
+005580     WRITE    BPLPRN-REC    INVALID KEY
+005590         MOVE "BPLPRN WRITE ﾌﾉｳ" TO ERR-MSG
+005600         MOVE BPLPRN-KEY TO ERR-CD
+005610         PERFORM ERR-RTN
+005620         MOVE 1    TO   WRITE-FLG.
+005630  BPRN-WR-999.
+005640     EXIT.
+005650*
+005660*--------[ ﾌﾞﾓﾝﾍﾞﾂｻｸﾋｮｳﾌｧｲﾙ REWRITE ]
+005670*
+005680 BPRN-RWR-RTN               SECTION.
+005690   BPRN-RWR-000.
+005700     REWRITE   BPLPRN-REC    INVALID KEY
+005710         MOVE "BPLPRN RWRITE ﾌﾉｳ" TO ERR-MSG
+005720         MOVE BPLPRN-KEY TO ERR-CD
+005730         PERFORM ERR-RTN
+005740         MOVE 1    TO   WRITE-FLG.
+005750  BPRN-WR-999.
+005760     EXIT.
+005770*
+005780*--------[ ﾘｽﾄ ｼｮﾘ ]
+005790*
+005800 LIST-RTN                   SECTION.
+005810   LIST-000.
+005820     IF      INIT-FLG   =   1
+005830         MOVE    W-NEWKEY   TO  W-OLDKEY
+005840         MOVE    0          TO  INIT-FLG.
+005850     IF      W-NEWKEY   NOT =   W-OLDKEY
+005860         MOVE    W-NEWKEY   TO  W-OLDKEY
+005870         MOVE    60         TO  L-CNT.
+005880     PERFORM HEAD-RTN.
+005890     PERFORM MEISAI-RTN.
+005900   LIST-999.
+005910     EXIT.
+005920*
+005930*---------[ ﾍｯﾄﾞ ｼｮﾘ ]
+005940*
+005950 HEAD-RTN                   SECTION.
+005960   HEAD-000.
+005970     IF      L-CNT   >   49                                       *C910318
+005980         PERFORM HEAD-EDIT-RTN
+005990         PERFORM HEAD-PR-RTN.
+006000  HEAD-999.
+006010     EXIT.
+006020*
+006030*----------[ ﾍｯﾄﾞEDITｼｮﾘ ]
+006040*
+006050 HEAD-EDIT-RTN              SECTION.
+006060   HEAD-EDIT-000.
+006070*****MOVE    W-YY    TO     W-EDIT-YY.                            D.971114
+006080     MOVE    W-MM    TO     W-EDIT-MM.
+006090     MOVE    W-DD    TO     W-EDIT-DD.
+006100*****MOVE    W-EDIT-YY  TO  H1-YY.                                D.971114
+006110     MOVE    W-YY       TO  H1-YY.                                I.971114
+006120     MOVE    W-EDIT-MM  TO  H1-MM.
+006130     MOVE    W-EDIT-DD  TO  H1-DD.
+006140*****MOVE   Z-TOUTYY(I) TO  W-EDIT-YY.                            D.971114
+006150     MOVE   Z-TOUTMM(I) TO  W-EDIT-MM.
+006160*****MOVE    W-EDIT-YY  TO  H2-YY.                                D.971114
+006170     MOVE   Z-TOUTYY2(I) TO  H2-YY.                               I.971114
+006180     MOVE    W-EDIT-MM  TO  H2-MM.
+006190     ADD     1          TO  W-PAGE.
+006200     MOVE    W-PAGE     TO  W-EDIT-PAGE.
+006210     MOVE    W-EDIT-PAGE TO H1-PAGE.
+006220     PERFORM BNM-EDIT-RTN   VARYING  IX1 FROM 1 BY 1
+006230             UNTIL  IX1  >  5.
+006240   HEAD-EDIT-999.
+006250     EXIT.
+006260*
+006270*------------[ ﾌﾞﾓﾝﾒｲ EDIT ]
+006280*
+006290 BNM-EDIT-RTN               SECTION.
+006300   BNM-EDIT-000.
+006310     MOVE    0       TO  W-PRSIN (IX1).
+006320     MOVE    BPLPRN-PG   TO BPLHAI-PG.
+006330     MOVE    IX1     TO  BPLHAI-LN.
+006340     READ    BPLHAI  INVALID KEY
+006350         MOVE    SPACE   TO  H4-BNM-A (IX1)
+006360         MOVE    1       TO  W-PRSIN  (IX1)
+006370         GO  TO  BNM-EDIT-999.
+006380     MOVE    BPLHAI-BUCD TO  BNM-KEY.
+006390     READ    BNM     INVALID KEY
+006400         MOVE    SPACE   TO  H4-BNM-A (IX1)
+006410         MOVE    1       TO  W-PRSIN  (IX1)
+006420         GO  TO  BNM-EDIT-999.
+006430     MOVE    BNMNM       TO  H4-BNM-A (IX1).
+006440   BNM-EDIT-999.
+006450     EXIT.
+006460*
+006470*-----------[ ﾍｯﾀﾞｰ ﾌﾟﾘﾝﾄ ｼｮﾘ ]
+006480*
+006490 HEAD-PR-RTN                SECTION.
+006500   HEAD-PR-000.
+006510     IF      L-CNT   NOT =  99
+006520         WRITE   PR-REC  FROM   H7  AFTER   1
+006530         MOVE    SPACE   TO     PR-REC
+006540         WRITE   PR-REC  AFTER  PAGE.
+006550     WRITE   PR-REC  FROM    H1  AFTER   2.
+006560     WRITE   PR-REC  FROM    H2  AFTER   2.
+006570     WRITE   PR-REC  FROM    H3  AFTER   1.
+006580     WRITE   PR-REC  FROM    H4  AFTER   1.
+006590     WRITE   PR-REC  FROM    H5  AFTER   1.
+006600     WRITE   PR-REC  FROM    H6  AFTER   1.
+006610     MOVE    0       TO      L-CNT.
+006620   HEAD-PR-999.
+006630     EXIT.
+006640*
+006650*---------[ ﾒｲｻｲ ﾌﾟﾘﾝﾄ ｼｮﾘ ]
+006660*
+006670 MEISAI-RTN                 SECTION.
+006680   MEISAI-000.
+006690     PERFORM ME-EDIT-RTN.
+006700     PERFORM ME-PR-RTN.
+006710   MEISAI-999.
+006720     EXIT.
+006730*
+006740*---------[ ﾒｲｻｲ EDIT ]
+006750 ME-EDIT-RTN                SECTION.
+006760   ME-EDIT-000.
+006770     MOVE    H6      TO  ME1.
+006780     IF      BPLPRN-GKB  =  1
+006790         MOVE    BPLPRN-NM   TO  ME1-NM1.
+006800     IF      BPLPRN-GKB  =  2
+006810         MOVE    BPLPRN-NM   TO  ME1-NM2.
+006820     IF      BPLPRN-GKB  =  3
+006830         MOVE    BPLPRN-NM   TO  ME1-NM3.
+006840     IF      BPLPRN-GKB  =  4
+006850         MOVE    BPLPRN-NM   TO  ME1-NM4.
+006860     IF      BPLPRN-GKB  =  5
+006870         MOVE    BPLPRN-NM   TO  ME1-NM5.
+006880     IF      BPLPRN-IKB  NOT =   1
+006890         PERFORM AMT-EDIT-RTN    VARYING  IX1 FROM 1 BY 1
+006900                 UNTIL   IX1 >   5.
+006910   ME-EDIT-999.
+006920     EXIT.
+006930*
+006940*----------[ ｷﾝｶﾞｸ EDIT ]
+006950*
+006960 AMT-EDIT-RTN            SECTION.
+006970   AMT-EDIT-000.
+006980     IF      W-PRSIN (IX1) =   0
+006990         MOVE    BPLPRN-AM (IX1) TO  ME1-AMT (IX1)
+007000         PERFORM RITU-RTN.
+007010   AMT-EDIT-999.
+007020     EXIT.
+007030*
+007040*---------[ ｺｳｾｲﾋ ]
+007050*
+007060 RITU-RTN                SECTION.
+007070   RITU-000.
+007080     MOVE    BPLPRN-LNO  TO  PL-KEY.
+007090     READ    PL          INVALID KEY
+007100         GO  TO  RITU-999.
+007110     IF      PL-TOUKI    NOT =   0
+007120         COMPUTE ME1-AMTRT (IX1) ROUNDED =   BPLPRN-AM (IX1) * 100
+007130                                 /   PL-TOUKI
+007140       ELSE
+007150         MOVE    0        TO  ME1-AMTRT (IX1).
+007160   RITU-999.
+007170     EXIT.
+007180*
+007190*---------[ ﾒｲｻｲ ﾌﾟﾘﾝﾄ ]
+007200*
+007210 ME-PR-RTN               SECTION.
+007220   ME-PR-000.
+007230     IF      BPLPRN-GYO  >   1
+007240         WRITE   PR-REC FROM  H6  AFTER 1
+007250         ADD     1      TO    L-CNT
+007260         SUBTRACT 1     FROM  BPLPRN-GYO
+007270         PERFORM HEAD-RTN
+007280         GO  TO  ME-PR-000.
+007290     WRITE   PR-REC  FROM  ME1     AFTER 1.
+007300     ADD     1       TO    L-CNT.
+007310   ME-PR-999.
+007320     EXIT.
+007330*
+007340*----------[ ERR ｼｮﾘ ]
+007350*
+007360 ERR-RTN                 SECTION.
+007370   ERR-000.
+007380*    DISPCRT  (01,01)    "(" ERR-CD ")" "   " ERR-MSG ""27"J"05"".
+007390*    ACEPCRT  (01,50)    ERR-ACT.
+007400     DISPLAY  DSP-010  DISP-BUZ-J-05.
+007410     ACCEPT   ACP-010.
+007420   ERR-999.
+007430     EXIT.
+007440*
+007450*----------[ ｼｭｳﾘｮｳ ｼｮﾘ ]
+007460 CLSE-ENT.
+007470     CLOSE     BU-F BNM BPLHAI BPLPRN PL PR-F.
+007480 CLSE-EXT.
+007490     EXIT.
+007500****
+007510 COPY  LPMSG.

@@ -1,0 +1,183 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. HMG900.
+000030*********************************************************
+000040*    PROGRAM         :  入出庫振替単価チェック  　　　　*
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :  ******                          *
+000070*        変更　　　  :  62/04/17                        *
+000080*    COMPILE TYPE    :  COBOL                           *
+000090*********************************************************
+000100 ENVIRONMENT DIVISION.
+000110 CONFIGURATION SECTION.
+000120 SOURCE-COMPUTER. SYSTEM3100.
+000130 OBJECT-COMPUTER. SYSTEM3100.
+000140 INPUT-OUTPUT SECTION.
+000150 FILE-CONTROL.
+000160*****SELECT HI-M ASSIGN TO HI-MSD                                 D.010806
+000170     SELECT HI-M ASSIGN TO HI1-MSD HI2-MSD                        I.010806
+000180         ORGANIZATION INDEXED
+000190         ACCESS MODE RANDOM
+000200         RECORD KEY HI-KEY
+000210         ALTERNATE RECORD KEY HI-KEY2                             I.010806
+000220         FILE STATUS ERR-STAT.
+000230     SELECT SNTR-F ASSIGN TO SSR-MSD.
+000240     SELECT UTR-F  ASSIGN TO UTR-MSD.
+000250 I-O-CONTROL.
+000260     APPLY SHARED-MODE ON HI-M.
+000270 DATA DIVISION.
+000280 FILE SECTION.
+000290     COPY LIHIM.
+000300 FD  SNTR-F
+000310     BLOCK  2 RECORDS
+000320     LABEL RECORD IS STANDARD
+000330     VALUE OF IDENTIFICATION IS "SNTRF".
+000340 01  SNTR-R.
+000350     02  SNTR-DNO       PIC  9(006).
+000360     02  SNTR-GNO       PIC  9(001).
+000370     02  SNTR-DATE      PIC  9(008).
+000380     02  SNTR-TCD       PIC  9(004).
+000390     02  SNTR-HCD       PIC  9(006).
+000400     02  F              PIC  X(051).
+000410     02  SNTR-FT        PIC  9(005).
+000420     02  F              PIC  X(046).
+000430     02  SNTR-UNC       PIC  9(001).
+000440 FD  UTR-F
+000450*****BLOCK  5 RECORDS                                             D.020517
+000460     BLOCK  2 RECORDS                                             I.020517
+000470     LABEL RECORD IS STANDARD
+000480     VALUE OF IDENTIFICATION IS "UTRF".
+000490 01  UTR-R.
+000500     02  UTR-NO         PIC  9(007).
+000510     02  UTR-DATE       PIC  9(008).
+000520     02  UTR-NGPD  REDEFINES UTR-DATE.
+000530       03  UTR-NG       PIC  9(006).
+000540       03  F            PIC  9(002).
+000550     02  UTR-HCD        PIC  9(006).
+000560     02  UTR-SIZ        PIC  9(001).
+000570     02  UTR-SUD.
+000580       03  UTR-SU       PIC S9(004)  OCCURS  10.
+000590     02  UTR-SUT        PIC S9(005).
+000600     02  UTR-BKIN       PIC S9(008).
+000610     02  UTR-FKIN       PIC S9(008).
+000620     02  UTR-NRC        PIC  9(001).
+000630     02  UTR-SSC        PIC  9(001).
+000640     02  UTR-HPC        PIC  9(001).
+000650     02  UTR-SKC        PIC  9(001).
+000660     02  UTR-BC.
+000670       03  UTR-BC1      PIC  9(002).
+000680       03  UTR-BC2      PIC  9(002).
+000690       03  UTR-BC3      PIC  9(002).
+000700*****02  F              PIC  X(008).                              D.020517
+000710     02  F              PIC  X(034).                              I.020517
+000720     02  UTR-PRC        PIC  9(001).
+000730 WORKING-STORAGE SECTION.
+000740 77  W-FILE             PIC  X(013).
+000750 01  W-DATA.
+000760     02  W-AHCD.
+000770       03  W-HCDD  OCCURS  80.
+000780         04  W-HCD      PIC  9(006).
+000790     02  W-HCDW         PIC  9(006).
+000800     02  W-L            PIC  9(002).
+000810     02  W-C            PIC  9(002).
+000820     02  CNT            PIC  9(002).
+000830     02  CNTD           PIC  9(002).
+000840     02  W-DMM          PIC  9(001).
+000850     02  W-END          PIC  9(001).
+000860 01  ERR-STAT           PIC  X(002).
+000870 SCREEN SECTION.
+000880 SD  C-CRT
+000890     END STATUS IS ESTAT.
+000900 01  C-CLEAR.
+000910     02  C-CL    LINE   1  CLEAR SCREEN.
+000920 01  C-MID.
+000930     02  LINE   1  COLUMN  15  PIC  N(023) VALUE
+000940          NC"＊＊＊　　振替単価　未決定　チェック　　＊＊＊".
+000950 01  C-DSP.
+000960     02  D-HCD   LINE W-L  COLUMN W-C  PIC  9(006) FROM
+000970          W-HCD(CNT).
+000980 01  C-ACP.
+000990     02  A-DMM   LINE  22  COLUMN  72  PIC  9(001)
+001000          USING W-DMM   CHECK OVERFLOW NO IFC.
+001010 01  C-ERR.
+001020     02  LINE 24.
+001030       03  E-ME1   COLUMN  15  PIC  X(016) VALUE
+001040            "***  HIM ﾅｼ  ***".
+001050       03  E-HCD   COLUMN  35  PIC  9(006) FROM  W-HCDW.
+001060     COPY LSSEM.
+001070 PROCEDURE DIVISION.
+001080 M-05.
+001090     DISPLAY C-CLEAR.
+001100     DISPLAY C-MID.
+001110     MOVE ZERO TO W-DATA.
+001120     MOVE 0 TO W-C.                                               I.010205
+001130     MOVE 5 TO W-L.                                               I.010205
+001140     OPEN INPUT SNTR-F.
+001150 M-10.
+001160     READ SNTR-F AT END
+001170         GO TO M-15.
+001180     IF SNTR-GNO = 9
+001190         GO TO M-10.
+001200     IF SNTR-UNC = 1
+001210         GO TO M-10.
+001220     IF SNTR-FT NOT = 1
+001230         GO TO M-10.
+001240*
+001250     MOVE SNTR-HCD TO W-HCDW.
+001260     PERFORM S-05 THRU S-10.
+001270     IF CNT = 81
+001280         CLOSE SNTR-F
+001290         GO TO M-30.
+001300     GO TO M-10.
+001310 M-15.
+001320     CLOSE SNTR-F.
+001330     ADD 1 TO CNT.                                                I.010205
+001340     ADD 7 TO W-C.                                                I.010205
+001350     IF CNT = 11 OR 21 OR 31 OR 41 OR 51 OR 61 OR 71              I.010205
+001360         ADD 2 TO W-L                                             I.010205
+001370         MOVE 7 TO W-C.                                           I.010205
+001380     IF CNT = 81                                                  I.010205
+001390         GO TO M-25.                                              I.010205
+001400     OPEN INPUT HI-M.
+001410     OPEN INPUT UTR-F.
+001420 M-20.
+001430     READ UTR-F AT END
+001440         GO TO M-25.
+001450*****IF UTR-NRC NOT = 1 AND 3 AND 4                               D.010724
+001460*****    GO TO M-20.                                              D.010724
+001470     MOVE UTR-HCD TO HI-KEY.
+001480     READ HI-M WITH UNLOCK INVALID KEY
+001490         MOVE UTR-HCD TO W-HCDW
+001500         MOVE ZERO TO HI-FT
+001510         DISPLAY E-ME1 E-HCD E-ME99
+001520         DISPLAY E-CL
+001530         GO TO M-20.
+001540     IF HI-FT NOT = 1
+001550         GO TO M-20.
+001560     MOVE UTR-HCD TO W-HCDW.
+001570     PERFORM S-05 THRU S-10.
+001580     IF CNT = 81
+001590         GO TO M-25.
+001600     GO TO M-20.
+001610 M-25.
+001620     CLOSE HI-M.
+001630     CLOSE UTR-F.
+001640 M-30.
+001650*****IF CNT NOT = ZERO                                            D.010207
+001660     IF CNT NOT = 1                                               I.010207
+001670         MOVE 255 TO COMPLETION-CODE
+001680         ACCEPT A-DMM.
+001690 M-95.
+001700     DISPLAY C-CLEAR.
+001710     STOP RUN.
+001720 S-05.
+001730     ADD 1 TO CNT.
+001740     ADD 7 TO W-C.
+001750     IF CNT = 11 OR 21 OR 31 OR 41 OR 51 OR 61 OR 71
+001760         ADD 2 TO W-L
+001770         MOVE 7 TO W-C.
+001780     IF CNT = 81
+001790         GO TO S-10.
+001800     MOVE W-HCDW TO W-HCD(CNT).
+001810     DISPLAY D-HCD.
+001820 S-10.
+001830     EXIT.

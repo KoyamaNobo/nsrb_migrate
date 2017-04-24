@@ -1,0 +1,610 @@
+000010 IDENTIFICATION                   DIVISION.
+000020 PROGRAM-ID.                      JT052U.
+000030******************************************************
+000040*    PROGRAM..........  送り状ファイルのメンテナンス *
+000050*    AUTHOR...........  O.OOSAKO.                    *
+000060*    COMPILE MODE.....  NORMAL                       *
+000070*    SCREEN...........  SJ052U                       *
+000080*    RELEASE..........  63/07/19      [REV.001]      *
+000090******************************************************
+000100 ENVIRONMENT                      DIVISION.
+000110 CONFIGURATION                    SECTION.
+000120 SOURCE-COMPUTER.                 SYSTEM100.
+000130 OBJECT-COMPUTER.                 SYSTEM100.
+000140 INPUT-OUTPUT                     SECTION.
+000150 FILE-CONTROL.
+000160     SELECT    OKJF     ASSIGN    TO    F1-MSD
+000170               ORGANIZATION             INDEXED
+000180               ACCESS  MODE             RANDOM
+000190               RECORD   KEY             OKJF-KEY
+000200               FILE  STATUS             ERR-STAT.
+000210     SELECT    TC-M     ASSIGN    TO    F2-MSD
+000220               ORGANIZATION             INDEXED
+000230               ACCESS  MODE             RANDOM
+000240               RECORD   KEY             TC-KEY.
+000250     SELECT    JCON     ASSIGN    TO    F3-MSD
+000260               ORGANIZATION             INDEXED
+000270               ACCESS  MODE             RANDOM
+000280               RECORD   KEY             JCON1-KEY
+000290               FILE  STATUS             ERR-STAT.
+000300 I-O-CONTROL.
+000310     APPLY     SHARED-MODE   ON   OKJF   TC-M   JCON.
+000320 DATA                             DIVISION.
+000330 FILE                             SECTION.
+000340*
+000350     COPY     L-JCON.
+000360     COPY     LITCM.
+000370     COPY     LOKJF.
+000380*
+000390*****
+000400 WORKING-STORAGE SECTION.
+000410*****
+000420 77  ERR-STAT               PIC  X(02).
+000430 77  W-ACT                  PIC  9(01).
+000440 77  W-OKC                  PIC  9(01).
+000450 77  W-JS                   PIC  X(01).                           ＪＳ区分
+000460 77  W-JSD                  PIC  9(01).                           I.070501
+000470 01  W-MID                  PIC  N(05).
+000480*
+000490 01  DATE-AREA.
+000500     03  WYMD               PIC  9(06).                           ｼｽﾃﾑﾋﾂﾞｹ
+000510     03  WYMD-R  REDEFINES  WYMD.
+000520         05  WYY            PIC  9(02).
+000530         05  WMM            PIC  9(02).
+000540         05  WDD            PIC  9(02).
+000550 01  WORK-AREA.
+000560     03  W-01               PIC  9(06).                           送状№
+000570     03  W-02               PIC  9(01).                           運送ｺｰﾄﾞ
+000580     03  W-03.                                                    発送日
+000590         05  W-031          PIC  9(02).                           　年
+000600         05  W-032          PIC  9(02).                           　月
+000610         05  W-033          PIC  9(02).                           　日
+000620     03  W-04               PIC  9(01).                           倉　ｺｰﾄﾞ
+000630     03  W-05               PIC  9(07).                           直送ｺｰﾄﾞ
+000640     03  W-06               PIC  N(09).                           配達日
+000650     03  W-07               PIC  9(03).                           個数
+000660     03  W-11               PIC  9(05).                           I.960903
+000670     03  W-12               PIC  9(06).                           I.040629
+000680     03  W-08               PIC  9(01).                           印字ｻｲﾝ
+000690*
+000700     03  W-DSP.
+000710         05  WD-ACT         PIC  N(02).                           処理
+000720         05  WD-01          PIC  N(06).                           運送業者
+000730         05  WD-02          PIC  N(06).                           倉コード
+000740         05  WD-03          PIC  N(26).                           I.020417
+000750*****    05  WD-03          PIC  N(24).                           D.020417
+000760         05  WD-MSG         PIC  N(15).                           入力ｴﾗｰ
+000770 01  ERR-MSG.
+000780     03  MSG-01             PIC  N(11)    VALUE
+000790             NC"＊　送り状№未登録　＊".
+000800     03  MSG-02             PIC  N(14)    VALUE
+000810             NC"＊　運送業者コード未登録　＊".
+000820     03  MSG-03             PIC  N(11)    VALUE
+000830             NC"＊　倉コード未登録　＊".
+000840     03  MSG-04             PIC  N(13)    VALUE
+000850             NC"＊　直送先コード未登録　＊".
+000860* * * * * * * * * * * *
+000870     COPY     LWMSG.
+000880* * * * * * * * * * * *
+000890 SCREEN                           SECTION.
+000900 SD  CRT-X    END    STATUS    ESTAT.
+000910*
+000920 01  CLE-GAMEN.
+000930     03  LINE  01  CLEAR  SCREEN.
+000940 01  DSP-MID.                                                     I.030723
+000950     03  LINE   1  COLUMN  24  PIC N(16) VALUE                    I.030723
+000960         NC"＊＊＊　　送り状　入力　　＊＊＊".                    I.030723
+000970     03  LINE   5.
+000980         04  COLUMN  21  PIC N(03) VALUE NC"教　育".              I.030723
+000990         04  COLUMN  27  PIC X(05) VALUE   "=0 , ".               I.030723
+001000*****    04  COLUMN  32  PIC N(03) VALUE NC"ワーク".              D.070411
+001010         04  COLUMN  32  PIC N(03) VALUE NC"一　般".              I.070411
+001020         04  COLUMN  38  PIC X(06) VALUE   "=1    ".              D.070411
+001030*****    04  COLUMN  38  PIC X(05) VALUE   "=1 , ".               D.070411
+001040*****    04  COLUMN  43  PIC N(05) VALUE NC"カジュアル".          D.070411
+001050*****    04  COLUMN  53  PIC X(06) VALUE   "=2    ".              D.070411
+001060     03  LINE  24  COLUMN  41  PIC X(25) VALUE                    I.030723
+001070           "確認 (OK=1,NO=9) --> ﾘﾀｰﾝ".                           I.030723
+001080 01  ACP-JS   LINE  05.                                           I.030723
+001090*****03     COLUMN  58     PIC  9(01)                             D.070411
+001100     03     COLUMN  43     PIC  9(01)                             I.070411
+001110            USING   W-JS     CHECK OVERFLOW  NO IFC.              I.030723
+001120 01  ACP-ACT  LINE  03.                                           ｱｸｼｮﾝ
+001130     03     COLUMN  46     PIC  9(01)
+001140            USING   W-ACT    CHECK OVERFLOW  NO IFC.
+001150     03  DSP-ACT    COLUMN 48  PIC   N(02)   FROM  WD-ACT.        処理
+001160 01  ACP-OKC  LINE  24.                                           確    認
+001170     03     COLUMN  61  PIC  9(01)
+001180             USING  W-OKC    CHECK OVERFLOW  NO IFC.
+001190***** ﾒﾝﾃﾅﾝｽ ******
+001200 01  ACP-AREA.
+001210     03  ACP-01  LINE  06
+001220         COLUMN  17    PIC  9(06)
+001230         USING  W-01     CHECK OVERFLOW  NO IFC.
+001240     03  ACP-02  LINE  08
+001250         COLUMN  17    PIC  9(01)
+001260         USING  W-02     CHECK OVERFLOW  NO IFC.
+001270     03  ACP-031 LINE  10
+001280         COLUMN  17    PIC  9(02)
+001290         USING  W-031   NO IFC.
+001300     03  ACP-032 LINE  10
+001310         COLUMN  20    PIC  9(02)
+001320         USING  W-032   NO IFC.
+001330     03  ACP-033 LINE  10
+001340         COLUMN  23    PIC  9(02)
+001350         USING  W-033    CHECK OVERFLOW  NO IFC.
+001360     03  ACP-04  LINE  12
+001370         COLUMN  17    PIC  9(01)
+001380         USING  W-04     CHECK OVERFLOW  NO IFC.
+001390     03  ACP-05  LINE  14
+001400         COLUMN  17    PIC  9(07)
+001410         USING  W-05     CHECK OVERFLOW  NO IFC.
+001420     03  ACP-06  LINE  16
+001430         COLUMN  17    PIC  N(09)
+001440         USING  W-06     CHECK OVERFLOW  NO IFC.
+001450     03  ACP-07  LINE  18
+001460         COLUMN  17    PIC  9(03)
+001470         USING  W-07     CHECK OVERFLOW  NO IFC.
+001480     03  ACP-11  LINE  20                                         I.960903
+001490         COLUMN  17    PIC  9(05)                                 I.960903
+001500         USING  W-11     CHECK OVERFLOW  NO IFC.                  I.960903
+001510     03  ACP-12  LINE  20                                         I.040629
+001520         COLUMN  33    PIC  9(06)                                 I.040629
+001530         USING  W-12     CHECK OVERFLOW  NO IFC.                  I.040629
+001540*****03  ACP-08  LINE  20                                         D.960903
+001550     03  ACP-08  LINE  22                                         D.960903
+001560         COLUMN  17    PIC  9(01)
+001570         USING  W-08     CHECK OVERFLOW  NO IFC.
+001580 01  DSP-AREA.
+001590     03  DSP-02    LINE 08 COLUMN 19  PIC   N(06)   FROM  WD-01.  運送業者
+001600     03  DSP-032   LINE 10 COLUMN 20  PIC   Z9      FROM  W-032.  　月
+001610     03  DSP-033   LINE 10 COLUMN 23  PIC   Z9      FROM  W-033.  　日
+001620     03  DSP-04    LINE 12 COLUMN 19  PIC   N(06)   FROM  WD-02.  倉庫　名
+001630*****03  DSP-05    LINE 14 COLUMN 25  PIC   N(24)   FROM  WD-03.  D.020417
+001640     03  DSP-05    LINE 14 COLUMN 25  PIC   N(26)   FROM  WD-03.  I.020417
+001650     03  DSP-07    LINE 18 COLUMN 17  PIC   ZZ9     FROM  W-07.   個数
+001660     03  DSP-11    LINE 20 COLUMN 17  PIC   Z(05)   FROM  W-11.   I.960903
+001670     03  DSP-12    LINE 20 COLUMN 33  PIC   Z(06)   FROM  W-12.   I.040629
+001680 01  MSG-AREA.
+001690     03  DSP-MSG   LINE 24 COLUMN 02  PIC   N(15)   FROM  WD-MSG. ｴﾗｰﾒｯｾｰｼ
+001700     03  DSP-KERR  LINE 24 COLUMN 02  PIC   N(05)                 I.030723
+001710         VALUE  NC"区分エラー".                                   I.030723
+001720*****03  DSP-KERR  LINE 24 COLUMN 02  PIC   N(11)                 D.030723
+001730*****    VALUE  NC"一般／教育区分エラー".                         D.030723
+001740 01  CLE-ACT.
+001750     03  CLE-ACT1  LINE 03 COLUMN 46  PIC   X(01)   VALUE   " ".
+001760     03  CLE-ACT2  LINE 03 COLUMN 48  PIC   N(02)   VALUE NC"　".
+001770 01  CLE-AREA.
+001780     03  CLE-01    LINE 06 COLUMN 17  PIC   X(06)   VALUE   " ".
+001790     03  CLE-021   LINE 08 COLUMN 17  PIC   X(01)   VALUE   " ".
+001800     03  CLE-022   LINE 08 COLUMN 19  PIC   N(06)   VALUE NC"　".
+001810     03  CLE-031   LINE 10 COLUMN 17  PIC   X(02)   VALUE   " ".
+001820     03  CLE-032   LINE 10 COLUMN 20  PIC   X(02)   VALUE   " ".
+001830     03  CLE-033   LINE 10 COLUMN 23  PIC   X(02)   VALUE   " ".
+001840     03  CLE-041   LINE 12 COLUMN 17  PIC   X(01)   VALUE   " ".
+001850     03  CLE-042   LINE 12 COLUMN 19  PIC   N(06)   VALUE NC"　".
+001860     03  CLE-051   LINE 14 COLUMN 17  PIC   X(07)   VALUE   " ".
+001870     03  CLE-052   LINE 14 COLUMN 25  PIC   N(26)   VALUE NC"　". D.020417
+001880*****03  CLE-052   LINE 14 COLUMN 25  PIC   N(24)   VALUE NC"　". D.020417
+001890     03  CLE-06    LINE 16 COLUMN 17  PIC   N(09)   VALUE NC"　".
+001900     03  CLE-07    LINE 18 COLUMN 17  PIC   X(03)   VALUE   " ".
+001910     03  CLE-11    LINE 20 COLUMN 17  PIC   X(05)   VALUE   " ".  I.960903
+001920     03  CLE-12    LINE 20 COLUMN 33  PIC   X(06)   VALUE   " ".  I.040629
+001930*****03  CLE-08    LINE 20 COLUMN 17  PIC   X(01)   VALUE   " ".  D.960903
+001940     03  CLE-08    LINE 22 COLUMN 17  PIC   X(01)   VALUE   " ".  I.960903
+001950     03  CLE-OKC   LINE 24 COLUMN 61  PIC   X(01)   VALUE   " ".
+001960     03  DSP-MSG-SPACE
+001970                   LINE 24 COLUMN 01  PIC   X(40)   VALUE   " ".
+001980 01  DSP-MIDASHI.
+001990     03  DSP-MID1  LINE  1 COLUMN  1  PIC   N(05)   FROM  W-MID.
+002000* * * * * * * * * * * *
+002010     COPY     LSMSG.
+002020* * * * * * * * * * * *
+002030********************************************
+002040 PROCEDURE                        DIVISION.
+002050********************************************
+002060 HAJIME.
+002070*****ACCEPT   W-JS.                                               D.030723
+002080     PERFORM  INI-RTN  THRU  INI-EX.
+002090 PRO-ACT.
+002100     ACCEPT   ACP-ACT.                                            ｱｸｼｮﾝ
+002110     DISPLAY  DSP-MSG-SPACE.
+002120     IF       ESTAT  =  "P9"                  GO  TO  OWARI.
+002130     IF       ESTAT NOT  =  "01" AND "06"     GO  TO  PRO-ACT.
+002140     IF       W-ACT   NOT  =  1 AND 2 AND 3 AND "P9"
+002150                                              GO  TO  PRO-ACT.
+002160*
+002170     DISPLAY  CLE-AREA.
+002180     INITIALIZE         WORK-AREA.
+002190     IF       W-ACT  =  1 OR 2 OR 3
+002200              PERFORM   INP-RTN  THRU  INP-EX.
+002210     GO  TO   PRO-ACT.
+002220*
+002230 OWARI.
+002240     PERFORM  END-RTN  THRU  END-EX.
+002250     DISPLAY  CLE-GAMEN.
+002260     STOP     RUN.
+002270**************************************************************************
+002280*    INI-RTN            初期処理                                         *
+002290**************************************************************************
+002300 INI-RTN.
+002310     DISPLAY  CLE-GAMEN.                                          I.030723
+002320     DISPLAY  DSP-MID.                                            I.030723
+002330 INI-010.                                                         I.030723
+002340     ACCEPT   ACP-JS.                                             I.030723
+002350     DISPLAY  DSP-MSG-SPACE  CLE-OKC.                             I.030723
+002360     IF       ESTAT      =  "P9"                                  I.030723
+002370              DISPLAY  CLE-GAMEN                                  I.030723
+002380              STOP     RUN.
+002390     IF       ESTAT  NOT =  "01" AND "06"   GO  TO  INI-010.      I.030723
+002400     DISPLAY  ACP-JS.                                             I.030723
+002410*****IF       W-JS   NOT =  0  AND  1  AND  2                     D.070411
+002420     IF       W-JS   NOT =  0  AND  1                             I.070411
+002430                                            GO  TO  INI-010.      I.030723
+002440 INI-090.                                                         I.030723
+002450     ACCEPT   ACP-OKC.                                            I.030723
+002460     DISPLAY  DSP-MSG-SPACE.                                      I.030723
+002470     IF       ESTAT      =  "09"            GO  TO  INI-010.      I.030723
+002480     IF       ESTAT  NOT =  "01" AND "06"   GO  TO  INI-090.      I.030723
+002490     IF       W-OKC  NOT =   1   AND  9     GO  TO  INI-090.      I.030723
+002500     IF       W-OKC  =  9                                         I.030723
+002510              DISPLAY  CLE-GAMEN                                  I.030723
+002520              STOP     RUN.
+002530*
+002540     ACCEPT   WYMD  FROM  DATE.
+002550     DISPLAY  CLE-GAMEN.
+002560     CALL     "SJ052U".
+002570     IF  W-JS             =  0     MOVE  NC"［教　育］" TO W-MID.
+002580     IF  W-JS             =  1     MOVE  NC"［一　般］" TO W-MID. I.070411
+002590*****IF  W-JS             =  1     MOVE  NC"［ワーク］" TO W-MID. D.070411
+002600*****IF  W-JS             =  2     MOVE  NC"［カジュ］" TO W-MID. D.070411
+002610*****IF  W-JS             =  1     MOVE  NC"［一　般］" TO W-MID. D.030707
+002620     DISPLAY  DSP-MID1.
+002630*
+002640     OPEN     I-O    OKJF   JCON.
+002650     OPEN     INPUT  TC-M.
+002660
+002670 INI-EX.
+002680     EXIT.
+002690**************************************************************************
+002700*    END-RTN            終了処理                                         *
+002710**************************************************************************
+002720 END-RTN.
+002730     CLOSE           OKJF   TC-M   JCON.
+002740 END-EX.
+002750     EXIT.
+002760**************************************************************************
+002770*    INP-RTN            メンテナンス処理                                 *
+002780**************************************************************************
+002790 INP-RTN.
+002800     IF       W-ACT      =      1
+002810              MOVE     NC"追加"   TO   WD-ACT
+002820              DISPLAY  DSP-ACT
+002830              GO  TO  INP-010.
+002840     IF       W-ACT      =      2
+002850              MOVE     NC"変更"   TO   WD-ACT
+002860              DISPLAY  DSP-ACT.
+002870     IF       W-ACT      =      3
+002880              MOVE     NC"取消"   TO   WD-ACT
+002890              DISPLAY  DSP-ACT.
+002900 INP-000.
+002910     ACCEPT   ACP-01.                                             送り状№
+002920     DISPLAY  DSP-MSG-SPACE  CLE-OKC.
+002930     IF       ESTAT      =  "09"            GO  TO  INP-EX.
+002940     IF       ESTAT  NOT =  "01" AND "06"   GO  TO  INP-000.
+002950     DISPLAY  ACP-01.
+002960*
+002970     MOVE     W-01      TO    OKJF-KEY.
+002980     READ     OKJF      INVALID    KEY
+002990              MOVE      MSG-01    TO    WD-MSG
+003000              DISPLAY DSP-MSG  DISP-BUZ-J   GO  TO  INP-000.
+003010     MOVE     OKJF-09   TO    W-JSD.                              I.070501
+003020     IF  W-JSD           =      2                                 I.070501
+003030         MOVE     1         TO    W-JSD.                          I.070501
+003040*****IF  W-JS        NOT =      OKJF-09                           D.070501
+003050     IF  W-JS        NOT =      W-JSD                             I.070501
+003060              DISPLAY DSP-KERR DISP-BUZ-J   GO  TO  INP-000.
+003070*
+003080     PERFORM   DSP-RTN   THRU   DSP-EX.
+003090     IF       W-ACT      =      3           GO  TO  INP-OKC.
+003100 INP-010.
+003110     ACCEPT   ACP-02.                                             運送業者
+003120     DISPLAY  DSP-MSG-SPACE  CLE-OKC.                             　コード
+003130     IF       ESTAT      =  "09"
+003140          IF  W-ACT      =   1              GO  TO  INP-EX
+003150          ELSE                              GO  TO  INP-000.
+003160     IF       ESTAT  NOT =  "01" AND "06"   GO  TO  INP-010.
+003170     DISPLAY  ACP-02.
+003180*
+003190     MOVE     2      TO    JCON2-01.                              運送業者
+003200     MOVE     W-02   TO    JCON2-02.                                    名
+003210*
+003220*****READ     JCON      INVALID   KEY                             D.921007
+003230     READ     JCON      WITH  UNLOCK    INVALID   KEY             I.921007
+003240              MOVE      MSG-02    TO    WD-MSG
+003250              DISPLAY DSP-MSG  DISP-BUZ-J   GO  TO  INP-010.
+003260*
+003270     MOVE     JCON2-03    TO    WD-01.
+003280     DISPLAY  DSP-02.
+003290 INP-020.                                                         発送日
+003300     ACCEPT   ACP-031.                                            　年
+003310     DISPLAY  DSP-MSG-SPACE.
+003320     IF       ESTAT      =  "09"            GO  TO  INP-010.
+003330     DISPLAY  ACP-031.
+003340     IF       W-031   =   0                                       システム
+003350              MOVE       WYY   TO   W-031                         　日付
+003360              MOVE       WMM   TO   W-032
+003370              MOVE       WDD   TO   W-033
+003380              DISPLAY    ACP-031
+003390              DISPLAY    DSP-032
+003400              DISPLAY    DSP-033
+003410              GO  TO   INP-050.
+003420 INP-030.
+003430     ACCEPT   ACP-032.                                            　月
+003440     IF       ESTAT      =  "09"            GO  TO  INP-020.
+003450     DISPLAY  ACP-032.
+003460 INP-040.
+003470     ACCEPT   ACP-033.                                            　日
+003480     DISPLAY  DSP-MSG-SPACE.
+003490     IF       ESTAT      =  "09"            GO  TO  INP-030.
+003500     IF       ESTAT  NOT =  "01" AND "06"   GO  TO  INP-040.
+003510     DISPLAY  ACP-033.
+003520*
+003530*
+003540     IF       (W-032 < 1)  OR  (W-032 > 12)
+003550          OR  (W-033 < 1)  OR  (W-033 > 31) GO  TO  INP-020.
+003560     DISPLAY  DSP-032.
+003570     DISPLAY  DSP-033.
+003580 INP-050.
+003590     ACCEPT   ACP-04.                                             倉コード
+003600     DISPLAY  DSP-MSG-SPACE.
+003610     IF       ESTAT      =  "09"            GO  TO  INP-020.
+003620     IF       ESTAT  NOT =  "01" AND "06"   GO  TO  INP-050.
+003630     DISPLAY  ACP-04.
+003640*
+003650     MOVE     3      TO    JCON3-01.                              倉庫　名
+003660     MOVE     W-04   TO    JCON3-02.
+003670*
+003680*****READ     JCON      INVALID   KEY                             D.921007
+003690     READ     JCON      WITH  UNLOCK    INVALID   KEY             I.921007
+003700              MOVE      MSG-03    TO    WD-MSG
+003710              DISPLAY DSP-MSG  DISP-BUZ-J   GO  TO  INP-050.
+003720*
+003730     MOVE     JCON3-03    TO    WD-02.
+003740     DISPLAY  DSP-04.
+003750 INP-060.
+003760     ACCEPT   ACP-05.                                             直送先
+003770     DISPLAY  DSP-MSG-SPACE.                                      　コード
+003780     IF       ESTAT      =  "09"            GO  TO  INP-050.
+003790     IF       ESTAT  NOT =  "01" AND "06"   GO  TO  INP-060.
+003800     DISPLAY  ACP-05.
+003810*
+003820     MOVE     W-05   TO    TC-KEY.                                直送先名
+003830*
+003840*****READ     TC-M      INVALID   KEY                             D.921007
+003850     READ     TC-M      WITH  UNLOCK    INVALID   KEY             I.921007
+003860              MOVE      MSG-04    TO    WD-MSG
+003870              DISPLAY DSP-MSG  DISP-BUZ-J   GO  TO  INP-060.
+003880*
+003890     MOVE     TC-NAME     TO    WD-03.
+003900     DISPLAY  DSP-05.
+003910 INP-070.
+003920     IF       W-ACT      =    1
+003930              DISPLAY    CLE-06.
+003940 INP-080.
+003950     ACCEPT   ACP-06.                                             配達日
+003960     DISPLAY  DSP-MSG-SPACE.
+003970     IF       ESTAT      =  "09"            GO  TO  INP-060.
+003980     IF       ESTAT  NOT =  "01" AND "06"   GO  TO  INP-080.
+003990 INP-090.
+004000     ACCEPT   ACP-07.                                             個数
+004010     DISPLAY  DSP-MSG-SPACE.
+004020     IF       ESTAT      =  "09"            GO  TO  INP-080.
+004030     IF       ESTAT  NOT =  "01" AND "06"   GO  TO  INP-090.
+004040     DISPLAY  DSP-07.
+004050*****IF       W-07       =  ZERO            GO  TO  INP-090.      D.070324
+004060 INP-095.                                                         I.960903
+004070     ACCEPT   ACP-11.                                             I.960903
+004080     DISPLAY  DSP-MSG-SPACE.                                      I.960903
+004090     IF       ESTAT      =  "09"            GO  TO  INP-090.      I.960903
+004100     IF       ESTAT  NOT =  "01" AND "06"   GO  TO  INP-095.      I.960903
+004110     DISPLAY  DSP-11.                                             I.960903
+004120     IF       W-02   NOT =  6                                     I.040629
+004130              MOVE  ZERO       TO  W-12                           I.040629
+004140              DISPLAY  DSP-12               GO  TO  INP-100.      I.040629
+004150 INP-097.                                                         I.040629
+004160     ACCEPT   ACP-12.                                             I.040629
+004170     DISPLAY  DSP-MSG-SPACE.                                      I.040629
+004180     IF       ESTAT      =  "09"            GO  TO  INP-095.      I.040629
+004190     IF       ESTAT  NOT =  "01" AND "06"   GO  TO  INP-097.      I.040629
+004200     DISPLAY  DSP-12.                                             I.040629
+004210     IF       W-12       =  ZERO            GO  TO  INP-097.      I.040629
+004220 INP-100.
+004230     ACCEPT   ACP-08.                                             印字
+004240     DISPLAY  DSP-MSG-SPACE.                                      　サイン
+004250*****IF       ESTAT      =  "09"            GO  TO  INP-090.      D.960903
+004260*****IF       ESTAT      =  "09"            GO  TO  INP-095.      D.040629
+004270     IF       ESTAT      =  "09"                                  I.040629
+004280              IF       W-02       =  6      GO  TO  INP-097       I.040629
+004290                                  ELSE      GO  TO  INP-095.      I.040629
+004300     IF       ESTAT  NOT =  "01" AND "06"   GO  TO  INP-100.
+004310     DISPLAY  ACP-08.
+004320     IF       W-08   NOT =   0  AND  1      GO  TO  INP-100.
+004330 INP-OKC.
+004340     DISPLAY  CLE-OKC.
+004350     ACCEPT   ACP-OKC.                                            確認
+004360     DISPLAY  DSP-MSG-SPACE.
+004370     IF       ESTAT      =  "09"
+004380              IF   W-ACT =   3              GO  TO  INP-000
+004390              ELSE                          GO  TO  INP-100.
+004400     IF       ESTAT  NOT =  "01" AND "06"   GO  TO  INP-OKC.
+004410     IF       W-OKC  NOT =   1   AND  9     GO  TO  INP-OKC.
+004420     IF       W-OKC  =  9   DISPLAY CAN-01  GO  TO  INP-999.
+004430     DISPLAY  OK-01.
+004440     PERFORM    WRD-RTN   THRU   WRD-EX.
+004450 INP-999.
+004460     INITIALIZE                 WORK-AREA.
+004470     DISPLAY  CLE-AREA.
+004480     MOVE     ZERO       TO     W-OKC.
+004490     IF       W-ACT   =   1                 GO  TO  INP-010
+004500     ELSE                                   GO  TO  INP-000.
+004510 INP-EX.
+004520     EXIT.
+004530*    * * * * * * * * * * * * * * * * * * * *
+004540*    * * * * * DSP-RTN * * 表示* * * * * * *
+004550*    * * * * * * * * * * * * * * * * * * * *
+004560 DSP-RTN.
+004570     MOVE     OKJF-02   TO    W-02.
+004580     MOVE     OKJF-03   TO    W-03.
+004590     MOVE     OKJF-04   TO    W-04.
+004600     MOVE     OKJF-05   TO    W-05.
+004610     MOVE     OKJF-06   TO    W-06.
+004620     MOVE     OKJF-07   TO    W-07.
+004630     MOVE     OKJF-08   TO    W-08.
+004640     MOVE     OKJF-11   TO    W-11.                               I.960903
+004650     MOVE     OKJF-12   TO    W-12.                               I.040629
+004660*
+004670     MOVE     2         TO    JCON2-01.
+004680     MOVE     OKJF-02   TO    JCON2-02.
+004690*****READ     JCON      INVALID   KEY                             D.921007
+004700     READ     JCON      WITH  UNLOCK     INVALID   KEY            I.921007
+004710              MOVE   ALL NX"2121"   TO   JCON2-03.
+004720     MOVE     JCON2-03  TO    WD-01.
+004730*
+004740     MOVE     3         TO    JCON3-01.
+004750     MOVE     OKJF-04   TO    JCON3-02.
+004760*****READ     JCON      INVALID   KEY                             D.921007
+004770     READ     JCON      WITH  UNLOCK     INVALID   KEY            I.921007
+004780              MOVE   ALL NX"2121"   TO   JCON3-03.
+004790     MOVE     JCON3-03  TO    WD-02.
+004800*
+004810     MOVE     OKJF-05   TO    TC-KEY.
+004820*****READ     TC-M      INVALID   KEY                             D.921007
+004830     READ     TC-M      WITH  UNLOCK     INVALID   KEY            I.921007
+004840              MOVE   ALL NX"2121"   TO   TC-NAME.
+004850     MOVE     TC-NAME   TO    WD-03.
+004860*
+004870*****DISPLAY  ACP-02  ACP-031  ACP-04  ACP-05  ACP-06  ACP-08.    D.960903
+004880     DISPLAY  ACP-02  ACP-031  ACP-04  ACP-05  ACP-06  ACP-08     I.960903
+004890              ACP-11  ACP-12.                                     I.040629
+004900*****                                                  ACP-11.    D.040629
+004910     DISPLAY  DSP-AREA.
+004920 DSP-EX.
+004930     EXIT.
+004940*    * * * * * * * * * * * * * * * * * * * *
+004950*     * * * *  WRD-RTN  *  更新 * * * * * *
+004960*    * * * * * * * * * * * * * * * * * * * *
+004970 WRD-RTN.
+004980     IF       W-ACT     =    2            GO  TO  WRD-000.
+004990     IF       W-ACT     =    3            GO  TO  WRD-111.
+005000     PERFORM    CNT-RTN    THRU    CNT-EX.
+005010*
+005020     MOVE     SPACE     TO    OKJF-R.
+005030     INITIALIZE               OKJF-R.
+005040*
+005050     MOVE     W-01      TO    OKJF-01.
+005060     MOVE     W-02      TO    OKJF-02.
+005070     MOVE     W-03      TO    OKJF-03.
+005080     MOVE     W-04      TO    OKJF-04.
+005090     MOVE     W-05      TO    OKJF-05.
+005100     MOVE     W-06      TO    OKJF-06.
+005110     MOVE     W-07      TO    OKJF-07.
+005120     MOVE     W-08      TO    OKJF-08.
+005130     MOVE     W-JS      TO    OKJF-09.
+005140     MOVE     1         TO    OKJF-10.
+005150     MOVE     W-11      TO    OKJF-11.                            I.960903
+005160     MOVE     W-12      TO    OKJF-12.                            I.040629
+005170*
+005180     WRITE    OKJF-R    INVALID    KEY
+005190              MOVE     "OKJF"     TO  ERR-F
+005200              MOVE     "W"        TO  ERR-M
+005210              MOVE     OKJF-KEY   TO  ERR-K
+005220              PERFORM  ERR-RTN  THRU  ERR-EX.
+005230     PERFORM  CBL-RTN   THRU  CBL-EX.
+005240     GO   TO  WRD-EX.
+005250 WRD-000.
+005260     MOVE     W-02      TO    OKJF-02.
+005270     MOVE     W-03      TO    OKJF-03.
+005280     MOVE     W-04      TO    OKJF-04.
+005290     MOVE     W-05      TO    OKJF-05.
+005300     MOVE     W-06      TO    OKJF-06.
+005310     MOVE     W-07      TO    OKJF-07.
+005320     MOVE     W-08      TO    OKJF-08.
+005330*****MOVE     W-JS      TO    OKJF-09.                            D.070501
+005340*****MOVE     1         TO    OKJF-10.                            D.070927
+005350     MOVE     W-11      TO    OKJF-11.                            I.960903
+005360     MOVE     W-12      TO    OKJF-12.                            I.040629
+005370*
+005380     REWRITE  OKJF-R    INVALID    KEY
+005390              MOVE     "OKJF"     TO  ERR-F
+005400              MOVE     "R"        TO  ERR-M
+005410              MOVE     OKJF-KEY   TO  ERR-K
+005420              PERFORM  ERR-RTN  THRU  ERR-EX.
+005430     GO   TO  WRD-EX.
+005440 WRD-111.
+005450     DELETE   OKJF      INVALID    KEY
+005460              MOVE     "OKJF"     TO  ERR-F
+005470              MOVE     "D"        TO  ERR-M
+005480              MOVE     OKJF-KEY   TO  ERR-K
+005490              PERFORM  ERR-RTN  THRU  ERR-EX.
+005500     PERFORM  CBL-RTN   THRU  CBL-EX.
+005510*
+005520 WRD-EX.
+005530     EXIT.
+005540 CNT-RTN.
+005550     MOVE     1        TO      JCON1-01.
+005560     MOVE     4        TO      JCON1-02.
+005570*
+005580     READ     JCON        INVALID     KEY
+005590              MOVE      MSG-01    TO    WD-MSG
+005600              DISPLAY   DSP-MSG
+005610                        DISP-BUZ-B
+005620              PERFORM   END-RTN   THRU  END-EX
+005630              STOP      RUN.
+005640*
+005650     IF       W-JS        =     0                                 教育
+005660         IF   JCON1-03    =     099999
+005670              MOVE      000001    TO    JCON1-03
+005680     ELSE
+005690              ADD       1         TO    JCON1-03.
+005700*
+005710     IF       W-JS        =     1                                 一般
+005720         IF   JCON1-04    =     199999
+005730              MOVE      100000    TO    JCON1-04
+005740     ELSE
+005750              ADD       1         TO    JCON1-04.
+005760*
+005770*****IF       W-JS        =     2                                 D.070411
+005780*****    IF   JCON1-05    =     299999                            D.070411
+005790*****         MOVE      200000    TO    JCON1-05                  D.070411
+005800*****ELSE                                                         D.070411
+005810*****         ADD       1         TO    JCON1-05.                 D.070411
+005820*
+005830     REWRITE  JCON1-R   INVALID    KEY
+005840              MOVE     "JCON"     TO  ERR-F
+005850              MOVE     "R"        TO  ERR-M
+005860              MOVE     JCON1-KEY  TO  ERR-K
+005870              PERFORM  ERR-RTN  THRU  ERR-EX.
+005880*
+005890     IF       W-JS        =     0
+005900              MOVE      JCON1-03  TO    W-01
+005910     ELSE
+005920              MOVE      JCON1-04  TO    W-01.                     I.070411
+005930*****         IF       W-JS        =     1                        D.070411
+005940*****                  MOVE      JCON1-04  TO    W-01             D.070411
+005950*****         ELSE     MOVE      JCON1-05  TO    W-01.            D.070411
+005960*****         MOVE      JCON1-04  TO    W-01.                     D.030707
+005970*
+005980 CNT-EX.
+005990     EXIT.
+006000**************************************************************************
+006010*    CBL-RTN            仮クローズ処理                                   *
+006020**************************************************************************
+006030 CBL-RTN.
+006040     CALL     "CBLTCLS"  USING  OKJF.
+006050 CBL-EX.
+006060     EXIT.
+006070*****
+006080     COPY     LPMSG.
+006090*******************    E N D    O F    P R O G R A M    ******************
+

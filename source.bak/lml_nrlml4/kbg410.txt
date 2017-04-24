@@ -1,0 +1,526 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. KBG410.
+000030*********************************************************
+000040*    PROGRAM         :  材料区分別　仕入・棚卸明細表    *
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :  ******                          *
+000070*        変更　　　  :  62/06/09                        *
+000080*    COMPILE TYPE    :  COBOL                           *
+000090*********************************************************
+000100 ENVIRONMENT DIVISION.
+000110 CONFIGURATION SECTION.
+000120 SOURCE-COMPUTER. SYSTEM3100.
+000130 OBJECT-COMPUTER. SYSTEM3100.
+000140 INPUT-OUTPUT SECTION.
+000150 FILE-CONTROL.
+000160     COPY LIBCSE.
+000170     SELECT J-M ASSIGN TO J-MSD
+000180         ORGANIZATION INDEXED
+000190         RECORD KEY J-KEY
+000200         ACCESS MODE RANDOM
+000210         FILE STATUS IS ERR-STAT.
+000220     SELECT JT-M ASSIGN TO JT-MSD
+000230         ORGANIZATION INDEXED
+000240         RECORD KEY JT-KEY
+000250         ACCESS MODE SEQUENTIAL
+000260         FILE STATUS IS ERR-STAT.
+000270     SELECT JSSR-F ASSIGN TO JSSR-MSD
+000280         FILE STATUS IS ERR-STAT.
+000290     SELECT SP-F ASSIGN TO P-PRN999.
+000300 I-O-CONTROL.
+000310     APPLY SHARED-MODE ON J-M
+000320     APPLY SHARED-MODE ON JT-M
+000330     APPLY SHARED-MODE ON M-DATE
+000340     APPLY SHIFT-CODE  ON SP-F.                                   A 62/06
+000350 DATA DIVISION.
+000360 FILE SECTION.
+000370     COPY LIBFDD.
+000380     COPY LIJM.
+000390     COPY LIJTM.
+000400     COPY LSPF.
+000410 FD  JSSR-F
+000420*****BLOCK  3 RECORDS                                             D.950418
+000430     BLOCK  5 RECORDS                                             I.950418
+000440     LABEL RECORD IS STANDARD
+000450     VALUE OF IDENTIFICATION "JSSRF".
+000460 01  JSSR-R.
+000470     02  JS-DC          PIC  9(002).
+000480*****02  F              PIC  X(010).                              D.970826
+000490     02  F              PIC  X(012).                              I.970826
+000500     02  JS-BC          PIC  9(001).
+000510     02  F              PIC  X(030).                              I.990518
+000520*****02  JS-SHZ         PIC S9(006).                              D.990531
+000530     02  JS-SHZ         PIC S9(007).                              I.990531
+000540     02  F              PIC  X(019).                              I.990518
+000550*****02  F              PIC  X(037).                              D.990518
+000560     02  JS-YC          PIC  9(001).
+000570     02  F              PIC  X(030).                              I.990531
+000580*****02  F              PIC  X(031).                              D.990531
+000590*****02  F              PIC  X(016).                              D.990518
+000600*****02  JS-SHZ         PIC S9(007).                              D.990518
+000610*****02  F              PIC  X(026).                              D.990518
+000620*****02  F              PIC  X(011).                              D.950418
+000630*****02  F              PIC  X(028).                              D.970826
+000640 WORKING-STORAGE SECTION.
+000650 01  HEAD1A.
+000660     02  W-20K          PIC  X(005) VALUE ""3FE04FE080"".
+000670     02  F              PIC  X(041) VALUE SPACE.
+000680     02  F              PIC  N(021) VALUE
+000690          NC"＊＊＊　　材料区分別　仕入明細表　　＊＊＊".
+000700     02  F              PIC  X(032) VALUE SPACE.
+000710     02  F              PIC  X(005) VALUE "DATE ".
+000720     02  HA-DATE        PIC 99B99B99.
+000730 01  HEAD1B.
+000740     02  F              PIC  X(005) VALUE ""3FE04FE080"".
+000750     02  F              PIC  X(014) VALUE SPACE.
+000760     02  F              PIC  N(021) VALUE
+000770          NC"＊＊＊　　材料区分別　棚卸明細表　　＊＊＊".
+000780     02  F              PIC  X(007) VALUE SPACE.
+000790     02  F              PIC  X(005) VALUE "DATE ".
+000800     02  HB-DATE        PIC 99B99B99.
+000810 01  HEAD1C.
+000820     02  F              PIC  X(005) VALUE ""3FE04FE080"".
+000830     02  F              PIC  X(042) VALUE SPACE.
+000840     02  F              PIC  N(022) VALUE
+000850          NC"＊＊＊　　原　材　料　　受　払　表　　＊＊＊".
+000860     02  F              PIC  X(034) VALUE SPACE.
+000870     02  F              PIC  X(005) VALUE "DATE ".
+000880     02  HC-DATE        PIC 99B99B99.
+000890 01  HEAD2A.
+000900     02  F              PIC  X(001) VALUE SPACE.
+000910     02  F              PIC  N(003) VALUE NC"部　門".
+000920     02  F              PIC  X(011) VALUE SPACE.
+000930     02  F              PIC  N(003) VALUE NC"原材料".
+000940     02  F              PIC  X(005) VALUE SPACE.
+000950     02  F              PIC  N(004) VALUE NC"補助材料".
+000960     02  F              PIC  X(005) VALUE SPACE.
+000970     02  F              PIC  N(004) VALUE NC"荷造材料".
+000980     02  F              PIC  X(005) VALUE SPACE.
+000990     02  F              PIC  N(004) VALUE NC"製品仕入".
+001000     02  F              PIC  X(003) VALUE SPACE.
+001010     02  F              PIC  N(005) VALUE NC"仕入品材料".
+001020     02  F              PIC  X(005) VALUE SPACE.
+001030*****02  F              PIC  N(004) VALUE NC"中国材料".           D.960417
+001040     02  F              PIC  N(004) VALUE NC"輸出材料".           I.960417
+001050     02  F              PIC  X(005) VALUE SPACE.
+001060     02  F              PIC  N(004) VALUE NC"小　　計".
+001070     02  F              PIC  X(005) VALUE SPACE.
+001080     02  F              PIC  N(004) VALUE NC"　消費税".
+001090     02  F              PIC  X(005) VALUE SPACE.
+001100     02  F              PIC  N(004) VALUE NC"合　　計".
+001110 01  HEAD2B.
+001120     02  F              PIC  X(001) VALUE SPACE.
+001130     02  F              PIC  N(003) VALUE NC"部　門".
+001140     02  F              PIC  X(011) VALUE SPACE.
+001150     02  F              PIC  N(003) VALUE NC"原材料".
+001160     02  F              PIC  X(005) VALUE SPACE.
+001170     02  F              PIC  N(004) VALUE NC"補助材料".
+001180     02  F              PIC  X(005) VALUE SPACE.
+001190     02  F              PIC  N(004) VALUE NC"荷造材料".
+001200*****02  F              PIC  X(005) VALUE SPACE.                  D.960417
+001210*****02  F              PIC  N(004) VALUE NC"中国材料".           D.960417
+001220     02  F              PIC  X(005) VALUE SPACE.
+001230     02  F              PIC  N(004) VALUE NC"合　　計".
+001240     02  F              PIC  X(005) VALUE SPACE.                  I.960417
+001250     02  F              PIC  N(004) VALUE NC"中国材料".           I.960417
+001260 01  HEAD2C.
+001270     02  F              PIC  X(007) VALUE SPACE.
+001280     02  F              PIC  X(013) VALUE "I------------".
+001290     02  F              PIC  N(008) VALUE NC"　　履　　物　　".
+001300     02  F              PIC  X(014) VALUE "------------I ".
+001310     02  F              PIC  X(012) VALUE "I-----------".
+001320     02  F              PIC  N(008) VALUE NC"　　工　　品　　".
+001330     02  F              PIC  X(020) VALUE "-----------I I------".
+001340     02  F              PIC  N(008) VALUE NC"　　素　　材　　".
+001350     02  F              PIC  X(007) VALUE "------I".
+001360 01  HEAD3C.
+001370     02  F              PIC  X(012) VALUE SPACE.
+001380     02  F              PIC  N(008) VALUE NC"原材料　補助材料".    
+001390     02  F              PIC  N(005) VALUE NC"　荷造材料".          
+001400     02  F              PIC  X(005) VALUE SPACE.
+001410     02  F              PIC  N(003) VALUE NC"合　計".
+001420     02  F              PIC  X(005) VALUE SPACE.
+001430     02  F              PIC  N(008) VALUE NC"原材料　補助材料".
+001440     02  F              PIC  X(001) VALUE SPACE.
+001450     02  F              PIC  N(004) VALUE NC"荷造材料".
+001460     02  F              PIC  X(005) VALUE SPACE.
+001470     02  F              PIC  N(003) VALUE NC"合　計".
+001480     02  F              PIC  X(005) VALUE SPACE.
+001490     02  F              PIC  N(003) VALUE NC"原材料".
+001500     02  F              PIC  X(001) VALUE SPACE.
+001510     02  F              PIC  N(004) VALUE NC"補助材料".
+001520     02  F              PIC  X(005) VALUE SPACE.
+001530     02  F              PIC  N(009) VALUE NC"合　計　総　合　計".
+001540 01  W-PA.
+001550     02  P-BMN          PIC  N(005).
+001560     02  F              PIC  X(001).
+001570     02  P-D     OCCURS   9  PIC -----,---,---.
+001580 01  W-PC.
+001590     02  P-15K          PIC  X(005).
+001600     02  P-KM           PIC  N(004).
+001610     02  P-HG           PIC ----,---,--9.
+001620     02  P-HH           PIC --,---,--9.
+001630     02  P-HN           PIC --,---,--9.
+001640     02  P-HT           PIC ---,---,--9.
+001650     02  P-KG           PIC ---,---,--9.
+001660     02  P-KH           PIC --,---,--9.
+001670     02  P-KN           PIC -----,--9.
+001680     02  P-KT           PIC ---,---,--9.
+001690     02  P-SG           PIC ---,---,--9.
+001700     02  P-SH           PIC -----,--9.
+001710     02  P-ST           PIC ---,---,--9.
+001720     02  P-GT           PIC ----,---,--9.
+001730     02  P-20K          PIC  X(005).
+001740 01  W-TOTAL.
+001750     02  W-HT.
+001760       03  W-HTA   OCCURS   9  PIC S9(009).
+001770       03  W-HTB   OCCURS   5  PIC S9(009).
+001780     02  W-KT.
+001790       03  W-KTA   OCCURS   9  PIC S9(009).
+001800       03  W-KTB   OCCURS   5  PIC S9(009).
+001810     02  W-ST.
+001820       03  W-STA   OCCURS   9  PIC S9(009).
+001830       03  W-STB   OCCURS   5  PIC S9(009).
+001840     02  W-AT.
+001850       03  W-ATA   OCCURS   9  PIC S9(009).
+001860       03  W-ATB   OCCURS   5  PIC S9(009).
+001870 01  W-BM.
+001880     02  W-BMD   OCCURS   4  PIC  N(005).
+001890 01  W-WM.
+001900     02  F              PIC  N(020) VALUE
+001910          NC"履　　物　工　　品　素　　材　合　　計　".
+001920 01  W-ZAIK             PIC S9(009).
+001930 01  W-UH.
+001940     02  W-ZKM.
+001950       03  W-ZK    OCCURS  12  PIC S9(009).
+001960     02  W-TSM.
+001970       03  W-TS    OCCURS  12  PIC S9(009).
+001980     02  W-YKM.
+001990       03  W-YK    OCCURS  12  PIC S9(009).
+002000     02  W-THM.
+002010       03  W-TH    OCCURS  12  PIC S9(009).
+002020     02  W-ADM.
+002030       03  W-AD    OCCURS  12  PIC S9(009).
+002040 01  CNT.
+002050     02  CNT1           PIC  9(002).
+002060     02  CNT2           PIC  9(002).
+002070 01  ERR-STAT           PIC  X(002).
+002080 01  W-15K              PIC  X(005) VALUE ""3FE04F40A0"".
+002090*01  W-20K              PIC  X(005) VALUE ""3FE04FE080"".         D.930902
+002100 SCREEN SECTION.
+002110 SD  C-CRT
+002120     END STATUS IS ESTAT.
+002130 01  C-CLEAR.
+002140     02  C-CL    LINE   1  CLEAR SCREEN.
+002150 01  C-MID.
+002160     02  LINE   3  COLUMN  10  PIC  N(023) VALUE
+002170          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002180     02  LINE   4  COLUMN  10  PIC  N(023) VALUE
+002190          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002200     02  LINE   5  COLUMN  10  PIC  N(023) VALUE
+002210          NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+002220     02  LINE   6  COLUMN  10  PIC  N(023) VALUE
+002230          NC"＊＊＊　　材料区分別仕入・棚卸明細表　　＊＊＊".
+002240     02  LINE   7  COLUMN  10  PIC  N(023) VALUE
+002250          NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+002260     02  LINE   8  COLUMN  10  PIC  N(023) VALUE
+002270          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002280     02  LINE   9  COLUMN  10  PIC  N(023) VALUE
+002290          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002300 01  C-ERR.
+002310     02  LINE  24.
+002320       03  E-ME1   COLUMN  15  PIC  X(015) VALUE
+002330            "***  JM ﾅｼ  ***".
+002340       03  E-KEY   COLUMN  40  PIC  9(006) FROM  JT-KEY.
+002350       03  E-ME98  COLUMN  75  PIC  X(005) VALUE ""27"J"05"".
+002360       03  E-ME99  COLUMN  75  PIC  X(005) VALUE ""27"B"05"".
+002370     COPY LIBSCR.
+002380 PROCEDURE DIVISION.
+002390 M-05.
+002400     COPY LIBCPR.
+002410     DISPLAY C-CLEAR.
+002420     OPEN INPUT J-M.
+002430     OPEN INPUT JT-M.
+002440     OPEN OUTPUT SP-F.
+002450     DISPLAY C-MID.
+002460     MOVE ZERO TO W-HT W-KT W-ST W-AT W-UH.
+002470     MOVE W-WM TO W-BM.
+002480     OPEN INPUT JSSR-F.
+002490 M-10.
+002500     READ JSSR-F AT END
+002510         CLOSE JSSR-F
+002520         GO TO M-15.
+002530     IF JS-SHZ = ZERO
+002540         GO TO M-10.
+002550     IF JS-DC = 30
+002560         GO TO M-10.
+002570     ADD JS-SHZ TO W-ATA(8) W-ATA(9).
+002580     GO TO M-10.
+002590 M-15.
+002600     READ JT-M NEXT RECORD WITH UNLOCK AT END
+002610         GO TO M-50.
+002620     IF JT-KEY = "999000"
+002630         GO TO M-15.
+002640     MOVE JT-KEY TO J-KEY.
+002650     READ J-M WITH UNLOCK INVALID KEY
+002660         DISPLAY E-ME1 E-KEY E-ME99
+002670         MOVE ZERO TO J-ST.
+002680     MOVE ZERO TO W-ZAIK.
+002690     IF JT-ZC = ZERO
+002700         COMPUTE W-ZAIK = (JT-ZKS + JT-SSU - JT-HSU) * J-ST.      I.990426
+002710*****    COMPUTE W-ZAIK = JT-ZSU * J-ST.                          D.990426
+002720     IF JT-YC = 4
+002730         MOVE ZERO TO W-ZAIK.
+002740     ADD JT-SIK TO W-ATA(7) W-ATA(9).
+002750*****IF JT-BC NOT = 1                                             D.960417
+002760*****    ADD W-ZAIK TO W-ATB(5).                                  D.960417
+002770     IF JT-BC NOT = 1 AND 5                                       I.960417
+002780         ADD W-ZAIK TO W-ATB(4).                                  I.960417
+002790*****IF JT-BC < 2                                                 D.960417
+002800     IF JT-BC < 2 OR = 5                                          I.960417
+002810         GO TO M-20.
+002820     IF JT-BC = 6
+002830         GO TO M-20.
+002840     IF JT-BC = 2
+002850         GO TO M-25.
+002860     IF JT-BC < 5
+002870         GO TO M-30.
+002880     IF JT-BC < 7
+002890         GO TO M-35.
+002900 M-20.
+002910     ADD JT-SIK TO W-HTA(7).
+002920     IF JT-ZC = ZERO
+002930*****    ADD W-ZAIK TO W-HTB(5).                                  D.960417
+002940         IF JT-BC NOT = 5                                         I.960417
+002950             ADD W-ZAIK TO W-HTB(4).                              I.960417
+002960     IF JT-BC = 6
+002970         ADD JT-SIK TO W-HTA(5) W-ATA(5)
+002980         GO TO M-40.
+002990     IF JT-BC = 1
+003000         ADD JT-SIK TO W-HTA(6) W-ATA(6)
+003010         GO TO M-40.
+003020     ADD JT-SIK TO W-HTA(JT-YC) W-ATA(JT-YC).
+003030     IF JT-YC = 4
+003040         GO TO M-40.
+003050     IF JT-ZC = ZERO
+003060         IF JT-BC = 5                                             I.960417
+003070             ADD W-ZAIK TO W-HTB(5)                               I.960417
+003080           ELSE                                                   I.960417
+003090             ADD W-ZAIK TO W-HTB(JT-YC) W-ATB(JT-YC).
+003100     GO TO M-40.
+003110 M-25.
+003120     ADD JT-SIK TO W-STA(7) W-STA(JT-YC) W-ATA(JT-YC).
+003130     IF JT-ZC = ZERO
+003140         ADD W-ZAIK TO W-STB(4) W-STB(JT-YC) W-ATB(JT-YC).        I.960417
+003150*****    ADD W-ZAIK TO W-STB(5) W-STB(JT-YC) W-ATB(JT-YC).        D.960417
+003160     GO TO M-40.
+003170 M-30.
+003180     ADD JT-SIK TO W-KTA(7) W-KTA(JT-YC) W-ATA(JT-YC).
+003190     IF JT-ZC = ZERO
+003200         ADD W-ZAIK TO W-KTB(4) W-KTB(JT-YC) W-ATB(JT-YC).        I.960417
+003210*****    ADD W-ZAIK TO W-KTB(5) W-KTB(JT-YC) W-ATB(JT-YC).        D.960417
+003220     GO TO M-40.
+003230 M-35.
+003240     IF JT-ZC = ZERO
+003250         IF JT-BC NOT = 5                                         I.960417
+003260             ADD W-ZAIK TO W-ATB(JT-YC).
+003270 M-40.
+003280*****IF JT-BC NOT = 0 AND 2 AND 3 AND 4                           D.960417
+003290     IF JT-BC NOT = 0 AND 2 AND 3 AND 4 AND 5                     I.960417
+003300         GO TO M-15.
+003310     IF JT-YC NOT = 1 AND 2 AND 3
+003320         GO TO M-15.
+003330     IF JT-BC NOT = 2
+003340         GO TO M-45.
+003350     IF JT-YC = 3
+003360         GO TO M-15.
+003370 M-45.
+003380     MOVE JT-YC TO CNT1.
+003390     MOVE 4 TO CNT2.
+003400     IF JT-BC = 2
+003410         ADD 8 TO CNT1
+003420         MOVE 11 TO CNT2.
+003430     IF JT-BC = 3 OR 4
+003440         ADD 4 TO CNT1
+003450         MOVE 8 TO CNT2.
+003460     ADD JT-SIK TO W-TS(CNT1) W-TS(CNT2) W-TS(12).
+003470     IF JT-ZC = ZERO
+003480         ADD JT-ZKK TO W-ZK(CNT1) W-ZK(CNT2) W-ZK(12)
+003490         ADD W-ZAIK TO W-YK(CNT1) W-YK(CNT2) W-YK(12).
+003500     GO TO M-15.
+003510 M-50.
+003520     MOVE ZERO TO CNT.
+003530 M-55.
+003540     ADD 1 TO CNT1.
+003550     IF CNT1 NOT = 13
+003560         COMPUTE W-TH(CNT1) = W-ZK(CNT1) + W-TS(CNT1) - W-YK(CNT1)
+003570         GO TO M-55.
+003580*
+003590     MOVE SPACE TO SP-R.
+003600     MOVE DATE-05R TO HA-DATE.
+003610     MOVE HEAD1A TO SP-R.
+003620     WRITE SP-R.
+003630     MOVE SPACE TO SP-R.
+003640     MOVE HEAD2A TO SP-R.
+003650     WRITE SP-R AFTER 2.
+003660     MOVE SPACE TO SP-R.
+003670     MOVE ZERO TO CNT.
+003680 M-60.
+003690     MOVE SPACE TO SP-R W-PA.
+003700     ADD 1 TO CNT1.
+003710     IF CNT1 = 5
+003720         GO TO M-65.
+003730     MOVE W-BMD(CNT1) TO P-BMN.
+003740     PERFORM S-05 THRU S-30.
+003750     MOVE W-PA TO SP-R.
+003760     WRITE SP-R AFTER 2.
+003770     GO TO M-60.
+003780 M-65.
+003790     MOVE SPACE TO SP-R.
+003800     MOVE DATE-05R TO HB-DATE.
+003810     MOVE HEAD1B TO SP-R.
+003820     WRITE SP-R AFTER 7.
+003830     MOVE SPACE TO SP-R.
+003840     MOVE HEAD2B TO SP-R.
+003850     WRITE SP-R AFTER 2.
+003860     MOVE SPACE TO SP-R.
+003870     MOVE ZERO TO CNT.
+003880 M-70.
+003890     MOVE SPACE TO SP-R W-PA.
+003900     ADD 1 TO CNT1.
+003910     IF CNT1 = 5
+003920         GO TO M-75.
+003930     MOVE W-BMD(CNT1) TO P-BMN.
+003940     PERFORM S-35 THRU S-60.
+003950     MOVE W-PA TO SP-R.
+003960     WRITE SP-R AFTER 2.
+003970     GO TO M-70.
+003980 M-75.
+003990     MOVE SPACE TO SP-R.
+004000     MOVE DATE-05R TO HC-DATE.
+004010     MOVE HEAD1C TO SP-R.
+004020     WRITE SP-R AFTER 7.
+004030     MOVE SPACE TO SP-R.
+004040     MOVE HEAD2C TO SP-R.
+004050     WRITE SP-R AFTER 2.
+004060     MOVE SPACE TO SP-R.
+004070     MOVE HEAD3C TO SP-R.
+004080     WRITE SP-R.
+004090     MOVE SPACE TO SP-R.
+004100     MOVE ZERO TO CNT.
+004110 M-80.
+004120     ADD 1 TO CNT1.
+004130     IF CNT1 = 5
+004140         GO TO M-95.
+004150     PERFORM S-65 THRU S-70.
+004160     GO TO M-80.
+004170 M-95.
+004180     CLOSE J-M.
+004190     CLOSE JT-M.
+004200     CLOSE SP-F.
+004210     DISPLAY C-CLEAR.
+004220     STOP RUN.
+004230 S-05.
+004240     MOVE ZERO TO CNT2.
+004250     IF CNT1 = 1
+004260         GO TO S-10.
+004270     IF CNT1 = 2
+004280         GO TO S-15.
+004290     IF CNT1 = 3
+004300         GO TO S-20.
+004310     IF CNT1 = 4
+004320         GO TO S-25.
+004330 S-10.
+004340     ADD 1 TO CNT2.
+004350     IF CNT2 = 10
+004360         GO TO S-30.
+004370     MOVE W-HTA(CNT2) TO P-D(CNT2).
+004380     GO TO S-10.
+004390 S-15.
+004400     ADD 1 TO CNT2.
+004410     IF CNT2 = 10
+004420         GO TO S-30.
+004430     MOVE W-KTA(CNT2) TO P-D(CNT2).
+004440     GO TO S-15.
+004450 S-20.
+004460     ADD 1 TO CNT2.
+004470     IF CNT2 = 10
+004480         GO TO S-30.
+004490     MOVE W-STA(CNT2) TO P-D(CNT2).
+004500     GO TO S-20.
+004510 S-25.
+004520     ADD 1 TO CNT2.
+004530     IF CNT2 NOT = 10
+004540         MOVE W-ATA(CNT2) TO P-D(CNT2)
+004550         GO TO S-25.
+004560 S-30.
+004570     EXIT.
+004580 S-35.
+004590     MOVE ZERO TO CNT2.
+004600     IF CNT1 = 1
+004610         GO TO S-40.
+004620     IF CNT1 = 2
+004630         GO TO S-45.
+004640     IF CNT1 = 3
+004650         GO TO S-50.
+004660     IF CNT1 = 4
+004670         GO TO S-55.
+004680 S-40.
+004690     ADD 1 TO CNT2.
+004700     IF CNT2 = 6
+004710         GO TO S-60.
+004720     MOVE W-HTB(CNT2) TO P-D(CNT2).
+004730     GO TO S-40.
+004740 S-45.
+004750     ADD 1 TO CNT2.
+004760     IF CNT2 = 6
+004770         GO TO S-60.
+004780     MOVE W-KTB(CNT2) TO P-D(CNT2).
+004790     GO TO S-45.
+004800 S-50.
+004810     ADD 1 TO CNT2.
+004820     IF CNT2 = 6
+004830         GO TO S-60.
+004840     MOVE W-STB(CNT2) TO P-D(CNT2).
+004850     GO TO S-50.
+004860 S-55.
+004870     ADD 1 TO CNT2.
+004880     IF CNT2 NOT = 6
+004890         MOVE W-ATB(CNT2) TO P-D(CNT2)
+004900         GO TO S-55.
+004910 S-60.
+004920     EXIT.
+004930 S-65.
+004940     MOVE SPACE TO W-PC.
+004950     MOVE W-15K TO P-15K.
+004960     IF CNT1 = 1
+004970         MOVE NC"前月繰越" TO P-KM
+004980         MOVE W-ZKM TO W-ADM.
+004990     IF CNT1 = 2
+005000         MOVE NC"当月仕入" TO P-KM
+005010         MOVE W-TSM TO W-ADM.
+005020     IF CNT1 = 3
+005030         MOVE NC"現在残高" TO P-KM
+005040         MOVE W-YKM TO W-ADM.
+005050     IF CNT1 = 4
+005060         MOVE NC"当月払出" TO P-KM
+005070         MOVE W-THM TO W-ADM.
+005080     MOVE W-AD(01) TO P-HG.
+005090     MOVE W-AD(02) TO P-HH.
+005100     MOVE W-AD(03) TO P-HN.
+005110     MOVE W-AD(04) TO P-HT.
+005120     MOVE W-AD(05) TO P-KG.
+005130     MOVE W-AD(06) TO P-KH.
+005140     MOVE W-AD(07) TO P-KN.
+005150     MOVE W-AD(08) TO P-KT.
+005160     MOVE W-AD(09) TO P-SG.
+005170     MOVE W-AD(10) TO P-SH.
+005180     MOVE W-AD(11) TO P-ST.
+005190     MOVE W-AD(12) TO P-GT.
+005200     MOVE W-20K TO P-20K.
+005210     MOVE SPACE TO SP-R.
+005220     MOVE W-PC TO SP-R.
+005230     WRITE SP-R AFTER 2.
+005240     MOVE SPACE TO SP-R.
+005250 S-70.
+005260     EXIT.

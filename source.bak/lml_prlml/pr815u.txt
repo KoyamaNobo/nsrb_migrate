@@ -1,0 +1,124 @@
+000010 IDENTIFICATION      DIVISION.
+000020 PROGRAM-ID.         PR815U.
+000030*
+000040 ENVIRONMENT         DIVISION.
+000050 CONFIGURATION       SECTION.
+000060 SOURCE-COMPUTER.    SYSTEM100.
+000070 OBJECT-COMPUTER.    SYSTEM100.
+000080 INPUT-OUTPUT        SECTION.
+000090 FILE-CONTROL.
+000100*
+000110     SELECT  HH-F    ASSIGN    TO  F1-MSD
+000120                     ORGANIZATION  INDEXED
+000130                     ACCESS  MODE  DYNAMIC
+000140                     RECORD   KEY  HH-KEY
+000150                     FILE  STATUS  IS  ERR-STAT.
+000160*
+000170     SELECT  FCTL-F  ASSIGN    TO  FCTL-MSD
+000180                     ORGANIZATION  INDEXED
+000190                     ACCESS  MODE  RANDOM
+000200                     RECORD   KEY  FCTL-KEY
+000210                     FILE  STATUS  IS  ERR-STAT.
+000220 I-O-CONTROL.
+000230     APPLY   EXCLUSIVE-MODE   ON   HH-F
+000240     APPLY   SHARED-MODE      ON   FCTL-F.
+000250 DATA                DIVISION.
+000260 FILE                SECTION.
+000270*
+000280     COPY    KEIHI.
+000290     COPY    FCTL.
+000300**********************************
+000310 WORKING-STORAGE     SECTION.
+000320**********************************
+000330 77  ERR-STAT        PIC  X(02).
+000340 01  SOEJI.
+000350     02  I           PIC  9(02).
+000360     02  SOE         PIC  9(02).
+000370*****
+000380 COPY  LWMSG.
+000390**********************************
+000400 SCREEN          SECTION.
+000410**********************************
+000420 SD  SCR-D
+000430     END STATUS  IS    ESTAT.
+000440 COPY  LSMSG.
+000450**********************************
+000460 PROCEDURE           DIVISION.
+000470**********************************
+000480 ST.
+000490*
+000500     PERFORM  INI-RTN     THRU     INI-EX.
+000510*
+000520     OPEN  I-O    HH-F.
+000530*
+000540     PERFORM  UPD-RTN     THRU     UPD-EX.
+000550*
+000560     PERFORM  CLSE-ENT    THRU     CLSE-EXT.
+000570 ED.
+000580     STOP     RUN.
+000590**********************************
+000600*    初期　処理                  *
+000610**********************************
+000620 INI-RTN.
+000630     OPEN INPUT FCTL-F.
+000640     MOVE   "DATE  "      TO  FCTL-KEY1.
+000650     READ   FCTL-F   UNLOCK   INVALID
+000660            MOVE     255      TO    COMPLETION-CODE
+000670            DISPLAY  INV-CON  DISP-BUZ-B
+000680            CLOSE FCTL-F
+000690            STOP     RUN.
+000700     MOVE FCTL-REC1     TO Z-R.
+000710     CLOSE FCTL-F.
+000720 INI-EX.
+000730     EXIT.
+000740**********************************
+000750*    更新　処理                  *
+000760**********************************
+000770 UPD-RTN.
+000780     READ   HH-F     NEXT AT  END
+000790            GO  TO   UPD-EX.
+000800     MOVE   HH-KEY        TO  ERR-K.
+000810*
+000820     PERFORM  ZERO-RTN    THRU     ZERO-EX
+000830              VARYING     I   FROM  1  BY  1
+000840              UNTIL       I   >    12.
+000850*
+000860     MOVE 13     TO I.
+000870 UPD-000.
+000880     COMPUTE SOE = Z-KSMM + ( I - 12 ).
+000890     IF SOE > 12
+000900        COMPUTE SOE = SOE - 12.
+000910     MOVE HH-GEL(I)     TO HH-GEL(SOE).
+000920     INITIALIZE  HH-GEL(I).                                       I.990702
+000930*****MOVE HH-YOS(I)     TO HH-YOS(SOE).                           D.990702
+000940*****INITIALIZE  HH-GEL(I) HH-YOS(I).                             D.990702
+000950     IF I NOT = 15
+000960        ADD  1     TO I
+000970        GO TO UPD-000.
+000980*
+000990     REWRITE   HH-R       INVALID
+001000               MOVE  "HH-F"    TO   ERR-F
+001010               MOVE  "R"       TO   ERR-M
+001020               PERFORM  ERR-ENT     THRU     ERR-EXT.
+001030     GO TO UPD-RTN.
+001040 UPD-EX.
+001050     EXIT.
+001060**********************************
+001070*    終了　処理                  *
+001080**********************************
+001090 CLSE-ENT.
+001100     CLOSE  HH-F.
+001110 CLSE-EXT.
+001120     EXIT.
+001130**
+001140**********************************
+001150*    当期実績　クリア            *
+001160**********************************
+001170 ZERO-RTN.
+001180     INITIALIZE  HH-GEL(I).                                       I.990702
+001190*****INITIALIZE  HH-GEL(I)  HH-YOS(I).                            D.990702
+001200 ZERO-EX.
+001210     EXIT.
+001220*****
+001230 COPY  LPMSG.
+001240*****

@@ -1,0 +1,107 @@
+000010 IDENTIFICATION   DIVISION.
+000020 PROGRAM-ID. HMG375.
+000030*********************************************************
+000040*    PROGRAM         :  出荷値引累積Ｗ　単価区分セット  *
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :  ******                          *
+000070*    COMPILE TYPE    :  COBOL                           *
+000080*********************************************************
+000090 ENVIRONMENT DIVISION.
+000100 CONFIGURATION SECTION.
+000110 SOURCE-COMPUTER. SYSTEM3100.
+000120 OBJECT-COMPUTER. SYSTEM3100.
+000130 INPUT-OUTPUT SECTION.
+000140 FILE-CONTROL.
+000150     SELECT SNTRF ASSIGN TO SNTR-MSD
+000160         FILE STATUS IS ERR-STAT.
+000170     SELECT HI-M ASSIGN TO HI1-MSD HI2-MSD
+000180         ORGANIZATION IS INDEXED
+000190         ACCESS MODE IS RANDOM
+000200         RECORD KEY IS HI-KEY
+000210         ALTERNATE RECORD KEY IS HI-KEY2
+000220         FILE STATUS IS ERR-STAT.
+000230 I-O-CONTROL.
+000240     APPLY SHARED-MODE ON HI-M.
+000250 DATA DIVISION.
+000260 FILE SECTION.
+000270     COPY LIHIM.
+000280     COPY LSSNTW.
+000290 WORKING-STORAGE  SECTION.
+000300 77  WK0064ID           PIC  X(009) VALUE SPACE.
+000310 01  STN-NO.
+000320     02  STN-NO1        PIC  X(003).
+000330     02  STN-NO2        PIC  X(003).
+000340 01  W-FID.
+000350     02  W-FID1         PIC  X(006) VALUE "WK0064".
+000360     02  W-FID2         PIC  X(003).
+000370 01  W-DATA.
+000380     02  W-DMM          PIC  9(001).
+000390 01  ERR-STAT           PIC  X(002).
+000400 SCREEN SECTION.
+000410 SD  C-CRT
+000420     END STATUS IS ESTAT.
+000430 01  C-CLEAR.
+000440     02  C-CL    LINE   1  CLEAR  SCREEN.
+000450 01  C-MID.
+000460     02  LINE   3  COLUMN  10  PIC  N(023) VALUE
+000470          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+000480     02  LINE   4  COLUMN  10  PIC  N(023) VALUE
+000490          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+000500     02  LINE   5  COLUMN  10  PIC  N(023) VALUE
+000510          NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+000520     02  LINE   6  COLUMN  10  PIC  N(023) VALUE
+000530          NC"＊＊＊　　出荷値引Ｗ　単価区分セット　　＊＊＊".
+000540     02  LINE   7  COLUMN  10  PIC  N(023) VALUE
+000550          NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+000560     02  LINE   8  COLUMN  10  PIC  N(023) VALUE
+000570          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+000580     02  LINE   9  COLUMN  10  PIC  N(023) VALUE
+000590          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+000600 01  C-ERR.
+000610     02  LINE  24.
+000620       03  E-ME98  COLUMN  75  PIC  X(005) VALUE ""27"J"05"".
+000630       03  E-ME99  COLUMN  75  PIC  X(005) VALUE ""27"B"05"".
+000640       03  E-STAT  COLUMN  10  PIC  X(002) FROM  ERR-STAT.
+000650       03  E-CL    COLUMN  10  PIC  X(050) VALUE
+000660            "                                                  ".
+000670 PROCEDURE DIVISION.
+000680 M-05.
+000690     DISPLAY C-CLEAR.
+000700     DISPLAY C-MID.
+000710     CALL "CBLSTNNO" USING STN-NO.
+000720     MOVE STN-NO2 TO W-FID2.
+000730     MOVE W-FID TO WK0064ID.
+000740     OPEN I-O SNTRF.
+000750     OPEN INPUT HI-M.
+000760 M-15.
+000770     READ SNTRF AT END
+000780         GO TO M-90.
+000790*****IF SNTR-BC3 = 20                                             D.090527
+000800*****    GO TO M-20.                                              D.090527
+000810*****IF SNTR-BC3 NOT = 10                                         D.090527
+000820*****    GO TO M-15.                                              D.090527
+000830     MOVE SNTR-HCD TO HI-KEY.
+000840     READ HI-M WITH UNLOCK INVALID KEY
+000850         MOVE ZERO TO HI-R.                                       I.090527
+000860*****    MOVE ZERO TO HI-FT.                                      D.090527
+000870     IF SNTR-BC3 = 20                                             I.090527
+000880         GO TO M-20.                                              I.090527
+000890     IF SNTR-BC3 = 30                                             I.090527
+000900         GO TO M-25.
+000910     IF HI-FT > 2000
+000920         MOVE 2 TO SNTR-FTC
+000930       ELSE
+000940         MOVE 1 TO SNTR-FTC.
+000950 M-20.
+000960     MOVE ZERO TO SNTR-BC1.
+000970 M-25.
+000980     MOVE HI-BMC TO SNTR-BMC.                                     I.090527
+000990     MOVE HI-BMNO TO SNTR-BMNO.                                   I.090527
+001000     REWRITE SNTR-R.
+001010     GO TO M-15.
+001020 M-90.
+001030     CLOSE SNTRF.
+001040     CLOSE HI-M.
+001050 M-95.
+001060     DISPLAY C-CLEAR.
+001070     STOP RUN.

@@ -1,0 +1,918 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. JTN65U.
+000030*********************************************************
+000040*    PROGRAM         :  生協用週受払ワーク作成          *
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :  ******                          *
+000070*    COMPILE TYPE    :  COBOL                           *
+000080*********************************************************
+000090 ENVIRONMENT DIVISION.
+000100 CONFIGURATION SECTION.
+000110 SOURCE-COMPUTER. SYSTEM3100.
+000120 OBJECT-COMPUTER. SYSTEM3100.
+000130 INPUT-OUTPUT SECTION.
+000140 FILE-CONTROL.
+000150     COPY LIBCSE.
+000160     SELECT HI-M ASSIGN TO HIM-RDB
+000170         ORGANIZATION INDEXED
+000180         ACCESS MODE DYNAMIC
+000190         RECORD KEY HI-KEY
+000200         ALTERNATE RECORD KEY HI-KEY2
+000210         FILE STATUS ERR-STAT.
+000220     SELECT CALNM ASSIGN TO CALNF-RDB
+000230         ORGANIZATION INDEXED
+000240         ACCESS MODE DYNAMIC
+000250         RECORD KEY CL-KEY
+000260         FILE STATUS ERR-STAT.
+000270     SELECT JCON ASSIGN TO JCON-MSD
+000280         ORGANIZATION INDEXED
+000290         ACCESS MODE DYNAMIC
+000300         RECORD KEY JCON1-KEY
+000310         FILE STATUS ERR-STAT.
+000320     SELECT NJZAI ASSIGN TO NJZAI-MSD
+000330         ORGANIZATION INDEXED
+000340         ACCESS MODE DYNAMIC
+000350         RECORD KEY NJZAI-KEY
+000360         FILE STATUS ERR-STAT.
+000370     SELECT JNSR ASSIGN TO JNSR1-MSD JNSR2-MSD JNSR3-MSD
+000380         ORGANIZATION IS INDEXED
+000390         ACCESS MODE IS DYNAMIC
+000400         RECORD KEY IS JNSR-KEY1
+000410         ALTERNATE RECORD KEY IS JNSR-KEY2
+000420         ALTERNATE RECORD KEY IS JNSR-KEY3
+000430         FILE STATUS IS ERR-STAT.
+000440     SELECT GSYF ASSIGN TO GSY-RDB                                I.040616
+000450         ORGANIZATION INDEXED                                     I.040616
+000460         ACCESS MODE DYNAMIC                                      I.040616
+000470         RECORD KEY GSY-KEY                                       I.040616
+000480         FILE STATUS ERR-STAT.                                    I.040616
+000490     SELECT JNSRW ASSIGN TO JNSRW-MSD.
+000500     SELECT HSHF ASSIGN TO HSH-MSD.
+000510     SELECT SKUH-F ASSIGN TO SKUHC-MSD.
+000520     SELECT NGPW ASSIGN TO NGPW-MSD.
+000530 I-O-CONTROL.
+000540     APPLY SHARED-MODE ON M-DATE
+000550     APPLY SHARED-MODE ON HI-M
+000560     APPLY SHARED-MODE ON CALNM
+000570     APPLY SHARED-MODE ON JCON
+000580     APPLY SHARED-MODE ON NJZAI
+000590     APPLY SHARED-MODE ON JNSR.
+000600 DATA DIVISION.
+000610 FILE SECTION.
+000620     COPY LIBFDD.
+000630     COPY LRHIM.
+000640     COPY LRCAL.
+000650     COPY L-JCON.
+000660     COPY LNJZAI.
+000670     COPY L-JNSR.
+000680     COPY LIGSYF.                                                 I.040614
+000690     COPY LSHSHF.
+000700 FD  JNSRW
+000710     BLOCK    1     RECORDS
+000720     LABEL    RECORD   STANDARD
+000730     VALUE     OF  IDENTIFICATION  WK0256ID.
+000740 01  JNSRW-R.
+000750     02  JNSRW-KEY1.                                              KEY1
+000760       03  JNSRW-01     PIC  9(06)  COMP-3.                       品名ｺｰﾄﾞ
+000770       03  JNSRW-02     PIC  9(08)  COMP-3.
+000780       03  JNSRW-03     PIC  9(02).                               入出力区
+000790       03  JNSRW-04     PIC  9(06)  COMP-3.                       伝票№
+000800       03  JNSRW-05     PIC  9(01).                               行
+000810     02  JNSRW-06       PIC  9(01).                               倉ｺｰﾄﾞ
+000820     02  JNSRW-07       PIC  9(01).                               サイズ
+000830     02  JNSRW-08.                                                入出庫数
+000840       03  JNSRW-081    PIC S9(04)  COMP-3    OCCURS  10.
+000850     02  JNSRW-09       PIC  9(01).                               生産区分
+000860     02  JNSRW-10       PIC  9(01).                               出荷伝区
+000870     02  JNSRW-11.
+000880       03  JNSRW-111    PIC  9(04).                               得意先C
+000890       03  JNSRW-112    PIC  9(03).                               直送NO
+000900     02  JNSRW-12       PIC  9(06)  COMP-3.                       送り状№
+000910     02  JNSRW-13       PIC  9(01).                               預り区分
+000920     02  JNSRW-14       PIC  9(01).                               運送C
+000930     02  JNSRW-KEY2.
+000940       03  JNSRW-15.                                              受注
+000950         04  JNSRW-151  PIC  9(06)  COMP-3.                       　受注№
+000960         04  JNSRW-152  PIC  9(01).                               　行№
+000970       03  JNSRW-16     PIC  9(08)  COMP-3.
+000980       03  JNSRW-17     PIC  9(01).                               ﾚｺｰﾄﾞKBN
+000990       03  JNSRW-18.                                              伝票
+001000         04  JNSRW-181  PIC  9(06)  COMP-3.                       　伝票№
+001010         04  JNSRW-182  PIC  9(01).                               　行№
+001020     02  JNSRW-KEY3.
+001030       03  JNSRW-19     PIC  9(04).                               得意先C
+001040       03  JNSRW-20     PIC  9(08)  COMP-3.
+001050       03  JNSRW-21     PIC  9(01).                               レコー区
+001060       03  JNSRW-22.                                              伝票№
+001070         04  JNSRW-221  PIC  9(06)  COMP-3.                       出荷指№
+001080         04  JNSRW-222  PIC  9(01).                               　行№
+001090     02  JNSRW-23       PIC  N(09).                               配達
+001100     02  JNSRW-24       PIC  N(23).                               摘要
+001110     02  JNSRW-81       PIC  9(08)  COMP-3.
+001120     02  JNSRW-82       PIC  9(03).
+001130     02  JNSRW-90       PIC  9(01).                               入力部署
+001140     02  JNSRW-91       PIC  9(01).                               繰越区分
+001150     02  JNSRW-92       PIC  9(02).                               処理月
+001160     02  F              PIC  X(86).
+001170 FD  SKUH-F
+001180     BLOCK  2 RECORDS
+001190     LABEL RECORD IS STANDARD
+001200     VALUE OF IDENTIFICATION WK0128ID.
+001210 01  SKUH-R.
+001220     02  SKUH-DATE      PIC  9(008).
+001230     02  SKUH-HCD       PIC  9(006).
+001240     02  SKUH-SIZ       PIC  9(001).
+001250     02  SKUH-KBN       PIC  9(001).
+001260     02  SKUH-ASU.
+001270       03  SKUH-SUD  OCCURS  10.
+001280         04  SKUH-SU    PIC S9(005).
+001290     02  SKUH-TCD       PIC  9(004).                              I.041111
+001300     02  F              PIC  X(058).                              I.041111
+001310*****02  F              PIC  X(062).                              D.041111
+001320 FD  NGPW
+001330     BLOCK  4 RECORDS
+001340     LABEL RECORD IS STANDARD
+001350     VALUE OF IDENTIFICATION WK0064ID.
+001360 01  NGPW-R.
+001370     02  NGPW-SNGP      PIC  9(008).
+001380     02  NGPW-ENGP      PIC  9(008).
+001390     02  F              PIC  X(048).
+001400 WORKING-STORAGE SECTION.
+001410 77  W-ME               PIC  X(040).
+001420 77  WK0768ID           PIC  X(009) VALUE SPACE.
+001430 77  WK0256ID           PIC  X(009) VALUE SPACE.
+001440 77  WK0128ID           PIC  X(009) VALUE SPACE.
+001450 77  WK0064ID           PIC  X(009) VALUE SPACE.
+001460 01  STN-NO.
+001470     02  STN-NO1        PIC  X(003).
+001480     02  STN-NO2        PIC  X(003).
+001490 01  W-FID1.
+001500     02  W-FID11        PIC  X(006) VALUE "WK0128".
+001510     02  W-FID12        PIC  X(003).
+001520 01  W-FID2.
+001530     02  W-FID21        PIC  X(006) VALUE "WK0256".
+001540     02  W-FID22        PIC  X(003).
+001550 01  W-FID3.
+001560     02  W-FID31        PIC  X(006) VALUE "WK0064".
+001570     02  W-FID32        PIC  X(003).
+001580 01  W-FID4.
+001590     02  W-FID41        PIC  X(006) VALUE "WK0768".
+001600     02  W-FID42        PIC  X(003).
+001610 01  W-DATA.
+001620     02  W-SYSD         PIC  9(008).
+001630     02  W-YMD          PIC  9(008).
+001640     02  W-YMDD  REDEFINES W-YMD.
+001650       03  W-YM         PIC  9(006).
+001660       03  F            PIC  9(002).
+001670     02  W-SSD          PIC  9(008).
+001680     02  W-ESD          PIC  9(008).
+001690     02  W-NGP.
+001700       03  W-NG.
+001710         04  W-NEN      PIC  9(004).
+001720         04  W-NENL  REDEFINES W-NEN.
+001730           05  W-NEN1   PIC  9(002).
+001740           05  W-NEN2   PIC  9(002).
+001750         04  W-GET      PIC  9(002).
+001760       03  W-PEY        PIC  9(002).
+001770     02  W-NGPL  REDEFINES W-NGP.
+001780       03  F            PIC  9(002).
+001790       03  W-NGPS       PIC  9(006).
+001800     02  W-SED.
+001810       03  W-SHCD       PIC  9(006).
+001820       03  W-EHCD       PIC  9(006).
+001830       03  W-SYMD       PIC  9(008).
+001840       03  W-SYMDD REDEFINES W-SYMD.
+001850         04  F          PIC  9(002).
+001860         04  W-SY       PIC  9(002).
+001870         04  W-SM       PIC  9(002).
+001880         04  W-SD       PIC  9(002).
+001890       03  W-EYMD       PIC  9(008).
+001900       03  W-EYMDD REDEFINES W-EYMD.
+001910         04  F          PIC  9(002).
+001920         04  W-EY       PIC  9(002).
+001930         04  W-EM       PIC  9(002).
+001940         04  W-ED       PIC  9(002).
+001950     02  W-DMM          PIC  9(001).
+001960     02  W-ANGP.
+001970       03  W-NGPD  OCCURS  40.
+001980         04  W-SNGP     PIC  9(008).
+001990         04  W-ENGP     PIC  9(008).
+002000     02  W-C            PIC  9(002).
+002010     02  CNT            PIC  9(002).
+002020     02  CNTC           PIC  9(002).
+002030     02  CHK            PIC  9(001).
+002040     02  W-SC           PIC  9(001).
+002050     02  W-RC           PIC  9(001).
+002060     02  W-EC           PIC  9(001).
+002070     02  W-AZSU.
+002080       03  W-ZSUD   OCCURS 10.
+002090         04  W-ZSU      PIC S9(005).
+002100     02  W-ASU.
+002110       03  W-SUD   OCCURS 10.
+002120         04  W-SU       PIC S9(005).
+002130     02  W-HCD          PIC  9(006).
+002140     02  W-MNGP         PIC  9(008).                              I.040616
+002150 01  ERR-STAT           PIC  X(002).
+002160     COPY LSTAT.
+002170 SCREEN  SECTION.
+002180 SD  C-CRT
+002190     END STATUS IS ESTAT.
+002200 01  C-CLEAR.
+002210     02  C-CL    LINE   1  CLEAR SCREEN.
+002220 01  C-MID.
+002230     02  LINE   3  COLUMN  12  PIC  N(021) VALUE
+002240          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002250     02  LINE   4  COLUMN  12  PIC  N(021) VALUE
+002260          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002270     02  LINE   5  COLUMN  12  PIC  N(021) VALUE
+002280          NC"＊＊＊　　　　　　　　　　　　　　　＊＊＊".
+002290     02  LINE   6  COLUMN  12  PIC  N(021) VALUE
+002300          NC"＊＊＊　　生協用週受払ワーク作成　　＊＊＊".
+002310     02  LINE   7  COLUMN  12  PIC  N(021) VALUE
+002320          NC"＊＊＊　　　　　　　　　　　　　　　＊＊＊".
+002330     02  LINE   8  COLUMN  12  PIC  N(021) VALUE
+002340          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002350     02  LINE   9  COLUMN  12  PIC  N(021) VALUE
+002360          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002370     02  LINE  14  COLUMN  16  PIC  X(026) VALUE
+002380          "品名ｺｰﾄﾞ  000000 ～ 999999".
+002390     02  LINE  16  COLUMN  18  PIC  X(030) VALUE
+002400          "'00年00月00日 ～ '99年99月99日".
+002410     02  LINE  22  COLUMN  24  PIC  X(022) VALUE
+002420          "確認  OK=1 NO=9   ﾘﾀｰﾝ".
+002430 01  C-ACP.
+002440     02  LINE  14.
+002450       03  A-SHCD  COLUMN  26  PIC  9(006)
+002460            USING W-SHCD  CHECK OVERFLOW NO IFC.
+002470       03  A-EHCD  COLUMN  36  PIC  9(006)
+002480            USING W-EHCD  CHECK OVERFLOW NO IFC.
+002490     02  LINE  16.
+002500       03  A-SY    COLUMN  19  PIC  9(002)
+002510            USING W-SY    CHECK OVERFLOW NO IFC.
+002520       03  A-SM    COLUMN  23  PIC  9(002)
+002530            USING W-SM    CHECK OVERFLOW NO IFC.
+002540       03  A-SD    COLUMN  27  PIC  9(002)
+002550            USING W-SD    CHECK OVERFLOW NO IFC.
+002560       03  A-EY    COLUMN  36  PIC  9(002)
+002570            USING W-EY    CHECK OVERFLOW NO IFC.
+002580       03  A-EM    COLUMN  40  PIC  9(002)
+002590            USING W-EM    CHECK OVERFLOW NO IFC.
+002600       03  A-ED    COLUMN  44  PIC  9(002)
+002610            USING W-ED    CHECK OVERFLOW NO IFC.
+002620     02  A-DMM   LINE  22  COLUMN  41  PIC  9(001)
+002630          USING W-DMM   CHECK OVERFLOW NO IFC.
+002640 01  C-ERR.
+002650     02  LINE  24.
+002660       03  E-ME    COLUMN  15  PIC  X(040) FROM  W-ME.
+002670       03  E-JCON  COLUMN  57  PIC  X(002) FROM  JCON1-KEY.
+002680       03  E-CAL   COLUMN  57  PIC  X(008) FROM  CL-KEY.
+002690       03  E-HIM   COLUMN  57  PIC  9(006) FROM  HI-HCD.
+002700       03  E-ME98  COLUMN  75  PIC  X(005) VALUE ""27"J"05"".
+002710       03  E-ME99  COLUMN  75  PIC  X(005) VALUE ""27"B"05"".
+002720       03  E-STAT  COLUMN  10  PIC  X(002) FROM  ERR-STAT.
+002730       03  E-CL.                                                  I.040616
+002740         04  COLUMN   1  PIC  X(040) VALUE                        I.040616
+002750              "                                        ".         I.040616
+002760         04  COLUMN  41  PIC  X(040) VALUE                        I.040616
+002770              "                                        ".         I.040616
+002780     COPY LIBSCR.
+002790 PROCEDURE DIVISION.
+002800 M-05.
+002810     DISPLAY C-CLEAR.
+002820     DISPLAY C-MID.
+002830     CALL "CBLSTNNO" USING STN-NO.
+002840     MOVE STN-NO2 TO W-FID12 W-FID22 W-FID32 W-FID42.
+002850     MOVE W-FID2 TO WK0256ID.
+002860     MOVE W-FID1 TO WK0128ID.
+002870     MOVE W-FID3 TO WK0064ID.
+002880     MOVE W-FID4 TO WK0768ID.
+002890     MOVE ZERO TO W-DATA.
+002900*
+002910     PERFORM ACP-RTN THRU ACP-EX.
+002920     IF COMPLETION-CODE = 255
+002930         GO TO M-95.
+002940*
+002950     OPEN OUTPUT SKUH-F.
+002960     OPEN INPUT HI-M.
+002970     OPEN INPUT NJZAI.
+002980     OPEN INPUT JNSR.
+002990     OPEN INPUT JNSRW.
+003000     SELECT HI-M WHERE HI-BCD1 = 261 AND HI-MHCD1 NOT = 9999 AND
+003010                       HI-MHCD = HI-HCD AND HI-MHCD >= W-SHCD AND
+003020                       HI-MHCD <= W-EHCD
+003030                 ORDER BY HI-MHCD.
+003040 M-10.
+003050     READ HI-M  NEXT RECORD WITH UNLOCK AT END
+003060         SCRATCH HI-M
+003070         GO TO M-50.
+003080     MOVE 0 TO HI-S(4,10).
+003090     MOVE ZERO TO W-SC.
+003100 M-15.
+003110     ADD 1 TO W-SC.
+003120     IF W-SC > 4
+003130         GO TO M-10.
+003140     IF HI-SS(W-SC) = ZERO
+003150         GO TO M-15.
+003160     MOVE ZERO TO W-AZSU.
+003170     MOVE 9 TO NJZAI-01.
+003180     MOVE HI-MHCD TO NJZAI-02.
+003190     MOVE W-SC TO NJZAI-03.
+003200     READ NJZAI WITH UNLOCK INVALID KEY
+003210         INITIALIZE NJZAI-04 NJZAI-05 NJZAI-06.
+003220     PERFORM ZAI1-RTN THRU ZAI1-EX.
+003230*
+003240     MOVE SPACE TO JNSR-KEY1.
+003250     MOVE HI-MHCD TO JNSR-01.
+003260     MOVE W-YMD TO JNSR-02.
+003270     START JNSR KEY NOT < JNSR-KEY1 INVALID KEY
+003280         GO TO M-25.
+003290 M-20.
+003300     READ JNSR NEXT RECORD WITH UNLOCK AT END
+003310         GO TO M-25.
+003320     IF HI-MHCD NOT = JNSR-01
+003330         GO TO M-25.
+003340     IF W-SC NOT = JNSR-07
+003350         GO TO M-20.
+003360     IF JNSR-03 NOT = 10 AND 22 AND 23 AND 25
+003370         GO TO M-20.
+003380     IF JNSR-03 = 23                                              I.040519
+003390         IF JNSR-10 = 2                                           I.040519
+003400             GO TO M-20.                                          I.040519
+003410     PERFORM ZAI2-RTN THRU ZAI2-EX.
+003420     GO TO M-20.
+003430 M-25.
+003440     MOVE ZERO TO  W-EYMD CNTC.
+003450     MOVE 41 TO CNT.
+003460 M-30.
+003470     SUBTRACT 1 FROM CNT.
+003480     IF CNT = ZERO
+003490         GO TO M-15.
+003500     IF W-SNGP(CNT) = ZERO
+003510         GO TO M-30.
+003520     IF W-EYMD = ZERO
+003530         MOVE W-ENGP(CNT) TO W-EYMD.
+003540     IF CNTC = ZERO
+003550         MOVE CNT TO CNTC.
+003560     IF W-EC = 1
+003570         GO TO M-45.
+003580     IF W-RC = 1
+003590         GO TO M-40.
+003600 M-35.
+003610     READ JNSRW AT END
+003620         MOVE 1 TO W-EC
+003630         GO TO M-45.
+003640     IF JNSRW-03 NOT = 10 AND 22 AND 23 AND 25
+003650         GO TO M-35.
+003660     IF JNSRW-03 = 23                                             I.040519
+003670         IF JNSRW-10 = 2                                          I.040519
+003680             GO TO M-35.                                          I.040519
+003690     IF CNT = CNTC
+003700         IF JNSRW-02 > W-ENGP(CNT)
+003710             PERFORM ZAI3-RTN THRU ZAI3-EX
+003720             GO TO M-35.
+003730 M-40.
+003740     IF HI-MHCD > JNSRW-01
+003750         GO TO M-35.
+003760     IF HI-MHCD < JNSRW-01
+003770         MOVE 1 TO W-RC
+003780         GO TO M-45.
+003790     IF JNSRW-07 < W-SC
+003800         GO TO M-35.
+003810     IF JNSRW-07 > W-SC
+003820         MOVE 1 TO W-RC
+003830         GO TO M-45.
+003840     MOVE 1 TO W-RC.
+003850     IF JNSRW-02 < W-SNGP(CNT)
+003860         GO TO M-45.
+003870     PERFORM ZAI3-RTN THRU ZAI3-EX.
+003880     PERFORM SET-RTN THRU SET-EX.
+003890     PERFORM WRI1-RTN THRU WRI1-EX.
+003900     GO TO M-35.
+003910 M-45.
+003920     IF CNT = 1
+003930         PERFORM WRI2-RTN THRU WRI2-EX.
+003940     GO TO M-30.
+003950 M-50.
+003960     CLOSE NJZAI.
+003970     CLOSE JNSR.
+003980     CLOSE JNSRW.
+003990*
+004000     OPEN INPUT HSHF.
+004010 M-55.
+004020     READ HSHF AT END
+004030         GO TO M-65.
+004040     IF HSH-HCD > W-EHCD
+004050         GO TO M-65.
+004060     IF HSH-HCD < W-SHCD
+004070         GO TO M-55.
+004080     IF HSH-NDD > W-EYMD
+004090         GO TO M-55.
+004100     MOVE HSH-HCD TO HI-HCD.
+004110     READ HI-M WITH UNLOCK INVALID KEY
+004120*****    MOVE 255 TO COMPLETION-CODE                              D.040616
+004130         MOVE SPACE TO W-ME
+004140         MOVE "***  HIM ﾅｼ  ***" TO W-ME
+004150         DISPLAY E-ME E-HIM E-ME99
+004160         DISPLAY E-CL                                             I.040616
+004170         GO TO M-55.                                              I.040616
+004180*****    GO TO M-65.                                              D.040616
+004190     MOVE HI-MHCD TO HI-HCD.
+004200     READ HI-M WITH UNLOCK INVALID KEY
+004210*****    MOVE 255 TO COMPLETION-CODE                              D.040616
+004220         MOVE SPACE TO W-ME
+004230         MOVE "***  HIM ﾅｼ  ***" TO W-ME
+004240         DISPLAY E-ME E-HIM E-ME99
+004250         DISPLAY E-CL                                             I.040616
+004260         GO TO M-55.                                              I.040616
+004270*****    GO TO M-65.                                              D.040616
+004280     IF HI-BCD1 NOT = 261
+004290         GO TO M-55.
+004300     IF HSH-NDD < W-SYSD
+004310         MOVE W-SYSD TO HSH-NDD.
+004320*
+004330     MOVE ZERO TO CNT.
+004340 M-60.
+004350     ADD 1 TO CNT.
+004360     IF CNT > 40
+004370         GO TO M-55.
+004380     IF W-SNGP(CNT) = ZERO
+004390         GO TO M-55.
+004400     IF HSH-NDD < W-SNGP(CNT)
+004410         GO TO M-55.
+004420     IF HSH-NDD > W-ENGP(CNT)
+004430         GO TO M-60.
+004440     PERFORM NKY-RTN THRU NKY-EX.
+004450     GO TO M-55.
+004460 M-65.
+004470     CLOSE HI-M.
+004480*
+004490     PERFORM SDS-RTN THRU SDS-EX.                                 I.040616
+004500     OPEN INPUT GSYF.                                             I.040616
+004510     SELECT GSYF WHERE GSY-ND >= W-MNGP AND GSY-ND <= W-EYMD AND  I.040616
+004520                       GSY-HCD >= W-SHCD AND GSY-HCD <= W-EHCD    I.040616
+004530                                         AND GSY-BCD1 = 261.      I.040616
+004540 M-70.                                                            I.040616
+004550     READ GSYF NEXT RECORD WITH UNLOCK AT END                     I.040616
+004560         SCRATCH GSYF                                             I.040616
+004570         GO TO M-80.                                              I.040616
+004580*
+004590     MOVE ZERO TO CNT.                                            I.040616
+004600 M-75.                                                            I.040616
+004610     ADD 1 TO CNT.                                                I.040616
+004620     IF CNT > 40                                                  I.040616
+004630         GO TO M-70.                                              I.040616
+004640     IF W-SNGP(CNT) = ZERO                                        I.040616
+004650         GO TO M-70.                                              I.040616
+004660     IF GSY-ND < W-SNGP(CNT)                                      I.040616
+004670         GO TO M-70.                                              I.040616
+004680     IF GSY-ND > W-ENGP(CNT)                                      I.040616
+004690         GO TO M-75.                                              I.040616
+004700     PERFORM SKY-RTN THRU SKY-EX.                                 I.040616
+004710     GO TO M-70.                                                  I.040616
+004720 M-80.                                                            I.040616
+004730     CLOSE GSYF.                                                  I.040616
+004740     CLOSE SKUH-F.
+004750 M-95.
+004760     DISPLAY C-CLEAR.
+004770     STOP RUN.
+004780 ACP-RTN.
+004790     OPEN INPUT JCON.
+004800     MOVE SPACE TO JCON1-KEY.
+004810     MOVE 6 TO JCON1-01.
+004820     READ JCON WITH UNLOCK INVALID KEY
+004830         MOVE 255 TO COMPLETION-CODE
+004840         CLOSE JCON
+004850         MOVE SPACE TO W-ME
+004860         MOVE "***  JCON ﾅｼ  ***" TO W-ME
+004870         DISPLAY E-ME E-JCON E-ME99
+004880         GO TO ACP-EX.
+004890     MOVE JCON6-03 TO W-NG W-YM.
+004900     CLOSE JCON.
+004910     SUBTRACT 1 FROM W-GET.
+004920     IF W-GET = ZERO
+004930         SUBTRACT 1 FROM W-NEN
+004940         MOVE 12 TO W-GET.
+004950     SUBTRACT 1 FROM W-GET.
+004960     IF W-GET = ZERO
+004970         SUBTRACT 1 FROM W-NEN
+004980         MOVE 12 TO W-GET.
+004990     SUBTRACT 1 FROM W-GET.
+005000     IF W-GET = ZERO
+005010         SUBTRACT 1 FROM W-NEN
+005020         MOVE 12 TO W-GET.
+005030     MOVE 1 TO W-PEY.
+005040     MOVE W-NGP TO W-SSD.
+005050*
+005060     MOVE ZERO TO W-NGP.
+005070     COPY LIBCPR.
+005080     ACCEPT W-NGPS FROM DATE.
+005090     IF W-NEN2 >= DATE-NF1 AND <= DATE-NT1
+005100         ADD DATE-NC1 TO W-NEN.
+005110     IF W-NEN2 >= DATE-NF2 AND <= DATE-NT2
+005120         ADD DATE-NC2 TO W-NEN.
+005130     MOVE W-NGP TO W-SYSD.
+005140     ADD 1 TO W-GET.
+005150     IF W-GET = 13
+005160         ADD 1 TO W-NEN
+005170         MOVE 1 TO W-GET.
+005180     ADD 1 TO W-GET.
+005190     IF W-GET = 13
+005200         ADD 1 TO W-NEN
+005210         MOVE 1 TO W-GET.
+005220     ADD 1 TO W-GET.
+005230     IF W-GET = 13
+005240         ADD 1 TO W-NEN
+005250         MOVE 1 TO W-GET.
+005260     ADD 1 TO W-GET.
+005270     IF W-GET = 13
+005280         ADD 1 TO W-NEN
+005290         MOVE 1 TO W-GET.
+005300     MOVE W-NGP TO W-ESD.
+005310 ACP-010.
+005320     ACCEPT A-SHCD.
+005330     IF ESTAT = PF9
+005340         MOVE 255 TO COMPLETION-CODE
+005350         GO TO ACP-EX.
+005360     IF ESTAT NOT = HTB AND SKP
+005370         GO TO ACP-010.
+005380 ACP-020.
+005390     ACCEPT A-EHCD.
+005400     IF ESTAT = BTB
+005410         GO TO ACP-010.
+005420     IF ESTAT NOT = HTB AND SKP
+005430         GO TO ACP-020.
+005440     IF W-SHCD > W-EHCD
+005450         GO TO ACP-020.
+005460 ACP-030.
+005470     ACCEPT A-SY.
+005480     IF ESTAT = BTB
+005490         GO TO ACP-020.
+005500     IF ESTAT NOT = HTB AND SKP
+005510         GO TO ACP-030.
+005520 ACP-040.
+005530     ACCEPT A-SM.
+005540     IF ESTAT = BTB
+005550         GO TO ACP-030.
+005560     IF ESTAT NOT = HTB AND SKP
+005570         GO TO ACP-040.
+005580     IF W-SY = ZERO
+005590         IF W-SM NOT = ZERO
+005600             GO TO ACP-040.
+005610     IF W-SM > 12
+005620         GO TO ACP-040.
+005630 ACP-050.
+005640     ACCEPT A-SD.
+005650     IF ESTAT = BTB
+005660         GO TO ACP-040.
+005670     IF ESTAT NOT = HTB AND SKP
+005680         GO TO ACP-050.
+005690     IF W-SM = ZERO
+005700         IF W-SD NOT = ZERO
+005710             GO TO ACP-050.
+005720     IF W-SD > 31
+005730         GO TO ACP-050.
+005740*
+005750     IF ZERO = W-SY AND W-SM AND W-SD
+005760         MOVE W-SSD TO W-SYMD
+005770         GO TO ACP-060.
+005780     MOVE W-SYMD TO W-NGP.
+005790     MOVE ZERO TO W-NEN1.
+005800     IF W-NEN2 >= DATE-NF1 AND <= DATE-NT1
+005810         ADD DATE-NC1 TO W-NEN.
+005820     IF W-NEN2 >= DATE-NF2 AND <= DATE-NT2
+005830         ADD DATE-NC2 TO W-NEN.
+005840     MOVE W-NGP TO W-SYMD.
+005850     IF W-SSD > W-SYMD
+005860         GO TO ACP-050.
+005870*
+005880     OPEN INPUT CALNM.
+005890     SELECT CALNM WHERE CL-DATE <= W-SYSD
+005900                  ORDER BY DESCENDING KEY CL-DATE.
+005910 ACP-055.
+005920     READ CALNM NEXT RECORD WITH UNLOCK AT END
+005930         SCRATCH CALNM
+005940         CLOSE CALNM
+005950         GO TO ACP-060.
+005960     IF CL-YB NOT = 2
+005970         GO TO ACP-055.
+005980     IF W-MNGP = ZERO                                             I.040616
+005990         MOVE CL-DATE TO W-MNGP.                                  I.040616
+006000     IF CL-DATE < W-SYMD
+006010         MOVE CL-DATE TO W-SYMD.
+006020     SCRATCH CALNM.                                               I.040616
+006030     CLOSE CALNM.
+006040 ACP-060.
+006050     ACCEPT A-EY.
+006060     IF ESTAT = BTB
+006070         GO TO ACP-050.
+006080     IF ESTAT NOT = HTB AND SKP
+006090         GO TO ACP-060.
+006100     IF W-SY > W-EY
+006110         GO TO ACP-060.
+006120 ACP-070.
+006130     ACCEPT A-EM.
+006140     IF ESTAT = BTB
+006150         GO TO ACP-060.
+006160     IF ESTAT NOT = HTB AND SKP
+006170         GO TO ACP-070.
+006180     IF W-EY = 99
+006190         IF W-EM NOT = 99
+006200             GO TO ACP-070.
+006210     IF W-EM > 12 AND < 99
+006220         GO TO ACP-070.
+006230 ACP-080.
+006240     ACCEPT A-ED.
+006250     IF ESTAT = BTB
+006260         GO TO ACP-070.
+006270     IF ESTAT NOT = HTB AND SKP
+006280         GO TO ACP-080.
+006290     IF W-EM = 99
+006300         IF W-ED NOT = 99
+006310             GO TO ACP-080.
+006320     IF W-ED > 31 AND < 99
+006330         GO TO ACP-080.
+006340*
+006350     IF 99 = W-EY AND W-EM AND W-ED
+006360         MOVE W-ESD TO W-EYMD
+006370         GO TO ACP-090.
+006380     MOVE W-EYMD TO W-NGP.
+006390     MOVE ZERO TO W-NEN1.
+006400     IF W-NEN2 >= DATE-NF1 AND <= DATE-NT1
+006410         ADD DATE-NC1 TO W-NEN.
+006420     IF W-NEN2 >= DATE-NF2 AND <= DATE-NT2
+006430         ADD DATE-NC2 TO W-NEN.
+006440     MOVE W-NGP TO W-EYMD.
+006450     IF W-ESD < W-EYMD
+006460         GO TO ACP-080.
+006470 ACP-090.
+006480     IF W-SYMD > W-EYMD
+006490         GO TO ACP-080.
+006500 ACP-100.
+006510     ACCEPT A-DMM.
+006520     IF ESTAT = BTB
+006530         GO TO ACP-080.
+006540     IF ESTAT NOT = HTB AND SKP
+006550         GO TO ACP-100.
+006560     IF W-DMM = 9
+006570         GO TO ACP-010.
+006580     IF W-DMM NOT = 1
+006590         GO TO ACP-100.
+006600*
+006610     MOVE ZERO TO CNT.
+006620     OPEN INPUT CALNM.
+006630     MOVE W-SYMD TO CL-KEY.
+006640     READ CALNM WITH UNLOCK INVALID KEY
+006650         MOVE 255 TO COMPLETION-CODE
+006660         CLOSE CALNM
+006670         MOVE SPACE TO W-ME
+006680         MOVE "***  CALNM ﾅｼ  ***" TO W-ME
+006690         DISPLAY E-ME E-CAL E-ME99
+006700         GO TO ACP-EX.
+006710 ACP-110.
+006720     IF CL-YB NOT = 1 AND 2
+006730         GO TO ACP-120.
+006740     IF CL-YB = 1
+006750         IF CNT = ZERO
+006760             GO TO ACP-120
+006770           ELSE
+006780             MOVE CL-KEY TO W-ENGP(CNT)
+006790             IF CHK = 1
+006800*****            CLOSE CALNM                                      D.040616
+006810                 GO TO ACP-510
+006820               ELSE
+006830                 GO TO ACP-120.
+006840     ADD 1 TO CNT.
+006850     IF CNT > 40
+006860         MOVE 255 TO COMPLETION-CODE
+006870         CLOSE CALNM
+006880         MOVE SPACE TO W-ME
+006890         MOVE "***  CALNM ｴﾗｰ  ***" TO W-ME
+006900         DISPLAY E-ME E-ME99
+006910         GO TO ACP-EX.
+006920     MOVE CL-KEY TO W-SNGP(CNT).
+006930 ACP-120.
+006940     READ CALNM NEXT RECORD WITH UNLOCK AT END
+006950         MOVE 255 TO COMPLETION-CODE
+006960         CLOSE CALNM
+006970         MOVE SPACE TO W-ME
+006980         MOVE "***  CALNM ﾅｼ  ***" TO W-ME
+006990         DISPLAY E-ME E-CAL E-ME99
+007000         GO TO ACP-EX.
+007010     IF CHK = 0
+007020         IF CL-KEY > W-EYMD
+007030             MOVE 1 TO CHK.
+007040     GO TO ACP-110.
+007050 ACP-510.
+007060     CLOSE CALNM.                                                 I.040616
+007070*
+007080     OPEN OUTPUT NGPW.
+007090     MOVE ZERO TO CNT.
+007100 ACP-520.
+007110     ADD 1 TO CNT.
+007120     IF CNT > 40
+007130         GO TO ACP-530.
+007140     IF W-SNGP(CNT) = ZERO
+007150         GO TO ACP-530.
+007160     MOVE ZERO TO NGPW-R.
+007170     MOVE W-SNGP(CNT) TO NGPW-SNGP.
+007180     MOVE W-ENGP(CNT) TO NGPW-ENGP.
+007190     WRITE NGPW-R.
+007200     GO TO ACP-520.
+007210 ACP-530.
+007220     CLOSE NGPW.
+007230 ACP-EX.
+007240     EXIT.
+007250 ZAI1-RTN.
+007260     MOVE ZERO TO W-C.
+007270 ZAI1-010.
+007280     ADD 1 TO W-C.
+007290     IF W-C < 11
+007300         COMPUTE W-ZSU(W-C) = NJZAI-0611(W-C) + NJZAI-0411(W-C)
+007310                                              - NJZAI-0511(W-C)
+007320         GO TO ZAI1-010.
+007330*****-----     200410 ﾉﾐ ｼﾖｳ  --------------------------------------------
+007340     IF W-YM = 200410                                             ********
+007350         IF NJZAI-KEY = 96241203                                  ********
+007360             SUBTRACT  25 FROM W-ZSU(02)                          ********
+007370             SUBTRACT  25 FROM W-ZSU(03)                          ********
+007380             SUBTRACT  80 FROM W-ZSU(04)                          ********
+007390             SUBTRACT 100 FROM W-ZSU(05)                          ********
+007400             SUBTRACT 130 FROM W-ZSU(06)                          ********
+007410             SUBTRACT 104 FROM W-ZSU(07)                          ********
+007420             SUBTRACT  67 FROM W-ZSU(08)                          ********
+007430             SUBTRACT  34 FROM W-ZSU(09)                          ********
+007440           ELSE                                                   ********
+007450             IF NJZAI-KEY = 96282453                              ********
+007460                 SUBTRACT  20 FROM W-ZSU(03)                      ********
+007470                 SUBTRACT  20 FROM W-ZSU(04).                     ********
+007480*****---------------------------------------------------------------------
+007490 ZAI1-EX.
+007500     EXIT.
+007510 ZAI2-RTN.
+007520     MOVE ZERO TO W-C.
+007530 ZAI2-010.
+007540     ADD 1 TO W-C.
+007550     IF W-C > 10
+007560         GO TO ZAI2-EX.
+007570     IF JNSR-03 = 10 OR 23 OR 25
+007580         ADD JNSR-081(W-C) TO W-ZSU(W-C)
+007590       ELSE
+007600         SUBTRACT JNSR-081(W-C) FROM W-ZSU(W-C).
+007610     GO TO ZAI2-010.
+007620 ZAI2-EX.
+007630     EXIT.
+007640 ZAI3-RTN.
+007650     MOVE ZERO TO W-C.
+007660 ZAI3-010.
+007670     ADD 1 TO W-C.
+007680     IF W-C > 10
+007690         GO TO ZAI3-EX.
+007700     IF JNSRW-03 = 10 OR 23 OR 25
+007710         SUBTRACT JNSRW-081(W-C) FROM W-ZSU(W-C)
+007720       ELSE
+007730         ADD JNSRW-081(W-C) TO W-ZSU(W-C).
+007740     GO TO ZAI3-010.
+007750 ZAI3-EX.
+007760     EXIT.
+007770 SET-RTN.
+007780     MOVE ZERO TO W-ASU W-C.
+007790 SET-010.
+007800     ADD 1 TO W-C.
+007810     IF W-C > 10
+007820         GO TO SET-EX.
+007830     IF JNSRW-03 = 10 OR 22
+007840         MOVE JNSRW-081(W-C) TO W-SU(W-C)
+007850       ELSE
+007860         COMPUTE W-SU(W-C) = JNSRW-081(W-C) * -1.
+007870     GO TO SET-010.
+007880 SET-EX.
+007890     EXIT.
+007900 WRI1-RTN.
+007910     IF ZERO = W-SU(01) AND W-SU(02) AND W-SU(03) AND
+007920               W-SU(04) AND W-SU(05) AND W-SU(06) AND
+007930               W-SU(07) AND W-SU(08) AND W-SU(09) AND
+007940               W-SU(10)
+007950         GO TO WRI1-EX.
+007960     MOVE ZERO TO SKUH-R.
+007970     MOVE W-SNGP(CNT) TO SKUH-DATE.
+007980     MOVE HI-MHCD TO SKUH-HCD.
+007990     MOVE W-SC TO SKUH-SIZ.
+008000     IF JNSRW-03 = 10
+008010         MOVE 2 TO SKUH-KBN                                       I.040519
+008020*****    MOVE 1 TO SKUH-KBN                                       D.040519
+008030       ELSE
+008040         IF JNSRW-03 = 23                                         I.040519
+008050             MOVE 5 TO SKUH-KBN                                   I.040519
+008060           ELSE                                                   I.040519
+008070             MOVE 4 TO SKUH-KBN.                                  I.040519
+008080*****    MOVE 2 TO SKUH-KBN.                                      D.040519
+008090     MOVE W-SU(01) TO SKUH-SU(01).
+008100     MOVE W-SU(02) TO SKUH-SU(02).
+008110     MOVE W-SU(03) TO SKUH-SU(03).
+008120     MOVE W-SU(04) TO SKUH-SU(04).
+008130     MOVE W-SU(05) TO SKUH-SU(05).
+008140     MOVE W-SU(06) TO SKUH-SU(06).
+008150     MOVE W-SU(07) TO SKUH-SU(07).
+008160     MOVE W-SU(08) TO SKUH-SU(08).
+008170     MOVE W-SU(09) TO SKUH-SU(09).
+008180     MOVE W-SU(10) TO SKUH-SU(10).
+008190     WRITE SKUH-R.
+008200 WRI1-EX.
+008210     EXIT.
+008220 WRI2-RTN.
+008230     IF ZERO = W-ZSU(01) AND W-ZSU(02) AND W-ZSU(03) AND
+008240               W-ZSU(04) AND W-ZSU(05) AND W-ZSU(06) AND
+008250               W-ZSU(07) AND W-ZSU(08) AND W-ZSU(09) AND
+008260               W-ZSU(10)
+008270         GO TO WRI2-EX.
+008280     MOVE ZERO TO SKUH-R.
+008290     MOVE W-SNGP(CNT) TO SKUH-DATE.
+008300     MOVE HI-MHCD TO SKUH-HCD.
+008310     MOVE W-SC TO SKUH-SIZ.
+008320     MOVE 0 TO SKUH-KBN.
+008330     MOVE W-ZSU(01) TO SKUH-SU(01).
+008340     MOVE W-ZSU(02) TO SKUH-SU(02).
+008350     MOVE W-ZSU(03) TO SKUH-SU(03).
+008360     MOVE W-ZSU(04) TO SKUH-SU(04).
+008370     MOVE W-ZSU(05) TO SKUH-SU(05).
+008380     MOVE W-ZSU(06) TO SKUH-SU(06).
+008390     MOVE W-ZSU(07) TO SKUH-SU(07).
+008400     MOVE W-ZSU(08) TO SKUH-SU(08).
+008410     MOVE W-ZSU(09) TO SKUH-SU(09).
+008420     MOVE W-ZSU(10) TO SKUH-SU(10).
+008430     WRITE SKUH-R.
+008440 WRI2-EX.
+008450     EXIT.
+008460 NKY-RTN.
+008470     MOVE ZERO TO W-SC.
+008480 NKY-010.
+008490     ADD 1 TO W-SC.
+008500     IF W-SC > 4
+008510         GO TO NKY-EX.
+008520     MOVE ZERO TO W-ASU W-C.
+008530 NKY-020.
+008540     ADD 1 TO W-C.
+008550     IF W-C > 10
+008560         GO TO NKY-030.
+008570     IF HSH-ENGP NOT = ZERO
+008580         MOVE HSH-ISU(W-SC,W-C) TO W-SU(W-C)
+008590       ELSE
+008600         COMPUTE W-SU(W-C) =
+008610                          HSH-HSU(W-SC,W-C) - HSH-NSU(W-SC,W-C).
+008620     GO TO NKY-020.
+008630 NKY-030.
+008640     IF ZERO = W-SU(01) AND W-SU(02) AND W-SU(03) AND
+008650               W-SU(04) AND W-SU(05) AND W-SU(06) AND
+008660               W-SU(07) AND W-SU(08) AND W-SU(09) AND
+008670               W-SU(10)
+008680         GO TO NKY-010.
+008690     MOVE ZERO TO SKUH-R.
+008700     MOVE W-SNGP(CNT) TO SKUH-DATE.
+008710     MOVE HI-MHCD TO SKUH-HCD.
+008720     MOVE W-SC TO SKUH-SIZ.
+008730     MOVE 1 TO SKUH-KBN.
+008740     MOVE W-ASU TO SKUH-ASU.
+008750     WRITE SKUH-R.
+008760     GO TO NKY-010.
+008770 NKY-EX.
+008780     EXIT.
+008790 SKY-RTN.                                                         I.040616
+008800     MOVE ZERO TO SKUH-R.                                         I.040616
+008810     MOVE W-SNGP(CNT) TO SKUH-DATE.                               I.040616
+008820     MOVE GSY-HCD TO SKUH-HCD.                                    I.040616
+008830     MOVE GSY-SIZ TO SKUH-SIZ.                                    I.040616
+008840     MOVE 3 TO SKUH-KBN.                                          I.040616
+008850     MOVE GSY-SU(01) TO SKUH-SU(01).                              I.040616
+008860     MOVE GSY-SU(02) TO SKUH-SU(02).                              I.040616
+008870     MOVE GSY-SU(03) TO SKUH-SU(03).                              I.040616
+008880     MOVE GSY-SU(04) TO SKUH-SU(04).                              I.040616
+008890     MOVE GSY-SU(05) TO SKUH-SU(05).                              I.040616
+008900     MOVE GSY-SU(06) TO SKUH-SU(06).                              I.040616
+008910     MOVE GSY-SU(07) TO SKUH-SU(07).                              I.040616
+008920     MOVE GSY-SU(08) TO SKUH-SU(08).                              I.040616
+008930     MOVE GSY-SU(09) TO SKUH-SU(09).                              I.040616
+008940     MOVE GSY-SU(10) TO SKUH-SU(10).                              I.040616
+008950     MOVE GSY-TCD TO SKUH-TCD.                                    I.041111
+008960     WRITE SKUH-R.                                                I.040616
+008970 SKY-EX.                                                          I.040616
+008980     EXIT.                                                        I.040616
+008990 SDS-RTN.                                                         I.040616
+009000     OPEN INPUT CALNM.                                            I.040616
+009010     SELECT CALNM WHERE CL-DATE <= W-SYSD                         I.040616
+009020                  ORDER BY DESCENDING KEY CL-DATE.                I.040616
+009030 SDS-010.                                                         I.040616
+009040     READ CALNM NEXT RECORD WITH UNLOCK AT END                    I.040616
+009050         SCRATCH CALNM                                            I.040616
+009060         CLOSE CALNM                                              I.040616
+009070         MOVE SPACE TO W-ME                                       I.040616
+009080         MOVE "***  ｶﾚﾝﾀﾞｰ ﾅｼ  ***" TO W-ME                       I.040616
+009090         DISPLAY E-ME E-ME99                                      I.040616
+009100         GO TO SDS-EX.                                            I.040616
+009110     IF CL-YB NOT = 2                                             I.040616
+009120         GO TO SDS-010.                                           I.040616
+009130     MOVE CL-DATE TO W-MNGP.                                      I.040616
+009140     SCRATCH CALNM.                                               I.040616
+009150     CLOSE CALNM.                                                 I.040616
+009160 SDS-EX.                                                          I.040616
+009170     EXIT.                                                        I.040616
+

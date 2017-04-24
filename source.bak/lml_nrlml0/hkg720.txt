@@ -1,0 +1,483 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. HKG720.
+000030 DATE-WRITTEN. 1974-05-15.
+000040*********************************************************
+000050*    PROGRAM         :  得意先元帳ワーク　作成        　*
+000060*    PRINTER TYPE    :  JIPS                            *
+000070*    SCREEN          :  ******                          *
+000080*        変更　　　  :  11/09/21                        *
+000090*    COMPILE TYPE    :  COBOL                           *
+000100*********************************************************
+000110 ENVIRONMENT DIVISION.
+000120 CONFIGURATION SECTION.
+000130 SOURCE-COMPUTER. SYSTEM3100.
+000140 OBJECT-COMPUTER. SYSTEM3100.
+000150 INPUT-OUTPUT SECTION.
+000160 FILE-CONTROL.
+000170     COPY LIBCSE.                                                 I.000322
+000180     SELECT CALNM ASSIGN TO CALN-MSD                              I.000322
+000190         ORGANIZATION IS INDEXED                                  I.000322
+000200         ACCESS MODE IS DYNAMIC                                   I.000322
+000210         RECORD KEY CL-KEY                                        I.000322
+000220         FILE STATUS IS ERR-STAT.                                 I.000322
+000230     SELECT T-M ASSIGN TO T1-MSD T2-MSD                           I.000222
+000240         ORGANIZATION INDEXED
+000250         ACCESS MODE RANDOM
+000260         RECORD KEY T-KEY                                         I.000222
+000270         ALTERNATE RECORD KEY T-KEY2.                             I.000222
+000280     SELECT TUKF ASSIGN TO TUK-MSD.                               I.030922
+000290     SELECT TMS-F ASSIGN TO TMS-MSD.
+000300 I-O-CONTROL.
+000310     APPLY SHARED-MODE ON M-DATE                                  I.000322
+000320     APPLY SHARED-MODE ON CALNM                                   I.000322
+000330     APPLY SHARED-MODE ON T-M.
+000340 DATA DIVISION.
+000350 FILE SECTION.
+000360     COPY LIBFDD.                                                 I.000322
+000370     COPY LICAL.                                                  I.000322
+000380     COPY LITM.
+000390 FD  TUKF                                                         I.030922
+000400     BLOCK  2 RECORDS                                             I.030922
+000410     LABEL RECORD IS STANDARD                                     I.030922
+000420     VALUE OF IDENTIFICATION WK0128ID.                            I.030922
+000430 01  TUK-R.                                                       I.030922
+000440     02  TUK-KEY.                                                 I.030922
+000450       03  TUK-TCD      PIC  9(004).                              I.030922
+000460       03  TUK-DAI      PIC  X(010).                              I.030922
+000470     02  TUK-KEY2.                                                I.030922
+000480       03  TUK-TCD2     PIC  9(004).                              I.030922
+000490       03  TUK-DATE     PIC  9(008).                              I.030922
+000500       03  TUK-NGP   REDEFINES TUK-DATE.                          I.030922
+000510         04  TUK-NG.                                              I.030922
+000520           05  TUK-NEN  PIC  9(004).                              I.030922
+000530           05  TUK-GET  PIC  9(002).                              I.030922
+000540         04  TUK-PEY    PIC  9(002).                              I.030922
+000550       03  TUK-DC       PIC  9(001).                              I.030922
+000560       03  TUK-DNO      PIC  X(006).                              I.030922
+000570       03  TUK-GNO      PIC  9(001).                              I.030922
+000580     02  TUK-KIN        PIC S9(009).                              I.030922
+000590     02  TUK-SHZ        PIC S9(007).                              I.030922
+000600     02  TUK-SKD        PIC  9(008).                              I.030922
+000610     02  TUK-DCC        PIC  9(001).                              I.030922
+000620     02  TUK-TNC        PIC  9(002).                              I.030922
+000630     02  TUK-BMC        PIC  9(001).                              I.030922
+000640     02  F              PIC  X(066).                              I.030922
+000650 FD  TMS-F
+000660     BLOCK  4 RECORDS                                             I.970520
+000670     LABEL RECORD IS STANDARD
+000680     VALUE OF IDENTIFICATION WK0064ID.                            I.970520
+000690 01  TMS-R.
+000700     02  TMS-TCD        PIC  9(004).
+000710     02  TMS-DATE       PIC  9(008).                              I.970716
+000720     02  TMS-KIN        PIC S9(009).
+000730     02  TMS-SHZ        PIC S9(007).
+000740     02  TMS-DC         PIC  9(001).
+000750     02  TMS-BC         PIC  9(001).
+000760     02  TMS-TNC        PIC  9(002).                              I.030922
+000770     02  TMS-DCC        PIC  9(001).                              I.030922
+000780     02  TMS-NGP.
+000790       03  TMS-NG       PIC  9(006).                              I.970716
+000800       03  F            PIC  9(002).                              I.970716
+000810     02  TMS-SNG        PIC  9(004).
+000820     02  TMS-ENG        PIC  9(004).
+000830     02  TMS-BM         PIC  9(001).
+000840     02  TMS-STCD       PIC  9(004).
+000850     02  TMS-ETCD       PIC  9(004).
+000860     02  F              PIC  X(006).                              I.030922
+000870 WORKING-STORAGE SECTION.
+000880 77  WK0064ID           PIC  X(009) VALUE SPACE.                  I.970520
+000890 77  WK0128ID           PIC  X(009) VALUE SPACE.                  I.030922
+000900 01  STN-NO.                                                      I.950626
+000910     02  STN-NO1        PIC  X(003).                              I.950626
+000920     02  STN-NO2        PIC  X(003).                              I.950626
+000930 01  W-FID1.                                                      I.950626
+000940     02  W-FID11        PIC  X(006) VALUE "WK0064".               I.970520
+000950     02  W-FID12        PIC  X(003).                              I.950626
+000960 01  W-FID2.                                                      I.030922
+000970     02  W-FID21        PIC  X(006) VALUE "WK0128".               I.030922
+000980     02  W-FID22        PIC  X(003).                              I.030922
+000990 01  W-DATA.                                                      I.000322
+001000     02  W-BM           PIC  9(001).
+001010     02  W-STCD         PIC  9(004).
+001020     02  W-ETCD         PIC  9(004).
+001030     02  W-DMM          PIC  9(001).                              I.030922
+001040     02  W-FNG.                                                   I.030922
+001050       03  W-FNEN       PIC  9(004).                              I.030922
+001060       03  W-FND   REDEFINES W-FNEN.
+001070         04  W-FN1      PIC  9(002).
+001080         04  W-FN2      PIC  9(002).
+001090       03  W-FGET       PIC  9(002).                              I.030922
+001100     02  W-FNGD  REDEFINES W-FNG.
+001110       03  F            PIC  9(002).
+001120       03  W-FNGS       PIC  9(004).
+001130     02  W-RNG.                                                   I.030922
+001140       03  W-RNEN       PIC  9(004).                              I.030922
+001150       03  W-RND   REDEFINES W-RNEN.
+001160         04  W-RN1      PIC  9(002).
+001170         04  W-RN2      PIC  9(002).
+001180       03  W-RGET       PIC  9(002).                              I.030922
+001190     02  W-RNGD  REDEFINES W-RNG.
+001200       03  F            PIC  9(002).
+001210       03  W-RNGS       PIC  9(004).
+001220     02  W-NGP.                                                   I.030922
+001230       03  W-NG         PIC  9(006).                              I.030922
+001240       03  W-NGD   REDEFINES W-NG.                                I.030922
+001250         04  W-NEN      PIC  9(004).                              I.030922
+001260         04  W-NENL REDEFINES W-NEN.                              I.030922
+001270           05  W-NEN1   PIC  9(002).                              I.030922
+001280           05  W-NEN2   PIC  9(002).                              I.030922
+001290         04  W-GET      PIC  9(002).                              I.030922
+001300       03  W-NGL  REDEFINES W-NG.                                 I.030922
+001310         04  F          PIC  9(002).                              I.030922
+001320         04  W-NGS      PIC  9(004).                              I.030922
+001330       03  W-PEY        PIC  9(002).                              I.030922
+001340     02  W-SNGP.                                                  I.001110
+001350       03  W-SNG.                                                 I.001110
+001360         04  W-SNEN     PIC  9(004).                              I.001110
+001370         04  W-SND   REDEFINES W-SNEN.
+001380           05  W-SN1    PIC  9(002).
+001390           05  W-SN2    PIC  9(002).
+001400         04  W-SGET     PIC  9(002).                              I.001110
+001410       03  W-SNGD  REDEFINES W-SNG.
+001420         04  F          PIC  9(002).
+001430         04  W-SNGS     PIC  9(004).
+001440       03  W-SPEY       PIC  9(002).                              I.001110
+001450     02  W-ENGP.                                                  I.001110
+001460       03  W-ENG.                                                 I.001110
+001470         04  W-ENEN     PIC  9(004).                              I.001110
+001480         04  W-END   REDEFINES W-ENEN.
+001490           05  W-EN1    PIC  9(002).
+001500           05  W-EN2    PIC  9(002).
+001510         04  W-EGET     PIC  9(002).                              I.001110
+001520       03  W-ENGD  REDEFINES W-ENG.
+001530         04  F          PIC  9(002).
+001540         04  W-ENGS     PIC  9(004).
+001550       03  W-EPEY       PIC  9(002).                              I.001110
+001560     02  W-SEC          PIC  9(001).                              I.001110
+001570     02  W-TCD          PIC  9(004).                              I.001110
+001580 01  ERR-STAT           PIC  X(002).
+001590     COPY LSTAT.                                                  I.030922
+001600 SCREEN SECTION.
+001610 SD  C-CRT
+001620     END STATUS IS ESTAT.
+001630 01  C-CLEAR.
+001640     02  C-CL    LINE   1  CLEAR SCREEN.
+001650 01  C-MID.
+001660     02  LINE   3  COLUMN  10  PIC  N(021) VALUE
+001670          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001680     02  LINE   4  COLUMN  10  PIC  N(021) VALUE
+001690          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001700     02  LINE   5  COLUMN  10  PIC  N(021) VALUE
+001710          NC"＊＊＊　　　　　　　　　　　　　　　＊＊＊".
+001720     02  LINE   6  COLUMN  10  PIC  N(021) VALUE
+001730          NC"＊＊＊　　得意先元帳ワーク　作成　　＊＊＊".
+001740     02  LINE   7  COLUMN  10  PIC  N(021) VALUE
+001750          NC"＊＊＊　　　　　　　　　　　　　　　＊＊＊".
+001760     02  LINE   8  COLUMN  10  PIC  N(021) VALUE
+001770          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001780     02  LINE   9  COLUMN  10  PIC  N(021) VALUE
+001790          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001800     02  LINE  11  COLUMN  17  PIC  X(039) VALUE
+001810            "データ期間   '  年   月　～　'  年   月".
+001820     02  LINE  13  COLUMN  17  PIC  X(039) VALUE
+001830            " 抽出期間    '  年   月　～　'  年   月".
+001840     02  LINE  16  COLUMN  17  PIC  X(042) VALUE
+001850            "全体 = 0  ,  履物 = 1  ,  工品他 = 2   [ ]".
+001860     02  LINE  18  COLUMN  17  PIC  X(024) VALUE
+001870            "得意先ｺｰﾄﾞ  0000 ～ 9999".
+001880     02  LINE  22  COLUMN  30  PIC  X(022) VALUE
+001890            "確認  OK=1 NO=9   ﾘﾀｰﾝ".
+001900 01  C-DSP.
+001910     02  D-DNG   LINE  11.
+001920       03  COLUMN  31  PIC  9(002)  FROM  W-FN2.
+001930       03  COLUMN  36  PIC  Z(002)  FROM  W-FGET.
+001940       03  COLUMN  47  PIC  9(002)  FROM  W-RN2.
+001950       03  COLUMN  52  PIC  Z(002)  FROM  W-RGET.
+001960 01  C-ACP.
+001970     02  LINE  13.
+001980       03  A-SNEN  COLUMN  31  PIC  9(002)
+001990            USING W-SN2   CHECK OVERFLOW NO IFC.
+002000       03  A-SGET  COLUMN  36  PIC  9(002)
+002010            USING W-SGET  CHECK OVERFLOW NO IFC.
+002020       03  A-ENEN  COLUMN  47  PIC  9(002)
+002030            USING W-EN2   CHECK OVERFLOW NO IFC.
+002040       03  A-EGET  COLUMN  52  PIC  9(002)
+002050            USING W-EGET  CHECK OVERFLOW NO IFC.
+002060     02  A-BM    LINE  16  COLUMN  57  PIC  9(001)
+002070          USING W-BM    CHECK OVERFLOW NO IFC.
+002080     02  LINE  18.
+002090       03  A-STCD  COLUMN  29  PIC  9(004)
+002100            USING W-STCD  CHECK OVERFLOW NO IFC.
+002110       03  A-ETCD  COLUMN  37  PIC  9(004)
+002120            USING W-ETCD  CHECK OVERFLOW NO IFC.
+002130     02  A-DMM   LINE  22  COLUMN  47  PIC  9(001)
+002140          USING W-DMM   CHECK OVERFLOW NO IFC.
+002150 01  C-ERR.
+002160     02  LINE  24.
+002170       03  E-ME1   COLUMN  15  PIC  X(015) VALUE
+002180            "***  TM ﾅｼ  ***".
+002190       03  E-ME9.                                                 I.000322
+002200         04  COLUMN  15  PIC  X(027) VALUE                        I.000322
+002210              "***  CALNM ﾅｼ (      )  ***".                      I.000322
+002220         04  COLUMN  30  PIC  X(006) FROM  W-NG.                  I.000322
+002230       03  E-KEY   COLUMN  35  PIC  9(004) FROM  T-TCD.
+002240       03  E-ME98  COLUMN  75  PIC  X(005) VALUE ""27"J"05"".
+002250       03  E-ME99  COLUMN  75  PIC  X(005) VALUE ""27"B"05"".
+002260     COPY LIBSCR.                                                 I.000322
+002270 PROCEDURE DIVISION.
+002280 M-05.
+002290     DISPLAY C-CLEAR.
+002300     DISPLAY C-MID.
+002310     MOVE ZERO TO W-DATA.                                         I.030922
+002320     MOVE 9999 TO W-ETCD.                                         I.151103
+002330     COPY LIBCPR.                                                 I.000322
+002340*
+002350     MOVE D-SNG TO W-FNGS.
+002360     MOVE D-NHNG TO W-RNGS W-SNGS W-ENGS.
+002370     MOVE 20 TO W-FN1 W-RN1 W-SN1 W-EN1.
+002380     DISPLAY D-DNG A-SNEN A-SGET A-ENEN A-EGET.
+002390     PERFORM ACP-RTN THRU ACP-EX.
+002400     IF COMPLETION-CODE = 255
+002410         GO TO M-95.
+002420*
+002430     CALL "CBLSTNNO" USING STN-NO.                                I.950626
+002440     MOVE STN-NO2 TO W-FID12 W-FID22.                             I.030922
+002450     MOVE W-FID1 TO WK0064ID.                                     I.970520
+002460     MOVE W-FID2 TO WK0128ID.                                     I.030922
+002470     OPEN OUTPUT TMS-F.                                           I.000322
+002480     OPEN INPUT T-M.                                              I.000322
+002490*
+002500     MOVE W-SNG TO W-FNG W-NG.
+002510     MOVE W-ENG TO W-RNG.
+002520 M-25.
+002530     MOVE W-NG TO W-SNG W-ENG.                                    I.001110
+002540     SUBTRACT 1 FROM W-SGET.                                      I.001110
+002550     IF W-SGET = ZERO                                             I.001110
+002560         MOVE 12 TO W-SGET                                        I.001110
+002570         SUBTRACT 1 FROM W-SNEN.                                  I.001110
+002580     MOVE 0 TO W-SEC.
+002590*
+002600     OPEN INPUT CALNM.                                            I.000322
+002610 M-30.                                                            I.001110
+002620     MOVE ZERO TO CL-KEY.                                         I.000322
+002630     IF W-SEC = 0                                                 I.001110
+002640         MOVE W-SNG TO CL-NG                                      I.001110
+002650       ELSE                                                       I.001110
+002660         MOVE W-ENG TO CL-NG.                                     I.001110
+002670     START CALNM KEY NOT < CL-KEY INVALID KEY                     I.000322
+002680         CLOSE CALNM                                              I.000322
+002690         DISPLAY E-ME9 E-ME99                                     I.000322
+002700         GO TO M-95.                                              I.000322
+002710     READ CALNM NEXT RECORD WITH UNLOCK AT END                    I.000322
+002720         CLOSE CALNM                                              I.000322
+002730         DISPLAY E-ME9 E-ME99                                     I.000322
+002740         GO TO M-95.                                              I.000322
+002750     IF W-SEC = 0                                                 I.001110
+002760         IF W-SNG NOT = CL-NG                                     I.001110
+002770             CLOSE CALNM                                          I.000322
+002780             DISPLAY E-ME9 E-ME99                                 I.000322
+002790             GO TO M-95.                                          I.000322
+002800     IF W-SEC NOT = 0                                             I.001110
+002810         IF W-ENG NOT = CL-NG                                     I.001110
+002820             CLOSE CALNM                                          I.001110
+002830             DISPLAY E-ME9 E-ME99                                 I.001110
+002840             GO TO M-95.                                          I.001110
+002850 M-35.                                                            I.000322
+002860     IF W-SEC = 0                                                 I.001110
+002870         MOVE CL-KEY TO W-SNGP                                    I.001110
+002880       ELSE                                                       I.001110
+002890         MOVE CL-KEY TO W-ENGP.                                   I.001110
+002900     READ CALNM NEXT RECORD WITH UNLOCK AT END                    I.000322
+002910         GO TO M-40.                                              I.000322
+002920     IF W-SEC = 0                                                 I.001110
+002930         IF W-SNG = CL-NG                                         I.001110
+002940             GO TO M-35.                                          I.000322
+002950     IF W-SEC NOT = 0                                             I.001110
+002960         IF W-ENG = CL-NG                                         I.001110
+002970             GO TO M-35.                                          I.001110
+002980 M-40.                                                            I.000322
+002990     IF W-SEC = 0                                                 I.001110
+003000         MOVE 1 TO W-SEC                                          I.001110
+003010         GO TO M-30.                                              I.001110
+003020     CLOSE CALNM.                                                 I.000322
+003030*
+003040     MOVE ZERO TO W-TCD.
+003050     OPEN INPUT TUKF.                                             I.030919
+003060 M-45.                                                            I.000322
+003070     READ TUKF AT END                                             I.030922
+003080         GO TO M-55.                                              I.030922
+003090     IF TUK-TCD < W-STCD OR > W-ETCD                              I.030922
+003100         GO TO M-45.                                              I.030922
+003110     IF W-BM = 1
+003120         IF TUK-BMC NOT = 0
+003130             GO TO M-45.                                          I.030922
+003140     IF W-BM = 2
+003150         IF TUK-BMC = 0
+003160             GO TO M-45.                                          I.030922
+003170     IF TUK-NG > W-NG                                             I.030922
+003180         GO TO M-55.                                              I.030922
+003190     IF TUK-NG < W-NG                                             I.030922
+003200         GO TO M-45.                                              I.001113
+003210     IF TUK-TCD = W-TCD                                           I.030922
+003220         GO TO M-50.                                              I.030922
+003230     MOVE TUK-TCD TO W-TCD.                                       I.030922
+003240     MOVE TUK-TCD TO T-KEY.                                       I.030922
+003250     READ T-M WITH UNLOCK INVALID KEY                             I.030922
+003260         DISPLAY E-ME1 E-KEY E-ME99                               I.030922
+003270         MOVE ZERO TO T-DCC T-TNC T-BC.                           I.030922
+003280     IF T-SS = 99                                                 I.001113
+003290         GO TO M-45.                                              I.001113
+003300 M-50.                                                            I.030922
+003310     MOVE ZERO TO TMS-R.                                          I.000322
+003320     MOVE TUK-TCD TO TMS-TCD.                                     I.030922
+003330     IF TUK-DC = 0                                                I.030922
+003340         MOVE W-SNGP TO TMS-DATE.                                 I.001110
+003350     IF TUK-DC = 1 OR 2                                           I.030922
+003360         IF TUK-PEY > 25                                          I.030922
+003370             MOVE W-ENGP TO TMS-DATE                              I.030922
+003380           ELSE                                                   I.030922
+003390             IF TUK-PEY > 20                                      I.030922
+003400                 MOVE 25 TO W-PEY                                 I.030922
+003410                 MOVE W-NGP TO TMS-DATE                           I.030922
+003420               ELSE                                               I.030922
+003430                 IF TUK-PEY > 15                                  I.030922
+003440                     MOVE 20 TO W-PEY                             I.030922
+003450                     MOVE W-NGP TO TMS-DATE                       I.030922
+003460                   ELSE                                           I.030922
+003470                     IF TUK-PEY > 10                              I.030922
+003480                         MOVE 15 TO W-PEY                         I.030922
+003490                         MOVE W-NGP TO TMS-DATE                   I.030922
+003500                       ELSE                                       I.030922
+003510                         IF TUK-PEY > 05                          I.030922
+003520                             MOVE 10 TO W-PEY                     I.030922
+003530                             MOVE W-NGP TO TMS-DATE               I.030922
+003540                           ELSE                                   I.030922
+003550                             MOVE 05 TO W-PEY                     I.030922
+003560                             MOVE W-NGP TO TMS-DATE.              I.030922
+003570     IF TUK-DC = 3 OR 4                                           I.030922
+003580         MOVE TUK-DATE TO TMS-DATE.                               I.030922
+003590     IF TUK-DC = 2                                                I.030922
+003600         COMPUTE TMS-KIN = -1 * TUK-KIN                           I.030922
+003610         COMPUTE TMS-SHZ = -1 * TUK-SHZ                           I.030922
+003620       ELSE                                                       I.030922
+003630         MOVE TUK-KIN TO TMS-KIN                                  I.030922
+003640         MOVE TUK-SHZ TO TMS-SHZ.                                 I.030922
+003650     IF TUK-DC = 0                                                I.030922
+003660         MOVE 0 TO TMS-DC.                                        I.030922
+003670     IF TUK-DC = 1 OR 2                                           I.030922
+003680         MOVE 1 TO TMS-DC.                                        I.030922
+003690     IF TUK-DC = 3                                                I.030922
+003700         MOVE 2 TO TMS-DC.                                        I.030922
+003710     IF TUK-DC = 4                                                I.030922
+003720         MOVE 3 TO TMS-DC.                                        I.030922
+003730     MOVE T-DCC TO TMS-DCC.                                       I.010221
+003740     MOVE T-TNC TO TMS-TNC.                                       I.000322
+003750     MOVE T-BC TO TMS-BC.                                         I.000322
+003760     MOVE W-NG TO TMS-NG.
+003770     MOVE W-FNGS TO TMS-SNG.
+003780     MOVE W-RNGS TO TMS-ENG.
+003790     MOVE W-BM TO TMS-BM.
+003800     MOVE W-STCD TO TMS-STCD.
+003810     MOVE W-ETCD TO TMS-ETCD.
+003820     WRITE TMS-R.                                                 I.000322
+003830     GO TO M-45.                                                  I.030922
+003840 M-55.
+003850     CLOSE TUKF.                                                  I.030922
+003860     ADD 1 TO W-GET.
+003870     IF W-GET = 13
+003880         MOVE 1 TO W-GET
+003890         ADD 1 TO W-NEN.
+003900     IF W-RNG NOT < W-NG
+003910         GO TO M-25.
+003920 M-90.
+003930     CLOSE TMS-F.
+003940     CLOSE T-M.
+003950 M-95.
+003960     DISPLAY C-CLEAR.
+003970     STOP RUN.
+003980 ACP-RTN.
+003990     ACCEPT A-SNEN.
+004000     IF ESTAT = PF9
+004010         MOVE 255 TO COMPLETION-CODE
+004020         GO TO ACP-EX.
+004030     IF ESTAT NOT = HTB AND SKP
+004040         GO TO ACP-RTN.
+004050     IF W-SNEN < W-FNEN
+004060         GO TO ACP-RTN.
+004070 ACP-020.
+004080     ACCEPT A-SGET.
+004090     IF ESTAT = BTB
+004100         GO TO ACP-RTN.
+004110     IF ESTAT NOT = HTB AND SKP
+004120         GO TO ACP-020.
+004130     IF W-SGET < 1 OR > 12
+004140         GO TO ACP-020.
+004150     IF W-SNG < W-FNG
+004160         GO TO ACP-020.
+004170     MOVE W-SNG TO W-NG.
+004180     SUBTRACT 1 FROM W-GET.
+004190     IF W-GET = ZERO
+004200         MOVE 12 TO W-GET
+004210       ELSE
+004220         ADD 1 TO W-NEN.
+004230 ACP-040.
+004240     ACCEPT A-ENEN.
+004250     IF ESTAT = BTB
+004260         GO TO ACP-020.
+004270     IF ESTAT NOT = HTB AND SKP
+004280         GO TO ACP-040.
+004290     IF W-ENEN > W-RNEN
+004300         GO TO ACP-040.
+004310 ACP-060.
+004320     ACCEPT A-EGET.
+004330     IF ESTAT = BTB
+004340         GO TO ACP-040.
+004350     IF ESTAT NOT = HTB AND SKP
+004360         GO TO ACP-060.
+004370     IF W-EGET < 1 OR > 12
+004380         GO TO ACP-060.
+004390     IF W-ENG > W-RNG
+004400         GO TO ACP-060.
+004410     IF W-ENG > W-NG
+004420         GO TO ACP-060.
+004430 ACP-080.
+004440     ACCEPT A-BM.
+004450     IF ESTAT = BTB
+004460         GO TO ACP-060.
+004470     IF ESTAT = PF9
+004480         MOVE 255 TO COMPLETION-CODE
+004490         GO TO ACP-EX.
+004500     IF ESTAT NOT = HTB AND SKP
+004510         GO TO ACP-080.
+004520     IF W-BM > 2
+004530         GO TO ACP-080.
+004540 ACP-100.
+004550     ACCEPT A-STCD.
+004560     IF ESTAT = BTB
+004570         GO TO ACP-080.
+004580     IF ESTAT = PF9
+004590         MOVE 255 TO COMPLETION-CODE
+004600         GO TO ACP-EX.
+004610     IF ESTAT NOT = HTB AND SKP
+004620         GO TO ACP-100.
+004630 ACP-120.
+004640     ACCEPT A-ETCD.
+004650     IF ESTAT = BTB
+004660         GO TO ACP-100.
+004670     IF ESTAT NOT = HTB AND SKP
+004680         GO TO ACP-100.
+004690     IF W-STCD > W-ETCD
+004700         GO TO ACP-120.
+004710 ACP-140.
+004720     ACCEPT A-DMM.
+004730     IF ESTAT = BTB
+004740         GO TO ACP-120.
+004750     IF ESTAT NOT = HTB AND SKP
+004760         GO TO ACP-140.
+004770     IF W-DMM = 9
+004780         GO TO ACP-RTN.
+004790     IF W-DMM NOT = 1
+004800         GO TO ACP-140.
+004810 ACP-EX.
+004820     EXIT.
+

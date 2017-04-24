@@ -1,0 +1,203 @@
+000010 IDENTIFICATION  DIVISION.
+000020 PROGRAM-ID.     PR255U.
+000030 ENVIRONMENT         DIVISION.
+000040 CONFIGURATION       SECTION.
+000050 SOURCE-COMPUTER.    NEAC-SYSTEM100.
+000060 OBJECT-COMPUTER.    NEAC-SYSTEM100.
+000070 INPUT-OUTPUT        SECTION.
+000080 FILE-CONTROL.
+000090     SELECT  SSD     ASSIGN   TO  F1-MSD
+000100             FILE STATUS  IS  ERR-STAT.
+000110*****SELECT  TGI     ASSIGN   TO  F2-MSD                          D.960321
+000120*****        ORGANIZATION INDEXED                                 D.960321
+000130*****        RECORD  KEY  TGI-KEY                                 D.960321
+000140*****        FILE STATUS  IS  ERR-STAT.                           D.960321
+000150     SELECT  SDH     ASSIGN   TO  F3-MSD F4-MSD F5-MSD
+000160             ORGANIZATION INDEXED
+000170             ACCESS  MODE IS  RANDOM
+000180             RECORD  KEY  SH-KEY1
+000190             ALTERNATE    RECORD  KEY  SH-KEY2
+000200             ALTERNATE    RECORD  KEY  SH-KEY3
+000210             FILE STATUS  IS  ERR-STAT.
+000220*****SELECT  TGH     ASSIGN   TO  F6-MSD                          D.960321
+000230*****        ORGANIZATION INDEXED                                 D.960321
+000240*****        ACCESS  MODE IS  RANDOM                              D.960321
+000250*****        RECORD  KEY  TGH-KEY                                 D.960321
+000260*****        FILE STATUS  IS  ERR-STAT.                           D.960321
+000270     SELECT  FCTL-F  ASSIGN   TO  F7-MSD
+000280             ORGANIZATION INDEXED
+000290             ACCESS  MODE IS  RANDOM
+000300             RECORD  KEY  IS  FCTL-KEY3.
+000310 DATA            DIVISION.
+000320 FILE            SECTION.
+000330 COPY  SIWAKE.
+000340*COPY  SIWAIT.                                                    D.960321
+000350 FD  SDH
+000360     LABEL   RECORD   IS   STANDARD
+000370     BLOCK   CONTAINS   3   RECORDS
+000380     VALUE   OF   IDENTIFICATION   "SIWAKE-H1"
+000390     ALTERNATE    IDENTIFICATION   "SIWAKE-H2"
+000400     ALTERNATE    IDENTIFICATION   "SIWAKE-H3".
+000410 COPY  SIWAKH.
+000420*COPY  SIWATH.                                                    D.960321
+000430 COPY  FCTL.
+000440 WORKING-STORAGE SECTION.
+000450 77  ERR-STAT            PIC X(02).
+000460 77  INV-SW              PIC 9(01).
+000470 COPY  LWMSG.
+000480 SCREEN          SECTION.
+000490 SD  SCR-D
+000500     END STATUS  IS          ESTAT.
+000510 01  DSP-CLR.                                                     I.970120
+000520     02  LINE 01  CLEAR  SCREEN.                                  I.970120
+000530 01  DISP-BUZZER             LINE    24.
+000540     03  DISP-BUZ-J-01   COLUMN  80  PIC X(05)  VALUE ""27"J"01"".
+000550 01  DSP-AREA.
+000560*****03  DSP-010   LINE  2.                                       D.970120
+000570     03  DSP-010   LINE 12.                                       I.970120
+000580         05  DSP-012    COLUMN  5  PIC X(17)
+000590                        VALUE "FCONTRL  ﾘﾗｲﾄ ｴﾗｰ".
+000600         05  DSP-013    COLUMN  5  PIC X(17)
+000610                        VALUE "FCONTRL  ﾘｰﾄﾞ ｴﾗｰ".
+000620 01  MG-AREA.
+000630     02  MG-01   LINE 24.
+000640       03  COLUMN 02     PIC N(20)
+000650           VALUE NC"＊　仕訳ヒストリ二重エラー　＊".
+000660       03  COLUMN 45     PIC X(15)
+000670           FROM ERR-K.
+000680*****02  MG-02   LINE 24.                                         D.960321
+000690*****  03  COLUMN 02     PIC N(20)                                D.960321
+000700*****      VALUE NC"＊　手形ヒストリ二重エラー　＊".              D.960321
+000710*****  03  COLUMN 45     PIC X(15)                                D.960321
+000720*****      FROM ERR-K.                                            D.960321
+000730*****
+000740 01  DSP-AREA2.                                                   I.970120
+000750     02  LINE 01  COLUMN 35  VALUE  NC"マスタ更新　⑧"  REVERSE.  I.970120
+000760 COPY  LSMSG.
+000770 PROCEDURE       DIVISION.
+000780 ST.
+000790     DISPLAY  DSP-CLR.                                            I.970120
+000800     DISPLAY  DSP-AREA2.                                          I.970120
+000810*****OPEN       INPUT        SSD  TGI                             D.960321
+000820*****OPEN       I-O          SDH  TGH.                            D.960321
+000830     OPEN       INPUT        SSD                                  I.960321
+000840     OPEN       I-O          SDH.                                 I.960321
+000850 ST-10.
+000860*****READ       SSD          AT END              GO TO ST-20.     D.960321
+000870     READ       SSD          AT END              GO TO ST-100.    I.960321
+000880     MOVE       0            TO     INV-SW.
+000890     MOVE       TRDATE       TO     HTRDATE.
+000900     MOVE       JUNLNO       TO     HJUNLNO.
+000910     MOVE       LINENO       TO     HLINENO.
+000920     MOVE       DR-CR        TO     HDR-CR.
+000930     MOVE SH-KEY1     TO ERR-K.                                   *
+000940     READ       SDH          INVALID
+000950                MOVE         1      TO           INV-SW.
+000960     IF DELKB = SPACE
+000970        IF INV-SW = 1
+000980           PERFORM SDH-SET-RTN THRU SDH-SET-EX
+000990           PERFORM SDH-WRI-RTN THRU SDH-WRI-EX                    *
+001000        ELSE
+001010           DISPLAY MG-01
+001020                   DISP-BUZ-B
+001030                   DISP-MSG-SPACE.
+001040     IF (DELKB NOT = SPACE) AND (INV-SW = 0)
+001050         PERFORM SDH-DEL-RTN THRU SDH-DEL-EX.                     *
+001060     GO TO      ST-10.
+001070*ST-20.                                                           D.960321
+001080*****READ       TGI          AT END              GO TO ST-100.    D.960321
+001090*****MOVE       0            TO     INV-SW.                       D.960321
+001100*****MOVE       TGI-REC      TO     TGH-REC.                      D.960321
+001110*****MOVE TGH-KEY     TO ERR-K.                                   D.960321
+001120*****READ       TGH          INVALID                              D.960321
+001130*****           MOVE         1      TO           INV-SW.          D.960321
+001140*****IF TGIDEL = SPACE                                            D.960321
+001150*****   IF INV-SW = 1                                             D.960321
+001160*****      PERFORM TGH-WRI-RTN THRU TGH-WRI-EX                    D.960321
+001170*****   ELSE                                                      D.960321
+001180*****      DISPLAY MG-02                                          D.960321
+001190*****              DISP-BUZ-B                                     D.960321
+001200*****              DISP-MSG-SPACE.                                D.960321
+001210*****IF (TGIDEL NOT = SPACE) AND (INV-SW = 0)                     D.960321
+001220*****    PERFORM TGH-DEL-RTN THRU TGH-DEL-EX.                     D.960321
+001230*****GO TO      ST-20.                                            D.960321
+001240 ST-100.
+001250     OPEN  I-O  FCTL-F.
+001260     MOVE  "SEL   "  TO  FCTL-KEY3.
+001270     READ  FCTL-F  INVALID  KEY  GO  TO  ERRORSHORI-2.
+001280     MOVE   0   TO  FCTL-SO.
+001290     REWRITE  FCTL-REC3   INVALID  KEY  GO  TO  ERRORSHORI-1.
+001300     CLOSE  FCTL-F.
+001310     PERFORM  CLSE-ENT    THRU     CLSE-EXT.
+001320     STOP   RUN.
+001330 ERRORSHORI-1.
+001340     DISPLAY DSP-012  DISP-BUZ-J-01
+001350     GO  TO  OWARI.
+001360 ERRORSHORI-2.
+001370     DISPLAY DSP-013  DISP-BUZ-J-01
+001380     GO  TO  OWARI.
+001390 OWARI.
+001400     CLOSE   FCTL-F.
+001410     PERFORM CLSE-ENT        THRU   CLSE-EXT.
+001420     STOP    RUN.
+001430*****
+001440 SDH-SET-RTN.
+001450     MOVE       SD-REC       TO     SH-REC.
+001460     MOVE       ACCNTCD      TO     HACCNTCD2.
+001470     MOVE       TRDATE       TO     HTRDATE2.
+001480     MOVE       JUNLNO       TO     HJUNLNO2.
+001490     MOVE       LINENO       TO     HLINENO2.
+001500     MOVE       DR-CR        TO     HDR-CR2.
+001510*****MOVE       KACD1        TO     HKACD3.                       D.980224
+001520*****MOVE       TRDATE       TO     HTRDATE3.                     D.980224
+001530*****MOVE       JUNLNO       TO     HJUNLNO3.                     D.980224
+001540*****MOVE       LINENO       TO     HLINENO3.                     D.980224
+001550*****MOVE       DR-CR        TO     HDR-CR3.                      D.980224
+001560     MOVE       ETAX         TO     HETAX.                        I.970729
+001570 SDH-SET-EX.
+001580     EXIT.
+001590*****
+001600 SDH-WRI-RTN.
+001610     WRITE  SH-REC       INVALID
+001620            MOVE         "SDH"  TO           ERR-F
+001630            MOVE         "W"    TO           ERR-M
+001640            PERFORM    ERR-ENT  THRU         ERR-EXT.
+001650     CALL "CBLTCLS" USING SDH.
+001660 SDH-WRI-EX.
+001670     EXIT.
+001680*****
+001690 SDH-DEL-RTN.
+001700     DELETE SDH          INVALID
+001710            MOVE         "SDH"  TO           ERR-F
+001720            MOVE         "D"    TO           ERR-M
+001730            PERFORM    ERR-ENT  THRU         ERR-EXT.
+001740     CALL "CBLTCLS" USING SDH.
+001750 SDH-DEL-EX.
+001760     EXIT.
+001770*****
+001780*TGH-WRI-RTN.                                                     D.960321
+001790*****MOVE TGI-REC     TO TGH-REC.                                 D.960321
+001800*****WRITE  TGH-REC      INVALID                                  D.960321
+001810*****       MOVE         "TGH"  TO           ERR-F                D.960321
+001820*****       MOVE         "W"    TO           ERR-M                D.960321
+001830*****       PERFORM    ERR-ENT  THRU         ERR-EXT.             D.960321
+001840*****CALL "CBLTCLS" USING TGH.                                    D.960321
+001850*TGH-WRI-EX.                                                      D.960321
+001860*****EXIT.                                                        D.960321
+001870*****
+001880*TGH-DEL-RTN.                                                     D.960321
+001890*****DELETE TGH          INVALID                                  D.960321
+001900*****       MOVE         "TGH"  TO           ERR-F                D.960321
+001910*****       MOVE         "D"    TO           ERR-M                D.960321
+001920*****       PERFORM    ERR-ENT  THRU         ERR-EXT.             D.960321
+001930*****CALL "CBLTCLS" USING TGH.                                    D.960321
+001940*TGH-DEL-EX.                                                      D.960321
+001950*****EXIT.                                                        D.960321
+001960*****
+001970 CLSE-ENT.
+001980*****CLOSE      SSD  TGI  SDH  TGH.                               D.960321
+001990     CLOSE      SSD       SDH.                                    I.960321
+002000 CLSE-EXT.
+002010     EXIT.
+002020*****
+002030 COPY  LPMSG.

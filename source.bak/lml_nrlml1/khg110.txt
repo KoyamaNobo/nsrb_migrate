@@ -1,0 +1,590 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. KHG110.
+000030********************************************************
+000040*    PROGRAM         :  防振ゴム　回収金額　計算表     *
+000050*                    :  JS-SIN=0  (東海ゴムベース)     *
+000060*                    :  JS-SIN=1  (出荷ベース)         *
+000070*                    :  JS-SIN=5  棚卸金額(棚卸)       *
+000080*    PRINTER TYPE    :  JIPS                           *
+000090*    SCREEN          :  ******                         *
+000100*        変更　　　  :  62/04/06                       *
+000110*    COMPILE TYPE    :  COBOL                          *
+000120********************************************************
+000130 ENVIRONMENT DIVISION.
+000140 CONFIGURATION SECTION.
+000150 SOURCE-COMPUTER. SYSTEM3100.
+000160 OBJECT-COMPUTER. SYSTEM3100.
+000170 INPUT-OUTPUT SECTION.
+000180 FILE-CONTROL.
+000190     COPY LIBCSE.
+000200     SELECT KH-M ASSIGN TO KH-MSD
+000210         ORGANIZATION INDEXED
+000220         ACCESS MODE DYNAMIC
+000230         RECORD KEY KH-KEY
+000240         FILE STATUS IS ERR-STAT.
+000250     SELECT KHJ-M ASSIGN TO KHJ-MSD                               I.940519
+000260         ORGANIZATION INDEXED                                     I.940519
+000270         ACCESS MODE DYNAMIC                                      I.940519
+000280         RECORD KEY KHJ-KEY                                       I.940519
+000290         FILE STATUS IS ERR-STAT.                                 I.940519
+000300     SELECT KHT-M ASSIGN TO KHT-MSD
+000310         ORGANIZATION INDEXED
+000320         ACCESS MODE DYNAMIC
+000330         RECORD KEY KHT-KEYD
+000340         FILE STATUS IS ERR-STAT.
+000350     SELECT SP-F ASSIGN TO P-PRN999.
+000360 I-O-CONTROL.
+000370     APPLY SHARED-MODE ON M-DATE
+000380     APPLY SHARED-MODE ON KH-M
+000390     APPLY SHARED-MODE ON KHJ-M                                   I.940519
+000400     APPLY SHARED-MODE ON KHT-M
+000410     APPLY SHIFT-CODE  ON SP-F.                                   A 62/04
+000420 DATA DIVISION.
+000430 FILE SECTION.
+000440     COPY LIBFDD.
+000450     COPY LIKHM.
+000460     COPY LIKHJM.                                                 I.940519
+000470     COPY LIKHT2.
+000480     COPY LSPHF.                                                  I.000129
+000490*****COPY LSPF.                                                   D.000129
+000500 WORKING-STORAGE SECTION.
+000510 77  JS-SIN             PIC  9(001).                                     I
+000520 01  HEAD11.
+000530     02  F              PIC  X(005) VALUE ""3FE04FE080"".
+000540     02  F              PIC  X(013) VALUE SPACE.
+000550     02  H-HM11.
+000560       03  H-HM11A      PIC  N(010) VALUE
+000570            NC"＊＊＊　　防振ゴム　".
+000580       03  F            PIC  N(004) VALUE NC"回収金額".
+000590       03  F            PIC  N(005) VALUE NC"　計算表　".
+000600     02  F              PIC  N(010) VALUE
+000610          NC"（東海ゴム　ベース）".
+000620     02  H-HM11B        PIC  N(005) VALUE NC"　　＊＊＊".
+000630     02  F              PIC  X(007) VALUE SPACE.
+000640     02  H-DP11.
+000650       03  F            PIC  X(005) VALUE "DATE ".
+000660       03  H-DATE       PIC 99B99B99.
+000670       03  F            PIC  X(007) VALUE "     P.".
+000680       03  H-PAGE       PIC Z9.
+000690 01  HEAD12.
+000700     02  F              PIC  X(005) VALUE ""3FE04FE080"".
+000710     02  F              PIC  X(016) VALUE SPACE.
+000720     02  H-HM12         PIC  N(019).
+000730     02  F              PIC  N(008) VALUE NC"（出荷　ベース）".
+000740     02  H-HM12B        PIC  N(005).
+000750     02  F              PIC  X(008) VALUE SPACE.
+000760     02  H-DP12         PIC  X(022).
+000770*01  HEAD13.                                                      D.951216
+000780*****02  F              PIC  X(005) VALUE ""3FE04FE080"".         D.951216
+000790*****02  F              PIC  X(025) VALUE SPACE.                  D.951216
+000800*****02  H-HM13A        PIC  N(010).                              D.951216
+000810*****02  F              PIC  N(008) VALUE NC"棚卸原価　明細表".   D.951216
+000820*****02  H-HM13B        PIC  N(005).                              D.951216
+000830*****02  F              PIC  X(017) VALUE SPACE.                  D.951216
+000840*****02  H-DP13         PIC  X(022).                              D.951216
+000850 01  HEAD14.
+000860     02  F              PIC  X(005) VALUE ""3FE04FE080"".
+000870     02  F              PIC  X(024) VALUE SPACE.
+000880     02  H-HM14A        PIC  N(010).
+000890     02  F              PIC  N(009) VALUE NC"（棚卸）原価明細表".
+000900     02  H-HM14B        PIC  N(005).
+000910     02  F              PIC  X(016) VALUE SPACE.
+000920     02  H-DP14         PIC  X(022).
+000930 01  HEAD2.
+000940     02  F              PIC  X(051) VALUE
+000950          "品名            I---------- 材　料　費 -----------I".
+000960     02  F              PIC  X(043) VALUE SPACE.
+000970     02  F              PIC  X(016) VALUE " << 単位 \100 >>".
+000980 01  HEAD31.
+000990     02  H-HM31A        PIC  X(008) VALUE " ｺｰﾄﾞ   ".
+001000     02  F              PIC  N(004) VALUE NC"生産金額".
+001010     02  H-HM31B.
+001020       03  F            PIC  X(046) VALUE
+001030            "　　 ゴム　　 金具　接着剤　　 合計   加工費  ".
+001040       03  F            PIC  X(048) VALUE
+001050            "補材費　動力費　 仕上代　直接原価    総益   率％".
+001060 01  HEAD32.
+001070     02  H-HM32A        PIC  X(008).
+001080     02  F              PIC  N(004) VALUE NC"倉入金額".
+001090     02  H-HM32B        PIC  X(094).
+001100 01  HEAD33.
+001110     02  H-HM33A        PIC  X(008).
+001120     02  F              PIC  N(004) VALUE NC"在庫金額".
+001130     02  H-HM33B        PIC  X(094).
+001140 01  W-P.
+001150     02  P-HCD          PIC  X(005).
+001160     02  P-KIN          PIC ---,---,--9.
+001170     02  P-JM    REDEFINES P-KIN   PIC  X(011).
+001180     02  P-GZ           PIC -----,--9.
+001190     02  P-KZ           PIC -----,--9.
+001200     02  P-SZ           PIC ----,--9.
+001210     02  P-AZ           PIC -----,--9.
+001220     02  P-KA           PIC -----,--9.
+001230     02  P-HO           PIC ----,--9.
+001240     02  P-DO           PIC ----,--9.
+001250     02  P-SI           PIC -----,--9.
+001260     02  P-CG           PIC --,---,--9.
+001270     02  P-SR           PIC ----,--9.
+001280     02  P-RR           PIC ----9.9.
+001290 01  W-N.
+001300     02  W-SU           PIC S9(006).
+001310     02  W-KIN          PIC S9(007).
+001320     02  W-GZ           PIC S9(006).
+001330     02  W-KZ           PIC S9(006).
+001340     02  W-SZ           PIC S9(005).
+001350     02  W-AZ           PIC S9(006).
+001360     02  W-GK           PIC S9(004)V9(01).
+001370     02  W-KK           PIC S9(004)V9(01).
+001380     02  W-KRK          PIC S9(004)V9(01).
+001390     02  W-KA           PIC S9(006).
+001400     02  W-HO           PIC S9(005).
+001410     02  W-DO           PIC S9(005).
+001420     02  W-SI           PIC S9(006).
+001430     02  W-CG           PIC S9(006).
+001440     02  W-SR           PIC S9(006).
+001450     02  W-RR           PIC S9(003)V9(01).
+001460     02  W-GG           PIC S9(005)V9(03).
+001470     02  W-KS           PIC S9(006).
+001480 01  W-SD.
+001490     02  WS-KIN         PIC S9(007).
+001500     02  WS-GZ          PIC S9(006).
+001510     02  WS-KZ          PIC S9(006).
+001520     02  WS-SZ          PIC S9(005).
+001530     02  WS-AZ          PIC S9(006).
+001540     02  WS-KA          PIC S9(006).
+001550     02  WS-HO          PIC S9(005).
+001560     02  WS-DO          PIC S9(005).
+001570     02  WS-SI          PIC S9(006).
+001580     02  WS-CG          PIC S9(007).
+001590     02  WS-SR          PIC S9(006).
+001600     02  WS-RR          PIC S9(003)V9(01).
+001610     02  WS-GG          PIC S9(006)V9(03).
+001620     02  WS-KS          PIC S9(007).
+001630 01  W-AD.
+001640     02  WA-KIN         PIC S9(007).
+001650     02  WA-GZ          PIC S9(006).
+001660     02  WA-KZ          PIC S9(006).
+001670     02  WA-SZ          PIC S9(005).
+001680     02  WA-AZ          PIC S9(006).
+001690     02  WA-KA          PIC S9(006).
+001700     02  WA-HO          PIC S9(005).
+001710     02  WA-DO          PIC S9(005).
+001720     02  WA-SI          PIC S9(006).
+001730     02  WA-CG          PIC S9(007).
+001740     02  WA-SR          PIC S9(006).
+001750     02  WA-RR          PIC S9(003)V9(01).
+001760     02  WA-GG          PIC S9(006)V9(03).
+001770     02  WA-KS          PIC S9(007).
+001780 01  W-DATA.
+001790     02  W-ZS           PIC S9(006).
+001800     02  W-ALL          PIC S9(009)V9(04).
+001810     02  W-YC           PIC  9(002).
+001820     02  W-GGR          PIC  9(006).
+001830     02  W-SGR          PIC  9(002)V9(04).                        I.940519
+001840     02  W-SUD          PIC  9(002).                              I.940519
+001850     02  CHK            PIC  9(001).
+001860     02  W-PAGE         PIC  9(002) VALUE ZERO.
+001870 01  ERR-STAT           PIC  X(002).
+001880 SCREEN SECTION.
+001890 SD  C-CRT
+001900     END STATUS IS ESTAT.
+001910 01  C-CLEAR.
+001920     02  C-CL    LINE   1  CLEAR SCREEN.
+001930 01  C-MID.
+001940     02  LINE   3  COLUMN  10  PIC  N(023) VALUE
+001950          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001960     02  LINE   4  COLUMN  10  PIC  N(023) VALUE
+001970          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001980     02  LINE   5  COLUMN  10  PIC  N(023) VALUE
+001990          NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+002000     02  LINE   7  COLUMN  10  PIC  N(023) VALUE
+002010          NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+002020     02  LINE   8  COLUMN  10  PIC  N(023) VALUE
+002030          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002040     02  LINE   9  COLUMN  10  PIC  N(023) VALUE
+002050          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002060 01  C-DSP.
+002070     02  D-MD1.
+002080       03  LINE   6  COLUMN  10  PIC  N(023) VALUE
+002090            NC"＊＊＊　　防振ゴム　回収金額　計算表　　＊＊＊".
+002100       03  LINE   7  COLUMN  24  PIC  N(010) VALUE
+002110            NC"（東海ゴム　ベース）".
+002120     02  D-MD2.
+002130       03  LINE   6  COLUMN  10  PIC  N(023) VALUE
+002140            NC"＊＊＊　　防振ゴム　回収金額　計算表　　＊＊＊".
+002150       03  LINE   7  COLUMN  24  PIC  N(008) VALUE
+002160            NC"（出荷　ベース）".
+002170     02  D-MD3.
+002180       03  LINE   6  COLUMN  10  PIC  N(023) VALUE
+002190            NC"＊＊＊　　防振ゴム　棚卸原価　明細表　　＊＊＊".
+002200 01  C-ERR.
+002210     02  LINE  24.
+002220       03  E-ME1   COLUMN  15  PIC  X(017) VALUE
+002230            "***  DATA ﾅｼ  ***".
+002240       03  E-ME2   COLUMN  15  PIC  X(016) VALUE
+002250            "***  KHM ﾅｼ  ***".
+002260       03  E-KEY   COLUMN  35  PIC  X(005) FROM  KHT-KEY.
+002270       03  E-ME98  COLUMN  75  PIC  X(005) VALUE ""27"J"05"".
+002280       03  E-ME99  COLUMN  75  PIC  X(005) VALUE ""27"B"05"".
+002290     COPY LIBSCR.
+002300 PROCEDURE DIVISION.
+002310 M-05.
+002320     ACCEPT JS-SIN.                                               I.930524
+002330*****IF JS-SIN NOT = 0 AND 1 AND 2 AND 5                          D.951216
+002340     IF JS-SIN NOT = 0 AND 1 AND 5                                I.951216
+002350         GO TO M-05.                                              I.930524
+002360     COPY LIBCPR.
+002370     IF JS-SIN = 0                                                I.930524
+002380         MOVE 1 TO CHK.
+002390*****IF COMPLETION-CODE = 100                                     D.930524
+002400     IF JS-SIN = 1                                                I.930524
+002410         MOVE 3 TO CHK.
+002420*****IF COMPLETION-CODE = 200                                     D.930524
+002430*****IF JS-SIN = 2                                                D.951216
+002440*****    MOVE 5 TO CHK.                                           D.951216
+002450*****IF COMPLETION-CODE = 250                                     D.930524
+002460     IF JS-SIN = 5                                                I.930524
+002470         MOVE 9 TO CHK.
+002480     DISPLAY C-CLEAR.
+002490     DISPLAY C-MID.
+002500     IF CHK = 1
+002510         DISPLAY D-MD1.
+002520     IF CHK = 3
+002530         DISPLAY D-MD2
+002540         MOVE H-HM11 TO H-HM12
+002550         MOVE H-HM11B TO H-HM12B
+002560         MOVE H-HM31A TO H-HM32A
+002570         MOVE H-HM31B TO H-HM32B.
+002580*****IF CHK = 5                                                   D.951216
+002590*****    DISPLAY D-MD3                                            D.951216
+002600*****    MOVE H-HM11A TO H-HM13A                                  D.951216
+002610*****    MOVE H-HM11B TO H-HM13B                                  D.951216
+002620*****    MOVE H-HM31A TO H-HM33A                                  D.951216
+002630*****    MOVE H-HM31B TO H-HM33B.                                 D.951216
+002640     IF CHK = 9
+002650         DISPLAY D-MD3
+002660         MOVE H-HM11A TO H-HM14A
+002670         MOVE H-HM11B TO H-HM14B
+002680         MOVE H-HM31A TO H-HM33A
+002690         MOVE H-HM31B TO H-HM33B.
+002700     OPEN INPUT KHT-M.
+002710 M-10.
+002720     READ KHT-M NEXT RECORD WITH UNLOCK AT END
+002730         DISPLAY E-ME1 E-ME99
+002740         CLOSE KHT-M
+002750         DISPLAY C-CLEAR
+002760         STOP RUN.
+002770     IF KHT-YC < 10
+002780         GO TO M-10.
+002790     IF KHT-YC > 11
+002800         DISPLAY E-ME1 E-ME99
+002810         CLOSE KHT-M
+002820         DISPLAY C-CLEAR
+002830         STOP RUN.
+002840     IF CHK = 1
+002850         IF KHT-KSU = ZERO
+002860             GO TO M-10.
+002870     IF CHK = 3
+002880         IF KHT-SSU = ZERO
+002890             GO TO M-10.
+002900*****IF CHK = 5                                                   D.951216
+002910*****    COMPUTE W-ZS = KHT-ZSU + KHT-KSU - KHT-HSU - KHT-SSU     D.951216
+002920*****    IF W-ZS = ZERO                                           D.951216
+002930*****        GO TO M-10.                                          D.951216
+002940     IF CHK = 9
+002950         MOVE KHT-JTS TO W-ZS
+002960         IF W-ZS = ZERO
+002970             GO TO M-10.
+002980     IF CHK NOT = 1                                               I.940519
+002990         OPEN INPUT KHJ-M.                                        I.940519
+003000     OPEN INPUT KH-M.
+003010     OPEN OUTPUT SP-F.                                            A 62/4
+003020     MOVE DATE-03R TO H-DATE.
+003030     PERFORM S-10 THRU S-15.
+003040     MOVE ZERO TO W-AD.
+003050 M-15.
+003060     MOVE ZERO TO W-SD.
+003070     MOVE KHT-YC TO W-YC.
+003080 M-20.
+003090     MOVE KHT-KEY TO KH-KEY.
+003100     READ KH-M WITH UNLOCK INVALID KEY
+003110         DISPLAY E-ME2 E-KEY E-ME99
+003120         GO TO M-95.
+003130     PERFORM S-20 THRU S-40.
+003140 M-25.
+003150     READ KHT-M NEXT RECORD WITH UNLOCK AT END
+003160         GO TO M-90.
+003170     IF KHT-YC < 10
+003180         GO TO M-25.
+003190     IF KHT-YC > 11
+003200         GO TO M-90.
+003210     IF CHK = 1
+003220         IF KHT-KSU = ZERO
+003230             GO TO M-25.
+003240     IF CHK = 3
+003250         IF KHT-SSU = ZERO
+003260             GO TO M-25.
+003270*****IF CHK = 5                                                   D.951216
+003280*****    COMPUTE W-ZS = KHT-ZSU + KHT-KSU - KHT-HSU - KHT-SSU     D.951216
+003290*****    IF W-ZS = ZERO                                           D.951216
+003300*****        GO TO M-25.                                          D.951216
+003310     IF CHK = 9
+003320         MOVE KHT-JTS TO W-ZS
+003330         IF W-ZS = ZERO
+003340             GO TO M-25.
+003350     IF W-YC = KHT-YC
+003360         GO TO M-20.
+003370 M-30.
+003380     PERFORM S-45 THRU S-55.
+003390     GO TO M-15.
+003400 M-90.
+003410     PERFORM S-45 THRU S-55.
+003420     PERFORM S-60 THRU S-65.
+003430 M-95.
+003440     CLOSE KH-M.
+003450     IF CHK NOT = 1                                               I.940519
+003460         CLOSE KHJ-M.                                             I.940519
+003470     CLOSE KHT-M.
+003480     CLOSE SP-F.
+003490     DISPLAY C-CLEAR.
+003500     STOP RUN.
+003510 S-05.
+003520     MOVE SPACE TO SP-R.
+003530     WRITE SP-R AFTER PAGE.
+003540 S-10.
+003550     ADD 1 TO W-PAGE.
+003560     MOVE W-PAGE TO H-PAGE.
+003570     MOVE SPACE TO SP-R.
+003580     IF CHK = 1
+003590         MOVE HEAD11 TO SP-R.
+003600     IF CHK = 3
+003610         MOVE H-DP11 TO H-DP12
+003620         MOVE HEAD12 TO SP-R.
+003630*****IF CHK = 5                                                   D.951216
+003640*****    MOVE H-DP11 TO H-DP13                                    D.951216
+003650*****    MOVE HEAD13 TO SP-R.                                     D.951216
+003660     IF CHK = 9
+003670         MOVE H-DP11 TO H-DP14
+003680         MOVE HEAD14 TO SP-R.
+003690     WRITE SP-R.
+003700     MOVE SPACE TO SP-R.
+003710     MOVE HEAD2 TO SP-R.
+003720     WRITE SP-R AFTER 2.
+003730     MOVE SPACE TO SP-R.
+003740     IF CHK = 1
+003750         MOVE HEAD31 TO SP-R.
+003760     IF CHK = 3
+003770         MOVE HEAD32 TO SP-R.
+003780*****IF CHK = 5 OR 9                                              D.951216
+003790     IF CHK = 9                                                   I.951216
+003800         MOVE HEAD33 TO SP-R.
+003810     WRITE SP-R.
+003820     MOVE SPACE TO SP-R.
+003830 S-15.
+003840     EXIT.
+003850 S-20.
+003860     MOVE SPACE TO W-P.
+003870     MOVE ZERO TO W-N.
+003880     MOVE KHT-KEY TO P-HCD.
+003890     IF CHK = 1
+003900         MOVE KHT-KSU TO W-SU
+003910         IF KH-T1 NOT = ZERO
+003920             COMPUTE W-KIN ROUNDED = (KHT-KSU * KH-T1) / 100.
+003930     IF CHK = 3
+003940         MOVE KHT-SSU TO W-SU
+003950         COMPUTE W-ALL = KHT-UKIN - KHT-NKIN
+003960         IF W-ALL NOT = ZERO
+003970             COMPUTE W-KIN ROUNDED = W-ALL / 100.
+003980*****IF CHK = 5 OR 9                                              D.951216
+003990     IF CHK = 9                                                   D.951216
+004000         MOVE W-ZS TO W-SU
+004010         IF KH-T1 NOT = ZERO
+004020             COMPUTE W-KIN ROUNDED = (W-ZS * KH-T1) / 100.
+004030     MOVE W-KIN TO P-KIN.
+004040     IF KH-TGM NOT = ZERO
+004050         COMPUTE W-GZ ROUNDED = (W-SU * KH-TGM) / 100.
+004060     MOVE W-GZ TO P-GZ.
+004070     IF KH-TKN NOT = ZERO
+004080         COMPUTE W-KZ ROUNDED = (W-SU * KH-TKN) / 100.
+004090     MOVE W-KZ TO P-KZ.
+004100     IF KH-TSZ NOT = ZERO
+004110         COMPUTE W-SZ ROUNDED = (W-SU * KH-TSZ) / 100.
+004120     MOVE W-SZ TO P-SZ.
+004130     COMPUTE W-AZ = W-GZ + W-KZ + W-SZ.
+004140     MOVE W-AZ TO P-AZ.
+004150     IF KH-MGS NOT = ZERO
+004160         COMPUTE W-GK ROUNDED = (W-SU * KH-MGS) / 60.
+004170     COMPUTE W-ALL = KH-MKM + KH-MKH + KH-MTS.
+004180     IF W-ALL NOT = ZERO
+004190         COMPUTE W-KK ROUNDED = (W-SU * W-ALL) / 60.
+004200     IF KH-MKR NOT = ZERO
+004210         COMPUTE W-KRK ROUNDED = (W-SU * KH-MKR) / 60.
+004220     COMPUTE W-ALL ROUNDED = W-SU * KH-KKH.
+004230     IF W-ALL NOT = ZERO
+004240         COMPUTE W-KA ROUNDED = W-ALL / 100.
+004250     COMPUTE W-ALL ROUNDED = (W-GK + W-KK + W-KRK) * 408.
+004260     IF W-ALL NOT = ZERO
+004270         COMPUTE W-HO ROUNDED = W-ALL / 100.
+004280     SUBTRACT W-HO FROM W-KA.
+004290     MOVE W-KA TO P-KA.
+004300     MOVE W-HO TO P-HO.
+004310     IF KH-DRH NOT = ZERO
+004320         COMPUTE W-DO ROUNDED = (W-SU * KH-DRH) / 100.
+004330     MOVE W-DO TO P-DO.
+004340     COMPUTE W-ALL = KH-SBB + KH-STS + KH-SNE + KH-SKP + KH-SKY
+004350*****              + KH-SMK + KH-SKG + KH-SAN + KH-SPK + KH-SST.  D.940519
+004360          + KH-SMK + KH-SKG + KH-SAN + KH-SPK + KH-SET + KH-SST.  I.940519
+004370     IF W-ALL NOT = ZERO
+004380         COMPUTE W-SI ROUNDED = (W-SU * W-ALL) / 100.
+004390     MOVE W-SI TO P-SI.
+004400     COMPUTE W-CG = W-AZ + W-KA + W-HO + W-DO + W-SI.
+004410     MOVE W-CG TO P-CG.
+004420     COMPUTE W-SR = W-KIN - W-CG.
+004430     MOVE W-SR TO P-SR.
+004440     IF ZERO NOT = W-SR AND W-KIN
+004450         COMPUTE W-RR ROUNDED = (W-SR * 100) / W-KIN
+004460         MOVE W-RR TO P-RR.
+004470*****IF LINAGE-COUNTER > 60                                       D.000129
+004480     IF LINAGE-COUNTER > 27                                       I.000129
+004490         PERFORM S-05 THRU S-15.
+004500     MOVE SPACE TO SP-R.
+004510     MOVE W-P TO SP-R.
+004520     WRITE SP-R.
+004530     MOVE SPACE TO SP-R.
+004540*****IF CHK = 3 OR 5 OR 9                                         D.940519
+004550     IF CHK = 1                                                   I.940519
+004560         GO TO S-35.                                              I.940519
+004570*
+004580     MOVE ZERO TO W-SGR W-SUD.                                    I.940519
+004590     MOVE SPACE TO KHJ-KEY.                                       I.940519
+004600     MOVE KH-KEY TO KHJ-HCD.                                      I.940519
+004610     START KHJ-M KEY NOT < KHJ-KEY INVALID KEY                    I.940519
+004620         GO TO S-30.                                              I.940519
+004630 S-25.                                                            I.940519
+004640     READ KHJ-M NEXT RECORD WITH UNLOCK AT END                    I.940519
+004650         GO TO S-30.                                              I.940519
+004660     IF KH-KEY NOT = KHJ-HCD                                      I.940519
+004670         GO TO S-30.                                              I.940519
+004680     ADD KHJ-SGRD TO W-SGR.                                       I.940519
+004690     ADD KHJ-SU TO W-SUD.                                         I.940519
+004700     GO TO S-25.                                                  I.940519
+004710 S-30.                                                            I.940519
+004720*****    COMPUTE W-GG ROUNDED = W-SU * (KH-SGD1 + KH-SGD2).       D.940519
+004730     COMPUTE W-GG ROUNDED = W-SU * W-SGR.                         I.940519
+004740*****    COMPUTE W-KS = W-SU *                                    D.940519
+004750*****       (KH-SS1 + KH-SS2 + KH-SS3 + KH-SS4 + KH-SS5 + KH-SS6).D.940519
+004760     COMPUTE W-KS = W-SU * W-SUD.                                 I.940519
+004770 S-35.                                                            I.940519
+004780     ADD W-KIN TO WS-KIN.
+004790     ADD W-GZ TO WS-GZ.
+004800     ADD W-KZ TO WS-KZ.
+004810     ADD W-SZ TO WS-SZ.
+004820     ADD W-AZ TO WS-AZ.
+004830     ADD W-KA TO WS-KA.
+004840     ADD W-HO TO WS-HO.
+004850     ADD W-DO TO WS-DO.
+004860     ADD W-SI TO WS-SI.
+004870     ADD W-CG TO WS-CG.
+004880     ADD W-SR TO WS-SR.
+004890*****IF CHK = 3 OR 5 OR 9                                         D.951216
+004900     IF CHK = 3 OR 9                                              I.951216
+004910         ADD W-GG TO WS-GG
+004920         ADD W-KS TO WS-KS.
+004930 S-40.
+004940     EXIT.
+004950 S-45.
+004960     MOVE SPACE TO W-P.
+004970     MOVE "小計 " TO P-HCD.                                       A 62/04
+004980     MOVE WS-KIN TO P-KIN.
+004990     MOVE WS-GZ TO P-GZ.
+005000     MOVE WS-KZ TO P-KZ.
+005010     MOVE WS-SZ TO P-SZ.
+005020     MOVE WS-AZ TO P-AZ.
+005030     MOVE WS-KA TO P-KA.
+005040     MOVE WS-HO TO P-HO.
+005050     MOVE WS-DO TO P-DO.
+005060     MOVE WS-SI TO P-SI.
+005070     MOVE WS-CG TO P-CG.
+005080     MOVE WS-SR TO P-SR.
+005090     IF ZERO NOT = WS-SR AND WS-KIN
+005100         COMPUTE WS-RR ROUNDED = (WS-SR * 100) / WS-KIN
+005110         MOVE WS-RR TO P-RR.
+005120*****IF LINAGE-COUNTER > 59                                       D.000129
+005130     IF LINAGE-COUNTER > 26                                       I.000129
+005140         PERFORM S-05 THRU S-15.
+005150     MOVE SPACE TO SP-R.
+005160     MOVE W-P TO SP-R.
+005170     WRITE SP-R AFTER 2.
+005180*
+005190     IF CHK = 1
+005200         GO TO S-50.
+005210     MOVE SPACE TO W-P.
+005220     MOVE " 材料使用量" TO P-JM.
+005230     COMPUTE W-GGR ROUNDED = WS-GG * 1.
+005240     MOVE W-GGR TO P-GZ.
+005250     MOVE WS-KS TO P-KZ.
+005260*****IF LINAGE-COUNTER > 60                                       D.000129
+005270     IF LINAGE-COUNTER > 27                                       I.000129
+005280         PERFORM S-05 THRU S-15.
+005290     MOVE SPACE TO SP-R.
+005300     MOVE W-P TO SP-R.
+005310     WRITE SP-R.
+005320 S-50.
+005330     MOVE SPACE TO SP-R.
+005340     WRITE SP-R.
+005350     ADD WS-KIN TO WA-KIN.
+005360     ADD WS-GZ TO WA-GZ.
+005370     ADD WS-KZ TO WA-KZ.
+005380     ADD WS-SZ TO WA-SZ.
+005390     ADD WS-AZ TO WA-AZ.
+005400     ADD WS-KA TO WA-KA.
+005410     ADD WS-HO TO WA-HO.
+005420     ADD WS-DO TO WA-DO.
+005430     ADD WS-SI TO WA-SI.
+005440     ADD WS-CG TO WA-CG.
+005450     ADD WS-SR TO WA-SR.
+005460*****IF CHK = 3 OR 5 OR 9                                         D.951216
+005470     IF CHK = 3 OR 9                                              I.951216
+005480         ADD WS-GG TO WA-GG
+005490         ADD WS-KS TO WA-KS.
+005500 S-55.
+005510     EXIT.
+005520 S-60.
+005530     MOVE SPACE TO W-P.
+005540     MOVE "合計 " TO P-HCD.                                       A 62/04
+005550     MOVE WA-KIN TO P-KIN.
+005560     MOVE WA-GZ TO P-GZ.
+005570     MOVE WA-KZ TO P-KZ.
+005580     MOVE WA-SZ TO P-SZ.
+005590     MOVE WA-AZ TO P-AZ.
+005600     MOVE WA-KA TO P-KA.
+005610     MOVE WA-HO TO P-HO.
+005620     MOVE WA-DO TO P-DO.
+005630     MOVE WA-SI TO P-SI.
+005640     MOVE WA-CG TO P-CG.
+005650     MOVE WA-SR TO P-SR.
+005660     IF ZERO NOT = WA-SR AND WA-KIN
+005670         COMPUTE WA-RR ROUNDED = (WA-SR * 100) / WA-KIN
+005680         MOVE WA-RR TO P-RR.
+005690*****IF LINAGE-COUNTER > 60                                       D.000129
+005700     IF LINAGE-COUNTER > 27                                       I.000129
+005710         PERFORM S-05 THRU S-15.
+005720     MOVE SPACE TO SP-R.
+005730     MOVE W-P TO SP-R.
+005740     WRITE SP-R.
+005750*
+005760     IF CHK = 1
+005770         GO TO S-65.
+005780     MOVE SPACE TO W-P.
+005790     MOVE " 材料使用量" TO P-JM.
+005800     COMPUTE W-GGR ROUNDED = WA-GG * 1.
+005810     MOVE W-GGR TO P-GZ.
+005820     MOVE WA-KS TO P-KZ.
+005830*****IF LINAGE-COUNTER > 60                                       D.000129
+005840     IF LINAGE-COUNTER > 27                                       I.000129
+005850         PERFORM S-05 THRU S-15.
+005860     MOVE SPACE TO SP-R.
+005870     MOVE W-P TO SP-R.
+005880     WRITE SP-R.
+005890 S-65.
+005900     EXIT.

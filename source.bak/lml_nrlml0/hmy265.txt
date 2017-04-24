@@ -1,0 +1,505 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. HMY265.
+000030*****************************************************************
+000040*    PROGRAM         :  履物品名別製品受払ファイル　作成 (EXCEL)*
+000050*    JS-SIGN         :  0=ALL色有り 1=生協分色なし              *
+000060*                    :              2=ALL色なし                 *
+000070*****************************************************************
+000080 ENVIRONMENT DIVISION.
+000090 CONFIGURATION SECTION.
+000100 SOURCE-COMPUTER. SYSTEM3100.
+000110 OBJECT-COMPUTER. SYSTEM3100.
+000120 INPUT-OUTPUT SECTION.
+000130 FILE-CONTROL.
+000140     COPY LIBCSE.
+000150     SELECT HI-M ASSIGN TO HI1-MSD HI2-MSD
+000160         ORGANIZATION INDEXED
+000170         ACCESS MODE DYNAMIC
+000180         RECORD KEY HI-KEY
+000190         ALTERNATE RECORD KEY HI-KEY2.
+000200     SELECT HIYF ASSIGN TO HIY-MSD
+000210         FILE STATUS ERR-STAT.
+000220     SELECT HUH-M ASSIGN TO HUH-MSD                               I.030828
+000230         ORGANIZATION INDEXED                                     I.030828
+000240         ACCESS MODE DYNAMIC                                      I.030828
+000250         RECORD KEY HUH-KEY.                                      I.030828
+000260*****SELECT HHUHF ASSIGN TO HHUH-FDU                              D.031218
+000270     SELECT HHUHF ASSIGN TO HHUH-MSD                              I.031218
+000280         FILE STATUS ERR-STAT.
+000290 I-O-CONTROL.
+000300     APPLY SHARED-MODE ON HI-M
+000310     APPLY SHARED-MODE ON HUH-M                                   I.030828
+000320     APPLY SHARED-MODE ON M-DATE.
+000330 DATA DIVISION.
+000340 FILE SECTION.
+000350     COPY LIBFDD.
+000360     COPY LIHIM.
+000370     COPY LIHUHM.                                                 I.030828
+000380 FD  HIYF
+000390     BLOCK  5 RECORDS
+000400     LABEL RECORD IS STANDARD
+000410     VALUE OF IDENTIFICATION "HIYF".
+000420 01  HIY-R.                                                       I.050329
+000430     02  HIY-KEY.                                                 I.050329
+000440       03  HIY-HCD      PIC  9(006).                              I.050329
+000450       03  HIY-HCDD  REDEFINES HIY-HCD.                           I.050329
+000460         04  HIY-HCD1   PIC  9(004).                              I.050329
+000470         04  HIY-HCD2   PIC  9(002).                              I.050329
+000480     02  HIY-NGD.                                                 I.050329
+000490       03  HIY-NEN      PIC  9(004).                              I.050329
+000500       03  HIY-GET      PIC  9(002).                              I.050329
+000510     02  HIY-NG    REDEFINES HIY-NGD  PIC 9(006).                 I.050329
+000520     02  HIY-D.                                                   I.050329
+000530       03  HIY-ZS       PIC S9(006).                              I.050329
+000540       03  HIY-ZK       PIC S9(009).                              I.050329
+000550       03  HIY-NS       PIC S9(007).                              I.050329
+000560       03  HIY-NK       PIC S9(010).                              I.050329
+000570       03  HIY-SS       PIC S9(008).                              I.050329
+000580       03  HIY-SK       PIC S9(010).                              I.050329
+000590       03  HIY-YS       PIC S9(006).                              I.050329
+000600       03  HIY-YK       PIC S9(009).                              I.050329
+000610       03  HIY-UG       PIC S9(010).                              I.050329
+000620     02  HIY-BCD12.                                               I.050329
+000630       03  HIY-BCD1     PIC  9(003).                              I.050329
+000640       03  HIY-BCW1  REDEFINES HIY-BCD1.                          I.050329
+000650         04  HIY-BC1    PIC  9(002).                              I.050329
+000660         04  HIY-BC21   PIC  9(001).                              I.050329
+000670       03  HIY-BC22     PIC  9(001).                              I.050329
+000680     02  HIY-BCW12 REDEFINES HIY-BCD12.                           I.050329
+000690       03  F            PIC  9(002).                              I.050329
+000700       03  HIY-BC2      PIC  9(002).                              I.050329
+000710     02  HIY-BC3        PIC  9(002).                              I.050329
+000720     02  HIY-BCD3  REDEFINES HIY-BC3.                             I.050329
+000730       03  HIY-BC31     PIC  9(001).                              I.050329
+000740       03  HIY-BC32     PIC  9(001).                              I.050329
+000750     02  HIY-BMC        PIC  9(002).                              I.050329
+000760     02  HIY-BMNO       PIC  9(001).                              I.050329
+000770     02  F              PIC  X(006).                              I.050329
+000780*01  HIY-R.                                                       D.030828
+000790*****02  HIY-HCD        PIC  9(006).                              D.030828
+000800*****02  HIY-NG         PIC  9(006).                              D.030828
+000810*****02  HIY-TD         PIC  X(084).                              D.030828
+000820*****02  F              PIC  X(006).                              D.030828
+000830 FD  HHUHF
+000840     BLOCK  7 RECORDS
+000850     LABEL RECORD IS STANDARD
+000860     VALUE OF IDENTIFICATION "HHUHF".
+000870 01  HHUH-R.
+000880     02  HHUH-NG        PIC  9(006).                              I.031218
+000890     02  HHUH-HCD       PIC  9(006).
+000900     02  HHUH-NAME      PIC  N(024).
+000910     02  HHUH-TD        PIC  X(084).
+000920 WORKING-STORAGE SECTION.
+000930 77  JS-SIGN            PIC  9(001).                              I.050329
+000940 77  W-FILE             PIC  X(013).
+000950 01  W-DATA.
+000960     02  W-DMM          PIC  9(001).
+000970     02  W-ENG          PIC  9(006).
+000980     02  W-MNG.                                                   I.030828
+000990       03  W-MNEN       PIC  9(004).                              I.030828
+001000       03  W-MGET       PIC  9(002).                              I.030828
+001010     02  W-NG           PIC  9(006).
+001020     02  W-NGD   REDEFINES W-NG.
+001030       03  W-NEN        PIC  9(004).
+001040       03  W-NEND  REDEFINES W-NEN.
+001050         04  W-NEN1     PIC  9(002).
+001060         04  W-NEN2     PIC  9(002).
+001070       03  W-GET        PIC  9(002).
+001080     02  W-NGL   REDEFINES W-NG.
+001090       03  F            PIC  9(002).
+001100       03  W-NGS        PIC  9(004).
+001110     02  W-FC           PIC  9(001).                              I.030828
+001120     02  CNT            PIC  9(002).                              I.050329
+001130     02  W-NAME         PIC  N(024).                              I.050329
+001140     02  W-ANAD  REDEFINES W-NAME.                                I.050329
+001150       03  W-ANA   OCCURS  24.                                    I.050329
+001160         04  W-NA       PIC  N(001).                              I.050329
+001170     02  W-HNA          PIC  N(024).                              I.050329
+001180     02  W-HNAD  REDEFINES W-HNA.                                 I.050329
+001190       03  W-AHN   OCCURS  24.                                    I.050329
+001200         04  W-HN       PIC  N(001).                              I.050329
+001210 01  W-R.                                                         I.030828
+001220     02  WR-HCD         PIC  9(006).                              I.030828
+001230     02  WR-HCDD  REDEFINES WR-HCD.                               I.050329
+001240       03  WR-HCD1      PIC  9(004).                              I.050329
+001250       03  WR-HCD2      PIC  9(002).                              I.050329
+001260     02  WR-NG          PIC  9(006).                              I.030828
+001270*****02  WR-TD          PIC  X(084).                              D.050329
+001280     02  WR-TD.                                                   I.050329
+001290       03  WR-D.                                                  I.050329
+001300         04  WR-ZS      PIC S9(006).                              I.050329
+001310         04  WR-ZK      PIC S9(009).                              I.050329
+001320         04  WR-NS      PIC S9(007).                              I.050329
+001330         04  WR-NK      PIC S9(010).                              I.050329
+001340         04  WR-SS      PIC S9(008).                              I.050329
+001350         04  WR-SK      PIC S9(010).                              I.050329
+001360         04  WR-YS      PIC S9(006).                              I.050329
+001370         04  WR-YK      PIC S9(009).                              I.050329
+001380         04  WR-UG      PIC S9(010).                              I.050329
+001390       03  WR-BCD12.                                              I.050329
+001400         04  WR-BCD1    PIC  9(003).                              I.050329
+001410         04  WR-BCW1  REDEFINES WR-BCD1.                          I.050329
+001420           05  WR-BC1   PIC  9(002).                              I.050329
+001430           05  WR-BC21  PIC  9(001).                              I.050329
+001440         04  WR-BC22    PIC  9(001).                              I.050329
+001450       03  WR-BCW12 REDEFINES WR-BCD12.                           I.050329
+001460         04  F          PIC  9(002).                              I.050329
+001470         04  WR-BC2     PIC  9(002).                              I.050329
+001480       03  WR-BC3       PIC  9(002).                              I.050329
+001490       03  WR-BCD3  REDEFINES WR-BC3.                             I.050329
+001500         04  WR-BC31    PIC  9(001).                              I.050329
+001510         04  WR-BC32    PIC  9(001).                              I.050329
+001520       03  WR-BMC       PIC  9(002).                              I.050329
+001530       03  WR-BMNO      PIC  9(001).                              I.050329
+001540     02  F              PIC  X(006).                              I.030828
+001550 01  ERR-STAT           PIC  X(002).
+001560     COPY LSTAT.
+001570 SCREEN SECTION.
+001580 SD  C-CRT
+001590     END STATUS IS ESTAT.
+001600 01  C-CLEAR.
+001610     02  LINE   1  CLEAR SCREEN.
+001620 01  C-MID.
+001630     02  LINE   3  COLUMN  10  PIC  N(024) VALUE
+001640          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001650     02  LINE   4  COLUMN  10  PIC  N(024) VALUE
+001660          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001670     02  LINE   5  COLUMN  10  PIC  N(024) VALUE
+001680          NC"＊＊＊　　　　　　　　　　　　　　　　　　＊＊＊".
+001690     02  LINE   6  COLUMN  10  PIC  N(024) VALUE
+001700          NC"＊＊＊　　品名別製品受払ファイル　作成　　＊＊＊".
+001710     02  LINE   7  COLUMN  10  PIC  N(024) VALUE
+001720          NC"＊＊＊　　　　　　　　　　　　　　　　　　＊＊＊".
+001730     02  LINE   8  COLUMN  10  PIC  N(024) VALUE
+001740          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001750     02  LINE   9  COLUMN  10  PIC  N(024) VALUE
+001760          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001770*****02  LINE  12  COLUMN  21  PIC  N(013) VALUE                  D.031218
+001780*****     NC"【　フロッピー　セット　】" BLINK.                   D.031218
+001790     02  LINE  15  COLUMN  23  PIC  X(022) VALUE
+001800          "＜　    年   月 分　＞".
+001810     02  LINE  22  COLUMN  23  PIC  X(022) VALUE
+001820          "確認  OK=1 NO=9   ﾘﾀｰﾝ".
+001830 01  C-ACP.
+001840     02  LINE  15.
+001850       03  A-NEN   COLUMN  27  PIC  9(004)
+001860            USING W-NEN   CHECK OVERFLOW NO IFC.
+001870       03  A-GET   COLUMN  34  PIC  9(002)
+001880            USING W-GET   CHECK OVERFLOW NO IFC.
+001890     02  A-DMM   LINE  22  COLUMN  40  PIC  9(001)
+001900          USING W-DMM   CHECK OVERFLOW NO IFC.
+001910 01  C-DSP.                                                       I.050329
+001920     02  D-INM   LINE  12  COLUMN  24  PIC  N(009) VALUE          I.050405
+001930          NC"［　色　な　し　］".                                 I.050405
+001940     02  D-SKM   LINE  12  COLUMN  24  PIC  N(010) VALUE          I.050329
+001950          NC"［　生協　色なし　］".                               I.050329
+001960 01  C-ERR.
+001970     02  LINE  24.
+001980       03  E-ME1   COLUMN  15  PIC  X(017) VALUE
+001990            "***  DATA ﾅｼ  ***".
+002000     COPY LSSEM.
+002010     COPY LIBSCR.
+002020 PROCEDURE DIVISION.
+002030 M-05.
+002040     ACCEPT JS-SIGN.
+002050*****IF JS-SIGN > 1                                               D.050405
+002060     IF JS-SIGN > 2                                               I.050405
+002070         MOVE 255 TO COMPLETION-CODE
+002080         GO TO M-95.
+002090     DISPLAY C-CLEAR.
+002100     DISPLAY C-MID.
+002110     IF JS-SIGN = 1                                               I.050329
+002120         DISPLAY D-SKM.                                           I.050329
+002130     IF JS-SIGN = 2                                               I.050405
+002140         DISPLAY D-INM.                                           I.050405
+002150     PERFORM S-05 THRU S-25.                                      I.050329
+002160     IF COMPLETION-CODE = 255                                     I.050329
+002170         GO TO M-95.                                              I.050329
+002180*****COPY LIBCPR.                                                 D.050329
+002190*****MOVE ZERO TO W-NG.                                           D.050329
+002200*****MOVE D-ENG TO W-NGS.                                         D.050329
+002210*****IF W-NEN2 >= DATE-NF1 AND <= DATE-NT1                        D.050329
+002220*****    ADD DATE-NC1 TO W-NEN.                                   D.050329
+002230*****IF W-NEN2 >= DATE-NF2 AND <= DATE-NT2                        D.050329
+002240*****    ADD DATE-NC2 TO W-NEN.                                   D.050329
+002250*****MOVE W-NG TO W-ENG.                                          D.050329
+002260*****DISPLAY A-NEN A-GET.                                         D.050329
+002270*****MOVE W-NG TO W-MNG.                                          D.050329
+002280*****ADD 1 TO W-MGET.                                             D.050329
+002290*****IF W-MGET = 13                                               D.050329
+002300*****    MOVE 1 TO W-MGET                                         D.050329
+002310*****    ADD 1 TO W-MNEN.                                         D.050329
+002320*****GO TO M-08.                                                  D.050329
+002330*M-06.                                                            D.050329
+002340*****ACCEPT A-NEN.                                                D.050329
+002350*****IF ESTAT = PF9                                               D.050329
+002360*****    MOVE 255 TO COMPLETION-CODE                              D.050329
+002370*****    GO TO M-95.                                              D.050329
+002380*****IF ESTAT NOT = HTB AND SKP                                   D.050329
+002390*****    GO TO M-06.                                              D.050329
+002400*****IF W-NEN < 2002                                              D.050329
+002410*****    GO TO M-06.                                              D.050329
+002420*M-07.                                                            D.050329
+002430*****ACCEPT A-GET.                                                D.050329
+002440*****IF ESTAT = BTB                                               D.050329
+002450*****    GO TO M-06.                                              D.050329
+002460*****IF ESTAT NOT = HTB AND SKP                                   D.050329
+002470*****    GO TO M-07.                                              D.050329
+002480*****IF W-GET < 1 OR > 12                                         D.050329
+002490*****    GO TO M-07.                                              D.050329
+002500*****IF W-NG > W-ENG                                              D.030828
+002510*****IF W-NG > W-MNG                                              D.050329
+002520*****    GO TO M-07.                                              D.050329
+002530*M-08.                                                            D.050329
+002540*****ACCEPT A-DMM.                                                D.050329
+002550*****IF ESTAT = BTB                                               D.050329
+002560*****    GO TO M-06.                                              D.050329
+002570*****IF ESTAT NOT = HTB AND SKP                                   D.050329
+002580*****   GO TO M-08.                                               D.050329
+002590*****IF W-DMM = 9                                                 D.050329
+002600*****    MOVE 255 TO COMPLETION-CODE                              D.050329
+002610*****    GO TO M-95.                                              D.050329
+002620*****IF W-DMM NOT = 1                                             D.050329
+002630*****    GO TO M-08.                                              D.050329
+002640*
+002650     OPEN INPUT HI-M.                                             I.030828
+002660     OPEN OUTPUT HHUHF.                                           I.030828
+002670*
+002680     MOVE 0 TO W-FC.                                              I.030828
+002690     IF W-NG = W-MNG                                              I.030828
+002700         MOVE 1 TO W-FC                                           I.030828
+002710         GO TO M-35.                                              I.030828
+002720*
+002730     OPEN INPUT HIYF.
+002740 M-10.
+002750     READ HIYF AT END
+002760*****    CLOSE HIYF                                               D.030828
+002770         MOVE 255 TO COMPLETION-CODE                              I.031218
+002780         DISPLAY E-ME1 E-ME99
+002790         GO TO M-90.                                              I.030828
+002800*****    GO TO M-95.                                              D.030828
+002810*****IF HIY-NG < W-NG                                             D.030828
+002820*****IF WR-NG < W-NG                                              D.050329
+002830     IF HIY-NG < W-NG                                             I.050329
+002840         GO TO M-10.
+002850*****IF HIY-NG > W-NG                                             D.030828
+002860*****    CLOSE HIYF                                               D.030828
+002870*****IF WR-NG > W-NG                                              D.050329
+002880     IF HIY-NG > W-NG                                             I.050329
+002890         DISPLAY E-ME1 E-ME99
+002900         GO TO M-90.                                              I.030828
+002910     IF JS-SIGN = 1                                               I.050329
+002920         IF HIY-BC1 < 26 OR > 27                                  I.050329
+002930             GO TO M-10.                                          I.050329
+002940 M-15.                                                            I.050329
+002950     MOVE HIY-R TO W-R.                                           I.030828
+002960*****    GO TO M-95.                                              D.030828
+002970*
+002980*****OPEN INPUT HI-M.                                             D.030828
+002990*****OPEN OUTPUT HHUHF.                                           D.030828
+003000 M-20.
+003010*****IF JS-SIGN = 1                                               D.050405
+003020     IF JS-SIGN = 1 OR 2                                          I.050405
+003030         MOVE ZERO TO WR-HCD2                                     I.050329
+003040       ELSE                                                       I.050329
+003050         PERFORM S-30 THRU S-50.                                  D.030828
+003060*****MOVE HIY-HCD TO HI-KEY.                                      D.030828
+003070*****READ HI-M WITH UNLOCK INVALID KEY                            D.030828
+003080*****    MOVE SPACE TO HI-NAME                                    D.030828
+003090*****    MOVE NC"　＊＊　マスター　なし　＊＊" TO HI-NAME.        D.030828
+003100*
+003110*****MOVE ZERO TO HHUH-R.                                         D.030828
+003120*****MOVE HIY-HCD TO HHUH-HCD.                                    D.030828
+003130*****MOVE HI-NAME TO HHUH-NAME.                                   D.030828
+003140*****MOVE HIY-TD TO HHUH-TD.                                      D.030828
+003150*****WRITE HHUH-R.                                                D.030828
+003160 M-25.                                                            I.050329
+003170     READ HIYF AT END
+003180         GO TO M-30.                                              I.050329
+003190*****    GO TO M-90.                                              D.050329
+003200*****IF HIY-NG > W-NG                                             D.030828
+003210*****IF WR-NG > W-NG                                              D.050329
+003220     IF HIY-NG > W-NG                                             I.030828
+003230         GO TO M-30.                                              I.050329
+003240     IF JS-SIGN = 1                                               I.050329
+003250         IF HIY-BC1 < 26 OR > 27                                  I.050329
+003260             GO TO M-25.                                          I.050329
+003270*****    GO TO M-90.                                              D.050329
+003280*****MOVE HIY-R TO W-R.                                           D.050329
+003290     IF JS-SIGN = 0                                               I.050329
+003300         MOVE HIY-R TO W-R                                        I.050329
+003310         GO TO M-20.
+003320     IF HIY-HCD1 = WR-HCD1                                        I.050329
+003330         ADD HIY-ZS TO WR-ZS                                      I.050329
+003340         ADD HIY-ZK TO WR-ZK                                      I.050329
+003350         ADD HIY-NS TO WR-NS                                      I.050329
+003360         ADD HIY-NK TO WR-NK                                      I.050329
+003370         ADD HIY-SS TO WR-SS                                      I.050329
+003380         ADD HIY-SK TO WR-SK                                      I.050329
+003390         ADD HIY-YS TO WR-YS                                      I.050329
+003400         ADD HIY-YK TO WR-YK                                      I.050329
+003410         ADD HIY-UG TO WR-UG                                      I.050329
+003420         GO TO M-20.
+003430     PERFORM S-30 THRU S-50.                                      I.050329
+003440     GO TO M-15.                                                  I.050329
+003450 M-30.                                                            I.050329
+003460*****IF JS-SIGN = 1                                               D.050405
+003470     IF JS-SIGN = 1 OR 2                                          I.050405
+003480         PERFORM S-30 THRU S-50.                                  I.050329
+003490     GO TO M-90.                                                  I.050329
+003500 M-35.                                                            I.030828
+003510     OPEN INPUT HUH-M.                                            I.030828
+003520 M-40.                                                            I.030828
+003530     READ HUH-M NEXT RECORD WITH UNLOCK  AT END                   I.030828
+003540         MOVE 255 TO COMPLETION-CODE                              I.031218
+003550         DISPLAY E-ME1 E-ME99                                     I.030828
+003560         GO TO M-90.                                              I.030828
+003570     IF JS-SIGN = 1                                               I.050329
+003580         IF HUH-BC1 < 26 OR > 27                                  I.050329
+003590             GO TO M-40.                                          I.050329
+003600 M-45.                                                            I.030828
+003610     MOVE HUH-R TO W-R.                                           I.030828
+003620 M-50.                                                            I.050329
+003630*****IF JS-SIGN = 1                                               D.050405
+003640     IF JS-SIGN = 1 OR 2                                          I.050405
+003650         MOVE ZERO TO WR-HCD2                                     I.050329
+003660       ELSE                                                       I.050329
+003670         PERFORM S-30 THRU S-50.                                  I.030828
+003680 M-55.                                                            I.050329
+003690     READ HUH-M NEXT RECORD WITH UNLOCK AT END                    I.030828
+003700         GO TO M-60.                                              I.050329
+003710*****    GO TO M-90.                                              D.050329
+003720     IF JS-SIGN = 1                                               I.050329
+003730         IF HUH-BC1 < 26 OR > 27                                  I.050329
+003740             GO TO M-55.                                          I.050329
+003750     IF JS-SIGN = 0                                               I.050329
+003760         GO TO M-45.                                              I.030828
+003770     IF HUH-HCD1 = WR-HCD1                                        I.050329
+003780         ADD HUH-ZS TO WR-ZS                                      I.050329
+003790         ADD HUH-ZK TO WR-ZK                                      I.050329
+003800         ADD HUH-NS TO WR-NS                                      I.050329
+003810         ADD HUH-NK TO WR-NK                                      I.050329
+003820         ADD HUH-SS TO WR-SS                                      I.050329
+003830         ADD HUH-SK TO WR-SK                                      I.050329
+003840         ADD HUH-YS TO WR-YS                                      I.050329
+003850         ADD HUH-YK TO WR-YK                                      I.050329
+003860         ADD HUH-UG TO WR-UG                                      I.050329
+003870         GO TO M-50.                                              I.050329
+003880     PERFORM S-30 THRU S-50.                                      I.050329
+003890     GO TO M-45.                                                  I.050329
+003900 M-60.                                                            I.050329
+003910*****IF JS-SIGN = 1                                               D.050405
+003920     IF JS-SIGN = 1 OR 2                                          I.050405
+003930         PERFORM S-30 THRU S-50.                                  I.050329
+003940 M-90.
+003950*****CLOSE HIYF.                                                  D.030828
+003960     IF W-FC = 0                                                  I.030828
+003970         CLOSE HIYF                                               I.030828
+003980       ELSE                                                       I.030828
+003990         CLOSE HUH-M.                                             I.030828
+004000     CLOSE HI-M.
+004010     CLOSE HHUHF.
+004020 M-95.
+004030     DISPLAY C-CLEAR.
+004040     STOP RUN.
+004050 S-05.                                                            I.050329
+004060     COPY LIBCPR.                                                 I.050329
+004070     MOVE ZERO TO W-NG.                                           I.050329
+004080     MOVE D-ENG TO W-NGS.                                         I.050329
+004090     IF W-NEN2 >= DATE-NF1 AND <= DATE-NT1                        I.050329
+004100         ADD DATE-NC1 TO W-NEN.                                   I.050329
+004110     IF W-NEN2 >= DATE-NF2 AND <= DATE-NT2                        I.050329
+004120         ADD DATE-NC2 TO W-NEN.                                   I.050329
+004130     MOVE W-NG TO W-ENG.                                          I.050329
+004140     DISPLAY A-NEN A-GET.                                         I.050329
+004150     MOVE W-NG TO W-MNG.                                          I.050329
+004160     ADD 1 TO W-MGET.                                             I.050329
+004170     IF W-MGET = 13                                               I.050329
+004180         MOVE 1 TO W-MGET                                         I.050329
+004190         ADD 1 TO W-MNEN.                                         I.050329
+004200     GO TO S-20.                                                  I.050329
+004210 S-10.                                                            I.050329
+004220     ACCEPT A-NEN.                                                I.050329
+004230     IF ESTAT = PF9                                               I.050329
+004240         MOVE 255 TO COMPLETION-CODE                              I.050329
+004250         GO TO S-25.                                              I.050329
+004260     IF ESTAT NOT = HTB AND SKP                                   I.050329
+004270         GO TO S-10.                                              I.050329
+004280     IF W-NEN < 2002                                              I.050329
+004290         GO TO S-10.                                              I.050329
+004300 S-15.                                                            I.050329
+004310     ACCEPT A-GET.                                                I.050329
+004320     IF ESTAT = BTB                                               I.050329
+004330         GO TO S-10.                                              I.050329
+004340     IF ESTAT NOT = HTB AND SKP                                   I.050329
+004350         GO TO S-15.                                              I.050329
+004360     IF W-GET < 1 OR > 12                                         I.050329
+004370         GO TO S-15.                                              I.050329
+004380     IF W-NG > W-MNG                                              I.050329
+004390         GO TO S-15.                                              I.050329
+004400 S-20.                                                            I.050329
+004410     ACCEPT A-DMM.                                                I.050329
+004420     IF ESTAT = BTB                                               I.050329
+004430         GO TO S-10.                                              I.050329
+004440     IF ESTAT NOT = HTB AND SKP                                   I.050329
+004450        GO TO S-20.                                               I.050329
+004460     IF W-DMM = 9                                                 I.050329
+004470         MOVE 255 TO COMPLETION-CODE                              I.050329
+004480         GO TO S-25.                                              I.050329
+004490     IF W-DMM NOT = 1                                             I.050329
+004500         GO TO S-20.                                              I.050329
+004510 S-25.                                                            I.050329
+004520     EXIT.                                                        I.050329
+004530 S-30.                                                            I.030828
+004540     IF ZERO = WR-ZS AND WR-ZK AND WR-NS AND WR-NK AND            I.050329
+004550               WR-SS AND WR-SK AND WR-YS AND WR-YK AND WR-UG      I.050329
+004560         GO TO S-50.                                              I.050329
+004570*****IF JS-SIGN = 1                                               D.050405
+004580     IF JS-SIGN = 1 OR 2                                          I.050405
+004590         GO TO S-35.                                              I.050329
+004600     MOVE WR-HCD TO HI-KEY.                                       I.030828
+004610     READ HI-M WITH UNLOCK INVALID KEY                            I.030828
+004620         MOVE SPACE TO HI-NAME                                    I.030828
+004630         MOVE NC"　＊＊　マスター　なし　＊＊" TO HI-NAME.        I.030828
+004640     MOVE HI-NAME TO W-NAME.                                      I.050329
+004650     GO TO S-45.                                                  I.050329
+004660 S-35.                                                            I.050329
+004670     MOVE WR-HCD TO HI-KEY.                                       I.050329
+004680     START HI-M KEY NOT < HI-KEY INVALID KEY                      I.050329
+004690         MOVE SPACE TO W-NAME                                     I.050329
+004700         MOVE NC"　＊＊　マスター　なし　＊＊" TO W-NAME          I.050329
+004710         GO TO S-45.                                              I.050329
+004720     READ HI-M NEXT RECORD WITH UNLOCK AT END                     I.050329
+004730         MOVE SPACE TO W-NAME                                     I.050329
+004740         MOVE NC"　＊＊　マスター　なし　＊＊" TO W-NAME          I.050329
+004750         GO TO S-45.                                              I.050329
+004760     IF WR-HCD1 NOT = HI-HCD1                                     I.050329
+004770         MOVE SPACE TO W-NAME                                     I.050329
+004780         MOVE NC"　＊＊　マスター　なし　＊＊" TO W-NAME          I.050329
+004790         GO TO S-45.                                              I.050329
+004800     MOVE SPACE TO W-NAME W-HNA.                                  I.050329
+004810     MOVE HI-NAME TO W-HNA.                                       I.050329
+004820     MOVE ZERO TO CNT.                                            I.050329
+004830 S-40.                                                            I.050329
+004840     ADD 1 TO CNT.                                                I.050329
+004850     IF CNT = 25                                                  I.050329
+004860         GO TO S-45.                                              I.050329
+004870     MOVE W-HN(CNT) TO W-NA(CNT).                                 I.050329
+004880     IF W-HN(CNT) NOT = SPACE                                     I.050329
+004890         GO TO S-40.                                              I.050329
+004900     ADD 1 TO CNT.                                                I.050329
+004910     IF CNT = 25                                                  I.050329
+004920         GO TO S-45.                                              I.050329
+004930     MOVE W-HN(CNT) TO W-NA(CNT).                                 I.050329
+004940     IF W-HN(CNT) NOT = SPACE                                     I.050329
+004950         GO TO S-40.                                              I.050329
+004960 S-45.                                                            I.050329
+004970     MOVE ZERO TO HHUH-R.                                         I.030828
+004980     MOVE WR-NG TO HHUH-NG.                                       I.031218
+004990     MOVE WR-HCD TO HHUH-HCD.                                     I.030828
+005000     MOVE W-NAME TO HHUH-NAME.                                    I.050329
+005010*****MOVE HI-NAME TO HHUH-NAME.                                   D.050329
+005020     MOVE WR-TD TO HHUH-TD.                                       I.030828
+005030     WRITE HHUH-R.                                                I.030828
+005040 S-50.                                                            I.030828
+005050     EXIT.                                                        I.030828

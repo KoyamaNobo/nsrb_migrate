@@ -1,0 +1,417 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. KBT550.
+000030*********************************************************
+000040*    PROGRAM         :  製品仕入ロット別入庫明細問合せ  *
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :  SCBT55                          *
+000070*    COMPILE TYPE    :  COBOL                           *
+000080*********************************************************
+000090 ENVIRONMENT DIVISION.
+000100 CONFIGURATION SECTION.
+000110 SOURCE-COMPUTER. SYSTEM3100.
+000120 OBJECT-COMPUTER. SYSTEM3100.
+000130 INPUT-OUTPUT SECTION.
+000140 FILE-CONTROL.
+000150     SELECT S-M ASSIGN TO S-MSD
+000160         ORGANIZATION INDEXED
+000170         ACCESS MODE RANDOM
+000180         RECORD KEY S-KEY
+000190         FILE STATUS IS ERR-STAT.
+000200     SELECT HI-M ASSIGN TO HI1-MSD HI2-MSD
+000210         ORGANIZATION INDEXED
+000220         ACCESS MODE RANDOM
+000230         RECORD KEY HI-KEY
+000240         ALTERNATE RECORD KEY HI-KEY2
+000250         FILE STATUS IS ERR-STAT.
+000260     SELECT HSHF ASSIGN TO HSH1-MSD HSH2-MSD HSH3-MSD
+000270         ORGANIZATION INDEXED
+000280         ACCESS MODE RANDOM
+000290         RECORD KEY HSH-KEY
+000300         ALTERNATE RECORD KEY HSH-KEY2
+000310         ALTERNATE RECORD KEY HSH-KEY3
+000320         FILE STATUS IS ERR-STAT.
+000330     SELECT HSHNF ASSIGN TO HSHN-MSD
+000340         ORGANIZATION INDEXED
+000350         ACCESS MODE DYNAMIC
+000360         RECORD KEY HSHN-KEY
+000370         FILE STATUS IS ERR-STAT.
+000380     SELECT HSS-F ASSIGN TO HSS-MSD
+000390         ORGANIZATION INDEXED
+000400         ACCESS MODE DYNAMIC
+000410         RECORD KEY HSS-KEY
+000420         FILE STATUS IS ERR-STAT.
+000430 I-O-CONTROL.
+000440     APPLY SHARED-MODE ON S-M
+000450     APPLY SHARED-MODE ON HI-M
+000460     APPLY SHARED-MODE ON HSHF
+000470     APPLY SHARED-MODE ON HSHNF
+000480     APPLY SHARED-MODE ON HSS-F.
+000490 DATA DIVISION.
+000500 FILE SECTION.
+000510     COPY LISM.
+000520     COPY LIHIM.
+000530     COPY LIHSHF.
+000540     COPY LIHSHN.
+000550     COPY LIHSSF.
+000560 WORKING-STORAGE SECTION.
+000570 01  W-DATA.
+000580     02  W-END          PIC  9(001).
+000590     02  W-RNO          PIC  9(008).
+000600     02  W-RNOD  REDEFINES W-RNO.
+000610       03  W-RSN        PIC  9(002).
+000620       03  W-RNG        PIC  9(004).
+000630       03  W-RND        PIC  9(002).
+000640     02  W-DMM          PIC  9(001).
+000650     02  W-L            PIC  9(002).
+000660     02  W-C            PIC S9(002).
+000670     02  W-AZCD.
+000680       03  W-ZCD   OCCURS   4.
+000690         04  W-ZC       PIC  9(001).
+000700     02  W-SC           PIC  9(001).
+000710     02  W-EC           PIC  9(001).
+000720     02  W-DE           PIC  9(001).
+000730     02  W-S            PIC  9(001).
+000740     02  CNT            PIC  9(002).
+000750     02  W-SUT          PIC  9(006).
+000760     02  W-KIN          PIC  9(008).
+000770     02  W-GP           PIC  9(004).
+000780     02  W-KBN          PIC  N(002).
+000790     02  W-ASUD.
+000800       03  W-ASU   OCCURS   4.
+000810         04  W-SUD   OCCURS  10.
+000820           05  W-SU     PIC S9(004).
+000830     02  W-GSU          PIC S9(006).
+000840     02  W-KBNO         PIC  X(006).
+000850     02  W-DC           PIC  9(001).                              I.030228
+000860 01  W-EM               PIC  X(030) VALUE SPACE.
+000870 01  W-FILE             PIC  X(013) VALUE SPACE.
+000880 01  ERR-STAT           PIC  X(002).
+000890     COPY LSTAT.
+000900 SCREEN SECTION.
+000910 SD  C-CRT
+000920     END STATUS IS ESTAT.
+000930 01  C-CLEAR.
+000940     02  C-CL    LINE   1  CLEAR SCREEN.
+000950 01  C-ACP.
+000960     02  LINE   2.
+000970       03  A-RSN   COLUMN  12   PIC  9(002)
+000980            USING W-RSN                  NO IFC.
+000990       03  A-RNG   COLUMN  15   PIC  9(004)
+001000            USING W-RNG                  NO IFC.
+001010       03  A-RND   COLUMN  20   PIC  9(002)
+001020            USING W-RND   CHECK OVERFLOW NO IFC.
+001030     02  A-DMM   LINE  23  COLUMN  68   PIC  9(001)
+001040          USING W-DMM    CHECK OVERFLOW NO IFC.
+001050 01  C-DSP.
+001060     02  D-MID.
+001070       03  LINE   3.
+001080         04  COLUMN  12  PIC  9(004) FROM  HSH-SCD.
+001090         04  COLUMN  17  PIC  N(024) FROM  S-NAME.
+001100       03  LINE   4.
+001110         04  COLUMN  12  PIC  9(006) FROM  HSH-HCD.
+001120         04  COLUMN  19  PIC  N(024) FROM  HI-NAME.
+001130       03  LINE   5.
+001140         04  COLUMN  12  PIC ZZ,ZZ9      FROM  W-SUT.
+001150         04  COLUMN  24  PIC ZZ,ZZ9      FROM  HSH-T.
+001160         04  COLUMN  36  PIC ZZ,ZZZ,ZZ9  FROM  W-KIN.
+001170         04  COLUMN  52  PIC 99/99/99    FROM  HSH-NNGPS.
+001180     02  D-MEI   LINE W-L.
+001190       03  D-GP    COLUMN   3  PIC ZZ/ZZ   FROM  W-GP.
+001200       03  D-KBN   COLUMN   9  PIC  N(002) FROM  W-KBN.
+001210       03  D-SIZ   COLUMN  14  PIC  9(001) FROM  W-S.
+001220       03  D-SU    COLUMN W-C  PIC  -(005) FROM  W-SU(W-S,CNT).
+001230       03  D-GSU   COLUMN  65  PIC ---,--9 FROM  W-GSU.
+001240       03  D-KBNO  COLUMN  73  PIC  9(006) FROM  W-KBNO.
+001250     02  LINE  23.
+001260       03  D-KRM   COLUMN   3  PIC  N(003) VALUE NC"完了済".
+001270       03  D-KRMC  COLUMN   3  PIC  X(006) VALUE   "      ".
+001280 01  C-ERR.
+001290     02  LINE  24.
+001300       03  E-ME    COLUMN  15   PIC  X(030) FROM  W-EM.
+001310     COPY LSSEM.
+001320 PROCEDURE DIVISION.
+001330 M-05.
+001340     DISPLAY C-CLEAR.
+001350     CALL "SCBT55".
+001360     OPEN INPUT S-M HI-M HSHF HSHNF.
+001370     MOVE ZERO TO W-DATA.
+001380 M-10.
+001390     ACCEPT A-RSN.
+001400     DISPLAY E-CL.
+001410     IF ESTAT = PF9
+001420         GO TO M-90.
+001430     IF ESTAT NOT = NOC AND HTB AND SKP
+001440         GO TO M-10.
+001450     IF W-RSN = ZERO
+001460         GO TO M-10.
+001470 M-15.
+001480     ACCEPT A-RNG.
+001490     IF ESTAT = BTB
+001500         GO TO M-10.
+001510     IF ESTAT NOT = NOC AND HTB AND SKP
+001520         GO TO M-15.
+001530     IF W-RNG = ZERO
+001540         GO TO M-15.
+001550 M-20.
+001560     ACCEPT A-RND.
+001570     IF ESTAT = BTB
+001580         GO TO M-15.
+001590     IF ESTAT NOT = HTB AND SKP
+001600         GO TO M-20.
+001610     IF W-RND = ZERO
+001620         GO TO M-20.
+001630*
+001640     MOVE W-RNO TO HSH-KEY.
+001650     READ HSHF WITH UNLOCK INVALID KEY
+001660         MOVE "***  ﾊｯﾁｭｳNO ﾅｼ  ***          " TO W-EM
+001670         DISPLAY E-ME E-ME98
+001680         GO TO M-10.
+001690*
+001700     MOVE HSH-SCD TO S-KEY.
+001710     READ S-M WITH UNLOCK INVALID KEY
+001720         MOVE SPACE TO S-NAME
+001730         MOVE NC"＊＊＊　仕入先　なし　　＊＊＊" TO S-NAME.
+001740*
+001750     MOVE HSH-HCD TO HI-KEY.
+001760     READ HI-M WITH UNLOCK INVALID KEY
+001770         MOVE SPACE TO HI-NAME
+001780         MOVE NC"＊＊＊　品名　なし　　＊＊＊　" TO HI-NAME.
+001790*
+001800     PERFORM SUM-RTN THRU SUM-EX.
+001810     DISPLAY D-MID.
+001820     IF HSH-ENGP = ZERO
+001830         DISPLAY D-KRMC
+001840       ELSE
+001850         DISPLAY D-KRM.
+001860     MOVE 9 TO W-L.
+001870     MOVE 0 TO W-END W-DE.
+001880*
+001890     MOVE HSH-HGP TO W-GP.                                        I.030228
+001900     MOVE NC"発注" TO W-KBN.                                      I.030228
+001910     MOVE ZERO TO W-ASUD.                                         I.030228
+001920     MOVE HSH-AHSUD TO W-ASUD.                                    I.030228
+001930     PERFORM SET-RTN THRU SET-EX.                                 I.030228
+001940     MOVE 1 TO W-DC.                                              I.030228
+001950     PERFORM DSP-RTN THRU DSP-EX.                                 I.030228
+001960     IF W-END = 9                                                 I.030228
+001970         GO TO M-90.                                              I.030228
+001980     IF W-END = 5                                                 I.030228
+001990         GO TO M-45.                                              I.030228
+002000*
+002010     MOVE SPACE TO HSHN-KEY.
+002020     MOVE W-RNO TO HSHN-RNO.
+002030     START HSHNF KEY NOT < HSHN-KEY INVALID KEY
+002040         GO TO M-25.
+002050 M-18.
+002060     READ HSHNF NEXT RECORD WITH UNLOCK AT END
+002070         GO TO M-25.
+002080     IF W-RNO NOT = HSHN-RNO
+002090         GO TO M-25.
+002100*
+002110     MOVE HSHN-GP TO W-GP.
+002120     IF HSHN-HPC = 0
+002130         MOVE NC"入庫" TO W-KBN
+002140       ELSE
+002150         MOVE NC"返品" TO W-KBN.
+002160     MOVE HSHN-KBNO TO W-KBNO.
+002170     MOVE ZERO TO W-ASUD.
+002180     MOVE HSHN-ASUD TO W-ASUD.
+002190     PERFORM SET-RTN THRU SET-EX.
+002200     MOVE 0 TO W-DC.                                              I.030228
+002210     PERFORM DSP-RTN THRU DSP-EX.
+002220     IF W-END = 9
+002230         GO TO M-90.
+002240     IF W-END = 5
+002250         GO TO M-45.
+002260     GO TO M-18.
+002270 M-25.
+002280     OPEN INPUT HSS-F.
+002290 M-30.
+002300     READ HSS-F NEXT RECORD WITH UNLOCK AT END
+002310         GO TO M-35.
+002320     IF HSS-HKC NOT = 0
+002330         GO TO M-30.
+002340     IF W-RNO NOT = HSS-RNO
+002350         GO TO M-30.
+002360*
+002370     MOVE ZERO TO W-GP.
+002380     IF HSS-HPC = 0
+002390         MOVE NC"入庫" TO W-KBN
+002400       ELSE
+002410         MOVE NC"返品" TO W-KBN.
+002420     MOVE HSS-DNO TO W-KBNO.
+002430     MOVE ZERO TO W-ASUD.
+002440     MOVE HSS-ASUD TO W-ASUD.
+002450     PERFORM SET-RTN THRU SET-EX.
+002460     MOVE 0 TO W-DC.                                              I.030228
+002470     PERFORM DSP-RTN THRU DSP-EX.
+002480     IF W-END = 9
+002490         CLOSE HSS-F
+002500         GO TO M-90.
+002510     IF W-END = 5
+002520         CLOSE HSS-F
+002530         GO TO M-45.
+002540     GO TO M-30.
+002550 M-35.
+002560     CLOSE HSS-F.
+002570*
+002580     MOVE NC"残高" TO W-KBN.                                      I.030228
+002590     PERFORM ZAN-RTN THRU ZAN-EX.                                 I.030228
+002600     PERFORM SET-RTN THRU SET-EX.                                 I.030228
+002610     MOVE 2 TO W-DC.                                              I.030228
+002620     PERFORM DSP-RTN THRU DSP-EX.                                 I.030228
+002630     IF W-END = 9                                                 I.030228
+002640         GO TO M-90.                                              I.030228
+002650     IF W-END = 5                                                 I.030228
+002660         GO TO M-45.                                              I.030228
+002670     MOVE "ＥＮＤ　ＤＡＴＡ              " TO W-EM.
+002680     DISPLAY E-ME.
+002690 M-40.
+002700     ACCEPT A-DMM.
+002710     IF ESTAT = PF9
+002720         GO TO M-90.
+002730     IF ESTAT NOT = HTB AND SKP
+002740         GO TO M-40.
+002750 M-45.
+002760     DISPLAY C-CLEAR.
+002770     CALL "SCBT55".
+002780     GO TO M-10.
+002790 M-90.
+002800     CLOSE S-M.
+002810     CLOSE HI-M.
+002820     CLOSE HSHF.
+002830     CLOSE HSHNF.
+002840 M-95.
+002850     DISPLAY C-CLEAR.
+002860     STOP RUN.
+002870 SUM-RTN.
+002880     MOVE ZERO TO W-S W-SUT.
+002890 SUM-020.
+002900     ADD 1 TO W-S.
+002910     IF W-S = 5
+002920         GO TO SUM-060.
+002930     MOVE ZERO TO CNT.
+002940 SUM-040.
+002950     ADD 1 TO CNT.
+002960     IF CNT = 11
+002970         GO TO SUM-020.
+002980     ADD HSH-HSU(W-S,CNT) TO W-SUT.
+002990     GO TO SUM-040.
+003000 SUM-060.
+003010     COMPUTE W-KIN = W-SUT * HSH-T.
+003020 SUM-EX.
+003030     EXIT.
+003040 SET-RTN.
+003050     MOVE ZERO TO W-S W-AZCD W-GSU.
+003060 SET-020.
+003070     ADD 1 TO W-S.
+003080     IF W-S = 5
+003090         GO TO SET-EX.
+003100     MOVE ZERO TO CNT.
+003110 SET-040.
+003120     ADD 1 TO CNT.
+003130     IF CNT = 11
+003140         GO TO SET-020.
+003150     IF W-SU(W-S,CNT) NOT = ZERO
+003160         ADD W-SU(W-S,CNT) TO W-GSU
+003170         IF W-ZC(W-S) = 0
+003180             MOVE 1 TO W-ZC(W-S).
+003190     GO TO SET-040.
+003200 SET-EX.
+003210     EXIT.
+003220 DSP-RTN.
+003230     MOVE 0 TO W-S W-SC W-EC.
+003240 DSP-020.
+003250     ADD 1 TO W-S.
+003260     IF W-S = 5
+003270         GO TO DSP-EX.
+003280     IF W-ZC(W-S) = 0
+003290         GO TO DSP-020.
+003300     ADD 1 TO W-L.
+003310     IF W-L = 23
+003320         GO TO DSP-080.
+003330 DSP-040.
+003340     IF W-S = 1
+003350         MOVE 1 TO W-SC
+003360         IF 0 = W-ZC(2) AND W-ZC(3) AND W-ZC(4)
+003370             MOVE 1 TO W-EC.
+003380     IF W-S = 2
+003390         IF 0 = W-ZC(1)
+003400             MOVE 1 TO W-SC.
+003410     IF W-S = 2
+003420         IF 0 = W-ZC(3) AND W-ZC(4)
+003430             MOVE 1 TO W-EC.
+003440     IF W-S = 3
+003450         IF 0 = W-ZC(1) AND W-ZC(2)
+003460             MOVE 1 TO W-SC.
+003470     IF W-S = 3
+003480         IF 0 = W-ZC(4)
+003490             MOVE 1 TO W-EC.
+003500     IF W-S = 4
+003510         MOVE 1 TO W-EC
+003520         IF 0 = W-ZC(1) AND W-ZC(2) AND W-ZC(3)
+003530             MOVE 1 TO W-SC.
+003540*
+003550     IF W-SC = 1
+003560         DISPLAY D-KBN                                            I.030228
+003570         IF W-DC = 0                                              I.030228
+003580             DISPLAY D-GP D-KBNO                                  I.030228
+003590           ELSE                                                   I.030228
+003600             IF W-DC = 1                                          I.030228
+003610                 DISPLAY D-GP.
+003620*****        DISPLAY D-GP D-KBN D-KBNO.                           D.030228
+003630     IF W-EC = 1
+003640         DISPLAY D-GSU.
+003650     DISPLAY D-SIZ.
+003660*
+003670     MOVE 10 TO W-C.
+003680     MOVE ZERO TO CNT.
+003690 DSP-060.
+003700     ADD 1 TO CNT.
+003710     IF CNT NOT = 11
+003720         ADD 5 TO W-C
+003730         DISPLAY D-SU
+003740         GO TO DSP-060.
+003750     GO TO DSP-020.
+003760 DSP-080.
+003770     ACCEPT A-DMM.
+003780     IF ESTAT = PF9
+003790         MOVE 9 TO W-END
+003800         GO TO DSP-EX.
+003810     IF ESTAT NOT = HTB AND SKP
+003820         GO TO DSP-080.
+003830     IF W-DMM = 9
+003840         MOVE 5 TO W-END
+003850         GO TO DSP-EX.
+003860     IF W-DMM NOT = 1
+003870         GO TO DSP-080.
+003880*
+003890     DISPLAY C-CLEAR.
+003900     CALL "SCBT55".
+003910     DISPLAY D-MID.
+003920     IF HSH-ENGP = ZERO
+003930         DISPLAY D-KRMC
+003940       ELSE
+003950         DISPLAY D-KRM.
+003960     MOVE 10 TO W-L.
+003970     MOVE 1 TO W-SC.
+003980     GO TO DSP-040.
+003990 DSP-EX.
+004000     EXIT.
+004010 ZAN-RTN.                                                         I.030228
+004020     MOVE ZERO TO W-ASUD CNT.                                     I.030228
+004030 ZAN-020.                                                         I.030228
+004040     ADD 1 TO CNT.                                                I.030228
+004050     IF CNT = 11                                                  I.030228
+004060         GO TO ZAN-EX.                                            I.030228
+004070     COMPUTE W-SU(1,CNT) = HSH-HSU(1,CNT) -                       I.030228
+004080                           HSH-NSU(1,CNT) - HSH-ISU(1,CNT).       I.030228
+004090     COMPUTE W-SU(2,CNT) = HSH-HSU(2,CNT) -                       I.030228
+004100                           HSH-NSU(2,CNT) - HSH-ISU(2,CNT).       I.030228
+004110     COMPUTE W-SU(3,CNT) = HSH-HSU(3,CNT) -                       I.030228
+004120                           HSH-NSU(3,CNT) - HSH-ISU(3,CNT).       I.030228
+004130     COMPUTE W-SU(4,CNT) = HSH-HSU(4,CNT) -                       I.030228
+004140                           HSH-NSU(4,CNT) - HSH-ISU(4,CNT).       I.030228
+004150     GO TO ZAN-020.                                               I.030228
+004160 ZAN-EX.                                                          I.030228
+004170     EXIT.                                                        I.030228

@@ -1,0 +1,249 @@
+000010 IDENTIFICATION  DIVISION.
+000020 PROGRAM-ID.     NSM02U.
+000030 AUTHOR.         A.KOMATSUBARA.
+000040**********************************
+000050*        仕入先マスタ変換        *
+000060**********************************
+000070 ENVIRONMENT     DIVISION.
+000080 CONFIGURATION   SECTION.
+000090 SOURCE-COMPUTER.    SYSTEM100.
+000100 OBJECT-COMPUTER.    SYSTEM100.
+000110 INPUT-OUTPUT    SECTION.
+000120 FILE-CONTROL.
+000130     SELECT  S-M             ASSIGN  TO  F1-MSD
+000140             ORGANIZATION    INDEXED
+000150             ACCESS          SEQUENTIAL
+000160             RECORD  KEY IS  S-KEY
+000170             FILE    STATUS  ERR-STAT.
+000180     SELECT  TK              ASSIGN  TO  F2-MSD
+000190             ORGANIZATION    INDEXED
+000200             ACCESS          DYNAMIC
+000210             RECORD  KEY IS  TK-KEY
+000220             FILE    STATUS  ERR-STAT.
+000230 I-O-CONTROL.
+000240     APPLY   SHARED-MODE       ON  S-M
+000250     APPLY   EXCLUSIVE-MODE    ON  TK.
+000260 DATA    DIVISION.
+000270 FILE    SECTION.
+000280 COPY    LISM.
+000290 COPY    TKLIB.
+000300 WORKING-STORAGE SECTION.
+000310 77  ERR-STAT              PIC  X(02).
+000320 01  SW-AREA.
+000330     02  END-SW            PIC  9(01)    VALUE 0.
+000340     02  TK-SW             PIC  9(01)    VALUE 0.
+000350 01  W-AREA.
+000360     02  W-OKC             PIC  X(01).
+000370     02  W-TCD.
+000380         03  W-TCD1        PIC  9(01).
+000390         03  W-TCD2        PIC  9(01).
+000400         03  W-TCD3        PIC  9(01).
+000410         03  W-TCD4        PIC  9(01).
+000420         03  W-TCD5        PIC  9(01).
+000430     02  SCNT              PIC  9(02).                            I.910919
+000440     02  DCNT              PIC  9(02).                            I.910919
+000450     02  CNT               PIC  9(02).                            I.910919
+000460     02  W-NAME            PIC  N(24).                            I.910919
+000470     02  W-NAMED  REDEFINES W-NAME.                               I.910919
+000480         03  W-NAME1       PIC  N(10).                            I.910919
+000490         03  W-NAME2       PIC  N(14).                            I.910919
+000500     02  W-NAD    REDEFINES W-NAME.                               I.910919
+000510         03  W-NA          PIC  N(01)  OCCURS  24.                I.910919
+000520     02  W-NAMEW           PIC  N(24).                            I.910919
+000530     02  W-NADW   REDEFINES W-NAMEW.                              I.910919
+000540         03  W-NAW         PIC  N(01)  OCCURS  24.                I.910919
+000550     02  W-TNAD1           PIC  N(04).                            I.910919
+000560     02  W-TND1   REDEFINES W-TNAD1.                              I.910919
+000570         03  W-TN1         PIC  N(01)  OCCURS   4.                I.910919
+000580 COPY    LWMSG.
+000590 SCREEN  SECTION.
+000600 SD  SRT-X
+000610     END STATUS  IS  ESTAT.
+000620 01  DISP-C      LINE  1.
+000630     02  DISP-CLE    CLEAR   SCREEN.
+000640 01  DISP-AREA.
+000650     02  LINE  01.
+000660         03  COLUMN  21    PIC  N(08)  VALUE
+000670             NC"仕入先マスタ変換"   REVERSE.
+000680     02  LINE  24.
+000690         03  COLUMN  61    PIC  N(02)  VALUE  NC"確認".
+000700         03  COLUMN  66    PIC  X(13)  VALUE
+000710             "OK=1,NO=9 ( )".
+000720 01  ACEP-AREA.
+000730     02  ACP-OKC     LINE  24   COLUMN 77
+000740                           PIC  X(01)  INTO  W-OKC
+000750                           CHECK OVERFLOW    NO IFC.
+000760**
+000770 COPY    LSMSG.
+000780**
+000790 PROCEDURE   DIVISION.
+000800*************************
+000810*    ＭＡＩＮ処理       *
+000820*************************
+000830 HAJIME.
+000840     PERFORM     INI-RTN   THRU   INI-EX.
+000850     PERFORM     UPD-RTN   THRU   UPD-EX.
+000860     PERFORM     CLSE-ENT  THRU   CLSE-EXT.
+000870 OWARI.
+000880     STOP RUN.
+000890*************************
+000900*    初期処理           *
+000910*************************
+000920 INI-RTN.
+000930     DISPLAY     DISP-C.
+000940     DISPLAY     DISP-AREA.
+000950     OPEN        INPUT     S-M
+000960                 I-O       TK.
+000970 INI-010.
+000980     ACCEPT  ACP-OKC.
+000990     IF  ESTAT  =  "P9"
+001000         MOVE  255         TO   COMPLETION-CODE
+001010         PERFORM  CLSE-ENT THRU CLSE-EXT
+001020         STOP  RUN.
+001030     IF  ESTAT  NOT =  "01" AND "06"
+001040         GO  TO  INI-010.
+001050     IF  W-OKC  NOT =  "1" AND "9"
+001060         GO  TO  INI-010.
+001070     IF  W-OKC  =  "9"
+001080         MOVE  255         TO   COMPLETION-CODE
+001090         PERFORM  CLSE-ENT THRU CLSE-EXT
+001100         STOP  RUN.
+001110 INI-EX.
+001120     EXIT.
+001130*************************
+001140*    更新処理           *
+001150*************************
+001160 UPD-RTN.
+001170     MOVE  20000           TO   TK-KEY.
+001180     START TK  KEY IS  NOT <    TK-KEY  INVALID
+001190           MOVE  1         TO   TK-SW.
+001200     PERFORM  TK1-RTN      THRU TK1-EX
+001210           UNTIL  TK-SW    =    1.
+001220     PERFORM  TK2-RTN      THRU TK2-EX
+001230           UNTIL  END-SW   =    1.
+001240 UPD-EX.
+001250     EXIT.
+001260*************************
+001270*    終了処理           *
+001280*************************
+001290 CLSE-ENT.
+001300     CLOSE       S-M  TK.
+001310 CLSE-EXT.
+001320     EXIT.
+001330*************************
+001340*    取引先マスタ更新① *
+001350*************************
+001360 TK1-RTN.
+001370     READ  TK              NEXT AT END
+001380           MOVE  1         TO   TK-SW
+001390           GO  TO  TK1-EX.
+001400     MOVE  TK-KEY          TO   W-TCD.
+001410     IF  W-TCD1  NOT =  2
+001420         MOVE  1           TO   TK-SW
+001430         GO  TO  TK1-EX.
+001440     MOVE  TK-KEY          TO   ERR-K.
+001450     DELETE  TK            INVALID
+001460             MOVE  "TK"    TO   ERR-F
+001470             MOVE  "D"     TO   ERR-M
+001480             PERFORM ERR-ENT    THRU  ERR-EXT.
+001490 TK1-EX.
+001500     EXIT.
+001510*************************
+001520*    取引先マスタ更新② *
+001530*************************
+001540 TK2-RTN.
+001550     READ  S-M             UNLOCK  AT  END
+001560           MOVE  1         TO   END-SW
+001570           GO  TO  TK2-EX.
+001580     MOVE  SPACE           TO   TK-REC.
+001590     MOVE  SPACE           TO   W-NAME.                           I.910919
+001600     INITIALIZE            TK-REC.
+001610     ADD   20000           TO   S-TCD  GIVING  TK-CD.
+001620*****MOVE  S-NAME          TO   TK-NAMEN.                         D.910919
+001630     MOVE  S-NAME          TO   W-NAME.                           I.910919
+001640     IF W-NAME2  NOT =     SPACE                                  I.910919
+001650        PERFORM TNA-RTN THRU TNA-EX.                              I.910919
+001660     MOVE  W-NAME1         TO   TK-NAMEN.                         I.910919
+001670     MOVE  S-PC            TO   TK-PRC.                           I.971105
+001680     MOVE  S-BKC           TO   TK-BKC.                           I.990603
+001690     MOVE  TK-KEY          TO   ERR-K.
+001700     WRITE TK-REC          INVALID
+001710           MOVE  "TK"      TO   ERR-F
+001720           MOVE  "W"       TO   ERR-M
+001730           PERFORM ERR-ENT THRU ERR-EXT.
+001740 TK2-EX.
+001750     EXIT.
+001760*************************
+001770*    取引先名　短縮     *
+001780*************************
+001790 TNA-RTN.                                                         I.910919
+001800     MOVE SPACE TO W-NAMEW.                                       I.910919
+001810     MOVE W-NAME TO W-NAMEW.                                      I.910919
+001820     MOVE SPACE TO W-NAME.                                        I.910919
+001830     MOVE ZERO TO DCNT CNT.                                       I.910919
+001840 TNA-010.                                                         I.910919
+001850     ADD 1 TO DCNT.                                               I.910919
+001860     IF DCNT = 25                                                 I.910919
+001870         GO TO TNA-100.                                           I.910919
+001880     MOVE W-NAW(DCNT) TO W-NA(DCNT).                              I.910919
+001890     IF W-NAW(DCNT) = SPACE                                       I.910919
+001900         ADD 1 TO CNT                                             I.910919
+001910       ELSE                                                       I.910919
+001920         MOVE ZERO TO CNT.                                        I.910919
+001930     IF CNT < 4                                                   I.910919
+001940         GO TO TNA-010.                                           I.910919
+001950 TNA-100.                                                         I.910919
+001960     IF W-NAME2 = SPACE                                           I.910919
+001970         GO TO TNA-EX.                                            I.910919
+001980     MOVE SPACE TO W-TNAD1.                                       I.910919
+001990     MOVE ZERO TO SCNT.                                           I.910919
+002000 TNA-110.                                                         I.910919
+002010     ADD 1 TO SCNT.                                               I.910919
+002020     IF SCNT = 21                                                 I.910919
+002030         GO TO TNA-200.                                           I.910919
+002040     COMPUTE DCNT = SCNT - 1.                                     I.910919
+002050     MOVE ZERO TO CNT.                                            I.910919
+002060 TNA-120.                                                         I.910919
+002070     ADD 1 TO CNT DCNT.                                           I.910919
+002080     IF CNT NOT = 5                                               I.910919
+002090         MOVE W-NA(DCNT) TO W-TN1(CNT)                            I.910919
+002100         GO TO TNA-120.                                           I.910919
+002110     IF W-TNAD1 NOT = NC"株式会社" AND NC"有限会社"               I.910919
+002120         GO TO TNA-110.                                           I.910919
+002130     IF W-TNAD1 = NC"株式会社"                                    I.910919
+002140         MOVE NC"㈱　　　" TO W-TNAD1.                            I.910919
+002150     IF W-TNAD1 = NC"有限会社"                                    I.910919
+002160         MOVE NC"㈲　　　" TO W-TNAD1.                            I.910919
+002170     COMPUTE DCNT = SCNT - 1.                                     I.910919
+002180     MOVE ZERO TO CNT.                                            I.910919
+002190 TNA-130.                                                         I.910919
+002200     ADD 1 TO CNT DCNT.                                           I.910919
+002210     IF CNT NOT = 5                                               I.910919
+002220         MOVE W-TN1(CNT) TO W-NA(DCNT)                            I.910919
+002230         GO TO TNA-130.                                           I.910919
+002240     COMPUTE CNT = SCNT + 3.                                      I.910919
+002250 TNA-140.                                                         I.910919
+002260     ADD 1 TO CNT SCNT.                                           I.910919
+002270     IF CNT NOT = 25                                              I.910919
+002280         MOVE W-NA(CNT) TO W-NA(SCNT)                             I.910919
+002290         GO TO TNA-140.                                           I.910919
+002300     MOVE SPACE TO W-NA(22) W-NA(23) W-NA(24).                    I.910919
+002310 TNA-200.                                                         I.910919
+002320     IF W-NAME2 = SPACE                                           I.910919
+002330         GO TO TNA-EX.                                            I.910919
+002340     MOVE SPACE TO W-NAMEW.                                       I.910919
+002350     MOVE W-NAME TO W-NAMEW.                                      I.910919
+002360     MOVE SPACE TO W-NAME.                                        I.910919
+002370     MOVE ZERO TO SCNT DCNT.                                      I.910919
+002380 TNA-210.                                                         I.910919
+002390     ADD 1 TO DCNT.                                               I.910919
+002400     IF DCNT = 25                                                 I.910919
+002410         GO TO TNA-EX.                                            I.910919
+002420     IF W-NAW(DCNT) NOT = SPACE                                   I.910919
+002430         ADD 1 TO SCNT                                            I.910919
+002440         MOVE W-NAW(DCNT) TO W-NA(SCNT).                          I.910919
+002450     GO TO TNA-210.                                               I.910919
+002460 TNA-EX.                                                          I.910919
+002470     EXIT.                                                        I.910919
+002480*******
+002490     COPY    LPMSG.

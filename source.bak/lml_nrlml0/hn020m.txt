@@ -1,0 +1,2002 @@
+000010 IDENTIFICATION   DIVISION.
+000020 PROGRAM-ID.      HN020M.
+000030 AUTHOR.          MAYUMI.I.
+000040*********************************************************
+000050*    PROGRAM         :  得意先品名別マスター（出荷）    *
+000060*    PRINTER TYPE    :  JIPS                            *
+000070*    SCREEN          :  SH010M                          *
+000080*    DATA WRITTN     :  91/08/23                        *
+000090*    COMPILE TYPE    :  CBL85 (MODE74)                  *
+000100*********************************************************
+000110 ENVIRONMENT      DIVISION.
+000120 CONFIGURATION    SECTION.
+000130 SOURCE-COMPUTER. NEAC-SYSTEM3100.
+000140 OBJECT-COMPUTER. NEAC-SYSTEM3100.
+000150 INPUT-OUTPUT     SECTION.
+000160 FILE-CONTROL.
+000170***  得意先品名別単価マスタ
+000180*****SELECT  JT-THTN  ASSIGN  TO  THTN-MSD                        D.010413
+000190     SELECT  THTM     ASSIGN  TO  THT1-MSD  THT2-MSD              I.010413
+000200         ORGANIZATION  IS INDEXED
+000210         ACCESS MODE   IS DYNAMIC
+000220         RECORD KEY    IS THT-KEY                                 I.010413
+000230         ALTERNATE RECORD KEY THT-KEY2                            I.010413
+000240*****    RECORD KEY    IS THTN-KEY                                D.010413
+000250         FILE STATUS   IS ERR-STAT.
+000260***  得意先マスタ
+000270*****SELECT  T-M  ASSIGN  TO  TM-MSD                              D.000224
+000280     SELECT  T-M  ASSIGN  TO  TM1-MSD TM2-MSD                     I.000224
+000290         ORGANIZATION  IS INDEXED
+000300         ACCESS MODE   IS RANDOM
+000310         RECORD KEY    IS T-KEY
+000320         ALTERNATE  RECORD KEY    IS T-KEY2                       I.000224
+000330         FILE STATUS IS ERR-STAT.
+000340***  品名ＩＮＤＥＸＥＤマスタ
+000350*****SELECT  HI-M  ASSIGN  TO  HIM-MSD                            D.010802
+000360     SELECT  HI-M  ASSIGN  TO  HI1-MSD HI2-MSD                    I.010802
+000370         ORGANIZATION  IS INDEXED
+000380*****    ACCESS MODE   IS RANDOM                                  D.000117
+000390         ACCESS MODE   IS DYNAMIC                                 I.000117
+000400         RECORD KEY    IS HI-KEY
+000410         ALTERNATE RECORD KEY    IS HI-KEY2                       I.010802
+000420         FILE STATUS IS ERR-STAT.
+000430     SELECT  P-F ASSIGN TO P-PRN999.
+000440 I-O-CONTROL.
+000450*****APPLY SHARED-MODE ON JT-THTN  T-M  HI-M                      D.010413
+000460     APPLY SHARED-MODE ON THTM     T-M  HI-M                      I.010413
+000470     APPLY SHIFT-CODE  ON P-F.
+000480 DATA    DIVISION.
+000490 FILE    SECTION.
+000500*COPY   LTHTN.                                                    D.010413
+000510     COPY LIDTHT.                                                 I.080425
+000520 COPY   LIHIM.
+000530 COPY   LITM.
+000540 FD  P-F
+000550     LABEL RECORD IS OMITTED                                      I.000623
+000560     LINAGE IS 66 LINES.                                          I.000623
+000570*****LABEL RECORD IS OMITTED.                                     D.000623
+000580 01  P-R                    PIC X(250).
+000590*01  P-R1.                                                        *D920511
+000600*****02  K-CD1              PIC X(05).
+000610*****02  F                  PIC X(03).
+000620*****02  P-01               PIC 9(04).
+000630*****02  FILLER             PIC X(04).
+000640*****02  P-02               PIC N(24).
+000650*****02  FILLER             PIC X(01).
+000660*****02  P-03               PIC 9(06).
+000670*****02  F                  PIC X(01).
+000680*****02  P-04               PIC N(24).
+000690*****02  F                  PIC X(03).                            *U920511
+000700*****02  P-05  OCCURS  5    PIC ZZZZBBB.                              :
+000710*****02  F                  PIC X(05).                            *D920511
+000720*****02  P-06               PIC ZZZ9.                                 :
+000730*****02  K-CD2              PIC X(05).
+000740 WORKING-STORAGE  SECTION.
+000750 77  ERR-STAT               PIC X(2).
+000760 77  20K                    PIC X(05)  VALUE  ""3FE04FE080"".
+000770 77  15K                    PIC X(05)  VALUE  ""3FE04F40A0"".
+000780 01  PRN-AREA.
+000790     02  W-POC              PIC  9(01) VALUE  ZERO.
+000800     02  W-SEN              PIC  9(01).                           I.010613
+000810     02  W-OMSG             PIC  N(03).                           I.010613
+000820     02  W-UMSG             PIC  N(03).                           I.010613
+000830     02  W-FROM1            PIC  9(04).
+000840     02  W-TO1              PIC  9(04).
+000850     02  W-FROM2            PIC  9(06).
+000860     02  W-TO2              PIC  9(06).
+000870     02  LCNT               PIC  9(02) VALUE  90.
+000880*****02  PCNT               PIC  9(04) VALUE  ZERO.               D.010419
+000890     02  PCNT               PIC  9(03) VALUE  ZERO.
+000900     02  OLD-KEY.
+000910         03  W-TCD          PIC  9(04).                           取引先Ｃ
+000920         03  W-HCD          PIC  9(06).                           品名ＣＤ
+000930         03  W-SIZ          PIC  9(01).                           ｻｲｽﾞ区分
+000940 01  GAM-AREA.
+000950     02  ACT                PIC  9(01).
+000960     02  OKC                PIC  9(01).
+000970     02  W-L1               PIC  9(02).                           *I920511
+000980     02  W-L2               PIC  9(02).                           I.010613
+000990     02  W-LCNT             PIC  9(02).                               :
+001000     02  I                  PIC  9(01).                               :
+001010     02  TCNT               PIC  9(02).                           I.010613
+001020     02  PRI-SW             PIC  9(01).                               :
+001030     02  W-MTCD             PIC  9(04).                           I.010227
+001040     02  W-STCD             PIC  9(04).                           I.010227
+001050     02  W-KEY.
+001060         03  W-01           PIC  9(04).
+001070         03  W-02           PIC  9(06).
+001080         03  W-02R          REDEFINES  W-02.                      I.000117
+001090           04  W-021        PIC  9(04).                           I.000117
+001100           04  W-022        PIC  9(02).                           I.000117
+001110         03  W-03           PIC  9(01).
+001120*****02  W-04               PIC  9(04).                           *D920511
+001130     02  W-04T.                                                   *U920511
+001140         03  W-04  OCCURS  5     PIC 9(05).                       I.941223
+001150         03  W-041 OCCURS  5     PIC 9(05).                       I.080204
+001160*****    03  W-04  OCCURS  5     PIC 9(04).                       D.941223
+001170     02  W-BITT.                                                  *I920511
+001180         03  W-BIT OCCURS  5     PIC 9(01).                           :
+001190     02  W-05T.                                                   I.010613
+001200         03  W-05  OCCURS  10    PIC 9(04).                       I.010613
+001210     02  W-PC.                                                    I.000623
+001220         03  W-PC1          PIC 9(01).                            I.000623
+001230         03  W-PC2          PIC 9(01).                            I.000623
+001240     02  W-CD               PIC 9(01).                            I.000623
+001250     02  W-LD               PIC 9(02).                            I.000623
+001260     02  W-C                PIC 9(02).                            I.000117
+001270     02  W-HNAD.                                                  I.000117
+001280         03  W-HNA          PIC N(01)  OCCURS  24.                I.000117
+001290     02  W-NAME             PIC N(24).                            I.000117
+001300     02  W-NAD              REDEFINES  W-NAME.                    I.000117
+001310         03  W-NA           PIC N(01)  OCCURS  24.                I.000117
+001320 01  W-R.                                                         I.010227
+001330     02  WR-KEY.                                                  I.010227
+001340       03  WR-01      PIC 9(4).                                   I.010227
+001350       03  WR-02      PIC 9(6).                                   I.010227
+001360       03  WR-03      PIC 9(1).                                   I.010227
+001370     02  WR-04        PIC 9(5).                                   I.010227
+001380     02  WR-041       PIC 9(5).                                   I.080204
+001390 01  WORK-AREA.
+001400     02  HIZUKE.
+001410         03  HI-YY          PIC 9(02).
+001420         03  HI-MM          PIC 9(02).
+001430         03  HI-DD          PIC 9(02).
+001440**
+001450*01  W-TBL.                                                       D.941223
+001460*****02  W-031              PIC  X(04).                           D.941223
+001470*****02  W-032              PIC  X(04).                           D.941223
+001480*****02  W-033              PIC  X(04).                           D.941223
+001490*****02  W-034              PIC  X(04).                           D.941223
+001500*****02  W-035              PIC  X(04).                           D.941223
+001510*****02  W-036              PIC  X(04).                           D.941223
+001520*****02  W-037              PIC  X(04).                           D.941223
+001530*****02  W-038              PIC  X(04).                           D.941223
+001540*****02  W-039              PIC  X(04).                           D.941223
+001550*****02  W-040              PIC  X(04).                           D.941223
+001560*01  TBL1                   PIC  X(40)  VALUE                     D.941223
+001570*****      "３号２号１号０号 中  大 特大28.029.030.0".            D.941223
+001580*01  TBL2                   PIC  X(40)  VALUE                     D.941223
+001590*****      "12.513.013.514.015.016.017.018.019.020.0".            D.941223
+001600*01  TBL3                   PIC  X(40)  VALUE                     D.941223
+001610*****      "21.021.522.022.523.023.524.024.525.0    ".            D.941223
+001620*01  TBL4                   PIC  X(40)  VALUE                     D.941223
+001630*****      "24.024.525.025.526.026.527.027.5    預り".            D.941223
+001640 01  HEAD1.
+001650     02  F              PIC X(05) VALUE ""3FE04FE080"".
+001660     02  F              PIC N(10) VALUE NC"（トラスコ他出荷用）". I.080425
+001670     02  F              PIC X(18) VALUE SPACE.                    I.080425
+001680*****02  F              PIC X(38) VALUE SPACE.                    D.080425
+001690     02  F              PIC N(26) VALUE                           I.000623
+001700         NC"＊＊＊　　得意先品名別単価マスター　リスト　　＊＊＊".I.000623
+001710*****02  F              PIC X(19) VALUE SPACE.                    D.000623
+001720*****02  F              PIC N(03) VALUE NC"＊＊＊".               D.000623
+001730*****02  F              PIC X(04) VALUE SPACE.                    D.000623
+001740*****02  F              PIC X(53) VALUE                           D.000623
+001750*****    "得 意 先 品 名 別 単 価 マ ス タ プ ル ー フ リ ス ト". D.000623
+001760*****02  F              PIC X(04) VALUE SPACE.                    D.000623
+001770*****02  F              PIC N(03) VALUE NC"＊＊＊".               D.000623
+001780*****02  F              PIC X(17) VALUE SPACE.                    D.000623
+001790     02  F              PIC X(22) VALUE SPACE.                    I.000623
+001800     02  F              PIC X(5) VALUE "DATE.".
+001810*****02  M-YY           PIC Z9.                                   D.000114
+001820     02  M-YY           PIC 9(2).                                 I.000114
+001830     02  F              PIC X    VALUE "/".
+001840     02  M-MM           PIC Z9.
+001850     02  F              PIC X    VALUE "/".
+001860     02  M-DD           PIC Z9.
+001870*****02  F              PIC X(7) VALUE SPACE.                     D.000623
+001880     02  F              PIC X(5) VALUE SPACE.                     I.000623
+001890     02  F              PIC X(2) VALUE "P.".
+001900     02  WPCNT          PIC ZZ9.                                  I.000623
+001910*****02  WPCNT          PIC ZZZ9.                                 D.000623
+001920*01  HEADA.                                                       D.000623
+001930*****02  F              PIC X(93) VALUE SPACE.                    D.000623
+001940*****02  F              PIC X(32) VALUE                           D.000623
+001950*****"<------  サイズ区分単価  ------>".                          D.000623
+001960 01  HEAD2.
+001970*****02  F              PIC X(05)  VALUE  ""3FE04F40A0"".         D.010613
+001980     02  HEAD21.                                                  I.010613
+001990       03  H-TCD21      PIC X(05).                                I.010613
+002000       03  H-TNA21      PIC N(07).                                I.010613
+002010     02  HEAD22  REDEFINES HEAD21.                                I.010613
+002020       03  H-HCD21      PIC X(07).                                I.010613
+002030       03  H-HNA21      PIC N(06).                                I.010613
+002040*****02  F              PIC X(05) VALUE "ｺｰﾄﾞ ".                  D.010613
+002050*****02  F              PIC N(10) VALUE                           D.010613
+002060*****    NC"得　　意　　先　　名".                                D.010613
+002070*****02  F              PIC X(45) VALUE SPACE.                    D.010613
+002080     02  F              PIC X(46) VALUE SPACE.                    I.010613
+002090     02  F              PIC X(05) VALUE "  :  ".                  I.000623
+002100     02  HEAD23.                                                  I.010613
+002110       03  H-TCD22      PIC X(05).                                I.010613
+002120       03  H-TNA22      PIC N(07).                                I.010613
+002130     02  HEAD24  REDEFINES HEAD23.                                I.010613
+002140       03  H-HCD22      PIC X(07).                                I.010613
+002150       03  H-HNA22      PIC N(06).                                I.010613
+002160     02  F              PIC X(46) VALUE SPACE.                    I.010613
+002170*****02  F              PIC X(05) VALUE "ｺｰﾄﾞ ".                  D.010613
+002180*****02  F              PIC N(10) VALUE                           D.010613
+002190*****    NC"得　　意　　先　　名".                                D.010613
+002200*****02  F              PIC X(45) VALUE SPACE.                    D.010613
+002210 01  HEAD3.                                                       I.000623
+002220     02  F              PIC X(05)  VALUE  ""3FE04F40A0"".         I.010613
+002230     02  F              PIC X(04) VALUE SPACE.                    I.020402
+002240     02  HEAD31F.                                                 I.020402
+002250       03  F            PIC X(02).                                I.020402
+002260       03  H-CD31F      PIC X(04).                                I.020402
+002270       03  F            PIC X(02).                                I.020402
+002280       03  H-NA31F      PIC N(10).                                I.020402
+002290       03  F            PIC X(21).                                I.020402
+002300     02  HEAD32F  REDEFINES HEAD31F.                              I.020402
+002310       03  H-CD32F      PIC X(04).                                I.020402
+002320       03  F            PIC X(01).                                I.020402
+002330       03  H-NA32F      PIC N(10).                                I.020402
+002340       03  F            PIC X(24).                                I.020402
+002350*****02  F              PIC X(13) VALUE SPACE.                    D.010413
+002360*****02  F              PIC X(06) VALUE SPACE.                    D.020402
+002370*****02  H-CD31         PIC X(06).                                D.020402
+002380*****02  H-NA31         PIC N(10).                                D.020402
+002390*****02  F              PIC X(06) VALUE "ｺｰﾄﾞ  ".                 D.010613
+002400*****02  F              PIC N(08) VALUE                           D.010613
+002410*****    NC"品　　　　　名　".                                    D.010613
+002420*****02  F              PIC X(24) VALUE SPACE.                    D.010613
+002430*****02  F              PIC X(21) VALUE SPACE.                    D.020402
+002440     02  F              PIC X(07) VALUE "ｻｲｽﾞ   ".                I.000623
+002450     02  F              PIC N(02) VALUE NC"単価".                 I.000623
+002460     02  F              PIC X(01) VALUE SPACE.                    I.010413
+002470     02  F              PIC N(04) VALUE NC"　店単価".             I.080204
+002480*****02  F              PIC N(04) VALUE NC"最終年月".             D.080204
+002490     02  F              PIC X(05) VALUE "  :  ".                  I.000623
+002500     02  F              PIC X(04) VALUE SPACE.                    I.020402
+002510     02  HEAD31R.                                                 I.020402
+002520       03  F            PIC X(02).                                I.020402
+002530       03  H-CD31R      PIC X(04).                                I.020402
+002540       03  F            PIC X(02).                                I.020402
+002550       03  H-NA31R      PIC N(10).                                I.020402
+002560       03  F            PIC X(21).                                I.020402
+002570     02  HEAD32R  REDEFINES HEAD31R.                              I.020402
+002580       03  H-CD32R      PIC X(04).                                I.020402
+002590       03  F            PIC X(01).                                I.020402
+002600       03  H-NA32R      PIC N(10).                                I.020402
+002610       03  F            PIC X(24).                                I.020402
+002620*****02  F              PIC X(13) VALUE SPACE.                    D.010413
+002630*****02  F              PIC X(06) VALUE SPACE.                    D.020402
+002640*****02  H-CD32         PIC X(06).                                D.020402
+002650*****02  H-NA32         PIC N(10).                                D.020402
+002660*****02  F              PIC X(06) VALUE "ｺｰﾄﾞ  ".                 D.010613
+002670*****02  F              PIC N(08) VALUE                           D.010613
+002680*****    NC"品　　　　　名　".                                    D.010613
+002690*****02  F              PIC X(24) VALUE SPACE.                    D.010613
+002700*****02  F              PIC X(21) VALUE SPACE.                    D.020402
+002710     02  F              PIC X(07) VALUE "ｻｲｽﾞ   ".                I.000623
+002720     02  F              PIC N(02) VALUE NC"単価".                 I.000623
+002730     02  F              PIC X(01) VALUE SPACE.                    I.010413
+002740     02  F              PIC N(04) VALUE NC"　店単価".             I.080204
+002750*****02  F              PIC N(04) VALUE NC"最終年月".             D.080204
+002760     02  F              PIC X(05) VALUE ""3FE04FE080"".           I.000623
+002770*****02  F              PIC X(10) VALUE "得意先ｺｰﾄﾞ".             D.000623
+002780*****02  F              PIC X(01) VALUE SPACE.                    D.000623
+002790*****02  F              PIC N(04) VALUE NC"得意先名".             D.000623
+002800*****02  F              PIC X(29) VALUE SPACE.                    D.000623
+002810*****02  F              PIC X(06) VALUE "品名CD".                 D.000623
+002820*****02  F              PIC X(01) VALUE SPACE.                    D.000623
+002830*****02  F              PIC N(02) VALUE NC"品名".                 D.000623
+002840*****02  F              PIC X(35) VALUE SPACE.                    D.950123
+002850*****02  F              PIC X(36) VALUE SPACE.                    D.000623
+002860*****02  F              PIC N(01) VALUE NC"９".                   D.000623
+002870*****02  F              PIC X(05) VALUE SPACE.                    D.000623
+002880*****02  F              PIC N(01) VALUE NC"１".                   D.000623
+002890*****02  F              PIC X(05) VALUE SPACE.                    D.000623
+002900*****02  F              PIC N(01) VALUE NC"２".                   D.000623
+002910*****02  F              PIC X(05) VALUE SPACE.                    D.000623
+002920*****02  F              PIC N(01) VALUE NC"３".                   D.000623
+002930*****02  F              PIC X(05) VALUE SPACE.                    D.000623
+002940*****02  F              PIC N(01) VALUE NC"４".                   D.000623
+002950*****02  F              PIC X(08) VALUE "ｻｲｽﾞ区分".               *D920511
+002960*****02  F              PIC X(01) VALUE SPACE.                        :
+002970*****02  F              PIC N(02) VALUE NC"単価".                     :
+002980 01  W-PR.                                                        *I920511
+002990     02  W-P     OCCURS  58.                                      I.000623
+003000       03  P-CD1            PIC X(05).                            I.000623
+003010       03  P-DF1.                                                 I.000623
+003020         04  P-TCD1         PIC 9(04).                            I.000623
+003030         04  F              PIC X(01).                            I.000623
+003040         04  P-TNA1         PIC N(26).                            I.020402
+003050         04  F              PIC X(21).                            I.020402
+003060*****    04  P-TNA1         PIC N(24).                            D.020402
+003070*****    04  F              PIC X(24).                            D.020402
+003080       03  P-DF2   REDEFINES P-DF1.                               I.000623
+003090*****    04  F              PIC X(12).                            D.010413
+003100*****    04  F              PIC X(05).                            D.020402
+003110         04  P-S11          PIC N(02).                            I.020402
+003120         04  F              PIC X(02).                            I.020402
+003130         04  P-HCD1         PIC 9(06).                            I.000623
+003140         04  F              PIC X(01).                            I.000623
+003150         04  P-HNA1         PIC N(24).                            I.000623
+003160         04  F              PIC X(01).                            I.000623
+003170         04  P-SIZ1         PIC 9(01).                            I.000623
+003180         04  P-TAN1         PIC ZZZZ,ZZ9.                         I.000623
+003190         04  P-MTN1         PIC ZZZ,ZZZ.                          I.080204
+003200*****    04  F              PIC X(02).                            D.080204
+003210*****    04  P-NG1          PIC 99/99.                            D.080204
+003220       03  P-DF3   REDEFINES P-DF1.                               I.010613
+003230         04  P-HCD11        PIC 9(06).                            I.010613
+003240         04  F              PIC X(01).                            I.010613
+003250         04  P-HNA11        PIC N(24).                            I.010613
+003260         04  P-S12          PIC N(02).                            I.020402
+003270         04  F              PIC X(19).                            I.020402
+003280*****    04  F              PIC X(22).                            D.020402
+003290       03  P-DF4   REDEFINES P-DF1.                               I.010613
+003300*****    04  F              PIC X(07).                            D.020402
+003310         04  F              PIC X(04).                            I.020402
+003320         04  P-TCD11        PIC 9(04).                            I.010613
+003330         04  F              PIC X(01).                            I.010613
+003340*****    04  P-TNA11        PIC N(24).                            D.020402
+003350         04  P-TNA11        PIC N(26).                            I.020402
+003360         04  F              PIC X(01).                            I.010613
+003370         04  P-SIZ11        PIC 9(01).                            I.010613
+003380         04  P-TAN11        PIC ZZZZ,ZZ9.                         I.010613
+003390         04  P-MTN11        PIC ZZZ,ZZZ.                          I.080204
+003400*****    04  F              PIC X(02).                            D.080204
+003410*****    04  P-NG11         PIC 99/99.                            D.080204
+003420       03  F                PIC X(02).                            I.000623
+003430       03  P-C              PIC X(01).                            I.000623
+003440       03  F                PIC X(02).                            I.000623
+003450       03  P-DR1.                                                 I.000623
+003460         04  P-TCD2         PIC 9(04).                            I.000623
+003470         04  F              PIC X(01).                            I.000623
+003480         04  P-TNA2         PIC N(26).                            I.020402
+003490         04  F              PIC X(21).                            I.020402
+003500*****    04  P-TNA2         PIC N(24).                            D.020402
+003510*****    04  F              PIC X(24).                            D.020402
+003520       03  P-DR2   REDEFINES P-DR1.                               I.000623
+003530*****    04  F              PIC X(12).                            D.010413
+003540*****    04  F              PIC X(05).                            D.020402
+003550         04  P-S21          PIC N(02).                            I.020402
+003560         04  F              PIC X(02).                            I.020402
+003570         04  P-HCD2         PIC 9(06).                            I.000623
+003580         04  F              PIC X(01).                            I.000623
+003590         04  P-HNA2         PIC N(24).                            I.000623
+003600         04  F              PIC X(01).                            I.000623
+003610         04  P-SIZ2         PIC 9(01).                            I.000623
+003620         04  P-TAN2         PIC ZZZZ,ZZ9.                         I.000623
+003630         04  P-MTN2         PIC ZZZ,ZZZ.                          I.080204
+003640*****    04  F              PIC X(02).                            D.080204
+003650*****    04  P-NG2          PIC 99/99.                            D.080204
+003660       03  P-DR3   REDEFINES P-DR1.                               I.010613
+003670         04  P-HCD21        PIC 9(06).                            I.010613
+003680         04  F              PIC X(01).                            I.010613
+003690         04  P-HNA21        PIC N(24).                            I.010613
+003700         04  P-S22          PIC N(02).                            I.020402
+003710         04  F              PIC X(19).                            I.020402
+003720*****    04  F              PIC X(22).                            D.020402
+003730       03  P-DR4   REDEFINES P-DR1.                               I.010613
+003740*****    04  F              PIC X(07).                            D.020402
+003750         04  F              PIC X(04).                            I.020402
+003760         04  P-TCD21        PIC 9(04).                            I.010613
+003770         04  F              PIC X(01).                            I.010613
+003780*****    04  P-TNA21        PIC N(24).                            D.020402
+003790         04  P-TNA21        PIC N(26).                            I.020402
+003800         04  F              PIC X(01).                            I.010613
+003810         04  P-SIZ21        PIC 9(01).                            I.010613
+003820         04  P-TAN21        PIC ZZZZ,ZZ9.                         I.010613
+003830         04  P-MTN21        PIC ZZZ,ZZZ.                          I.080204
+003840*****    04  F              PIC X(02).                            D.080204
+003850*****    04  P-NG21         PIC 99/99.                            D.080204
+003860       03  P-CD2            PIC X(05).                            I.000623
+003870*****02  K-CD1              PIC X(05).                            D.000623
+003880*****02  F                  PIC X(03).                            D.000623
+003890*****02  P-01               PIC 9(04).                            D.000623
+003900*****02  FILLER             PIC X(04).                            D.000623
+003910*****02  P-02               PIC N(24).                            D.000623
+003920*****02  FILLER             PIC X(01).                            D.000623
+003930*****02  P-03               PIC 9(06).                            D.000623
+003940*****02  F                  PIC X(01).                            D.000623
+003950*****02  P-04               PIC N(24).                            D.000623
+003960*****02  F                  PIC X(02).                            D.941223
+003970*****02  F                  PIC X(01).                            D.000623
+003980*****02  P-05  OCCURS  5    PIC ZZZZBBB.                          D.941223
+003990*****02  P-05  OCCURS  5    PIC ZZ,ZZZB.                          D.000623
+004000*****02  K-CD2              PIC X(05).                            D.000623
+004010*01  W-STAT.                                                      D.010529
+004020*****02  HTB            PIC X(2)  VALUE  "01".                    D.010529
+004030*****02  SKP            PIC X(2)  VALUE  "06".                    D.010529
+004040*****02  BTB            PIC X(2)  VALUE  "09".                    D.010529
+004050*****02  ADV            PIC X(2)  VALUE  "04".                    D.010529
+004060*****02  FUK            PIC X(2)  VALUE  "05".                    D.010529
+004070***
+004080     COPY LSTAT.                                                  I.010529
+004090 COPY  LWMSG.
+004100***
+004110 SCREEN      SECTION.
+004120 SD  C-CRT
+004130     END  STATUS  IS  ESTAT.
+004140 01  C-CLEAR.
+004150     02  C-CL     LINE   1  CLEAR SCREEN.
+004160     02  C-CL1    LINE  24  COLUMN  1  VALUE
+004170             "                              ".
+004180 01  PRN-CLR.
+004190     02  CLR-01  LINE   6  COLUMN  55  PIC  X(01)  VALUE  " ".    I.010613
+004200     02  CLR-02  LINE   9  COLUMN  35  PIC  X(06)  VALUE  " ".    I.010613
+004210     02  CLR-03  LINE   9  COLUMN  45  PIC  X(06)  VALUE  " ".    I.010613
+004220     02  CLR-04  LINE  11  COLUMN  35  PIC  X(06)  VALUE  " ".    I.010613
+004230     02  CLR-05  LINE  11  COLUMN  45  PIC  X(06)  VALUE  " ".    I.010613
+004240*****02  CLR-01  LINE   6  COLUMN  26  PIC  X(04)  VALUE  " ".    D.010613
+004250*****02  CLR-02  LINE   6  COLUMN  38  PIC  X(04)  VALUE  " ".    D.010613
+004260*****02  CLR-03  LINE   8  COLUMN  24  PIC  X(06)  VALUE  " ".    D.010613
+004270*****02  CLR-04  LINE   8  COLUMN  36  PIC  X(06)  VALUE  " ".    D.010613
+004280 01  CPY-CLR.
+004290     02  CLC-01  LINE   6  COLUMN  24  PIC  X(53)  VALUE  " ".
+004300     02  CLC-02  LINE  11  COLUMN  24  PIC  X(53)  VALUE  " ".
+004310 01  GAM-CLR.
+004320     02  CLE-01  LINE  06.                                        I.020402
+004330         03  COLUMN  7  PIC  X(04)  VALUE " ".                    I.080204
+004340         03  COLUMN 19  PIC  X(52)  VALUE " ".                    I.080204
+004350*****    03  COLUMN 10  PIC  X(04)  VALUE " ".                    D.080204
+004360*****    03  COLUMN 22  PIC  X(52)  VALUE " ".                    D.080204
+004370     02  CLE-02  LINE  08.                                        I.020402
+004380         03  COLUMN  7  PIC  X(06)  VALUE " ".                    I.080204
+004390         03  COLUMN 19  PIC  X(48)  VALUE " ".                    I.080204
+004400*****    03  COLUMN 10  PIC  X(06)  VALUE " ".                    D.080204
+004410*****    03  COLUMN 22  PIC  X(48)  VALUE " ".                    D.080204
+004420*****02  CLE-01  LINE  06  CLEAR  DATA  TO  06.                   D.020402
+004430*****02  CLE-02  LINE  09  CLEAR  DATA  TO  09.                   D.020402
+004440     02  CLE-03A.
+004450         03  CLE-031 LINE  11  COLUMN  8  PIC X(12)  VALUE " ".   I.080204
+004460         03  CLE-032 LINE  12  COLUMN  8  PIC X(12)  VALUE " ".   I.080204
+004470         03  CLE-033 LINE  13  COLUMN  8  PIC X(12)  VALUE " ".   I.080204
+004480         03  CLE-034 LINE  14  COLUMN  8  PIC X(12)  VALUE " ".   I.080204
+004490         03  CLE-035 LINE  15  COLUMN  8  PIC X(12)  VALUE " ".   I.080204
+004500*****    03  CLE-031 LINE  11  COLUMN 10  PIC X(05)  VALUE " ".   D.080204
+004510*****    03  CLE-032 LINE  12  COLUMN 10  PIC X(05)  VALUE " ".   D.080204
+004520*****    03  CLE-033 LINE  13  COLUMN 10  PIC X(05)  VALUE " ".   D.080204
+004530*****    03  CLE-034 LINE  14  COLUMN 10  PIC X(05)  VALUE " ".   D.080204
+004540*****    03  CLE-035 LINE  15  COLUMN 10  PIC X(05)  VALUE " ".   D.080204
+004550*****    03  CLE-031 LINE  12  COLUMN 11  PIC X(05)  VALUE " ".   D.020402
+004560*****    03  CLE-032 LINE  13  COLUMN 11  PIC X(05)  VALUE " ".   D.020402
+004570*****    03  CLE-033 LINE  14  COLUMN 11  PIC X(05)  VALUE " ".   D.020402
+004580*****    03  CLE-034 LINE  15  COLUMN 11  PIC X(05)  VALUE " ".   D.020402
+004590*****    03  CLE-035 LINE  16  COLUMN 11  PIC X(05)  VALUE " ".   D.020402
+004600     02  CLE-05A.                                                 I.010613
+004610         03  CLE-051 LINE  11  COLUMN 23  PIC X(57)  VALUE " ".   I.080204
+004620         03  CLE-052 LINE  12  COLUMN 23  PIC X(57)  VALUE " ".   I.080204
+004630         03  CLE-053 LINE  13  COLUMN 23  PIC X(57)  VALUE " ".   I.080204
+004640         03  CLE-054 LINE  14  COLUMN 23  PIC X(57)  VALUE " ".   I.080204
+004650         03  CLE-055 LINE  15  COLUMN 23  PIC X(57)  VALUE " ".   I.080204
+004660         03  CLE-056 LINE  16  COLUMN 23  PIC X(57)  VALUE " ".   I.080204
+004670         03  CLE-057 LINE  17  COLUMN 23  PIC X(57)  VALUE " ".   I.080204
+004680         03  CLE-058 LINE  18  COLUMN 23  PIC X(57)  VALUE " ".   I.080204
+004690         03  CLE-059 LINE  19  COLUMN 23  PIC X(57)  VALUE " ".   I.080204
+004700         03  CLE-050 LINE  20  COLUMN 23  PIC X(57)  VALUE " ".   I.080204
+004710*****    03  CLE-051 LINE  11  COLUMN 19  PIC X(57)  VALUE " ".   D.080204
+004720*****    03  CLE-052 LINE  12  COLUMN 19  PIC X(57)  VALUE " ".   D.080204
+004730*****    03  CLE-053 LINE  13  COLUMN 19  PIC X(57)  VALUE " ".   D.080204
+004740*****    03  CLE-054 LINE  14  COLUMN 19  PIC X(57)  VALUE " ".   D.080204
+004750*****    03  CLE-055 LINE  15  COLUMN 19  PIC X(57)  VALUE " ".   D.080204
+004760*****    03  CLE-056 LINE  16  COLUMN 19  PIC X(57)  VALUE " ".   D.080204
+004770*****    03  CLE-057 LINE  17  COLUMN 19  PIC X(57)  VALUE " ".   D.080204
+004780*****    03  CLE-058 LINE  18  COLUMN 19  PIC X(57)  VALUE " ".   D.080204
+004790*****    03  CLE-059 LINE  19  COLUMN 19  PIC X(57)  VALUE " ".   D.080204
+004800*****    03  CLE-050 LINE  20  COLUMN 19  PIC X(57)  VALUE " ".   D.080204
+004810*****    03  CLE-051 LINE  12  COLUMN 21  PIC X(57)  VALUE " ".   D.020402
+004820*****    03  CLE-052 LINE  13  COLUMN 21  PIC X(57)  VALUE " ".   D.020402
+004830*****    03  CLE-053 LINE  14  COLUMN 21  PIC X(57)  VALUE " ".   D.020402
+004840*****    03  CLE-054 LINE  15  COLUMN 21  PIC X(57)  VALUE " ".   D.020402
+004850*****    03  CLE-055 LINE  16  COLUMN 21  PIC X(57)  VALUE " ".   D.020402
+004860*****    03  CLE-056 LINE  17  COLUMN 21  PIC X(57)  VALUE " ".   D.020402
+004870*****    03  CLE-057 LINE  18  COLUMN 21  PIC X(57)  VALUE " ".   D.020402
+004880*****    03  CLE-058 LINE  19  COLUMN 21  PIC X(57)  VALUE " ".   D.020402
+004890*****    03  CLE-059 LINE  20  COLUMN 21  PIC X(57)  VALUE " ".   D.020402
+004900*****    03  CLE-050 LINE  21  COLUMN 21  PIC X(57)  VALUE " ".   D.020402
+004910*****    03  CLE-031 LINE  12  COLUMN 11  PIC X(04)  VALUE " ".   D.941223
+004920*****    03  CLE-032 LINE  13  COLUMN 11  PIC X(04)  VALUE " ".   D.941223
+004930*****    03  CLE-033 LINE  14  COLUMN 11  PIC X(04)  VALUE " ".   D.941223
+004940*****    03  CLE-034 LINE  15  COLUMN 11  PIC X(04)  VALUE " ".   D.941223
+004950*****    03  CLE-035 LINE  16  COLUMN 11  PIC X(04)  VALUE " ".   D.941223
+004960*********03  CLE-03  LINE  12  CLEAR  DATA  TO  12.               *D920511
+004970*********03  CLE-04  LINE  15  CLEAR  DATA  TO  15.                   :
+004980*
+004990     02  CLE-OKC     LINE  23  COLUMN 38  PIC X(01)  VALUE " ".
+005000 01  GAM-CLR2.
+005010     02  LINE  05  CLEAR  LINE  TO  15.
+005020***
+005030 01  ACP-AREA.
+005040*****02  ACP-ACT     LINE 03     COLUMN 58     PIC 9              D.000117
+005050*****02  ACP-ACT     LINE 03     COLUMN 75     PIC 9              I.010227
+005060*****02  ACP-ACT     LINE 04     COLUMN 75     PIC 9              D.020402
+005070     02  ACP-ACT     LINE 04     COLUMN 58     PIC 9              I.020402
+005080         USING       ACT         CHECK  OVERFLOW  NO  IFC.
+005090     02  ACP-OKC     LINE 23     COLUMN 38     PIC 9
+005100         USING       OKC         CHECK  OVERFLOW  NO  IFC.
+005110 01  GAM-ACP.
+005120*****02  ACP-01      LINE 06     COLUMN 04     PIC 9(04)          D.020402
+005130*****02  ACP-01      LINE 06     COLUMN 10     PIC 9(04)          D.080204
+005140     02  ACP-01      LINE 06     COLUMN  7     PIC 9(04)          I.080204
+005150         USING       W-01        CHECK  OVERFLOW  NO  IFC.
+005160*****02  ACP-02      LINE 09     COLUMN 03     PIC 9(06)          D.020402
+005170*****02  ACP-02      LINE 08     COLUMN 10     PIC 9(06)          D.080204
+005180     02  ACP-02      LINE 08     COLUMN  7     PIC 9(06)          I.080204
+005190         USING       W-02        CHECK  OVERFLOW  NO  IFC.
+005200*****02  ACP-021     LINE 09     COLUMN 03     PIC 9(04)          D.020402
+005210*****02  ACP-021     LINE 08     COLUMN 10     PIC 9(04)          D.080204
+005220     02  ACP-021     LINE 08     COLUMN  7     PIC 9(04)          I.080204
+005230         USING       W-021       CHECK  OVERFLOW  NO  IFC.
+005240*****02  ACP-03      LINE 12     COLUMN 05     PIC 9(01)          *D920511
+005250*****    USING       W-03        CHECK  OVERFLOW  NO  IFC.            :
+005260*****02  ACP-04      LINE 15     COLUMN 02     PIC 9(04)              :
+005270*****    USING       W-04          CHECK  OVERFLOW  NO  IFC.          :
+005280*****02  ACP-04      LINE W-L1   COLUMN 11     PIC 9(04)          D.941223
+005290*****02  ACP-04      LINE W-L1   COLUMN 11     PIC 9(05)          D.020402
+005300*****02  ACP-04      LINE W-L1   COLUMN 10     PIC 9(05)          D.080204
+005310     02  ACP-04      LINE W-L1   COLUMN  8     PIC 9(05)          I.080204
+005320         USING       W-04(I)       CHECK  OVERFLOW  NO  IFC.          :
+005330     02  ACP-041     LINE W-L1   COLUMN 15     PIC 9(05)          I.080204
+005340         USING       W-041(I)      CHECK  OVERFLOW  NO  IFC.          :
+005350*****02  ACP-05      LINE W-L2   COLUMN 23     PIC 9(04)          D.020402
+005360*****02  ACP-05      LINE W-L2   COLUMN 19     PIC 9(04)          D.080204
+005370     02  ACP-05      LINE W-L2   COLUMN 23     PIC 9(04)          I.080204
+005380         USING       W-05(TCNT)    CHECK  OVERFLOW  NO  IFC.      I.010613
+005390 01  PRN-ACP.
+005400     02  ACP-SEN     LINE 06     COLUMN 55     PIC 9(01)          I.010613
+005410         USING       W-SEN       CHECK  OVERFLOW  NO  IFC.        I.010613
+005420*****02  ACP-FROM1   LINE 06     COLUMN 26     PIC 9(04)          D.010613
+005430     02  ACP-OTF     LINE 09     COLUMN 37     PIC 9(04)          I.010613
+005440         USING       W-FROM1     CHECK  OVERFLOW  NO  IFC.
+005450     02  ACP-OHF     LINE 09     COLUMN 35     PIC 9(06)          I.010613
+005460         USING       W-FROM2     CHECK  OVERFLOW  NO  IFC.        I.010613
+005470*****02  ACP-TO1     LINE 06     COLUMN 38     PIC 9(04)          D.010613
+005480     02  ACP-OTT     LINE 09     COLUMN 45     PIC 9(04)          I.010613
+005490         USING       W-TO1       CHECK  OVERFLOW  NO  IFC.
+005500     02  ACP-OHT     LINE 09     COLUMN 45     PIC 9(06)          I.010613
+005510         USING       W-TO2       CHECK  OVERFLOW  NO  IFC.        I.010613
+005520*****02  ACP-FROM2   LINE 08     COLUMN 24     PIC 9(06)          D.010613
+005530     02  ACP-UHF     LINE 11     COLUMN 35     PIC 9(06)          I.010613
+005540         USING       W-FROM2     CHECK  OVERFLOW  NO  IFC.
+005550     02  ACP-UTF     LINE 11     COLUMN 37     PIC 9(04)          I.010613
+005560         USING       W-FROM1     CHECK  OVERFLOW  NO  IFC.
+005570*****02  ACP-TO2     LINE 08     COLUMN 36     PIC 9(06)          D.010613
+005580     02  ACP-UHT     LINE 11     COLUMN 45     PIC 9(06)          I.010613
+005590         USING       W-TO2       CHECK  OVERFLOW  NO  IFC.
+005600     02  ACP-UTT     LINE 11     COLUMN 45     PIC 9(04)          I.010613
+005610         USING       W-TO1       CHECK  OVERFLOW  NO  IFC.        I.010613
+005620 01  CPY-ACP.                                                     I.010227
+005630     02  ACP-MTCD    LINE 06     COLUMN 24     PIC 9(04)          I.010227
+005640         USING       W-MTCD      CHECK  OVERFLOW  NO  IFC.        I.010227
+005650     02  ACP-STCD    LINE 11     COLUMN 24     PIC 9(04)          I.010227
+005660         USING       W-STCD      CHECK  OVERFLOW  NO  IFC.        I.010227
+005670***
+005680 01  DSP-AERA.
+005690*****02  DSP-01      LINE 06     COLUMN 11     PIC N(24)          D.020402
+005700*****02  DSP-01      LINE 06     COLUMN 22     PIC N(26)          D.080204
+005710     02  DSP-01      LINE 06     COLUMN 19     PIC N(26)          I.080204
+005720         FROM        T-NAME.
+005730*****02  DSP-02      LINE 09     COLUMN 11     PIC N(24)          D.020402
+005740*****02  DSP-02      LINE 08     COLUMN 22     PIC N(24)          D.080204
+005750     02  DSP-02      LINE 08     COLUMN 19     PIC N(24)          I.080204
+005760         FROM        HI-NAME.
+005770*****02  DSP-021     LINE 09     COLUMN 11     PIC N(24)          D.020402
+005780*****02  DSP-021     LINE 08     COLUMN 22     PIC N(24)          D.080204
+005790     02  DSP-021     LINE 08     COLUMN 19     PIC N(24)          I.080204
+005800         FROM        W-NAME.                                      I.000117
+005810*****02  DSP-04      LINE W-L1   COLUMN 11     PIC ZZZZZ          D.020402
+005820*****02  DSP-04      LINE W-L1   COLUMN 10     PIC ZZZZZ          D.080204
+005830     02  DSP-04      LINE W-L1   COLUMN  8     PIC ZZZZZ          I.080204
+005840           FROM      W-04(I).                                         :
+005850     02  DSP-041     LINE W-L1   COLUMN 15     PIC ZZZZZ          I.080204
+005860           FROM      W-041(I).                                    I.080204
+005870*****02  DSP-05      LINE W-L2   COLUMN 30     PIC N(24)          D.020402
+005880*****02  DSP-05      LINE W-L2   COLUMN 24     PIC N(26)          D.080204
+005890     02  DSP-05      LINE W-L2   COLUMN 28     PIC N(26)          I.080204
+005900         FROM        T-NAME.                                      I.010613
+005910*****02  DSP-MTNA    LINE 06     COLUMN 29     PIC N(24)          D.020402
+005920     02  DSP-MTNA    LINE 06     COLUMN 29     PIC N(26)          I.020402
+005930         FROM        T-NAME.                                      I.010227
+005940*****02  DSP-STNA    LINE 11     COLUMN 29     PIC N(24)          D.020402
+005950     02  DSP-STNA    LINE 11     COLUMN 29     PIC N(26)          D.020402
+005960         FROM        T-NAME.                                      I.010227
+005970*****02  DSP-03.                                                  *D920511
+005980*****  03  DSP-031   LINE 12     COLUMN 11     PIC X(04)              :
+005990*****      FROM      W-031.                                           :
+006000*****  03  DSP-032   LINE 12     COLUMN 16     PIC X(04)              :
+006010*****      FROM      W-032.                                           :
+006020*****  03  DSP-033   LINE 12     COLUMN 21     PIC X(04)              :
+006030*****      FROM      W-033.                                           :
+006040*****  03  DSP-034   LINE 12     COLUMN 26     PIC X(04)              :
+006050*****      FROM      W-034.                                           :
+006060****** 03  DSP-035   LINE 12     COLUMN 31     PIC X(04)              :
+006070*****      FROM      W-035.                                           :
+006080*****  03  DSP-036   LINE 12     COLUMN 36     PIC X(04)              :
+006090*****      FROM      W-036.                                           :
+006100*****  03  DSP-037   LINE 12     COLUMN 41     PIC X(04)              :
+006110*****      FROM      W-037.                                           :
+006120*****  03  DSP-038   LINE 12     COLUMN 46     PIC X(04)              :
+006130*****      FROM      W-038.                                           :
+006140*****  03  DSP-039   LINE 12     COLUMN 51     PIC X(04)              :
+006150*****      FROM      W-039.                                           :
+006160*****  03  DSP-040   LINE 12     COLUMN 56     PIC X(04)              :
+006170*****      FROM      W-040.                                           :
+006180*****02  DSP-04      LINE 15     COLUMN 02     PIC ZZZZ               :
+006190*****      FROM      W-04.                                            :
+006200*****02  DSP-04      LINE W-L1   COLUMN 11     PIC ZZZZ           D.941223
+006210 01  DSP-DSP.
+006220     02  LINE   1  COLUMN   1   PIC N(05) VALUE NC"（出荷用）".   I.080425
+006230     02  LINE   1  COLUMN  11   PIC N(18) VALUE                   I.020402
+006240        NC"＊＊＊　　得意先品名別単価マスター　".                 I.020402
+006250     02  LINE   1  COLUMN  47   PIC N(11) VALUE                   I.020402
+006260        NC"メンテナンス　　＊＊＊".                               I.020402
+006270*****02  LINE   1  COLUMN  11   PIC N(16) VALUE                   D.020402
+006280*****   NC"＊＊＊　得意先品名別単価マスター".                     D.020402
+006290*****02  LINE   1  COLUMN  45   PIC N(10) VALUE                   D.020402
+006300*****   NC"メンテナンス　＊＊＊".                                 D.020402
+006310*****02  LINE   3  COLUMN  17   PIC X(50) VALUE                   D.000117
+006320*****     "登録=1 修正=2 削除=3 作表=4 終了=9  ACT   ﾘﾀｰﾝ".       D.000117
+006330*****02  LINE   3  COLUMN  01   PIC X(50) VALUE                   D.010227
+006340*****     "登録=1 修正=2 削除=3 作表=4 一括登録=6 一括修正=7 ".   D.010227
+006350*****02  LINE   3  COLUMN  51   PIC X(29) VALUE                   D.010227
+006360*****     "一括削除=8 終了=9  ACT   ﾘﾀｰﾝ".                        D.010227
+006370*****02  LINE   3  COLUMN  01   PIC X(36) VALUE                   D.020402
+006380     02  LINE   3  COLUMN  17   PIC X(36) VALUE                   I.020402
+006390          "登録=1 修正=2 削除=3 作表=4 コピー=5".                 I.010227
+006400     02  LINE   4  COLUMN  17   PIC X(46) VALUE                   I.020402
+006410          "一括登録=6 一括修正=7 一括削除=8 終了=9   ﾘﾀｰﾝ".       I.020402
+006420*****02  LINE   3  COLUMN  38   PIC X(39) VALUE                   D.020402
+006430*****     "一括登録=6 一括修正=7 一括削除=8 終了=9".              D.020402
+006440*****02  LINE   4  COLUMN  71   PIC X(10) VALUE                   D.020402
+006450*****     "ACT   ﾘﾀｰﾝ".                                           D.020402
+006460     02  LINE  23  COLUMN  22   PIC X(21) VALUE
+006470          "確認 OK=1 NO=9   ﾘﾀｰﾝ".
+006480 01  DSP-PRN.
+006490     02  LINE  5   CLEAR  LINE   TO  22.
+006500     02  LINE   6  COLUMN  18  VALUE                              I.010613
+006510          "得意先品名別 = 1 , 品名得意先別 = 2   ".               I.010613
+006520     02  LINE   9  COLUMN  29  VALUE  "ｺｰﾄﾞ        ～       ".    I.010613
+006530     02  LINE  11  COLUMN  29  VALUE  "ｺｰﾄﾞ        ～       ".    I.010613
+006540 01  DSP-PRN1.                                                    I.010613
+006550     02  LINE   9  COLUMN  23  PIC N(03) FROM  W-OMSG.            I.010613
+006560     02  LINE  11  COLUMN  23  PIC N(03) FROM  W-UMSG.            I.010613
+006570*****02  LINE   6  COLUMN  11  VALUE                              D.010613
+006580*****    "< 得意先ｺｰﾄﾞ".                                          D.010613
+006590*****02  LINE   6  COLUMN  31  VALUE                              D.010613
+006600*****    NC"より".                                                D.010613
+006610*****02  LINE   6  COLUMN  43  VALUE                              D.010613
+006620*****    NC"まで".                                                D.010613
+006630*****02  LINE   8  COLUMN  13  VALUE                              D.010613
+006640*****    "品　名ｺｰﾄﾞ".                                            D.010613
+006650*****02  LINE   8  COLUMN  31  VALUE                              D.010613
+006660*****    NC"より".                                                D.010613
+006670*****02  LINE   8  COLUMN  43  VALUE                              D.010613
+006680*****    "まで打出し >".                                          D.010613
+006690 01  DSP-CPY.                                                     I.010227
+006700     02  LINE  5   CLEAR  LINE   TO  22.                          I.010227
+006710     02  LINE   6  COLUMN  08  VALUE                              I.010227
+006720         "コピー元得意先".                                        I.010227
+006730     02  LINE   8  COLUMN  35  VALUE                              I.010227
+006740         NC"↓".                                                  I.010227
+006750     02  LINE   9  COLUMN  35  VALUE                              I.010227
+006760         NC"↓".                                                  I.010227
+006770     02  LINE  11  COLUMN  08  VALUE                              I.010227
+006780         "コピー先得意先".                                        I.010227
+006790 01  DSP-ERR.
+006800     02  LINE  24.
+006810         03  ERR-1      COLUMN 01     PIC N(16)   VALUE
+006820             NC"得意先マスタ　未登録".
+006830         03  ERR-2      COLUMN 01     PIC N(16)   VALUE
+006840             NC"品名ＩＮＤＥＸＥＤマスタ　未登録".
+006850         03  ERR-3      COLUMN 01     PIC N(08)   VALUE
+006860             NC"サイズ区分エラー".
+006870         03  ERR-4.                                               I.010802
+006880           04  COLUMN 01     PIC N(06)   VALUE                    I.010802
+006890                NC"親コードあり".                                 I.010802
+006900           04  COLUMN 17     PIC 9(06)   FROM  HI-MHCD.           I.010802
+006910         03  ERR-99     COLUMN 75     PIC X(05)   VALUE           I.010802
+006920              ""27"B"01"".                                        I.010802
+006930***
+006940 COPY  LSMSG.
+006950***
+006960 PROCEDURE   DIVISION.
+006970****************************
+006980***  ﾒ ｲ ﾝ  R T N        ***
+006990****************************
+007000**
+007010 MR-RTN.
+007020     PERFORM  INIT-RTN  THRU   INIT-EX.
+007030 MR-10.
+007040     DISPLAY  C-CLEAR.
+007050     DISPLAY  DSP-DSP.
+007060 MR-20.
+007070     ACCEPT   ACP-ACT.
+007080     DISPLAY  DISP-MSG-SPACE.
+007090     IF  ESTAT  NOT  =  HTB  AND  SKP
+007100            GO  TO  MR-20.
+007110*****IF   ACT  =  1  OR  2    PERFORM    ENT-RTN THRU ENT-EX.     *D920511
+007120*****IF   ACT  =  3           PERFORM    DEA-RTN THRU DEA-EX.         :
+007130*****IF   ACT  =  1 OR 2 OR 3 PERFORM    ENT-RTN THRU ENT-EX.     D.000117
+007140     IF   ACT  =  1 OR 2 OR 3 OR 6 OR 7 OR 8                      I.000117
+007150                              PERFORM    ENT-RTN THRU ENT-EX.     I.000117
+007160     IF   ACT  =  4           PERFORM    LIS-RTN THRU LIS-EX.
+007170     IF   ACT  =  5           PERFORM    CPY-RTN THRU CPY-EX.     I.010227
+007180     IF   ACT  =  9           PERFORM    END-RTN THRU END-EX
+007190                                               STOP RUN.
+007200     GO   TO   MR-20.
+007210*********************************
+007220***   ｲﾆｼｬﾙ   R T N           ***
+007230*********************************
+007240**
+007250 INIT-RTN.
+007260*****OPEN  I-O    JT-THTN.                                        D.010413
+007270     OPEN  I-O    THTM.                                           I.010413
+007280     OPEN  INPUT  T-M  HI-M.
+007290     ACCEPT   HIZUKE  FROM  DATE.
+007300     MOVE  HI-YY     TO  M-YY.
+007310     MOVE  HI-MM     TO  M-MM.
+007320     MOVE  HI-DD     TO  M-DD.
+007330 INIT-EX.
+007340      EXIT.
+007350*********************************
+007360*     ﾄｳﾛｸ ｼｭｳｾｲ  R T N       ***
+007370*********************************
+007380**
+007390 ENT-RTN.
+007400     DISPLAY    GAM-CLR2.
+007410     CALL      "SH010M".
+007420 ENT-20.
+007430     ACCEPT   ACP-01.
+007440     DISPLAY  DISP-MSG-SPACE.
+007450     IF  ESTAT       =  BTB     GO  TO ENT-EX.
+007460     IF  ESTAT  NOT  =  HTB  AND  SKP     GO  TO ENT-20.
+007470     MOVE  W-01     TO  T-KEY.
+007480***  得意先マスタ　ＲＥＡＤ
+007490     READ  T-M  UNLOCK  INVALID
+007500         DISPLAY  ERR-1
+007510         GO  TO  ENT-20.
+007520     DISPLAY  DSP-01.
+007530     IF   ACT  =  1 OR 2 OR 3             GO  TO  ENT-30.         I.000117
+007540 ENT-25.                                                          I.000117
+007550     ACCEPT   ACP-021.                                            I.000117
+007560     DISPLAY  DISP-MSG-SPACE.                                     I.000117
+007570     IF  ESTAT       =  BTB     GO  TO ENT-20.                    I.000117
+007580     IF  ESTAT  NOT  =  HTB  AND  SKP     GO  TO ENT-25.          I.000117
+007590     MOVE  ZERO     TO  W-022.                                    I.000117
+007600     MOVE  SPACE    TO  HI-KEY.                                   I.000117
+007610*****MOVE  W-021    TO  HI-KEY1.                                  D.010802
+007620     MOVE  W-021    TO  HI-HCD1.                                  I.010802
+007630     START HI-M  KEY  NOT <  HI-KEY  INVALID KEY                  I.000117
+007640         DISPLAY  ERR-2                                           I.000117
+007650         GO TO ENT-25.                                            I.000117
+007660     READ  HI-M  NEXT RECORD UNLOCK  AT END                       I.000117
+007670         DISPLAY  ERR-2                                           I.000117
+007680         GO  TO  ENT-25.                                          I.000117
+007690*****IF  W-021   NOT =  HI-KEY1                                   D.010802
+007700     IF  W-021   NOT =  HI-HCD1                                   I.010802
+007710         DISPLAY  ERR-2                                           I.000117
+007720         GO  TO  ENT-25.                                          I.000117
+007730     MOVE  HI-HCD   TO  W-02.                                     I.080204
+007740     PERFORM  NAM-RTN  THRU  NAM-EX.                              I.000117
+007750     DISPLAY  DSP-021.                                            I.000117
+007760     IF ACT NOT = 6                                               I.010802
+007770         GO  TO  ENT-35.                                          I.000117
+007780 ENT-026.                                                         I.010802
+007790     IF HI-MHCD NOT = HI-HCD                                      I.010802
+007800         DISPLAY ERR-4 ERR-99.                                    I.010802
+007810     READ  HI-M  NEXT RECORD UNLOCK  AT END                       I.010802
+007820         GO  TO  ENT-27.                                          I.010802
+007830     IF  W-021   NOT =  HI-HCD1                                   I.010802
+007840         GO  TO  ENT-27.                                          I.010802
+007850     GO TO ENT-026.                                               I.010802
+007860 ENT-27.                                                          I.010802
+007870     MOVE  SPACE    TO  HI-KEY.                                   I.010802
+007880     MOVE  W-021    TO  HI-HCD1.                                  I.010802
+007890     START HI-M  KEY  NOT <  HI-KEY  INVALID KEY                  I.010802
+007900         DISPLAY  ERR-2                                           I.010802
+007910         GO TO ENT-25.                                            I.010802
+007920     READ  HI-M  NEXT RECORD UNLOCK  AT END                       I.010802
+007930         DISPLAY  ERR-2                                           I.010802
+007940         GO  TO  ENT-25.                                          I.010802
+007950     IF  W-021   NOT =  HI-HCD1                                   I.010802
+007960         DISPLAY  ERR-2                                           I.010802
+007970         GO  TO  ENT-25.                                          I.010802
+007980     GO  TO  ENT-35.                                              I.010802
+007990 ENT-30.
+008000     ACCEPT   ACP-02.
+008010     DISPLAY  DISP-MSG-SPACE.
+008020     IF  ESTAT       =  BTB     GO  TO ENT-20.
+008030     IF  ESTAT  NOT  =  HTB  AND  SKP     GO  TO ENT-30.
+008040     MOVE  W-02     TO  HI-KEY.
+008050***  品名ＩＮＤＥＸＥＤマスタ　ＲＥＡＤ
+008060     READ  HI-M  UNLOCK  INVALID
+008070         DISPLAY  ERR-2
+008080         GO  TO  ENT-30.
+008090     DISPLAY  DSP-02.
+008100     IF ACT = 1                                                   I.010802
+008110         IF HI-MHCD NOT = HI-HCD                                  I.010802
+008120             DISPLAY ERR-4 ERR-99.                                I.010802
+008130 ENT-35.                                                          I.000117
+008140*****   使用サイズ　チェック  *****
+008150     MOVE   ZERO   TO    W-BITT.                                  *I920511
+008160     IF     HI-SS(1)  =  ZERO      MOVE  1   TO  W-BIT(2).            :
+008170     IF     HI-SS(2)  =  ZERO      MOVE  1   TO  W-BIT(3).            :
+008180     IF     HI-SS(3)  =  ZERO      MOVE  1   TO  W-BIT(4).            :
+008190     IF     HI-SS(4)  =  "0000000001"                                 :
+008200       OR   HI-SS(4)  =  ZERO      MOVE  1   TO  W-BIT(5).            :
+008210     IF     W-BITT    =  "01111"                                      :
+008220            DISPLAY  ERR-3                                            :
+008230            IF  ACT   =   6 OR 7 OR 8     GO  TO  ENT-25          I.000117
+008240                                   ELSE   GO  TO  ENT-30.         I.000117
+008250*****       GO  TO   ENT-30.                                      D.000117
+008260 ENT-40.
+008270*****ACCEPT   ACP-03.                                             *D920511
+008280*****DISPLAY  DISP-MSG-SPACE.
+008290*****IF  ESTAT       =  BTB     GO  TO ENT-30.
+008300*****IF  ESTAT  NOT  =  HTB  AND  SKP     GO  TO ENT-40.
+008310*****IF  W-03  NOT   =   1 AND 2 AND 3 AND 4 AND 9
+008320*****    GO  TO  ENT-40.
+008330*****IF  W-03        =   1
+008340*****    IF  HI-SS(1)  =  ZERO
+008350*****        DISPLAY  ERR-3
+008360*****        GO  TO   ENT-40.
+008370*****IF  W-03        =   2
+008380*****    IF  HI-SS(2)  =  ZERO
+008390*****        DISPLAY  ERR-3
+008400*****        GO  TO   ENT-40.
+008410*****IF  W-03        =   3
+008420*****    IF  HI-SS(3)  =  ZERO
+008430*****        DISPLAY  ERR-3
+008440*****        GO  TO   ENT-40.
+008450*****IF  W-03        =   4
+008460*****    IF  HI-SS(4)  =  ZERO
+008470*****        DISPLAY  ERR-3
+008480*****        GO  TO   ENT-40.
+008490*****IF  W-03        =   1
+008500*****    MOVE  TBL1     TO  W-TBL.
+008510*****IF  W-03        =   2
+008520*****    MOVE  TBL2     TO  W-TBL.
+008530*****IF  W-03        =   3
+008540*****    MOVE  TBL3     TO  W-TBL.
+008550*****IF  W-03        =   4
+008560*****    MOVE  TBL4     TO  W-TBL.
+008570*****IF  W-03        =   9
+008580*****    MOVE  SPACE    TO  W-TBL.
+008590*****DISPLAY  DSP-03.
+008600*****
+008610*****IF  ACT         =   2      GO  TO ENT-60.
+008620     MOVE   ZERO    TO   W-03   W-04T.                            *I920511
+008630     MOVE   W-KEY   TO   THT-KEY.                                 I.010413
+008640*****MOVE   W-KEY   TO   THTN-KEY.                                D.010413
+008650*****START  JT-THTN KEY NOT <   THTN-KEY   INVALID                D.010413
+008660     START  THTM    KEY NOT <   THT-KEY   INVALID                 I.010413
+008670            GO  TO  ENT-60.                                           :
+008680 ENT-50.
+008690*****MOVE   W-KEY   TO   THTN-KEY.                                *D920511
+008700*****READ   JT-THTN NEXT UNLOCK   AT END                          D.010413
+008710     READ   THTM    NEXT UNLOCK   AT END                          I.010413
+008720            GO  TO  ENT-60.                                           :
+008730*****IF     THTN-03 NOT = 1 AND 2 AND 3 AND 4 AND 9               D.010413
+008740     IF     THT-SIZ NOT = 1 AND 2 AND 3 AND 4 AND 9               I.010413
+008750                                 GO  TO  ENT-50.                      :
+008760     IF  ACT    <  5                                              I.000117
+008770*****    IF  (  THTN-01 NOT  = W-01  )                            D.010413
+008780*****     OR (  THTN-02 NOT  = W-02  )                            D.010413
+008790         IF  (  THT-TCD NOT  = W-01  )                            I.010413
+008800          OR (  THT-HCD NOT  = W-02  )                            I.010413
+008810                GO  TO  ENT-60.                                       :
+008820     IF  ACT    >  4                                              I.000117
+008830*****    IF  (  THTN-01 NOT  = W-01  )                            D.010413
+008840*****     OR (  THTN-021 NOT  = W-021  )                          D.010413
+008850         IF  (  THT-TCD NOT  = W-01  )                            I.010413
+008860          OR (  THT-HCDF NOT  = W-021  )                          I.010413
+008870                GO  TO  ENT-60.                                   I.000117
+008880     IF     ACT  =  1                                             *I920511
+008890            DISPLAY   CLE-03A  NOR-M01
+008900            GO   TO   ENT-30.
+008910     IF     ACT  =  6                                             I.000117
+008920            DISPLAY   CLE-03A  NOR-M01                            I.000117
+008930            GO   TO   ENT-25.                                     I.000117
+008940     GO  TO ENT-70.                                               *I920511
+008950 ENT-60.
+008960*****MOVE   W-KEY   TO   THTN-KEY.
+008970*    READ   JT-THTN     INVALID
+008980*                         DISPLAY  INV-M01
+008990*                         GO   TO   ENT-40.
+009000*****IF     ACT NOT =  1                                          D.000117
+009010     IF     ACT NOT =  1 AND 6                                    I.000117
+009020            DISPLAY   CLE-03A  INV-M01                                :
+009030            GO   TO   ENT-30.                                         :
+009040     MOVE   ZERO TO   W-04T.                                          :
+009050     DISPLAY          CLE-03A.                                        :
+009060     GO  TO   ENT-71.                                                 :
+009070*****MOVE  THTN-04     TO  W-04.
+009080*****DISPLAY  DSP-04.
+009090 ENT-70.
+009100     PERFORM  DIS-RTN  THRU  DIS-EX.                              *I920511
+009110     IF       ACT   =  3  OR 8       GO  TO  ENT-330.             I.000117
+009120*****IF       ACT   =  3     GO  TO  ENT-330.                     D.000117
+009130 ENT-71.                                                              :
+009140     MOVE     1        TO    I.                                       :
+009150     MOVE     11       TO    W-L1.                                I.020402
+009160*****MOVE     12       TO    W-L1.                                D.020402
+009170 ENT-75.                                                              :
+009180*****IF       W-BIT(I)  =    1     GO  TO  ENT-88.                D.010613
+009190     IF       W-BIT(I)  =    1                                    I.010613
+009200*****         MOVE  ZERO     TO   W-04(I)                         D.080204
+009210*****         DISPLAY   DSP-04                                    D.080204
+009220              MOVE  ZERO     TO   W-04(I)  W-041(I)               I.080204
+009230              DISPLAY   DSP-04  DSP-041                           I.080204
+009240              GO  TO  ENT-88.                                     I.010613
+009250 ENT-76.                                                          I.080204
+009260     ACCEPT  ACP-04.
+009270     DISPLAY  DISP-MSG-SPACE.
+009280     IF   ESTAT  NOT  =  BTB       GO  TO ENT-78.
+009290     IF   I      =    1                                           I.000117
+009300          IF   ACT    =  1 OR 2 OR 3        GO  TO ENT-30         I.000117
+009310                                      ELSE  GO  TO ENT-25.        I.000117
+009320*****IF   I      =    1            GO  TO ENT-30.                 D.000117
+009330 ENT-77.
+009340     COMPUTE     I    =  I  -   1.
+009350     COMPUTE     W-L1 =  W-L1 -  1.
+009360     IF   I      =    1                                           I.000117
+009370          IF   ACT    =  1 OR 2 OR 3        GO  TO ENT-30         I.000117
+009380                                      ELSE  GO  TO ENT-25.        I.000117
+009390*****IF   I      =    1            GO  TO ENT-30.                 D.000117
+009400*****IF   W-BIT(I)    =  0         GO  TO ENT-75.                 D.080204
+009410     IF   W-BIT(I)    =  0         GO  TO ENT-76.                 I.080204
+009420     GO  TO  ENT-77.
+009430 ENT-78.
+009440     IF   ESTAT  NOT  =  HTB  AND  SKP       GO  TO ENT-75.
+009450     DISPLAY DSP-04.
+009460 ENT-79.                                                          I.080204
+009470     ACCEPT  ACP-041.                                             I.080204
+009480     DISPLAY  DISP-MSG-SPACE.                                     I.080204
+009490     IF   ESTAT       =  BTB                 GO  TO ENT-76.       I.080204
+009500     IF   ESTAT  NOT  =  HTB  AND  SKP       GO  TO ENT-79.       I.080204
+009510     DISPLAY DSP-041.
+009520*****IF  (  I  =  1  )  AND (  W-04(I) NOT = 0  )                 D.010613
+009530*****       MOVE  0     TO     W-04(2) W-04(3) W-04(4) W-04(5)    D.010613
+009540*****       DISPLAY     CLE-032 CLE-033 CLE-034 CLE-035           D.010613
+009550*****       GO  TO      ENT-330.                                  D.010613
+009560 ENT-88.                                                          *I920511
+009570     ADD  1      TO   I  W-L1.                                        :
+009580     IF   I NOT  >    5                      GO  TO ENT-75.           :
+009590*****IF   W-04T  =    ZERO                                        D.080204
+009600     IF   ZERO   =    W-04(1)  AND  W-04(2)  AND  W-04(3)         I.080204
+009610                               AND  W-04(4)  AND  W-04(5)         I.080204
+009620          DISPLAY     ERR-01
+009630          GO  TO      ENT-71.
+009640     IF   ACT    NOT  =  1  AND  6                                I.010613
+009650          MOVE  ZERO  TO  W-05T                                   I.010613
+009660          DISPLAY     CLE-05A                                     I.010613
+009670          GO  TO  ENT-330.                                        I.010613
+009680 ENT-90.                                                          I.010613
+009690     MOVE  ZERO   TO  TCNT.                                       I.010613
+009700     MOVE  10     TO  W-L2.                                       I.020402
+009710*****MOVE  11     TO  W-L2.                                       D.020402
+009720 ENT-91.                                                          I.010613
+009730     ADD   1      TO  TCNT  W-L2.                                 I.010613
+009740     IF  TCNT        =  11                  GO  TO  ENT-330.      I.010613
+009750 ENT-95.                                                          I.010613
+009760     ACCEPT  ACP-05.                                              I.010613
+009770     DISPLAY  DISP-MSG-SPACE.                                     I.010613
+009780     IF  ESTAT       =  BTB                                       I.010613
+009790            MOVE 6  TO     I                                      I.010613
+009800            MOVE 16 TO     W-L1                                   I.020402
+009810*****       MOVE 17 TO     W-L1                                   D.020402
+009820            GO  TO  ENT-77.                                       I.010613
+009830     IF  ESTAT  NOT  =  HTB  AND  SKP       GO  TO  ENT-95.       I.010613
+009840     IF  W-05(TCNT)  =  ZERO                GO  TO  ENT-97.       I.010613
+009850*
+009860     MOVE  W-05(TCNT)   TO  T-KEY.                                I.010613
+009870     READ  T-M  UNLOCK  INVALID                                   I.010613
+009880         DISPLAY  ERR-1                                           I.010613
+009890         GO  TO  ENT-95.                                          I.010613
+009900     DISPLAY  DSP-05.                                             I.010613
+009910*
+009920     MOVE  SPACE       TO  THT-KEY.                               I.010613
+009930     MOVE  W-05(TCNT)  TO  THT-TCD.                               I.010613
+009940     IF  ACT         =  1                                         I.010613
+009950             MOVE  W-02        TO  THT-HCD                        I.010613
+009960     ELSE    MOVE  W-021       TO  THT-HCDF.                      I.010613
+009970     START  THTM    KEY NOT <   THT-KEY   INVALID                 I.010613
+009980            GO  TO  ENT-91.                                       I.010613
+009990     READ   THTM    NEXT  UNLOCK  AT END                          I.010613
+010000            GO  TO  ENT-91.                                       I.010613
+010010     IF  W-05(TCNT) NOT  =  THT-TCD                               I.010613
+010020            GO  TO  ENT-91.                                       I.010613
+010030     IF  ACT         =  1                                         I.010613
+010040             IF    W-02     NOT =  THT-HCD                        I.010613
+010050                   GO  TO  ENT-91.                                I.010613
+010060     IF  ACT         =  6                                         I.010613
+010070             IF    W-021    NOT =  THT-HCDF                       I.010613
+010080                   GO  TO  ENT-91.                                I.010613
+010090     DISPLAY   NOR-M01  DISP-BUZ-J.                               I.010613
+010100     GO   TO   ENT-95.                                            I.010613
+010110 ENT-97.                                                          I.010613
+010120     IF  TCNT        <=  10                                       I.010613
+010130         MOVE  ZERO     TO  W-05(10)                              I.010613
+010140         DISPLAY  CLE-050.                                        I.010613
+010150     IF  TCNT        <=  9                                        I.010613
+010160         MOVE  ZERO     TO  W-05(09)                              I.010613
+010170         DISPLAY  CLE-059.                                        I.010613
+010180     IF  TCNT        <=  8                                        I.010613
+010190         MOVE  ZERO     TO  W-05(08)                              I.010613
+010200         DISPLAY  CLE-058.                                        I.010613
+010210     IF  TCNT        <=  7                                        I.010613
+010220         MOVE  ZERO     TO  W-05(07)                              I.010613
+010230         DISPLAY  CLE-057.                                        I.010613
+010240     IF  TCNT        <=  6                                        I.010613
+010250         MOVE  ZERO     TO  W-05(06)                              I.010613
+010260         DISPLAY  CLE-056.                                        I.010613
+010270     IF  TCNT        <=  5                                        I.010613
+010280         MOVE  ZERO     TO  W-05(05)                              I.010613
+010290         DISPLAY  CLE-055.                                        I.010613
+010300     IF  TCNT        <=  4                                        I.010613
+010310         MOVE  ZERO     TO  W-05(04)                              I.010613
+010320         DISPLAY  CLE-054.                                        I.010613
+010330     IF  TCNT        <=  3                                        I.010613
+010340         MOVE  ZERO     TO  W-05(03)                              I.010613
+010350         DISPLAY  CLE-053.                                        I.010613
+010360     IF  TCNT        <=  2                                        I.010613
+010370         MOVE  ZERO     TO  W-05(02)                              I.010613
+010380         DISPLAY  CLE-052.                                        I.010613
+010390     IF  TCNT        <=  1                                        I.010613
+010400         MOVE  ZERO     TO  W-05(01)                              I.010613
+010410         DISPLAY  CLE-051.                                        I.010613
+010420 ENT-330.
+010430     ACCEPT  ACP-OKC.
+010440     IF  ESTAT       =  BTB       GO  TO  ENT-331.                I.010613
+010450*****IF  ESTAT       =  BTB       GO  TO  ENT-70.                 D.000117
+010460*****IF  ESTAT  =    BTB                                          D.010613
+010470*****    IF     ACT  =  3         GO  TO  ENT-30                  D.010613
+010480*****           ELSE    IF  ACT     = 8         GO  TO  ENT-25.   D.010613
+010490*****    IF     ACT  =  3         GO  TO  ENT-30.                 D.000117
+010500*****IF  ESTAT  =    BTB                                          D.010613
+010510*****    IF     W-04(1) NOT =  0                                  D.010613
+010520*****           GO  TO  ENT-71                                    D.010613
+010530*****    ELSE                                                     D.010613
+010540*****           MOVE 6  TO     I                                  D.010613
+010550*****           MOVE 17 TO     W-L1                               D.010613
+010560*****           GO  TO  ENT-77.                                   D.010613
+010570     IF  ESTAT  NOT  =  HTB  AND  SKP       GO  TO  ENT-330.
+010580     IF  OKC              =  9
+010590                DISPLAY  CAN-01
+010600                DISPLAY  GAM-CLR  CLE-OKC
+010610                GO  TO  ENT-20.
+010620     IF   OKC       NOT  =  1          GO  TO  ENT-330.
+010630     GO  TO  ENT-340.                                             I.010613
+010640 ENT-331.                                                         I.010613
+010650     IF     ACT  =  3             GO  TO  ENT-30                  I.010613
+010660            ELSE    IF  ACT     = 8         GO  TO  ENT-25.       I.010613
+010670     IF     ACT  NOT  =  1  AND  6                                I.010613
+010680            MOVE 6  TO     I                                      I.010613
+010690            MOVE 16 TO     W-L1                                   I.020402
+010700*****       MOVE 17 TO     W-L1                                   D.020402
+010710            GO  TO  ENT-77.                                       I.010613
+010720     MOVE  11   TO  TCNT.                                         I.010613
+010730     MOVE  21   TO  W-L2.                                         I.020402
+010740*****MOVE  22   TO  W-L2.                                         D.020402
+010750 ENT-332.                                                         I.010613
+010760     SUBTRACT  1    FROM  TCNT  W-L2.                             I.010613
+010770     IF  TCNT    =   ZERO                                         I.010613
+010780            MOVE 6  TO     I                                      I.010613
+010790            MOVE 16 TO     W-L1                                   I.020402
+010800*****       MOVE 17 TO     W-L1                                   D.020402
+010810            GO  TO  ENT-77.                                       I.010613
+010820     IF  W-05(TCNT)    =  ZERO                                    I.010613
+010830         GO  TO  ENT-332.                                         I.010613
+010840     GO  TO  ENT-95.                                              I.010613
+010850 ENT-340.
+010860     PERFORM    UPD-RTN   THRU    UPD-EX.                         *I920511
+010870     DISPLAY    OK-01.
+010880*****PERFORM    GET-RTN   THRU    DEL-EX.
+010890*****DISPLAY   CLE-02  CLE-03A CLE-OKC.                           D.010613
+010900     DISPLAY   CLE-02  CLE-03A CLE-05A CLE-OKC.                   I.010613
+010910     IF   ACT    =   6 OR 7 OR 8       GO  TO  ENT-25.            I.000117
+010920     GO   TO   ENT-30.
+010930 ENT-EX.
+010940     EXIT.
+010950***************************
+010960*    データ　表示         *                                       *I920511
+010970***************************
+010980 DIS-RTN.
+010990     IF   THT-SIZ  =  1    MOVE  2   TO   I.                      I.010413
+011000     IF   THT-SIZ  =  2    MOVE  3   TO   I.                      I.010413
+011010     IF   THT-SIZ  =  3    MOVE  4   TO   I.                      I.010413
+011020     IF   THT-SIZ  =  4    MOVE  5   TO   I.                      I.010413
+011030     IF   THT-SIZ  =  9    MOVE  1   TO   I.                      I.010413
+011040     MOVE  THT-T      TO  W-04(I).                                I.010413
+011050     MOVE  THT-TT     TO  W-041(I).                               I.080204
+011060*****IF   THTN-03  =  1    MOVE  2   TO   I.                      D.010413
+011070*****IF   THTN-03  =  2    MOVE  3   TO   I.                      D.010413
+011080*****IF   THTN-03  =  3    MOVE  4   TO   I.                      D.010413
+011090*****IF   THTN-03  =  4    MOVE  5   TO   I.                      D.010413
+011100*****IF   THTN-03  =  9    MOVE  1   TO   I.                      D.010413
+011110*****MOVE THTN-04  TO W-04(I).                                    D.010413
+011120 DIS-010.
+011130*****READ JT-THTN  NEXT UNLOCK   AT END                           D.010413
+011140     READ THTM     NEXT UNLOCK   AT END                           I.010413
+011150          GO  TO   DIS-050.
+011160     IF   THT-TCD  NOT = W-01    GO  TO  DIS-050.                 I.010413
+011170     IF   THT-HCD  NOT = W-02    GO  TO  DIS-050.                 I.010413
+011180*****IF   THTN-01  NOT = W-01    GO  TO  DIS-050.                 D.010413
+011190*****IF   THTN-02  NOT = W-02    GO  TO  DIS-050.                 D.010413
+011200*****IF   THTN-03  NOT = 1 AND 2 AND 3 AND 4 AND 9                D.010413
+011210     IF   THT-SIZ  NOT = 1 AND 2 AND 3 AND 4 AND 9                I.010413
+011220                                 GO  TO  DIS-050.
+011230     GO  TO  DIS-RTN.
+011240 DIS-050.
+011250     MOVE    1   TO   I.
+011260     MOVE    11  TO   W-L1.                                       I.020402
+011270*****MOVE    12  TO   W-L1.                                       D.020402
+011280 DIS-060.
+011290*****DISPLAY DSP-04.                                              D.080204
+011300     DISPLAY DSP-04 DSP-041.                                      I.080204
+011310     ADD     1   TO   I  W-L1.
+011320     IF      I NOT >  5  GO  TO  DIS-060.
+011330 DIS-EX.
+011340     EXIT.
+011350***********************
+011360*    更新　処理       *
+011370***********************
+011380 UPD-RTN.
+011390     IF        ACT   =    1 OR 6   GO  TO  UPD-020.               I.000117
+011400*****IF        ACT   =    1        GO  TO  UPD-020.               D.000117
+011410*****  ＯＬＤ削除  *****
+011420*****MOVE      ZERO        TO    THTN-KEY.                        D.010413
+011430*****MOVE      W-01        TO    THTN-01.                         D.010413
+011440*****MOVE      W-02        TO    THTN-02.                         D.010413
+011450*****START     JT-THTN KEY NOT < THTN-KEY  INVALID                D.010413
+011460     MOVE      ZERO        TO    THT-KEY.                         I.010413
+011470     MOVE      W-01        TO    THT-TCD.                         I.010413
+011480     MOVE      W-02        TO    THT-HCD.                         I.010413
+011490     START     THTM    KEY NOT < THT-KEY  INVALID                 I.010413
+011500               GO  TO  UPD-020.
+011510 UPD-010.
+011520*****READ      JT-THTN NEXT  AT END   GO  TO  UPD-020.            D.010413
+011530     READ      THTM    NEXT  AT END   GO  TO  UPD-020.            I.010413
+011540     IF        THT-TCD NOT = W-01     GO  TO  UPD-020.            I.010413
+011550*****IF        THTN-01 NOT = W-01     GO  TO  UPD-020.            D.010413
+011560     IF        ACT   <    5                                       I.000117
+011570         IF        THT-HCD NOT = W-02     GO  TO  UPD-020.        I.010413
+011580*****    IF        THTN-02 NOT = W-02     GO  TO  UPD-020.        D.010413
+011590     IF        ACT   >    4                                       I.000117
+011600         IF        THT-HCDF NOT = W-021   GO  TO  UPD-020.        I.010413
+011610*****    IF        THTN-021 NOT = W-021   GO  TO  UPD-020.        D.010413
+011620*****PERFORM   DEL-RTN.                                           D.000117
+011630     PERFORM   DEL-RTN THRU  DEL-EX.                              I.000117
+011640     GO  TO    UPD-010.
+011650 UPD-020.
+011660*****IF        ACT   =    3        GO  TO  UPD-EX.                D.000117
+011670     IF        ACT   =    3 OR 8   GO  TO  UPD-EX.                I.000117
+011680     MOVE      1     TO   I.
+011690 UPD-030.
+011700*****IF        W-04(I)  = 0        GO  TO  UPD-050.               D.080204
+011710     IF        0        = W-04(I)  AND  W-041(I)                  I.080204
+011720                                   GO  TO  UPD-050.               I.080204
+011730     INITIALIZE  THT-R.                                           I.010413
+011740*****INITIALIZE  THTN-R.                                          D.010413
+011750*****MOVE      W-01   TO  THTN-01.                                D.010413
+011760     MOVE      W-01   TO  THT-TCD THT-TCD2.                       I.010413
+011770     IF        ACT   =    6 OR 7                                  I.000117
+011780*****          MOVE      HI-KEY TO  THTN-02                       D.010413
+011790*****    ELSE  MOVE      W-02   TO  THTN-02.                      D.010413
+011800               MOVE      HI-KEY TO  THT-HCD                       I.010413
+011810         ELSE  MOVE      W-02   TO  THT-HCD.                      I.010413
+011820     IF        I  =   1   MOVE  9  TO  THT-SIZ.                   I.010413
+011830     IF        I  =   2   MOVE  1  TO  THT-SIZ.                   I.010413
+011840     IF        I  =   3   MOVE  2  TO  THT-SIZ.                   I.010413
+011850     IF        I  =   4   MOVE  3  TO  THT-SIZ.                   I.010413
+011860     IF        I  =   5   MOVE  4  TO  THT-SIZ.                   I.010413
+011870*****IF        I  =   1   MOVE  9  TO  THTN-03.                   D.010413
+011880*****IF        I  =   2   MOVE  1  TO  THTN-03.                   D.010413
+011890*****IF        I  =   3   MOVE  2  TO  THTN-03.                   D.010413
+011900*****IF        I  =   4   MOVE  3  TO  THTN-03.                   D.010413
+011910*****IF        I  =   5   MOVE  4  TO  THTN-03.                   D.010413
+011920*****MOVE      W-04(I)    TO    THTN-04.                          D.010413
+011930     MOVE      W-04(I)    TO    THT-T.                            I.010413
+011940     MOVE      W-041(I)   TO    THT-TT.                           I.080204
+011950     PERFORM   WRI-RTN  THRU  WRI-EX.                             I.000117
+011960*****PERFORM   WRI-RTN.                                           D.000117
+011970 UPD-050.
+011980     ADD       1   TO     I.
+011990     IF        I   NOT >  5     GO  TO  UPD-030.
+012000     IF        ACT     <  5     GO  TO  UPD-100.                  I.010613
+012010*****IF        ACT     <  5     GO  TO  UPD-EX.                   D.010613
+012020*
+012030     READ  HI-M  NEXT RECORD UNLOCK  AT END                       I.000117
+012040         GO  TO  UPD-100.                                         I.010613
+012050*****    GO  TO  UPD-EX.                                          D.010613
+012060*****IF  W-021   NOT =  HI-KEY1                                   D.010802
+012070     IF  W-021   NOT =  HI-HCD1                                   I.010802
+012080         GO  TO  UPD-100.                                         I.010613
+012090*****    GO  TO  UPD-EX.                                          D.010613
+012100     GO  TO  UPD-020.                                             I.000117
+012110 UPD-100.                                                         I.010613
+012120     IF   ACT    NOT  =    1  AND  6     GO  TO  UPD-EX.          I.010613
+012130     MOVE  ZERO    TO  TCNT.                                      I.010613
+012140 UPD-120.                                                         I.010613
+012150     ADD   1       TO  TCNT.                                      I.010613
+012160     IF  TCNT         =  11              GO  TO  UPD-EX.          I.010613
+012170     IF  W-05(TCNT)   =  ZERO            GO  TO  UPD-EX.          I.010613
+012180     MOVE      1     TO   I.                                      I.010613
+012190 UPD-130.                                                         I.010613
+012200*****IF        W-04(I)  = 0        GO  TO  UPD-150.               D.080204
+012210     IF        0        = W-04(I)  AND  W-041(I)                  I.080204
+012220                                   GO  TO  UPD-150.               I.080204
+012230     INITIALIZE  THT-R.                                           I.010613
+012240     MOVE  W-05(TCNT) TO  THT-TCD THT-TCD2.                       I.010613
+012250     IF        ACT   =    6                                       I.010613
+012260               MOVE      HI-KEY TO  THT-HCD                       I.010613
+012270         ELSE  MOVE      W-02   TO  THT-HCD.                      I.010613
+012280     IF        I  =   1   MOVE  9  TO  THT-SIZ.                   I.010613
+012290     IF        I  =   2   MOVE  1  TO  THT-SIZ.                   I.010613
+012300     IF        I  =   3   MOVE  2  TO  THT-SIZ.                   I.010613
+012310     IF        I  =   4   MOVE  3  TO  THT-SIZ.                   I.010613
+012320     IF        I  =   5   MOVE  4  TO  THT-SIZ.                   I.010613
+012330     MOVE      W-04(I)    TO    THT-T.                            I.010613
+012340     MOVE      W-041(I)   TO    THT-TT.                           I.080204
+012350     PERFORM   WRI-RTN  THRU  WRI-EX.                             I.010613
+012360 UPD-150.                                                         I.010613
+012370     ADD       1   TO     I.                                      I.010613
+012380     IF        I   NOT >  5     GO  TO  UPD-130.                  I.010613
+012390     IF        ACT     <  5     GO  TO  UPD-120.                  I.010613
+012400*
+012410     READ  HI-M  NEXT RECORD UNLOCK  AT END                       I.010613
+012420         GO  TO  UPD-120.                                         I.010613
+012430*****IF  W-021   NOT =  HI-KEY1                                   D.010802
+012440     IF  W-021   NOT =  HI-HCD1                                   I.010802
+012450         GO  TO  UPD-120.                                         I.010613
+012460     GO  TO  UPD-130.                                             I.010613
+012470 UPD-EX.
+012480     EXIT.
+012490************************************
+012500***    DELETE    R T N           ***
+012510************************************
+012520**
+012530*DEA-RTN.
+012540*****DISPLAY    GAM-CLR2.
+012550*****CALL      "SH010M".
+012560*DEA-20.
+012570*****ACCEPT   ACP-01.
+012580*****DISPLAY  DISP-MSG-SPACE.
+012590*****IF  ESTAT       =  BTB     GO  TO DEA-EX.
+012600*****IF  ESTAT  NOT  =  HTB  AND  SKP     GO  TO DEA-20.
+012610*****MOVE  W-01     TO  T-KEY.
+012620***  得意先マスタ　ＲＥＡＤ
+012630*****READ  T-M  UNLOCK  INVALID
+012640*****    DISPLAY  ERR-1
+012650*****    GO  TO  DEA-20.
+012660*****DISPLAY  DSP-01.
+012670*DEA-30.
+012680*****ACCEPT   ACP-02.
+012690*****DISPLAY  DISP-MSG-SPACE.
+012700*****IF  ESTAT       =  BTB     GO  TO DEA-20.
+012710*****IF  ESTAT  NOT  =  HTB  AND  SKP     GO  TO DEA-30.
+012720*****MOVE  W-02     TO  HI-KEY.
+012730***  品名ＩＮＤＥＸＥＤマスタ　ＲＥＡＤ
+012740*****READ  HI-M  UNLOCK  INVALID
+012750*****    DISPLAY  ERR-2
+012760*****    GO  TO  DEA-30.
+012770*****DISPLAY  DSP-02.
+012780*DEA-40.
+012790*****ACCEPT   ACP-03.
+012800*****DISPLAY  DISP-MSG-SPACE.
+012810*****IF  ESTAT       =  BTB     GO  TO DEA-30.
+012820*****IF  ESTAT  NOT  =  HTB  AND  SKP     GO  TO DEA-40.
+012830*****IF  W-03  NOT   =   1 AND 2 AND 3 AND 4 AND 9
+012840*****    GO  TO  DEA-40.
+012850*****IF  W-03        =   1
+012860*****    IF  HI-SS(1)  =  ZERO
+012870*****        DISPLAY  ERR-3
+012880*****        GO  TO   DEA-40.
+012890*****IF  W-03        =   2
+012900*****    IF  HI-SS(2)  =  ZERO
+012910*****        DISPLAY  ERR-3
+012920*****        GO  TO   DEA-40.
+012930*****IF  W-03        =   3
+012940*****    IF  HI-SS(3)  =  ZERO
+012950*****        DISPLAY  ERR-3
+012960*****        GO  TO   DEA-40.
+012970*****IF  W-03        =   4
+012980*****    IF  HI-SS(4)  =  ZERO
+012990*****        DISPLAY  ERR-3
+013000*****        GO  TO   DEA-40.
+013010*****IF  W-03        =   1
+013020*****    MOVE  TBL1     TO  W-TBL.
+013030*****IF  W-03        =   2
+013040*****    MOVE  TBL2     TO  W-TBL.
+013050*****IF  W-03        =   3
+013060*****    MOVE  TBL3     TO  W-TBL.
+013070*****IF  W-03        =   4
+013080*****    MOVE  TBL4     TO  W-TBL.
+013090*****IF  W-03        =   9
+013100*****    MOVE  SPACE    TO  W-TBL.
+013110*****DISPLAY  DSP-03.
+013120*
+013130*DEA-60.
+013140*****MOVE   W-KEY   TO   THTN-KEY.
+013150*****READ   JT-THTN     INVALID
+013160*****                     DISPLAY  INV-M01
+013170*****                     GO   TO   DEA-40.
+013180*****MOVE  THTN-04     TO  W-04.
+013190*****DISPLAY  DSP-04.
+013200*DEA-70.
+013210*****ACCEPT  ACP-OKC.
+013220*****IF  ESTAT       =  BTB      GO  TO  DEA-40.
+013230*****IF  ESTAT  NOT  =  HTB  AND  SKP      GO  TO  DEA-70.
+013240*****IF   OKC   =   9
+013250*****     DISPLAY  CAN-01
+013260*****     DISPLAY  GAM-CLR
+013270*****     GO  TO  DEA-20.
+013280*****IF   OKC   NOT   =  1             GO  TO  DEA-70.
+013290*DEA-80.
+013300*****DISPLAY    OK-01.
+013310*****PERFORM    GET-RTN    THRU     DEL-EX.
+013320*****DISPLAY   CLE-03A.
+013330*****GO   TO   DEA-40.
+013340*DEA-EX.
+013350*****EXIT.
+013360******************************
+013370***   ﾘ ｽ ﾄ   R T N        ***
+013380******************************
+013390**
+013400 LIS-RTN.
+013410     DISPLAY    GAM-CLR2.
+013420     DISPLAY  DSP-PRN.
+013430 LIS-00.                                                          I.010613
+013440     ACCEPT  ACP-SEN.                                             I.010613
+013450     DISPLAY  DISP-MSG-SPACE.                                     I.010613
+013460     IF  ESTAT       =  BTB     GO  TO  LIS-90.                   I.010613
+013470     IF  ESTAT  NOT  =  HTB  AND  SKP     GO  TO  LIS-00.         I.010613
+013480     IF  W-SEN  NOT  =  1    AND  2       GO  TO  LIS-00.         I.010613
+013490*
+013500*****MOVE  SPACE         TO  HEAD21  HEAD23  H-NA31  H-NA32.      D.020402
+013510     MOVE  SPACE         TO  HEAD21  HEAD23.                      I.020402
+013520     IF  W-SEN       =  1                                         I.010613
+013530         MOVE  NC"得意先"    TO  W-OMSG                           I.010613
+013540         MOVE  NC"品　名"    TO  W-UMSG                           I.010613
+013550         MOVE    "ｺｰﾄﾞ "     TO  H-TCD21  H-TCD22                 I.010613
+013560         MOVE  NC"得　意　先　名"  TO  H-TNA21  H-TNA22           I.010613
+013570         MOVE  SPACE TO HEAD31F HEAD31R                           I.020402
+013580         MOVE    "ｺｰﾄﾞ"      TO  H-CD31F  H-CD31R                 I.020402
+013590         MOVE  NC"品　　　　　名　　　"  TO  H-NA31F H-NA31R      I.020402
+013600*****    MOVE    "ｺｰﾄﾞ  "    TO  H-CD31  H-CD32                   D.020402
+013610*****    MOVE  NC"品　　　　　名　　　"  TO  H-NA31  H-NA32       D.020402
+013620     ELSE                                                         I.010613
+013630         MOVE  NC"品　名"    TO  W-OMSG                           I.010613
+013640         MOVE  NC"得意先"    TO  W-UMSG                           I.010613
+013650         MOVE    " ｺｰﾄﾞ  "   TO  H-HCD21  H-HCD22                 I.010613
+013660         MOVE  NC"品　　　　名"  TO  H-HNA21  H-HNA22             I.010613
+013670         MOVE  SPACE TO HEAD32F HEAD32R                           I.020402
+013680         MOVE    "ｺｰﾄﾞ"      TO  H-CD32F  H-CD32R                 I.020402
+013690         MOVE  NC"得　意　先　名　　　"  TO  H-NA32F H-NA32R.     I.020402
+013700*****    MOVE    " ｺｰﾄﾞ "    TO  H-CD31  H-CD32                   D.020402
+013710*****    MOVE  NC"得　意　先　名　　　"  TO  H-NA31  H-NA32.      D.020402
+013720     DISPLAY  DSP-PRN1.                                           I.010613
+013730 LIS-01.
+013740*****ACCEPT  ACP-FROM1.                                           D.010613
+013750     IF  W-SEN       =  1                                         I.010613
+013760         ACCEPT  ACP-OTF                                          I.010613
+013770     ELSE                                                         I.010613
+013780         ACCEPT  ACP-OHF.                                         I.010613
+013790     DISPLAY  DISP-MSG-SPACE.
+013800*****IF  ESTAT       =  BTB     GO  TO  LIS-EX.                   D.010613
+013810     IF  ESTAT       =  BTB     GO  TO  LIS-00.                   I.010613
+013820     IF  ESTAT  NOT  =  HTB  AND  SKP     GO  TO  LIS-01.
+013830 LIS-01A.
+013840*****ACCEPT  ACP-TO1.                                             D.010613
+013850     IF  W-SEN       =  1                                         I.010613
+013860         ACCEPT  ACP-OTT                                          I.010613
+013870     ELSE                                                         I.010613
+013880         ACCEPT  ACP-OHT.                                         I.010613
+013890     IF  ESTAT  =  BTB    GO  TO LIS-01.
+013900     IF  ESTAT  NOT  =   HTB  AND  SKP
+013910                GO  TO  LIS-01A.
+013920     IF  W-SEN       =  1                                         I.010613
+013930         IF  W-FROM1  >  W-TO1       GO  TO  LIS-01.
+013940     IF  W-SEN       =  2                                         I.010613
+013950         IF  W-FROM2  >  W-TO2       GO  TO  LIS-01.              I.010613
+013960 LIS-01B.
+013970*****ACCEPT  ACP-FROM2.                                           D.010613
+013980     IF  W-SEN       =  1                                         I.010613
+013990         ACCEPT  ACP-UHF                                          I.010613
+014000     ELSE                                                         I.010613
+014010         ACCEPT  ACP-UTF.                                         I.010613
+014020     IF  ESTAT       =  BTB     GO  TO  LIS-01.
+014030     IF  ESTAT  NOT  =  HTB  AND  SKP     GO  TO  LIS-01B.
+014040 LIS-01C.
+014050*****ACCEPT  ACP-TO2.                                             D.010613
+014060     IF  W-SEN       =  1                                         I.010613
+014070         ACCEPT  ACP-UHT                                          I.010613
+014080     ELSE                                                         I.010613
+014090         ACCEPT  ACP-UTT.                                         I.010613
+014100     IF  ESTAT  =  BTB    GO  TO LIS-01B.
+014110     IF  ESTAT  NOT  =   HTB  AND  SKP
+014120                GO  TO  LIS-01C.
+014130     IF  W-SEN       =  1                                         I.010613
+014140         IF  W-FROM2  >  W-TO2       GO  TO  LIS-01B.
+014150     IF  W-SEN       =  2                                         I.010613
+014160         IF  W-FROM1  >  W-TO1       GO  TO  LIS-01B.             I.010613
+014170 LIS-02.
+014180     ACCEPT  ACP-OKC.
+014190     IF  ESTAT       =  BTB     GO  TO  LIS-01B.
+014200     IF  ESTAT  NOT  =  HTB  AND  SKP     GO  TO  LIS-02.
+014210     IF  OKC         =    9
+014220                DISPLAY  PRN-CLR
+014230                DISPLAY  CAN-01  CLE-OKC
+014240                GO  TO  LIS-00.                                   I.010613
+014250*****           GO  TO  LIS-01.                                   D.010613
+014260     IF  OKC    NOT  =    1     GO  TO  LIS-02.
+014270     IF  W-SEN  NOT  =    1     GO  TO  LIS-05.                   I.010613
+014280*****IF  W-POC       =    ZERO     MOVE  5  TO  W-POC             D.000623
+014290*****                              OPEN  OUTPUT  P-F.             D.000623
+014300 LIS-03.
+014310     MOVE ZERO TO THT-KEY.                                        I.010413
+014320     MOVE  W-FROM1 TO    THT-TCD.                                 I.010413
+014330     MOVE  W-FROM2 TO    THT-HCD.                                 I.010413
+014340*****MOVE ZERO TO THTN-KEY.                                       D.010413
+014350*****MOVE  W-FROM1 TO    THTN-01.                                 D.010413
+014360*****MOVE  W-FROM2 TO    THTN-02.                                 D.010413
+014370*****MOVE  ZERO    TO    THTN-03   OLD-KEY.                       D.000623
+014380*****START   JT-THTN   KEY  IS  NOT  <   THTN-KEY                 D.010413
+014390     START   THTM      KEY  IS  NOT  <   THT-KEY                  I.010413
+014400                    INVALID KEY    GO  TO  LIS-90.                I.010613
+014410*****               INVALID KEY    GO  TO  LIS-EX.                D.010613
+014420*****               INVALID KEY    GO  TO  LIS-99.                D.000623
+014430 LIS-04.
+014440*****READ  JT-THTN  NEXT  UNLOCK  AT  END    GO  TO  LIS-99.      D.000623
+014450*****READ  JT-THTN  NEXT  UNLOCK  AT  END    GO  TO  LIS-EX.      D.010413
+014460*****IF  THTN-01  <  W-FROM1            GO  TO  LIS-04.           D.010413
+014470*****IF  THTN-01  >  W-TO1              GO  TO  LIS-EX.           D.010413
+014480*****READ  THTM     NEXT  UNLOCK  AT  END    GO  TO  LIS-EX.      D.010613
+014490     READ  THTM     NEXT  UNLOCK  AT  END    GO  TO  LIS-90.      I.010613
+014500     IF  THT-TCD  <  W-FROM1            GO  TO  LIS-04.           I.010413
+014510     IF  THT-TCD  >  W-TO1              GO  TO  LIS-90.           I.010613
+014520     IF  THT-HCD  <  W-FROM2  OR  >  W-TO2                        I.010613
+014530         GO  TO  LIS-04.                                          I.010613
+014540     GO  TO  LIS-09.                                              I.010613
+014550*****IF  THT-TCD  >  W-TO1              GO  TO  LIS-EX.           D.010613
+014560*****IF  THT-HCD  <  W-FROM2            GO  TO  LIS-04.           D.010613
+014570*****IF  THT-HCD  >  W-TO2              GO  TO  LIS-04.           D.010613
+014580*****IF  THTN-01  >  W-TO1              GO  TO  LIS-99.           D.000623
+014590*****IF  THTN-02  <  W-FROM2            GO  TO  LIS-04.           D.010413
+014600*****IF  THTN-02  >  W-TO2              GO  TO  LIS-04.           D.010413
+014610 LIS-05.                                                          I.010613
+014620     MOVE  SPACE   TO    THT-KEY2.                                I.010613
+014630     MOVE  W-FROM2 TO    THT-HCD2.                                I.010613
+014640     START   THTM      KEY  IS  NOT  <   THT-KEY2                 I.010613
+014650                    INVALID KEY    GO  TO  LIS-90.                I.010613
+014660 LIS-06.                                                          I.010613
+014670     READ  THTM     NEXT  UNLOCK  AT  END    GO  TO  LIS-90.      I.010613
+014680     IF  THT-HCD2 <  W-FROM2            GO  TO  LIS-06.           I.010613
+014690     IF  THT-HCD2 >  W-TO2              GO  TO  LIS-90.           I.010613
+014700     IF  THT-TCD2 <  W-FROM1  OR  >  W-TO1                        I.010613
+014710         GO  TO  LIS-06.                                          I.010613
+014720 LIS-09.                                                          I.010613
+014730     PERFORM SPC-RTN THRU SPC-EX.                                 I.000623
+014740*****IF  LCNT  NOT <  62                                          *D920511
+014750*****    PERFORM  MID-RTN     THRU  MID-EX.                           :
+014760*****PERFORM  MEI-RTN     THRU  MEI-EX.                           D.000623
+014770 LIS-10.                                                          I.000623
+014780*****MOVE  THTN-KEY     TO  OLD-KEY.                              D.010413
+014790*****MOVE  THT-KEY      TO  OLD-KEY.                              D.010613
+014800     MOVE ZERO TO W-PC.                                           I.000623
+014810     IF  W-SEN    =  1                                            I.010613
+014820         MOVE  THT-KEY      TO  OLD-KEY                           I.010613
+014830         PERFORM READ-RTN1 THRU READ-EX1                          I.010613
+014840     ELSE                                                         I.010613
+014850         MOVE  THT-HCD2     TO  W-HCD                             I.010613
+014860         MOVE  THT-SIZ2     TO  W-SIZ                             I.010613
+014870         MOVE  THT-TCD2     TO  W-TCD                             I.010613
+014880         PERFORM READ-RTN2 THRU READ-EX2.                         I.010613
+014890*****PERFORM READ-RTN1 THRU READ-EX1.                             D.010613
+014900 LIS-15.                                                          I.000623
+014910*****MOVE THTN-02 TO W-HCD.                                       D.010413
+014920*****MOVE THT-HCD TO W-HCD.                                       D.010613
+014930     MOVE 0 TO W-PC2.                                             I.000623
+014940     IF  W-SEN    =  1                                            I.010613
+014950         MOVE  THT-HCD      TO  W-HCD                             I.010613
+014960         PERFORM READ-RTN2 THRU READ-EX2                          I.010613
+014970     ELSE                                                         I.010613
+014980         MOVE  THT-TCD2     TO  W-TCD                             I.010613
+014990         PERFORM READ-RTN1 THRU READ-EX1.                         I.010613
+015000*****PERFORM READ-RTN2 THRU READ-EX2.                             D.010613
+015010 LIS-20.                                                          I.000623
+015020     PERFORM  MEI-RTN     THRU  MEI-EX.                           I.000623
+015030 LIS-25.                                                          I.000623
+015040     READ  THTM     NEXT  UNLOCK  AT  END    GO  TO  LIS-50.      I.010413
+015050     IF  W-SEN    =  1                                            I.010613
+015060         IF  THT-TCD  >  W-TO1              GO  TO  LIS-50.       I.010413
+015070     IF  W-SEN    =  2                                            I.010613
+015080         IF  THT-HCD2 >  W-TO2              GO  TO  LIS-50.       I.010613
+015090     IF  W-SEN    =  1                                            I.010613
+015100         IF  THT-HCD  <  W-FROM2  OR  >  W-TO2                    I.010613
+015110             GO  TO  LIS-25.                                      I.010613
+015120     IF  W-SEN    =  2                                            I.010613
+015130         IF  THT-TCD2 <  W-FROM1  OR  >  W-TO1                    I.010613
+015140             GO  TO  LIS-25.                                      I.010613
+015150*****IF  THT-HCD  <  W-FROM2            GO  TO  LIS-25.           D.010613
+015160*****IF  THT-HCD  >  W-TO2              GO  TO  LIS-25.           D.010613
+015170*****READ  JT-THTN  NEXT  UNLOCK  AT  END    GO  TO  LIS-50.      D.010413
+015180*****IF  THTN-01  >  W-TO1              GO  TO  LIS-50.           D.010413
+015190*****IF  THTN-02  <  W-FROM2            GO  TO  LIS-25.           D.010413
+015200*****IF  THTN-02  >  W-TO2              GO  TO  LIS-25.           D.010413
+015210*
+015220*****IF THTN-01 NOT = W-TCD                                       D.010413
+015230     IF  W-SEN    =  1                                            I.010613
+015240         IF THT-TCD NOT = W-TCD                                   I.010413
+015250             GO TO LIS-10.                                        I.000623
+015260     IF  W-SEN    =  2                                            I.010613
+015270         IF THT-HCD2 NOT = W-HCD                                  I.010613
+015280             GO TO LIS-10.                                        I.010613
+015290*****IF THTN-02 NOT = W-HCD                                       D.010413
+015300     IF  W-SEN    =  1                                            I.010613
+015310         IF THT-HCD NOT = W-HCD                                   I.010413
+015320             GO TO LIS-15.                                        I.000623
+015330     IF  W-SEN    =  2                                            I.010613
+015340         IF THT-TCD2 NOT = W-TCD                                  I.010613
+015350             GO TO LIS-15.                                        I.010613
+015360     GO TO LIS-20.                                                I.000623
+015370 LIS-50.                                                          I.000623
+015380     PERFORM PRI-RTN THRU PRI-EX.                                 I.000623
+015390 LIS-90.                                                          I.010613
+015400     IF   W-POC  =  5                                             I.010613
+015410          MOVE  0       TO  W-POC                                 I.010613
+015420          CLOSE   P-F.                                            I.010613
+015430*****GO  TO  LIS-04.                                              D.000623
+015440*LIS-99.                                                          D.000623
+015450*****PERFORM PRI-RTN  THRU  PRI-EX.                               *I920511
+015460*****DISPLAY  OK-01   CLE-OKC.                                    D.000623
+015470*****MOVE   90      TO  LCNT.                                     D.000623
+015480*****MOVE   ZERO    TO  PCNT.                                     D.000623
+015490*****CLOSE  P-F.                                                  D.000623
+015500*****MOVE   ZERO    TO  W-POC.                                    D.000623
+015510*****GO  TO  LIS-RTN.                                             D.000623
+015520 LIS-EX.
+015530     EXIT.
+015540*****************************
+015550***    M E I   R T N      ***
+015560*****************************
+015570 MEI-RTN.
+015580     PERFORM GYO-RTN THRU GYO-EX.                                 I.000623
+015590     IF W-PC1 NOT = 0                                             I.000623
+015600         GO TO MEI-10.                                            I.000623
+015610     IF W-LD = 58                                                 I.000623
+015620         PERFORM GYO-RTN THRU GYO-EX.                             I.000623
+015630     MOVE 1 TO W-PC1.                                             I.000623
+015640     IF  W-SEN    NOT  =  1                                       I.010613
+015650         GO  TO  MEI-05.                                          I.010613
+015660     IF W-CD = 0                                                  I.000623
+015670         MOVE ":" TO P-C(W-LD)                                    I.000623
+015680         MOVE SPACE TO P-DF1(W-LD)                                I.000623
+015690         MOVE W-TCD TO P-TCD1(W-LD)                               I.000623
+015700         MOVE T-NAME TO P-TNA1(W-LD)                              I.000623
+015710       ELSE                                                       I.000623
+015720         MOVE SPACE TO P-DR1(W-LD)                                I.000623
+015730         MOVE W-TCD TO P-TCD2(W-LD)                               I.000623
+015740         MOVE T-NAME TO P-TNA2(W-LD).                             I.000623
+015750     PERFORM GYO-RTN THRU GYO-EX.                                 I.000623
+015760     GO TO MEI-10.                                                I.010613
+015770 MEI-05.                                                          I.010613
+015780     IF W-CD = 0                                                  I.010613
+015790         MOVE ":" TO P-C(W-LD)                                    I.010613
+015800         MOVE SPACE TO P-DF3(W-LD)                                I.010613
+015810         MOVE SPACE TO P-S12(W-LD)                                I.020402
+015820         MOVE W-HCD TO P-HCD11(W-LD)                              I.010613
+015830         MOVE HI-NAME TO P-HNA11(W-LD)                            I.010613
+015840       ELSE                                                       I.010613
+015850         MOVE SPACE TO P-DR3(W-LD)                                I.010613
+015860         MOVE SPACE TO P-S22(W-LD)                                I.020402
+015870         MOVE W-HCD TO P-HCD21(W-LD)                              I.010613
+015880         MOVE HI-NAME TO P-HNA21(W-LD).                           I.010613
+015890     PERFORM GYO-RTN THRU GYO-EX.                                 I.010613
+015900 MEI-10.                                                          I.000623
+015910     IF W-PC2 NOT = 0                                             I.000623
+015920         GO TO MEI-30.                                            I.000623
+015930     MOVE 1 TO W-PC2.                                             I.000623
+015940     IF  W-SEN    NOT  =  1                                       I.010613
+015950         GO  TO  MEI-15.                                          I.010613
+015960     IF W-CD = 0                                                  I.000623
+015970         MOVE ":" TO P-C(W-LD)                                    I.000623
+015980         MOVE SPACE TO P-DF2(W-LD)                                I.010613
+015990         MOVE SPACE TO P-S11(W-LD)                                I.020402
+016000         MOVE W-HCD TO P-HCD1(W-LD)                               I.000623
+016010         MOVE HI-NAME TO P-HNA1(W-LD)                             I.000623
+016020         MOVE THT-SIZ TO P-SIZ1(W-LD)                             I.010413
+016030         MOVE THT-T TO P-TAN1(W-LD)                               I.010413
+016040         MOVE THT-TT TO P-MTN1(W-LD).                             I.080204
+016050*****    IF THT-NGS NOT = ZERO                                    D.080204
+016060*****        MOVE THT-NGS TO P-NG1(W-LD).                         D.080204
+016070*****    MOVE THTN-03 TO P-SIZ1(W-LD)                             D.010413
+016080*****    MOVE THTN-04 TO P-TAN1(W-LD)                             D.010413
+016090*****  ELSE                                                       D.010413
+016100     IF W-CD NOT = 0                                              I.010413
+016110         MOVE SPACE TO P-DR2(W-LD)                                I.010613
+016120         MOVE SPACE TO P-S21(W-LD)                                I.020402
+016130         MOVE W-HCD TO P-HCD2(W-LD)                               I.000623
+016140         MOVE HI-NAME TO P-HNA2(W-LD)                             I.000623
+016150         MOVE THT-SIZ TO P-SIZ2(W-LD)                             I.010413
+016160         MOVE THT-T TO P-TAN2(W-LD)                               I.010413
+016170         MOVE THT-TT TO P-MTN2(W-LD).                             I.080204
+016180*****    IF THT-NGS NOT = ZERO                                    D.080204
+016190*****        MOVE THT-NGS TO P-NG2(W-LD).                         D.080204
+016200     GO TO MEI-EX.                                                I.010613
+016210 MEI-15.                                                          I.010613
+016220     IF W-CD = 0                                                  I.010613
+016230         MOVE ":" TO P-C(W-LD)                                    I.010613
+016240         MOVE SPACE TO P-DF4(W-LD)                                I.010613
+016250         MOVE W-TCD TO P-TCD11(W-LD)                              I.010613
+016260         MOVE T-NAME TO P-TNA11(W-LD)                             I.010613
+016270         MOVE THT-SIZ TO P-SIZ11(W-LD)                            I.010613
+016280         MOVE THT-T TO P-TAN11(W-LD)                              I.010613
+016290         MOVE THT-TT TO P-MTN11(W-LD).                            I.080204
+016300*****    IF THT-NGS NOT = ZERO                                    D.080204
+016310*****        MOVE THT-NGS TO P-NG11(W-LD).                        D.080204
+016320     IF W-CD NOT = 0                                              I.010613
+016330         MOVE SPACE TO P-DR4(W-LD)                                I.010613
+016340         MOVE W-TCD TO P-TCD21(W-LD)                              I.010613
+016350         MOVE T-NAME TO P-TNA21(W-LD)                             I.010613
+016360         MOVE THT-SIZ TO P-SIZ21(W-LD)                            I.010613
+016370         MOVE THT-T TO P-TAN21(W-LD)                              I.010613
+016380         MOVE THT-TT TO P-MTN21(W-LD).                            I.080204
+016390*****    IF THT-NGS NOT = ZERO                                    D.080204
+016400*****        MOVE THT-NGS TO P-NG21(W-LD).                        D.080204
+016410     GO TO MEI-EX.                                                I.010613
+016420*****    MOVE THTN-03 TO P-SIZ2(W-LD)                             D.010413
+016430*****    MOVE THTN-04 TO P-TAN2(W-LD).                            D.010413
+016440 MEI-30.                                                          I.000623
+016450     IF W-CD = 0                                                  I.000623
+016460         MOVE ":" TO P-C(W-LD)                                    I.000623
+016470         MOVE SPACE TO P-DF2(W-LD)                                I.010613
+016480         MOVE SPACE TO P-HNA1(W-LD)                               I.010613
+016490         MOVE SPACE TO P-S11(W-LD)                                I.020402
+016500         MOVE THT-SIZ TO P-SIZ1(W-LD)                             I.010413
+016510         MOVE THT-T TO P-TAN1(W-LD)                               I.010413
+016520         MOVE THT-TT TO P-MTN1(W-LD).                             I.080204
+016530*****    IF THT-NGS NOT = ZERO                                    D.080204
+016540*****        MOVE THT-NGS TO P-NG1(W-LD).                         D.080204
+016550     IF W-CD NOT = 0                                              I.010413
+016560         MOVE SPACE TO P-DR2(W-LD)                                I.010613
+016570         MOVE SPACE TO P-HNA2(W-LD)                               I.010613
+016580         MOVE SPACE TO P-S21(W-LD)                                I.020402
+016590         MOVE THT-SIZ TO P-SIZ2(W-LD)                             I.010413
+016600         MOVE THT-T TO P-TAN2(W-LD)                               I.010413
+016610         MOVE THT-TT TO P-MTN2(W-LD).                             I.080204
+016620*****    IF THT-NGS NOT = ZERO                                    D.080204
+016630*****        MOVE THT-NGS TO P-NG2(W-LD).                         D.080204
+016640*****    MOVE THTN-03 TO P-SIZ1(W-LD)                             D.010413
+016650*****    MOVE THTN-04 TO P-TAN1(W-LD)                             D.010413
+016660*****  ELSE                                                       D.010413
+016670*****    MOVE THTN-03 TO P-SIZ2(W-LD)                             D.010413
+016680*****    MOVE THTN-04 TO P-TAN2(W-LD).                            D.010413
+016690*****MOVE  15K         TO  K-CD1.
+016700*****MOVE  20K         TO  K-CD2.
+016710*****MOVE  SPACE       TO  P-02  P-04.
+016720*****IF    THTN-01      =  W-TCD                                  D.000623
+016730*****AND   THTN-02      =  W-HCD                                  D.000623
+016740*****      GO  TO   MEI-010.                                      D.000623
+016750*****IF    THTN-01  NOT =  W-TCD                                  D.000623
+016760*****   OR   THTN-02  NOT =  W-HCD                                D.000623
+016770*****        PERFORM  PRI-RTN  THRU  PRI-EX.                      D.000623
+016780*****IF  ( THTN-01  NOT =  W-TCD)  OR  ( LCNT  =  4 )             D.000623
+016790*****  OR  (  LCNT  NOT <  61   )                                 D.000623
+016800*****  OR  (  LCNT  NOT <  62   )                                 D.971119
+016810*****    MOVE  THTN-01     TO  P-01                               D.000623
+016820*****    PERFORM  READ-RTN1     THRU  READ-EX1                    D.000623
+016830*****    MOVE  T-NAME      TO  P-02                               D.000623
+016840*****    MOVE  THTN-02     TO  P-03                               D.000623
+016850*****    PERFORM  READ-RTN2     THRU  READ-EX2                    D.000623
+016860*****    MOVE  HI-NAME     TO  P-04                               D.000623
+016870*****    MOVE   2          TO  W-LCNT                             D.000623
+016880*****    GO  TO  MEI-010.                                         D.000623
+016890*****IF  THTN-02  NOT =  W-HCD                                    D.000623
+016900*****    MOVE  THTN-02     TO  P-03                               D.000623
+016910*****    PERFORM  READ-RTN2     THRU  READ-EX2                    D.000623
+016920*****    MOVE  HI-NAME     TO  P-04.                              D.000623
+016930*****    MOVE   1          TO  W-LCNT.                            D.000623
+016940*MEI-010.                                                         D.000623
+016950**** MOVE  THTN-03     TO  P-05.                                  *D920511
+016960**** MOVE  THTN-04     TO  P-06.                                      :
+016970*****IF    THTN-03  =  1   MOVE    THTN-04  TO  P-05(2).          D.000623
+016980*****IF    THTN-03  =  2   MOVE    THTN-04  TO  P-05(3).          D.000623
+016990*****IF    THTN-03  =  3   MOVE    THTN-04  TO  P-05(4).          D.000623
+017000*****IF    THTN-03  =  4   MOVE    THTN-04  TO  P-05(5).          D.000623
+017010*****IF    THTN-03  =  9   MOVE    THTN-04  TO  P-05(1).          D.000623
+017020*****MOVE  1        TO     PRI-SW.                                D.000623
+017030*****IF  ( THTN-01  NOT =  W-TCD)  OR  ( LCNT  =  4 )             *D920511
+017040******   WRITE  P-R  AFTER 2
+017050*****    ADD  2      TO  LCNT
+017060*****ELSE
+017070*****    WRITE  P-R  AFTER 1
+017080*****    ADD  1      TO  LCNT.
+017090*****MOVE  SPACE     TO  P-R.
+017100 MEI-EX.
+017110     EXIT.
+017120 GYO-RTN.                                                         I.000623
+017130     ADD 1 TO W-LD.                                               I.000623
+017140     IF W-LD NOT = 59                                             I.000623
+017150         GO TO GYO-EX.                                            I.000623
+017160     IF W-CD = 0                                                  I.000623
+017170         MOVE 1 TO W-CD W-LD                                      I.000623
+017180         MOVE ZERO TO W-PC                                        I.000623
+017190         GO TO GYO-EX.                                            I.000623
+017200     PERFORM PRI-RTN THRU PRI-EX.                                 I.000623
+017210     PERFORM SPC-RTN THRU SPC-EX.                                 I.000623
+017220     GO TO GYO-RTN.                                               I.000623
+017230 GYO-EX.                                                          I.000623
+017240     EXIT.                                                        I.000623
+017250 PRI-RTN.
+017260*****IF    PRI-SW  =  0       GO  TO  PRI-050.                    D.000623
+017270*****IF  LCNT  NOT <  62                                          D.971119
+017280*****IF  LCNT  NOT <  61                                          D.000623
+017290     IF W-POC = 0                                                 I.000623
+017300         MOVE 5 TO W-POC                                          I.000623
+017310         OPEN OUTPUT P-F                                          I.000623
+017320         PERFORM  MID-010     THRU  MID-EX                        I.000623
+017330       ELSE                                                       I.000623
+017340         PERFORM  MID-RTN     THRU  MID-EX.
+017350**
+017360*****MOVE  15K         TO  K-CD1.                                 D.000623
+017370*****MOVE  20K         TO  K-CD2.                                 D.000623
+017380**
+017390*****WRITE  P-R  FROM  W-PR  AFTER   W-LCNT.                      D.000623
+017400*****ADD    W-LCNT   TO  LCNT.                                    D.000623
+017410     MOVE ZERO TO W-LD.                                           I.000623
+017420 PRI-050.
+017430     ADD 1 TO W-LD.                                               I.000623
+017440     IF W-LD NOT = 59                                             I.000623
+017450         IF P-C(W-LD) NOT = SPACE                                 I.000623
+017460             MOVE SPACE TO P-R                                    I.000623
+017470             MOVE W-P(W-LD) TO P-R                                I.000623
+017480             WRITE P-R                                            I.000623
+017490             MOVE SPACE TO P-R                                    I.000623
+017500             GO TO PRI-050.                                       I.000623
+017510*****MOVE  SPACE     TO  P-R W-PR.                                D.000623
+017520*****MOVE  SPACE     TO  P-02  P-04.                              D.000623
+017530*****MOVE  0         TO  PRI-SW.                                  D.000623
+017540 PRI-EX.
+017550     EXIT.
+017560 SPC-RTN.                                                         I.000623
+017570     MOVE SPACE TO W-PR.                                          I.000623
+017580     MOVE ZERO TO W-LD.                                           I.000623
+017590 SPC-050.                                                         I.000623
+017600     ADD 1 TO W-LD.                                               I.000623
+017610     IF W-LD NOT = 59                                             I.000623
+017620         MOVE  15K         TO  P-CD1(W-LD)                        I.000623
+017630         MOVE  20K         TO  P-CD2(W-LD)                        I.000623
+017640         MOVE SPACE TO P-HNA1(W-LD) P-HNA2(W-LD)                  I.000623
+017650                       P-S11(W-LD) P-S21(W-LD)                    I.020402
+017660         GO TO SPC-050.                                           I.000623
+017670     MOVE ZERO TO W-LD W-CD W-PC.                                 I.000623
+017680 SPC-EX.                                                          I.000623
+017690     EXIT.                                                        I.000623
+017700******************************
+017710***   ｺ ﾋﾟ-   R T N        ***
+017720******************************
+017730**
+017740 CPY-RTN.                                                         I.010227
+017750     DISPLAY    GAM-CLR2.                                         I.010227
+017760     DISPLAY  DSP-CPY.                                            I.010227
+017770 CPY-01.                                                          I.010227
+017780     ACCEPT  ACP-MTCD.                                            I.010227
+017790     DISPLAY  DISP-MSG-SPACE.                                     I.010227
+017800     IF  ESTAT       =  BTB     GO  TO  CPY-EX.                   I.010227
+017810     IF  ESTAT  NOT  =  HTB  AND  SKP     GO  TO  CPY-01.         I.010227
+017820     MOVE  W-MTCD   TO  T-KEY.                                    I.010227
+017830     READ  T-M  UNLOCK  INVALID                                   I.010227
+017840         DISPLAY  ERR-1                                           I.010227
+017850         GO  TO  CPY-01.                                          I.010227
+017860     DISPLAY DSP-MTNA.                                            I.010227
+017870 CPY-01A.                                                         I.010227
+017880     ACCEPT  ACP-STCD.                                            I.010227
+017890     IF  ESTAT  =  BTB    GO  TO CPY-01.                          I.010227
+017900     IF  ESTAT  NOT  =   HTB  AND  SKP                            I.010227
+017910                GO  TO  CPY-01A.                                  I.010227
+017920     MOVE  W-STCD   TO  T-KEY.                                    I.010227
+017930     READ  T-M  UNLOCK  INVALID                                   I.010227
+017940         DISPLAY  ERR-1                                           I.010227
+017950         GO  TO  CPY-01A.                                         I.010227
+017960     DISPLAY DSP-STNA.                                            I.010227
+017970     IF  W-MTCD   =  W-STCD      GO  TO  CPY-01A.                 I.010227
+017980 CPY-02.                                                          I.010227
+017990     ACCEPT  ACP-OKC.                                             I.010227
+018000     IF  ESTAT       =  BTB     GO  TO  CPY-01A.                  I.010227
+018010     IF  ESTAT  NOT  =  HTB  AND  SKP     GO  TO  CPY-02.         I.010227
+018020     IF  OKC         =    9                                       I.010227
+018030                DISPLAY  CPY-CLR                                  I.010227
+018040                DISPLAY  CAN-01  CLE-OKC                          I.010227
+018050                GO  TO  CPY-01.                                   I.010227
+018060     IF  OKC    NOT  =    1     GO  TO  CPY-02.                   I.010227
+018070*
+018080     MOVE ZERO TO WR-KEY.                                         I.010227
+018090     MOVE W-MTCD TO WR-01.                                        I.010227
+018100 CPY-03.                                                          I.010227
+018110*****MOVE ZERO TO THTN-KEY.                                       D.010413
+018120*****MOVE  W-STCD  TO    THTN-01.                                 D.010413
+018130*****START   JT-THTN   KEY  IS  NOT  <   THTN-KEY                 D.010413
+018140     MOVE ZERO TO THT-KEY.                                        I.010413
+018150     MOVE  W-STCD  TO    THT-TCD.                                 I.010413
+018160     START   THTM      KEY  IS  NOT  <   THT-KEY                  I.010413
+018170                    INVALID KEY    GO  TO  CPY-10.                I.010227
+018180 CPY-04.                                                          I.010227
+018190*****READ  JT-THTN  NEXT  UNLOCK  AT  END    GO  TO  CPY-10.      D.010413
+018200*****IF  THTN-01  NOT = W-STCD          GO  TO  CPY-10.           D.010413
+018210*****READ  THTM     NEXT  UNLOCK  AT  END    GO  TO  CPY-10.      D.010514
+018220     READ  THTM     NEXT          AT  END    GO  TO  CPY-10.      I.010514
+018230     IF  THT-TCD  NOT = W-STCD          GO  TO  CPY-10.           I.010413
+018240     PERFORM   DEL-RTN THRU  DEL-EX.                              I.010227
+018250     GO  TO  CPY-04.                                              I.010227
+018260 CPY-10.                                                          I.010227
+018270*****MOVE ZERO TO THTN-KEY.                                       D.010413
+018280*****MOVE  WR-KEY  TO    THTN-KEY.                                D.010413
+018290*****START   JT-THTN   KEY  IS  NOT  <   THTN-KEY                 D.010413
+018300     MOVE ZERO TO THT-KEY.                                        I.010413
+018310     MOVE  WR-KEY  TO    THT-KEY.                                 I.010413
+018320     START   THTM      KEY  IS  NOT  <   THT-KEY                  I.010413
+018330                    INVALID KEY    GO  TO  CPY-EX.                I.010227
+018340 CPY-15.                                                          I.010227
+018350*****READ  JT-THTN  NEXT  UNLOCK  AT  END    GO  TO  CPY-EX.      D.010413
+018360*****IF  THTN-01  NOT = W-MTCD          GO  TO  CPY-EX.           D.010413
+018370*****IF  THTN-KEY     = WR-KEY          GO  TO  CPY-15.           D.010413
+018380*****MOVE THTN-KEY TO WR-KEY.                                     D.010413
+018390*****MOVE W-STCD TO THTN-01.                                      D.010413
+018400     READ  THTM     NEXT  UNLOCK  AT  END    GO  TO  CPY-EX.      I.010413
+018410     IF  THT-TCD  NOT = W-MTCD          GO  TO  CPY-EX.           I.010413
+018420     IF  THT-KEY      = WR-KEY          GO  TO  CPY-15.           I.010413
+018430     MOVE THT-KEY  TO WR-KEY.                                     I.010413
+018440     MOVE W-STCD TO THT-TCD THT-TCD2.                             I.010413
+018450     PERFORM WRI-RTN THRU WRI-EX.                                 I.010227
+018460     GO TO CPY-10.                                                I.010227
+018470 CPY-EX.                                                          I.010227
+018480     EXIT.                                                        I.010227
+018490*****************************
+018500***   R E A D   R T N 1   ***
+018510*****************************
+018520 READ-RTN1.
+018530*****MOVE  THTN-01     TO  T-KEY.                                 D.010413
+018540*****MOVE  THT-TCD     TO  T-KEY.                                 D.010613
+018550     MOVE  W-TCD       TO  T-KEY.                                 I.010613
+018560***  得意先マスタ　ＲＥＡＤ
+018570     READ  T-M  UNLOCK  INVALID
+018580         MOVE  SPACE     TO  T-NAME.
+018590 READ-EX1.
+018600     EXIT.
+018610*****************************
+018620***   R E A D   R T N 2   ***
+018630*****************************
+018640 READ-RTN2.
+018650*****MOVE  THTN-02     TO  HI-KEY.                                D.010413
+018660*****MOVE  THT-HCD     TO  HI-KEY.                                D.010613
+018670     MOVE  W-HCD       TO  HI-KEY.                                I.010613
+018680***  品名ＩＮＤＥＸＥＤマスタ　ＲＥＡＤ
+018690     READ  HI-M  UNLOCK  INVALID
+018700         MOVE  SPACE     TO  HI-NAME.
+018710 READ-EX2.
+018720     EXIT.
+018730*****************************
+018740***    G E T   R T N      ***
+018750*****************************
+018760**
+018770*GET-RTN.                                                         D.000117
+018780*****IF    ACT    =    1    GO    TO    WRI-RTN.                  D.000117
+018790*****IF    ACT    =    2    PERFORM  HI-ED    THRU    HI-EDEX     D.000117
+018800*****                       GO    TO    GET-R3.                   D.000117
+018810*****IF    ACT    =    3    GO    TO    DEL-RTN.                  D.000117
+018820*
+018830*    ﾋﾝﾒｲ ｲﾝﾃﾞｯｸｽ ﾄｳﾛｸ   *
+018840*
+018850 WRI-RTN.
+018860*****INITIALIZE         THTN-R.                                   *D920511
+018870*****PERFORM   HI-ED    THRU     HI-EDEX.                             :
+018880*****WRITE     THTN-R    INVALID KEY                              D.010413
+018890*****          MOVE  "JT-THTN"   TO  ERR-F                        D.010413
+018900     WRITE     THT-R     INVALID KEY                              I.010413
+018910               MOVE  "THTM1"     TO  ERR-F                        I.010413
+018920               MOVE  "W"         TO  ERR-M
+018930*****          MOVE  THTN-KEY    TO  ERR-K                        D.010413
+018940               MOVE  THT-KEY     TO  ERR-K                        I.010413
+018950               PERFORM  ERR-RTN  THRU  ERR-EX.
+018960*****CALL     "CBLTCLS"   USING  JT-THTN.                         D.010413
+018970 WRI-EX.                                                          I.000117
+018980     EXIT.                                                        I.000117
+018990*****GO    TO    DEL-EX.
+019000*
+019010*
+019020*    ﾋﾝﾒｲｲﾝﾃﾞｯｸｽ ｼｭｳｾｲ   *
+019030*
+019040*GET-R3.                                                          D.000117
+019050*****REWRITE   THTN-R    INVALID KEY                              D.000117
+019060*****          MOVE  "JT-THTN"   TO  ERR-F                        D.000117
+019070*****          MOVE  "R"         TO  ERR-M                        D.000117
+019080*****          MOVE  THTN-KEY    TO  ERR-K                        D.000117
+019090*****          PERFORM  ERR-RTN  THRU  ERR-EX.                    D.000117
+019100*****GO    TO    DEL-EX.                                          D.000117
+019110*
+019120*    ﾋﾝﾒｲ ｲﾝﾃﾞｯｸｽ ｻｸｼﾞｮ   *
+019130*
+019140 DEL-RTN.
+019150*****DELETE    JT-THTN    INVALID KEY                             D.010413
+019160*****          MOVE  "JT-THTN"    TO  ERR-F                       D.010413
+019170     DELETE    THTM       INVALID KEY                             I.010413
+019180               MOVE  "THTM1  "    TO  ERR-F                       I.010413
+019190               MOVE  "D"          TO  ERR-M
+019200*****          MOVE  THTN-KEY     TO  ERR-K                       D.010413
+019210               MOVE  THT-KEY      TO  ERR-K                       I.010413
+019220               PERFORM  ERR-RTN   THRU  ERR-EX.
+019230     IF COMPLETION-CODE = 000                                     I.010529
+019240         MOVE 050 TO COMPLETION-CODE.                             I.010529
+019250*****CALL     "CBLTCLS"   USING  JT-THTN.                         D.010413
+019260*
+019270 DEL-EX.
+019280     EXIT.
+019290*
+019300*HI-ED.
+019310*
+019320*****MOVE    W-KEY       TO   THTN-KEY.
+019330*****MOVE    W-04        TO   THTN-04.
+019340*HI-EDEX.
+019350*****EXIT.
+019360*
+019370*****************************
+019380***    ﾐ ﾀﾞ ｼ  R T N      ***
+019390*****************************
+019400**
+019410 MID-RTN.
+019420     MOVE   SPACE   TO   P-R.                                     I.000623
+019430     WRITE  P-R     AFTER  PAGE.                                  I.000623
+019440*****IF  LCNT   <  90                                             D.000623
+019450*****     MOVE   SPACE   TO   P-R                                 D.000623
+019460*****     WRITE  P-R     AFTER  PAGE.                             D.000623
+019470*****MOVE  4     TO  LCNT.                                        D.000623
+019480 MID-010.                                                         I.000623
+019490     ADD   1   TO    PCNT.
+019500     MOVE  PCNT  TO  WPCNT.
+019510     MOVE   HEAD1    TO    P-R.
+019520     WRITE  P-R      AFTER  1.
+019530     MOVE   SPACE    TO     P-R.
+019540     MOVE   HEAD2    TO    P-R.                                   I.000623
+019550     WRITE  P-R      AFTER  2.                                    I.000623
+019560*****MOVE   HEADA    TO    P-R.                                   D.000623
+019570*****WRITE  P-R      AFTER  1.                                    D.000623
+019580     MOVE   SPACE    TO     P-R.
+019590     MOVE   HEAD3    TO    P-R.                                   I.000623
+019600*****MOVE   HEAD2    TO    P-R.                                   D.000623
+019610     WRITE  P-R      AFTER  1.
+019620     MOVE   SPACE   TO     P-R.
+019630 MID-EX.
+019640     EXIT.
+019650*
+019660*****************************
+019670***  ﾋﾝﾒｲ(ｲﾛﾅｼ) ｾｯﾄ       ***
+019680*****************************
+019690**
+019700 NAM-RTN.                                                         I.000117
+019710     MOVE  ZERO  TO  W-C.                                         I.000117
+019720     MOVE ALL NC"　"  TO  W-NAME W-HNAD.                          I.000117
+019730     MOVE  HI-NAME TO  W-HNAD.                                    I.000117
+019740 NAM-10.                                                          I.000117
+019750     ADD   1     TO  W-C.                                         I.000117
+019760     IF  W-C     >  24                                            I.000117
+019770         GO  TO  NAM-EX.                                          I.000117
+019780     MOVE   W-HNA(W-C) TO W-NA(W-C).                              I.000117
+019790     IF  W-HNA(W-C) NOT = SPACE                                   I.000117
+019800         GO TO NAM-10.                                            I.000117
+019810     ADD   1     TO  W-C.                                         I.000117
+019820     IF  W-C     >  24                                            I.000117
+019830         GO  TO  NAM-EX.                                          I.000117
+019840     MOVE   W-HNA(W-C) TO W-NA(W-C).                              I.000117
+019850     IF  W-HNA(W-C) NOT = SPACE                                   I.000117
+019860         GO TO NAM-10.                                            I.000117
+019870 NAM-EX.                                                          I.000117
+019880     EXIT.                                                        I.000117
+019890**************************
+019900***  ﾌ ｧ ｲ ﾙ  CLOSE    ***
+019910**************************
+019920**
+019930 END-RTN.
+019940     CLOSE   THTM     T-M  HI-M.                                  I.010413
+019950*****CLOSE   JT-THTN  T-M  HI-M.                                  D.010413
+019960*****IF   W-POC  =  5     CLOSE   P-F.                            D.010613
+019970     DISPLAY  C-CLEAR.
+019980 END-EX.
+019990     EXIT.
+020000***
+020010 COPY  LPMSG.
+020020***

@@ -1,0 +1,506 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. KHT510.
+000030*********************************************************
+000040*    PROGRAM         :  用途区分別　製品受払問合せ　　  *
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :  SCKT51                          *
+000070*        変更　　　  :  62/04/06                        *
+000080*    COMPILE TYPE    :  COBOL                           *
+000090*********************************************************
+000100 ENVIRONMENT DIVISION.
+000110 CONFIGURATION SECTION.
+000120 SOURCE-COMPUTER. SYSTEM3100.
+000130 OBJECT-COMPUTER. SYSTEM3100.
+000140 INPUT-OUTPUT SECTION.
+000150 FILE-CONTROL.
+000160     SELECT KH-M ASSIGN TO KH-MSD
+000170         ORGANIZATION INDEXED
+000180         ACCESS MODE DYNAMIC
+000190         RECORD KEY KH-KEY
+000200         FILE STATUS IS ERR-STAT.
+000210     SELECT KHT-M ASSIGN TO KHT-MSD
+000220         ORGANIZATION INDEXED
+000230         ACCESS MODE DYNAMIC
+000240         RECORD KEY KHT-KEYD
+000250         FILE STATUS IS ERR-STAT.
+000260     SELECT KKB-M ASSIGN TO KKB-MSD
+000270         ORGANIZATION INDEXED
+000280         ACCESS MODE DYNAMIC
+000290         RECORD KEY KKB-KEY
+000300         FILE STATUS IS ERR-STAT.
+000310     SELECT URIR-F ASSIGN TO URIR-MSD
+000320         FILE STATUS IS ERR-STAT.
+000330*****SELECT SP-F ASSIGN TO P-PRN999.                              D.020906
+000340 I-O-CONTROL.
+000350     APPLY SHARED-MODE ON KH-M
+000360     APPLY SHARED-MODE ON KHT-M
+000370     APPLY SHARED-MODE ON KKB-M
+000380     APPLY SHARED-MODE ON URIR-F.                                 I.020906
+000390*****APPLY SHARED-MODE ON URIR-F                                  D.020906
+000400*****APPLY SHIFT-CODE  ON SP-F.                                   D.020906
+000410 DATA DIVISION.
+000420 FILE SECTION.
+000430     COPY LIKHM.
+000440     COPY LIKHT2.
+000450     COPY LIKKBM.
+000460*****COPY LSPF.                                                   D.020906
+000470 FD  URIR-F
+000480*****BLOCK  4 RECORDS                                             D.001101
+000490*****BLOCK  3 RECORDS                                             D.010907
+000500     BLOCK  2 RECORDS                                             I.010907
+000510     LABEL RECORD IS STANDARD
+000520     VALUE OF IDENTIFICATION "URIRF".
+000530 01  URIR-R.
+000540*****02  F              PIC  X(005).                              D.970820
+000550     02  F              PIC  X(007).                              I.970820
+000560     02  UR-PEY         PIC  9(002).
+000570     02  F              PIC  X(033).
+000580     02  UR-YC          PIC  9(002).
+000590     02  F              PIC  X(084).                              I.010907
+000600*****02  F              PIC  X(041).                              D.010907
+000610*****02  F              PIC  X(020).                              D.001101
+000620*****02  F              PIC  X(022).                              D.970820
+000630 WORKING-STORAGE SECTION.
+000640*01  W-15K              PIC  X(005) VALUE ""3FE04F40A0"".         D.020906
+000650*01  HEAD1.                                                       D.020906
+000660*****02  W-20K          PIC  X(005) VALUE ""3FE04FE080"".         D.020906
+000670*****02  F              PIC  X(029) VALUE SPACE.                  D.020906
+000680*****02  F              PIC  N(024) VALUE                         D.020906
+000690*****     NC"＊＊＊　　工品　用途区分別　製品受払表　　＊＊＊".   D.020906
+000700*****     NC"＊＊＊　　工品　用途区分別　販売実績表　　＊＊＊".   D.020719
+000710*****02  F              PIC  X(018) VALUE SPACE.                  D.020906
+000720*****02  F              PIC  N(003) VALUE NC"（防振".             D.020906
+000730*****02  H-BP           PIC  9(002).                              D.020906
+000740*****02  F              PIC  N(001) VALUE NC"日".                 D.020906
+000750*****02  F              PIC  X(001).                              D.020906
+000760*****02  F              PIC  N(003) VALUE NC"その他".             D.020906
+000770*****02  H-MP           PIC  9(002).                              D.020906
+000780*****02  F              PIC  N(002) VALUE NC"日）".               D.020906
+000790*****02  F              PIC  X(010) VALUE "     DATE ".           D.020906
+000800*****02  H-DATE         PIC 99B99B99.                             D.020906
+000810*01  HEAD2.                                                       D.020906
+000820*****02  F              PIC  X(025) VALUE SPACE.                  D.020906
+000830*****02  F              PIC  X(046) VALUE                         D.020906
+000840*****     "I---  前月繰越  --I I------  当月入庫  -----I ".       D.020906
+000850*****02  F              PIC  X(046) VALUE                         D.020906
+000860*****     "I------  当月出庫  -----I I---  次月繰越  --I ".       D.020906
+000870*****02  F              PIC  X(019) VALUE "I----  増 減  ----I".  D.020906
+000880*01  HEAD3.                                                       D.020906
+000890*****02  F              PIC  X(044) VALUE                         D.020906
+000900*****     "用　途　区　分　名       　数　量　 金　　額".         D.020906
+000910*****02  F              PIC  X(052) VALUE                         D.020906
+000920*****     "        数　量　　金　　額        数　量　　金　　額". D.020906
+000930*****02  F              PIC  X(040) VALUE                         D.020906
+000940*****     "   数　量　 金　　額   数　量　 金　　額".             D.020906
+000950*01  D-P.                                                         D.020906
+000960*****02  P-15K          PIC  X(005).                              D.020906
+000970*****02  P-M            PIC  N(016).                              D.020906
+000980*****02  P-ZS           PIC -----,--9.                            D.020906
+000990*****02  P-ZK           PIC ---,---,--9.                          D.020906
+001000*****02  P-NS           PIC ---,---,--9.99.                       D.020906
+001010*****02  P-NK           PIC ----,---,--9.                         D.020906
+001020*****02  P-SS           PIC ---,---,--9.99.                       D.020906
+001030*****02  P-SK           PIC ----,---,--9.                         D.020906
+001040*****02  P-YS           PIC -----,--9.                            D.020906
+001050*****02  P-YK           PIC ---,---,--9.                          D.020906
+001060*****02  P-HS           PIC -----,--9.                            D.020906
+001070*****02  P-HK           PIC ---,---,--9.                          D.020906
+001080*****02  P-20K          PIC  X(005).                              D.020906
+001090 01  W-DATA.
+001100     02  W-PEY.
+001110       03  W-BP         PIC  9(002).
+001120       03  W-MP         PIC  9(002).
+001130     02  CNT            PIC  9(002).                              I.120606
+001140     02  CNTD           PIC  9(002).                              I.120606
+001150*****02  CNT            PIC  9(002).                              D.020906
+001160     02  W-L            PIC  9(002).
+001170     02  W-DMM          PIC  X(001).                              I.120606
+001180*****02  W-DMM          PIC  9(001).                              D.120606
+001190*****02  W-ZC           PIC  9(001).                              D.020906
+001200     02  W-D.
+001210*****  03  W-ZK         PIC S9(008).                              D.020829
+001220*****  03  W-NS         PIC S9(007)V9(02).                        D.020906
+001230*****  03  W-NK         PIC S9(009).                              D.020829
+001240*****  03  W-SK         PIC S9(009).                              D.020829
+001250*****  03  W-YS         PIC S9(006).                              D.020906
+001260       03  W-NS         PIC S9(006)V9(02).                        I.020906
+001270       03  W-YS         PIC S9(006)V9(02).                        I.020906
+001280       03  W-YK         PIC S9(008).
+001290*****  03  W-HS         PIC S9(006).                              D.020906
+001300*****  03  W-HK         PIC S9(008).                              D.020906
+001310     02  W-ND.
+001320       03  WN-YC        PIC  9(002).
+001330*****  03  WN-ZS        PIC S9(006).                              D.020906
+001340       03  WN-ZS        PIC S9(006)V9(02).                        I.020906
+001350       03  WN-ZK        PIC S9(008).
+001360       03  WN-NS        PIC S9(006)V9(02).                        I.020906
+001370       03  WN-NK        PIC S9(008).                              I.020906
+001380       03  WN-SS        PIC S9(006)V9(02).                        I.020906
+001390       03  WN-SK        PIC S9(008).                              I.020906
+001400*****  03  WN-NS        PIC S9(007)V9(02).                        D.020906
+001410*****  03  WN-NK        PIC S9(009).                              D.020906
+001420*****  03  WN-SS        PIC S9(007)V9(02).                        D.020906
+001430*****  03  WN-SS        PIC S9(006)V9(02).                        D.020906
+001440*****  03  WN-SK        PIC S9(009).                              D.020906
+001450*****  03  WN-YS        PIC S9(006).                              D.020906
+001460       03  WN-YS        PIC S9(006)V9(02).                        I.020906
+001470       03  WN-YK        PIC S9(008).
+001480*****  03  WN-HS        PIC S9(006).                              D.020906
+001490*****  03  WN-HK        PIC S9(008).                              D.020906
+001500*****02  W-ATD.                                                   D.020906
+001510*****  03  W-TD    OCCURS 30.                                     D.020906
+001520*****    04  WT-YC      PIC  9(002).                              D.020906
+001530*****    04  WT-ZS      PIC S9(006).                              D.020906
+001540*****    04  WT-ZK      PIC S9(008).                              D.020906
+001550*****    04  WT-NS      PIC S9(007)V9(02).                        D.020906
+001560*****    04  WT-NK      PIC S9(009).                              D.020906
+001570*****    04  WT-SS      PIC S9(007)V9(02).                        D.020906
+001580*****    04  WT-SK      PIC S9(009).                              D.020906
+001590*****    04  WT-YS      PIC S9(006).                              D.020906
+001600*****    04  WT-YK      PIC S9(008).                              D.020906
+001610*****    04  WT-HS      PIC S9(006).                              D.020906
+001620*****    04  WT-HK      PIC S9(008).                              D.020906
+001630     02  W-DD.                                                    I.120606
+001640       03  W-DDD   OCCURS  42.                                    I.120606
+001650         04  WD-YCN       PIC  N(015).                            I.120606
+001660         04  WD-ZK        PIC S9(008).                            I.120606
+001670         04  WD-NK        PIC S9(008).                            I.120606
+001680         04  WD-SK        PIC S9(008).                            I.120606
+001690         04  WD-YK        PIC S9(008).                            I.120606
+001700     02  W-AD.
+001710       03  WA-ZK        PIC S9(008).
+001720*****  03  WA-NK        PIC S9(009).                              D.020906
+001730*****  03  WA-SK        PIC S9(009).                              D.020906
+001740       03  WA-NK        PIC S9(008).                              I.020906
+001750       03  WA-SK        PIC S9(008).                              I.020906
+001760       03  WA-YK        PIC S9(008).
+001770*****  03  WA-HK        PIC S9(008).                              D.020906
+001780 01  ERR-STAT           PIC  X(002).
+001790     COPY LSTAT.
+001800 SCREEN SECTION.
+001810 SD  C-CRT
+001820     END STATUS IS ESTAT.
+001830 01  C-CLEAR.
+001840     02  C-CL    LINE   1  CLEAR SCREEN.
+001850 01  C-ACP.
+001860*****02  A-DMM   LINE  23  COLUMN  23  PIC  9(001)                D.120606
+001870     02  A-DMM   LINE  23  COLUMN  26  PIC  X(001)                I.120606
+001880          USING W-DMM   CHECK OVERFLOW NO IFC.
+001890 01  C-DSP.
+001900     02  D-PEY   LINE   1.
+001910       03  COLUMN  65  PIC  Z(002)  FROM  W-BP.                   I.020906
+001920       03  COLUMN  77  PIC  Z(002)  FROM  W-MP.                   I.020906
+001930*****  03  COLUMN  62  PIC  9(002)  FROM  W-BP.                   D.020906
+001940*****  03  COLUMN  74  PIC  9(002)  FROM  W-MP.                   D.020906
+001950     02  D-DATA  LINE W-L.
+001960       03  COLUMN   2  PIC  N(015)      FROM  WD-YCN(CNT).        I.120606
+001970       03  COLUMN  33  PIC ---,---,--9  FROM  WD-ZK(CNT).         I.120606
+001980       03  COLUMN  45  PIC ---,---,--9  FROM  WD-NK(CNT).         I.120606
+001990       03  COLUMN  57  PIC ---,---,--9  FROM  WD-SK(CNT).         I.120606
+002000       03  COLUMN  69  PIC ---,---,--9  FROM  WD-YK(CNT).         I.120606
+002010*****  03  COLUMN   2  PIC  N(015)      FROM  KKB-YCN.            D.120606
+002020*****  03  COLUMN  33  PIC ---,---,--9  FROM  WN-ZK.              D.120606
+002030*****  03  COLUMN  45  PIC ---,---,--9  FROM  WN-NK.              D.120606
+002040*****  03  COLUMN  57  PIC ---,---,--9  FROM  WN-SK.              D.120606
+002050*****  03  COLUMN  69  PIC ---,---,--9  FROM  WN-YK.              D.120606
+002060*****  03  COLUMN   3  PIC  9(002)       FROM  WN-YC.             D.020906
+002070*****  03  COLUMN   6  PIC  N(016)       FROM  KKB-YCN.           D.020906
+002080*****  03  COLUMN  39  PIC ----,---,--9  FROM  WN-NK.             D.020906
+002090*****  03  COLUMN  52  PIC ----,---,--9  FROM  WN-SK.             D.020906
+002100*****  03  COLUMN  65  PIC ----,---,--9  FROM  WN-YK.             D.020906
+002110     02  D-TOTAL LINE  23.
+002120       03  COLUMN  33  PIC ---,---,--9  FROM  WA-ZK.              I.020906
+002130       03  COLUMN  45  PIC ---,---,--9  FROM  WA-NK.              I.020906
+002140       03  COLUMN  57  PIC ---,---,--9  FROM  WA-SK.              I.020906
+002150       03  COLUMN  69  PIC ---,---,--9  FROM  WA-YK.              I.020906
+002160*****  03  COLUMN   5  PIC  X(023) VALUE                          D.020906
+002170*****       "作表  ｽﾙ=5 ｼﾅｲ=0   ﾘﾀｰﾝ".                            D.020906
+002180*****  03  COLUMN  39  PIC ----,---,--9  FROM  WA-NK.             D.020906
+002190*****  03  COLUMN  52  PIC ----,---,--9  FROM  WA-SK.             D.020906
+002200*****  03  COLUMN  65  PIC ----,---,--9  FROM  WA-YK.             D.020906
+002210 01  C-ERR.
+002220     02  LINE  24.
+002230       03  E-ME1   COLUMN  15  PIC  X(017) VALUE
+002240            "***  DATA ﾅｼ  ***".
+002250       03  E-ME2   COLUMN  15  PIC  X(016) VALUE
+002260            "***  KHM ﾅｼ  ***".
+002270       03  E-ME3   COLUMN  15  PIC  X(018) VALUE
+002280            "***  DATA ｴﾗｰ  ***".
+002290       03  E-KEY   COLUMN  35  PIC  X(005) FROM  KHT-KEY.
+002300       03  E-ME98  COLUMN  75  PIC  X(005) VALUE ""27"J"05"".
+002310       03  E-ME99  COLUMN  75  PIC  X(005) VALUE ""27"B"05"".
+002320 PROCEDURE DIVISION.
+002330 M-05.
+002340     DISPLAY C-CLEAR.
+002350     CALL "SCKT51".
+002360     OPEN INPUT URIR-F.
+002370     MOVE ZERO TO W-PEY.
+002380 M-10.
+002390     READ URIR-F AT END
+002400         GO TO M-20.
+002410     IF UR-YC NOT = 10 AND 11
+002420         GO TO M-15.
+002430     IF UR-PEY > W-BP
+002440         MOVE UR-PEY TO W-BP.
+002450     GO TO M-10.
+002460 M-15.
+002470     IF UR-PEY > W-MP
+002480         MOVE UR-PEY TO W-MP.
+002490     GO TO M-10.
+002500 M-20.
+002510     CLOSE URIR-F.
+002520     DISPLAY D-PEY.
+002530     MOVE ZERO TO CNT.                                            I.120606
+002540     OPEN INPUT KHT-M.
+002550     OPEN INPUT KH-M KKB-M.
+002560 M-25.
+002570     READ KHT-M NEXT RECORD WITH UNLOCK AT END
+002580         DISPLAY E-ME1 E-ME99
+002590         GO TO M-90.                                              I.020906
+002600*****    CLOSE KHT-M                                              D.020906
+002610*****    CLOSE KH-M                                               D.020906
+002620*****    GO TO M-95.                                              D.020906
+002630     IF KHT-YC = ZERO
+002640         GO TO M-25.
+002650     MOVE ZERO TO W-AD W-DD.                                      I.120606
+002660*****MOVE 2 TO W-L.                                               D.120606
+002670*****MOVE ZERO TO W-AD.                                           D.120606
+002680*****MOVE ZERO TO W-ATD W-AD CNT W-ZC.                            D.020906
+002690 M-30.
+002700     MOVE ZERO TO W-ND.
+002710     MOVE KHT-YC TO WN-YC.
+002720     MOVE SPACE TO KKB-KEY.
+002730     MOVE 01 TO KKB-NO.
+002740     MOVE WN-YC TO KKB-YC.
+002750     READ KKB-M WITH UNLOCK INVALID KEY
+002760         MOVE SPACE TO KKB-YCN.
+002770*****ADD 1 TO CNT W-L.                                            D.930506
+002780*****ADD 1 TO CNT.                                                D.020906
+002790*****IF W-ZC = 0                                                  D.020906
+002800*****     ADD 1 TO W-L.                                           D.020906
+002810*****IF CNT > 30                                                  D.020906
+002820*****    DISPLAY E-ME3 E-ME99                                     D.020906
+002830*****    CLOSE KHT-M                                              D.020906
+002840*****    CLOSE KH-M                                               D.020906
+002850*****    GO TO M-95.                                              D.020906
+002860 M-35.
+002870     MOVE KHT-KEY TO KH-KEY.
+002880     READ KH-M WITH UNLOCK INVALID KEY
+002890         DISPLAY E-ME2 E-KEY E-ME99
+002900         GO TO M-90.                                              I.020906
+002910*****    CLOSE KHT-M                                              D.020906
+002920*****    CLOSE KH-M                                               D.020906
+002930*****    GO TO M-95.                                              D.020906
+002940     MOVE ZERO TO W-D.
+002950     COMPUTE W-NS = KHT-KSU - KHT-HSU + KHT-ISU.                  I.021010
+002960*****COMPUTE W-NS = KHT-KSU - KHT-HSU.                            D.021010
+002970*****COMPUTE W-SK = KHT-UKIN - KHT-NKIN.                          D.020719
+002980     COMPUTE W-YS = KHT-ZSU + W-NS - KHT-SSU.
+002990     COMPUTE W-YK = W-YS * KH-GT1.                                I.090429
+003000*****IF KHT-YC = 10 OR 11                                         D.090429
+003010*****    MOVE KHT-ZKIN TO W-ZK                                    D.020829
+003020*****    MOVE KHT-KKIN TO W-NK                                    D.020829
+003030*****    COMPUTE W-SK = KHT-UKIN - KHT-NKIN                       D.020829
+003040*****    COMPUTE W-YK = W-YS * KH-T1                              D.090429
+003050*****  ELSE                                                       D.090429
+003060*****    COMPUTE W-ZK = KHT-ZSU * KH-T2                           D.020829
+003070*****    COMPUTE W-NK = W-NS * KH-T2                              D.020829
+003080*****    COMPUTE W-SK = KHT-SSU * KH-T2                           D.020829
+003090*****    COMPUTE W-YK = W-YS * KH-T2.                             D.090429
+003100*****COMPUTE W-YK = W-YS * KH-T1.                                 D.020719
+003110*****COMPUTE W-HS = W-YS - KHT-ZSU.                               D.020906
+003120*****COMPUTE W-HK = W-YK - KHT-ZKIN.                              D.020906
+003130*****COMPUTE W-HK = W-YK - W-ZK.                                  D.020829
+003140*****COMPUTE W-HK = W-YK - KHT-ZKIN.                              D.020719
+003150     ADD KHT-ZSU TO WN-ZS.
+003160     ADD KHT-ZKIN TO WN-ZK WA-ZK.                                 I.020829
+003170*****ADD W-ZK TO WN-ZK WA-ZK.                                     D.020829
+003180*****ADD KHT-ZKIN TO WN-ZK WA-ZK.                                 D.020719
+003190     ADD W-NS TO WN-NS.
+003200     ADD KHT-KKIN TO WN-NK WA-NK.                                 I.020829
+003210*****ADD W-NK TO WN-NK WA-NK.                                     D.020829
+003220*****ADD KHT-KKIN TO WN-NK WA-NK.                                 D.020719
+003230     ADD KHT-SSU TO WN-SS.
+003240     ADD KHT-GKIN TO WN-SK WA-SK.                                 I.020829
+003250*****ADD W-SK TO WN-SK WA-SK.                                     D.020829
+003260     ADD W-YS TO WN-YS.
+003270     ADD W-YK TO WN-YK WA-YK.
+003280*****ADD W-HS TO WN-HS.                                           D.020906
+003290*****ADD W-HK TO WN-HK WA-HK.                                     D.020906
+003300 M-40.
+003310     READ KHT-M NEXT RECORD WITH UNLOCK AT END
+003320         GO TO M-45.
+003330     IF KHT-YC = ZERO
+003340         GO TO M-40.
+003350     IF KHT-YC = WN-YC
+003360         GO TO M-35.
+003370     IF ZERO = WN-ZS AND WN-ZK AND WN-NS AND WN-NK AND            I.020906
+003380               WN-SS AND WN-SK AND WN-YS AND WN-YK                I.020906
+003390         GO TO M-30.                                              I.020906
+003400*****MOVE W-ND TO W-TD(CNT).                                      D.020906
+003410*****IF ZERO = WN-NK AND WN-SK AND WN-YK                          D.020906
+003420*****    MOVE 5 TO W-ZC                                           D.020906
+003430*****  ELSE                                                       D.020906
+003440*****    MOVE 0 TO W-ZC                                           D.020906
+003450*****ADD 1 TO W-L.                                                D.120606
+003460*****IF W-L = 23                                                  D.120606
+003470*****    DISPLAY E-ME3 E-ME99                                     D.120606
+003480*****    GO TO M-90.                                              D.120606
+003490*****DISPLAY D-DATA.                                              D.120606
+003500     ADD 1 TO CNT.                                                I.120606
+003510     IF CNT > 40                                                  I.120606
+003520         DISPLAY E-ME3 E-ME99                                     I.120606
+003530         GO TO M-90.                                              I.120606
+003540     MOVE KKB-YCN TO WD-YCN(CNT).                                 I.120606
+003550     MOVE WN-ZK TO WD-ZK(CNT).                                    I.120606
+003560     MOVE WN-NK TO WD-NK(CNT).                                    I.120606
+003570     MOVE WN-SK TO WD-SK(CNT).                                    I.120606
+003580     MOVE WN-YK TO WD-YK(CNT).                                    I.120606
+003590     GO TO M-30.
+003600 M-45.
+003610     CLOSE KKB-M.                                                 I.120606
+003620     CLOSE KH-M.                                                  I.120606
+003630     CLOSE KHT-M.                                                 I.120606
+003640*
+003650     IF ZERO = WN-ZS AND WN-ZK AND WN-NS AND WN-NK AND            I.020906
+003660               WN-SS AND WN-SK AND WN-YS AND WN-YK                I.020906
+003670         GO TO M-50.                                              I.020906
+003680     ADD 1 TO CNT.                                                I.120606
+003690     IF CNT > 40                                                  I.120606
+003700         DISPLAY E-ME3 E-ME99                                     I.120606
+003710         GO TO M-95.                                              I.120606
+003720     MOVE KKB-YCN TO WD-YCN(CNT).                                 I.120606
+003730     MOVE WN-ZK TO WD-ZK(CNT).                                    I.120606
+003740     MOVE WN-NK TO WD-NK(CNT).                                    I.120606
+003750     MOVE WN-SK TO WD-SK(CNT).                                    I.120606
+003760     MOVE WN-YK TO WD-YK(CNT).                                    I.120606
+003770*****ADD 1 TO W-L.                                                D.120606
+003780*****IF W-L = 23                                                  D.120606
+003790*****    DISPLAY E-ME3 E-ME99                                     D.120606
+003800*****    GO TO M-90.                                              D.120606
+003810*****DISPLAY D-DATA.                                              D.120606
+003820*****MOVE W-ND TO W-TD(CNT).                                      D.020906
+003830*****DISPLAY D-DATA D-TOTAL.                                      D.020906
+003840*****CLOSE KH-M.                                                  D.020906
+003850*****CLOSE KHT-M.                                                 D.020906
+003860*****CLOSE KKB-M.                                                 D.020906
+003870 M-50.
+003880     COMPUTE CNTD = CNT + 1.                                      I.120606
+003890     PERFORM S-05 THRU S-20.                                      I.120606
+003900     GO TO M-95.                                                  I.120606
+003910*****DISPLAY D-TOTAL.                                             D.120606
+003920*****ACCEPT A-DMM.                                                D.120606
+003930*****IF ESTAT NOT = HTB AND SKP                                   D.020906
+003940*****    GO TO M-50.                                              D.020906
+003950*****IF W-DMM = ZERO                                              D.020906
+003960*****    GO TO M-95.                                              D.020906
+003970*****IF W-DMM NOT = 5                                             D.020906
+003980*****    GO TO M-50.                                              D.020906
+003990*
+004000*****OPEN INPUT KKB-M.                                            D.020906
+004010*****OPEN OUTPUT SP-F.                                            D.020906
+004020*****MOVE SPACE TO SP-R.                                          D.020906
+004030*****ACCEPT H-DATE FROM DATE.                                     D.020906
+004040*****MOVE W-BP TO H-BP.                                           D.020906
+004050*****MOVE W-MP TO H-MP.                                           D.020906
+004060*****MOVE HEAD1 TO SP-R.                                          D.020906
+004070*****WRITE SP-R.                                                  D.020906
+004080*****MOVE SPACE TO SP-R.                                          D.020906
+004090*****MOVE HEAD2 TO SP-R.                                          D.020906
+004100*****WRITE SP-R AFTER 2.                                          D.020906
+004110*****MOVE SPACE TO SP-R.                                          D.020906
+004120*****MOVE HEAD3 TO SP-R.                                          D.020906
+004130*****WRITE SP-R.                                                  D.020906
+004140*****MOVE SPACE TO SP-R.                                          D.020906
+004150*****WRITE SP-R.                                                  D.020906
+004160*****MOVE ZERO TO CNT.                                            D.020906
+004170*M-55.                                                            D.020906
+004180*****ADD 1 TO CNT.                                                D.020906
+004190*****IF CNT > 30                                                  D.020906
+004200*****    GO TO M-60.                                              D.020906
+004210*****MOVE W-TD(CNT) TO W-ND.                                      D.020906
+004220*****IF WN-YC = ZERO                                              D.020906
+004230*****    GO TO M-60.                                              D.020906
+004240*****MOVE SPACE TO KKB-KEY.                                       D.020906
+004250*****MOVE 01 TO KKB-NO.                                           D.020906
+004260*****MOVE WN-YC TO KKB-YC.                                        D.020906
+004270*****READ KKB-M WITH UNLOCK INVALID KEY                           D.020906
+004280*****    MOVE SPACE TO KKB-YCN.                                   D.020906
+004290*****MOVE SPACE TO SP-R W-P.                                      D.020906
+004300*****MOVE W-15K TO P-15K.                                         D.020906
+004310*****MOVE W-20K TO P-20K.                                         D.020906
+004320*****MOVE KKB-YCN TO P-M.                                         D.020906
+004330*****MOVE WN-ZS TO P-ZS.                                          D.020906
+004340*****MOVE WN-ZK TO P-ZK.                                          D.020906
+004350*****MOVE WN-NS TO P-NS.                                          D.020906
+004360*****MOVE WN-NK TO P-NK.                                          D.020906
+004370*****MOVE WN-SS TO P-SS.                                          D.020906
+004380*****MOVE WN-SK TO P-SK.                                          D.020906
+004390*****MOVE WN-YS TO P-YS.                                          D.020906
+004400*****MOVE WN-YK TO P-YK.                                          D.020906
+004410*****MOVE WN-HS TO P-HS.                                          D.020906
+004420*****MOVE WN-HK TO P-HK.                                          D.020906
+004430*****MOVE W-P TO SP-R.                                            D.020906
+004440*****WRITE SP-R.                                                  D.020906
+004450*****MOVE SPACE TO SP-R.                                          D.020906
+004460*****WRITE SP-R.                                                  D.020906
+004470*****GO TO M-55.                                                  D.020906
+004480*M-60.                                                            D.020906
+004490*****CLOSE KKB-M.                                                 D.020906
+004500*****MOVE SPACE TO SP-R W-P.                                      D.020906
+004510*****MOVE W-15K TO P-15K.                                         D.020906
+004520*****MOVE W-20K TO P-20K.                                         D.020906
+004530*****MOVE NC"　　　　　［　　合　計　　］　　" TO P-M.            D.020906
+004540*****MOVE WA-ZK TO P-ZK.                                          D.020906
+004550*****MOVE WA-NK TO P-NK.                                          D.020906
+004560*****MOVE WA-SK TO P-SK.                                          D.020906
+004570*****MOVE WA-YK TO P-YK.                                          D.020906
+004580*****MOVE WA-HK TO P-HK.                                          D.020906
+004590*****MOVE W-P TO SP-R.                                            D.020906
+004600*****WRITE SP-R AFTER 2.                                          D.020906
+004610*****CLOSE SP-F.                                                  D.020906
+004620 M-90.                                                            I.020906
+004630     CLOSE KKB-M.                                                 I.020906
+004640     CLOSE KH-M.                                                  I.020906
+004650     CLOSE KHT-M.                                                 I.020906
+004660 M-95.
+004670*****CLOSE KKB-M.                                                 D.020513
+004680     DISPLAY C-CLEAR.
+004690     STOP RUN.
+004700 S-05.                                                            I.120606
+004710     MOVE 2 TO W-L.                                               I.120606
+004720     MOVE ZERO TO CNT.
+004730 S-10.                                                            I.120606
+004740     ADD 1 TO CNT W-L.                                            I.120606
+004750     IF CNT > 40                                                  I.120606
+004760         DISPLAY E-ME3 E-ME99                                     I.120606
+004770         GO TO S-20.                                              I.120606
+004780     IF CNT = CNTD                                                I.120606
+004790         DISPLAY D-TOTAL                                          I.120606
+004800         GO TO S-15.                                              I.120606
+004810     IF CNT NOT = 21                                              I.120606
+004820         DISPLAY D-DATA                                           I.120606
+004830         GO TO S-10.                                              I.120606
+004840 S-15.                                                            I.120606
+004850     ACCEPT A-DMM.                                                I.120606
+004860     IF ESTAT = PF9                                               I.120606
+004870         GO TO S-20.                                              I.120606
+004880     IF CNT = CNTD                                                I.120606
+004890         GO TO S-20.                                              I.120606
+004900     IF ESTAT = PF5                                               I.120606
+004910         IF CNT = 21                                              I.120606
+004920             DISPLAY C-CLEAR                                      I.120606
+004930             CALL "SCKT51"                                        I.120606
+004940             DISPLAY D-PEY                                        I.120606
+004950             MOVE 3 TO W-L                                        I.120606
+004960             DISPLAY D-DATA                                       I.120606
+004970             GO TO S-10.                                          I.120606
+004980     IF ESTAT = PF6                                               I.120606
+004990         IF CNT > 21                                              I.120606
+005000             DISPLAY C-CLEAR                                      I.120606
+005010             CALL "SCKT51"                                        I.120606
+005020             DISPLAY D-PEY                                        I.120606
+005030             GO TO S-05.                                          I.120606
+005040     GO TO S-15.                                                  I.120606
+005050 S-20.                                                            I.120606
+005060     EXIT.                                                        I.120606

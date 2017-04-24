@@ -1,0 +1,984 @@
+000010 IDENTIFICATION      DIVISION.
+000020 PROGRAM-ID.         HKD910.
+000030 AUTHOR.             KAMASAKA   1995-12-22.
+000040**************************************
+000050******    直送先シール　作成    ******
+000060******    JS-SIGN  0 : ｺｰﾄﾞ入力 ******
+000070******             1 : ALL入力  ******
+000080******             2 : 得意先   ******
+000090**************************************
+000100 ENVIRONMENT         DIVISION.
+000110 CONFIGURATION       SECTION.
+000120 SOURCE-COMPUTER.    SYSTEM3100.
+000130 OBJECT-COMPUTER.    SYSTEM3100.
+000140 INPUT-OUTPUT        SECTION.
+000150 FILE-CONTROL.
+000160     SELECT  TC-M  ASSIGN  TO  TC-MSD
+000170             ORGANIZATION  INDEXED
+000180             ACCESS  MODE  DYNAMIC
+000190             RECORD  KEY   TC-KEY
+000200             FILE  STATUS  IS  ERR-STAT.
+000210*****SELECT  T-M   ASSIGN  TO  T-MSD                              D.000224
+000220     SELECT  T-M   ASSIGN  TO  T1-MSD T2-MSD                      I.000224
+000230             ORGANIZATION  INDEXED
+000240             ACCESS  MODE  DYNAMIC
+000250             RECORD  KEY   T-KEY
+000260             ALTERNATE  RECORD  KEY   T-KEY2                      I.000224
+000270             FILE  STATUS  IS  ERR-STAT.
+000280     SELECT  TMW   ASSIGN  TO  TMW-MSD.                           I.000224
+000290     SELECT  SP-F  ASSIGN  TO  P-PRN999.
+000300 I-O-CONTROL.
+000310     APPLY  SHARED-MODE  ON  TC-M
+000320     APPLY  SHARED-MODE  ON  T-M
+000330     APPLY  SHIFT-CODE   ON  SP-F.
+000340 DATA                DIVISION.
+000350 FILE                SECTION.
+000360 COPY  LITCM.
+000370 COPY  LITM.
+000380 FD  TMW                                                          I.051029
+000390     BLOCK  1 RECORDS                                             I.051029
+000400     LABEL RECORD IS STANDARD                                     I.051029
+000410     VALUE OF IDENTIFICATION WK0512ID.                            I.051029
+000420 01  TMW-R.                                                       I.051029
+000430     02  TMW-KEY2.                                                I.051029
+000440       03  TMW-NTCD     PIC  9(004).                              I.051029
+000450       03  TMW-KEY.                                               I.051029
+000460         04  TMW-TCD    PIC  9(004).                              I.051029
+000470     02  TMW-NAME       PIC  N(026).                              I.051029
+000480     02  TMW-JSU        PIC  N(020).                              I.051029
+000490     02  TMW-JSS        PIC  N(020).                              I.051029
+000500     02  TMW-UNO        PIC  X(008).                              I.051029
+000510     02  TMW-TEL        PIC  X(014).                              I.051029
+000520     02  TMW-FAX        PIC  X(014).                              I.051029
+000530     02  TMW-FKC        PIC  9(002).                              I.051029
+000540     02  TMW-BC         PIC  9(001).                              I.051029
+000550     02  F              PIC  9(002).                              I.051029
+000560     02  TMW-TNC        PIC  9(002).                              I.051029
+000570     02  TMW-SS         PIC  9(002).                              I.051029
+000580     02  TMW-NKY        PIC  9(003).                              I.051029
+000590     02  TMW-DCC        PIC  9(001).                              I.051029
+000600     02  TMW-TGC        PIC  9(001).                              I.051029
+000610     02  TMW-YG         PIC  9(006).                              I.051029
+000620     02  TMW-BIK        PIC  9(001).                              I.051029
+000630     02  TMW-ZEI        PIC  9(001).                              I.051029
+000640     02  F              PIC  X(009).                              I.051029
+000650     02  TMW-TNA        PIC  N(016).                              I.051029
+000660     02  TMW-SNA        PIC  N(026).                              I.051029
+000670     02  TMW-SJSU       PIC  N(020).                              I.051029
+000680     02  TMW-SJSS       PIC  N(020).                              I.051029
+000690     02  TMW-SUNO       PIC  X(008).                              I.051029
+000700     02  TMW-STEL       PIC  X(014).                              I.051029
+000710     02  TMW-SFAX       PIC  X(014).                              I.051029
+000720     02  TMW-SHD        PIC  9(002).                              I.051029
+000730     02  TMW-SSI        PIC  9(003).                              I.051029
+000740     02  TMW-SHC1       PIC  9(001).                              I.051029
+000750     02  TMW-SHC2       PIC  9(001).                              I.051029
+000760     02  TMW-SGT        PIC  9(001).                              I.051029
+000770     02  TMW-SGR        PIC  9(001)V9(01).                        I.051029
+000780     02  TMW-STT        PIC  9(001).                              I.051029
+000790     02  TMW-STR        PIC  9(001)V9(01).                        I.051029
+000800     02  TMW-SKR        PIC  9(004).                              I.051029
+000810     02  F              PIC  9(001).                              I.051029
+000820     02  TMW-KSC        PIC  9(001).                              I.051029
+000830     02  TMW-SSC        PIC  9(001).                              I.051029
+000840*
+000850     02  F              PIC  X(035).                              I.051029
+000860     02  TMW-KANA       PIC  X(036).                              I.051029
+000870     02  TMW-DNG        PIC  9(006).                              I.051029
+000880     02  TMW-SNG        PIC  9(004).                              I.051029
+000890     02  TMW-ENG        PIC  9(004).                              I.051029
+000900 FD  SP-F
+000910     LABEL  RECORD  IS  OMITTED
+000920     LINAGE  IS  10  LINES.
+000930 01  SP-R                      PIC X(204).
+000940 WORKING-STORAGE     SECTION.
+000950 77  WK0512ID           PIC  X(009) VALUE SPACE.                  I.051029
+000960 01  STN-NO.                                                      I.051029
+000970     02  STN-NO1        PIC  X(003).                              I.051029
+000980     02  STN-NO2        PIC  X(003).                              I.051029
+000990 01  W-FID.                                                       I.051029
+001000     02  W-FID1         PIC  X(006) VALUE "WK0512".               I.051029
+001010     02  W-FID2         PIC  X(003).                              I.051029
+001020 01  JS-SIGN                   PIC 9(001).                        I.970618
+001030 01  W-15K                     PIC X(005)    VALUE ""3FE04F40A0"".
+001040 01  W-P1.
+001050     02  P-15K                 PIC X(005).
+001060     02  P-UM1                 PIC N(002).
+001070*****02  P-UB1                 PIC X(006).                        D.970128
+001080*****02  F                     PIC X(026).                        D.970128
+001090     02  P-UB1                 PIC X(008).                        I.970128
+001100     02  F                     PIC X(024).                        I.970128
+001110     02  P-UM2                 PIC N(002).
+001120*****02  P-UB2                 PIC X(006).                        D.970128
+001130*****02  F                     PIC X(026).                        D.970128
+001140     02  P-UB2                 PIC X(008).                        I.970128
+001150     02  F                     PIC X(024).                        I.970128
+001160     02  P-UM3                 PIC N(002).
+001170*****02  P-UB3                 PIC X(006).                        D.970128
+001180*****02  F                     PIC X(026).                        D.970128
+001190     02  P-UB3                 PIC X(008).                        I.970128
+001200     02  F                     PIC X(024).                        I.970128
+001210     02  P-UM4                 PIC N(002).
+001220*****02  P-UB4                 PIC X(006).                        D.970128
+001230     02  P-UB4                 PIC X(008).                        I.970128
+001240 01  W-P2.
+001250*****02  F                     PIC X(001).                        D.020422
+001260     02  P-JU1                 PIC N(020).
+001270     02  F                     PIC X(005).
+001280     02  P-JU2                 PIC N(020).
+001290     02  F                     PIC X(005).
+001300     02  P-JU3                 PIC N(020).
+001310     02  F                     PIC X(005).
+001320     02  P-JU4                 PIC N(020).
+001330 01  W-P3.
+001340*****02  F                     PIC X(001).                        D.020422
+001350     02  P-JS1                 PIC N(020).
+001360     02  F                     PIC X(005).
+001370     02  P-JS2                 PIC N(020).
+001380     02  F                     PIC X(005).
+001390     02  P-JS3                 PIC N(020).
+001400     02  F                     PIC X(005).
+001410     02  P-JS4                 PIC N(020).
+001420*01  W-P4.                                                        D.020422
+001430*****02  F                     PIC X(013).                        D.020422
+001440*****02  P-JC1                 PIC N(012).                        D.020422
+001450*****02  F                     PIC X(017).                        D.020422
+001460*****02  P-JC2                 PIC N(012).                        D.020422
+001470*****02  F                     PIC X(017).                        D.020422
+001480*****02  P-JC3                 PIC N(012).                        D.020422
+001490*****02  F                     PIC X(017).                        D.020422
+001500*****02  P-JC4                 PIC N(012).                        D.020422
+001510 01  W-P5.
+001520     02  F                     PIC X(001).
+001530     02  P-NA1                 PIC N(020).
+001540     02  F                     PIC X(005).
+001550     02  P-NA2                 PIC N(020).
+001560     02  F                     PIC X(005).
+001570     02  P-NA3                 PIC N(020).
+001580     02  F                     PIC X(005).
+001590     02  P-NA4                 PIC N(020).
+001600 01  W-P6.
+001610     02  F                     PIC X(001).
+001620     02  P-NA5                 PIC N(020).
+001630     02  F                     PIC X(005).
+001640     02  P-NA6                 PIC N(020).
+001650     02  F                     PIC X(005).
+001660     02  P-NA7                 PIC N(020).
+001670     02  F                     PIC X(005).
+001680     02  P-NA8                 PIC N(020).
+001690 01  W-DATA.
+001700     02  W-TPC                 PIC 9(001).
+001710     02  W-STCD                PIC 9(004).                        I.051029
+001720     02  W-ETCD                PIC 9(004).                        I.051029
+001730     02  W-DMM                 PIC 9(001).
+001740     02  W-EC                  PIC 9(001).
+001750     02  W-C                   PIC 9(002).
+001760     02  W-ZC                  PIC 9(002).
+001770     02  W-L                   PIC 9(002).
+001780     02  CNT                   PIC 9(002).
+001790     02  CNTD                  PIC 9(002).
+001800     02  CNTE                  PIC 9(002).
+001810     02  CNTF                  PIC 9(002).
+001820     02  CNTG                  PIC 9(002).
+001830     02  CNTH                  PIC 9(002).
+001840     02  W-OLD                 PIC 9(007).                        I.980629
+001850     02  W-AD.
+001860         03  W-D    OCCURS  16.
+001870             04  W-KEY         PIC 9(007).
+001880             04  W-KEYD    REDEFINES  W-KEY.
+001890                 05  W-KEY1    PIC 9(004).
+001900                 05  W-KEY2    PIC 9(003).
+001910             04  W-NAME        PIC N(026).                        I.020422
+001920             04  W-JSU         PIC N(020).                        I.020422
+001930             04  W-JSS         PIC N(020).                        I.020422
+001940*****        04  W-NAME        PIC N(024).                        D.020422
+001950*****        04  W-JSU         PIC N(024).                        D.020422
+001960*****        04  W-JSS         PIC N(012).                        D.020422
+001970*****        04  W-UNO         PIC X(006).                        D.970128
+001980             04  W-UNO         PIC X(008).                        I.970128
+001990     02  W-BD.                                                    I.990602
+002000         03  W-BKEY            PIC 9(007).                        I.990602
+002010         03  W-BNAME           PIC N(026).                        I.020422
+002020         03  W-BJSU            PIC N(020).                        I.020422
+002030         03  W-BJSS            PIC N(020).                        I.020422
+002040*****    03  W-BNAME           PIC N(024).                        D.020422
+002050*****    03  W-BJSU            PIC N(024).                        D.020422
+002060*****    03  W-BJSS            PIC N(012).                        D.020422
+002070         03  W-BNO             PIC X(008).                        I.990602
+002080*****02  W-NMD                 PIC N(027).                        D.020422
+002090*****02  W-NAD             REDEFINES  W-NMD.                      D.020422
+002100*****    03  W-NA              PIC N(001)    OCCURS  27.          D.020422
+002110*****02  W-NUR                 PIC N(020).                        D.020422
+002120*****02  W-NUD             REDEFINES  W-NUR.                      D.020422
+002130*****    03  W-NU              PIC N(001)    OCCURS  20.          D.020422
+002140*****02  W-NSR                 PIC N(020).                        D.020422
+002150*****02  W-NSD             REDEFINES  W-NSR.                      D.020422
+002160*****    03  W-NS              PIC N(001)    OCCURS  20.          D.020422
+002170*****02  W-JUR                 PIC N(024).                        D.020422
+002180*****02  W-JUD             REDEFINES  W-JUR.                      D.020422
+002190*****    03  W-JU              PIC N(001)    OCCURS  24.          D.020422
+002200*****02  W-ADRU                PIC N(020).                        D.020422
+002210*****02  W-ADDU            REDEFINES  W-ADRU.                     D.020422
+002220*****    03  W-ADU             PIC N(001)    OCCURS  20.          D.020422
+002230*****02  W-ADRN                PIC N(020).                        D.020422
+002240*****02  W-ADDN            REDEFINES  W-ADRN.                     D.020422
+002250*****    03  W-ADN             PIC N(001)    OCCURS  20.          D.020422
+002260     02  W-END                 PIC 9(001) VALUE 0.                I.970618
+002270 01  WN-AREA.                                                     I.020422
+002280     02  WN-DCHK        PIC  9(001).                              I.020422
+002290     02  WN-CNT1        PIC  9(002).                              I.020422
+002300     02  WN-CNT2        PIC  9(002).                              I.020422
+002310     02  WN-CNT3        PIC  9(002).                              I.020422
+002320     02  WN-CNT4        PIC  9(002).                              I.020422
+002330     02  WN-NAME        PIC  N(026).                              I.020422
+002340     02  WN-ANA   REDEFINES WN-NAME.                              I.020422
+002350       03  WN-NAD   OCCURS  26.                                   I.020422
+002360         04  WN-NA      PIC  N(001).                              I.020422
+002370     02  WN-WNAME       PIC  N(026).                              I.020422
+002380     02  WN-WANA   REDEFINES WN-WNAME.                            I.020422
+002390       03  WN-WNAD   OCCURS  26.                                  I.020422
+002400         04  WN-WNA     PIC  N(001).                              I.020422
+002410     02  WN-ONAME       PIC  N(019).                              I.020422
+002420     02  WN-AONA  REDEFINES WN-ONAME.                             I.020422
+002430       03  WN-ONAD  OCCURS  19.                                   I.020422
+002440         04  WN-ONA     PIC  N(001).                              I.020422
+002450     02  WN-UNAME       PIC  N(019).                              I.020422
+002460     02  WN-AUNA  REDEFINES WN-UNAME.                             I.020422
+002470       03  WN-UNAD  OCCURS  19.                                   I.020422
+002480         04  WN-UNA     PIC  N(001).                              I.020422
+002490     02  WN-KUM         PIC  N(004).                              I.020422
+002500     02  WN-AKUM  REDEFINES WN-KUM.                               I.020422
+002510       03  WN-KUMD  OCCURS   4.                                   I.020422
+002520         04  WN-KU      PIC  N(001).                              I.020422
+002530 01  ERR-STAT                  PIC X(002).
+002540     COPY LSTAT.
+002550 SCREEN              SECTION.
+002560 SD  C-CRT
+002570     END  STATUS  IS  ESTAT.
+002580 01  C-CLEAR.
+002590     02  C-CL  LINE  1    CLEAR  SCREEN.
+002600 01  C-MID.
+002610     02  LINE   3    COLUMN  10    PIC N(024)    VALUE
+002620           NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002630     02  LINE   4    COLUMN  10    PIC N(024)    VALUE
+002640           NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002650     02  LINE   5    COLUMN  10    PIC N(024)    VALUE
+002660           NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+002670     02  LINE   6    COLUMN  10    PIC N(024)    VALUE
+002680*****      NC"＊＊＊　　直送先・得意先シール　作成　　＊＊＊".    D.970618
+002690           NC"＊＊＊　　　郵便　宛名シール　作成　　　＊＊＊".    I.970618
+002700     02  LINE   7    COLUMN  10    PIC N(024)    VALUE
+002710           NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+002720     02  LINE   8    COLUMN  10    PIC N(024)    VALUE
+002730           NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002740     02  LINE   9    COLUMN  10    PIC N(024)    VALUE
+002750           NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002760     02  LINE  15    COLUMN  12    PIC X(038)    VALUE
+002770             "[  TEST PRINT  ｽﾙ=9  ｼﾅｲ=1     ﾘﾀｰﾝ  ]".
+002780 01  C-MID1.
+002790     02  LINE   1    COLUMN  12    PIC N(024)    VALUE
+002800           NC"＊＊＊　　直送先・得意先シール　作成　　＊＊＊".
+002810*****02  LINE   2    COLUMN  68    PIC X(008)    VALUE            D.980629
+002820*****        "終了=PF9".                                          D.980629
+002830     02  LINE   2    COLUMN  58    PIC X(018)    VALUE            I.980629
+002840             "同上=F5 , 終了=F9 ".                                I.091015
+002850*****        "同上=Ⅱ , 終了=PF9".                                D.091015
+002860     02  LINE   3.
+002870         03  COLUMN   8    PIC X(026)    VALUE
+002880               "ｺｰﾄﾞ      直送先・得意先名".
+002890         03  COLUMN  68    PIC X(012)    VALUE
+002900               "確認=F10    ".                                    I.091015
+002910*****          "確認=ADVANCE".                                    D.091015
+002920     02  LINE  23    COLUMN  40    PIC X(022)    VALUE
+002930               "確認  OK=1 NO=9   ﾘﾀｰﾝ".
+002940 01  C-MID2.                                                      I.970618
+002950     02  LINE   1    COLUMN  20    PIC N(020)    VALUE            I.970618
+002960           NC"＊＊＊　　郵便宛名シール　作成　　＊＊＊".          I.970618
+002970     02  LINE   5.                                                I.970618
+002980         03  COLUMN  11    PIC N(004)    VALUE                    I.970618
+002990           NC"郵便番号".                                          I.970618
+003000         03  COLUMN  33    PIC X(008)    VALUE                    I.970618
+003010             "終了=F9 ".                                          I.091012
+003020*****        "終了=PF9".                                          D.091012
+003030     02  LINE   7    COLUMN  11    PIC X(008)    VALUE            I.970618
+003040             "住所(上)".                                          I.970618
+003050     02  LINE   8    COLUMN  11    PIC X(008)    VALUE            I.970618
+003060             "    (下)".                                          I.970618
+003070     02  LINE  10    COLUMN  11    PIC N(004)    VALUE            I.970618
+003080           NC"氏　　名".                                          I.970618
+003090     02  LINE  23    COLUMN  40    PIC X(022)    VALUE
+003100               "確認  OK=1 NO=9  1ﾘﾀｰﾝ".
+003110 01  C-MID3.                                                      I.051029
+003120     02  LINE   1    COLUMN  20    PIC N(020)    VALUE            I.051029
+003130           NC"＊＊＊　　郵便宛名シール　作成　　＊＊＊".          I.051029
+003140     02  LINE   8    COLUMN  28    PIC X(024)    VALUE            I.051029
+003150             "得意先ｺｰﾄﾞ  0000 ～ 9999".                          I.051029
+003160     02  LINE  23    COLUMN  40    PIC X(022)    VALUE            I.051029
+003170               "確認  OK=1 NO=9   ﾘﾀｰﾝ".                          I.051029
+003180 01  C-ACP.
+003190     02  A-TPC      LINE  15     COLUMN  41    PIC 9(001)
+003200           USING  W-TPC       CHECK  OVERFLOW  NO  IFC.
+003210     02  A-KEY      LINE  W-L    COLUMN   8    PIC 9(007)
+003220           USING  W-KEY(W-C)  CHECK  OVERFLOW  NO  IFC.
+003230*
+003240     02  A-UNO      LINE    5    COLUMN  21    PIC X(008)         I.970618
+003250           USING  W-UNO(W-C)  CHECK  OVERFLOW  NO  IFC.           I.970618
+003260*****02  A-JSU      LINE    7    COLUMN  21    PIC N(024)         D.020422
+003270     02  A-JSU      LINE    7    COLUMN  21    PIC N(020)         I.020422
+003280           USING  W-JSU(W-C)  CHECK  OVERFLOW  NO  IFC.           I.970618
+003290*****02  A-JSS      LINE    8    COLUMN  21    PIC N(012)         D.020422
+003300     02  A-JSS      LINE    8    COLUMN  21    PIC N(020)         I.020422
+003310           USING  W-JSS(W-C)  CHECK  OVERFLOW  NO  IFC.           I.970618
+003320*****02  A-NAME     LINE   10    COLUMN  21    PIC N(024)         D.020422
+003330     02  A-NAME     LINE   10    COLUMN  21    PIC N(026)         I.020422
+003340           USING  W-NAME(W-C) CHECK  OVERFLOW  NO  IFC.           I.970618
+003350*
+003360     02  LINE   8.                                                I.051029
+003370       03  A-STCD     COLUMN  40    PIC 9(004)                    I.051029
+003380             USING  W-STCD      CHECK  OVERFLOW  NO  IFC.         I.051029
+003390       03  A-ETCD     COLUMN  48    PIC 9(004)                    I.051029
+003400             USING  W-ETCD      CHECK  OVERFLOW  NO  IFC.         I.051029
+003410*
+003420     02  A-DMM      LINE  23     COLUMN  57    PIC 9(001)
+003430           USING  W-DMM       CHECK  OVERFLOW  NO  IFC.
+003440 01  C-DSP.
+003450*****02  D-NAME     LINE  W-L    COLUMN  18    PIC N(024)         D.020422
+003460     02  D-NAME     LINE  W-L    COLUMN  18    PIC N(026)         I.020422
+003470                                                FROM  W-NAME(W-C).
+003480     02  D-CLEAR    LINE  W-L.
+003490         03  COLUMN  13    PIC X(007)    VALUE  "       ".
+003500         03  COLUMN  18    PIC X(052)    VALUE                    I.020422
+003510          "                                                    ". I.020422
+003520*****    03  COLUMN  18    PIC X(048)    VALUE                    D.020422
+003530*****          "                                                ".D.020422
+003540 01  C-ERR.
+003550     02  LINE  24.
+003560         03  E-ME1   COLUMN 15   PIC X(026)   VALUE
+003570               "***  ﾁｮｸｿｳｻｷ･ﾄｸｲｻｷ ﾅｼ  ***".
+003580         03  E-ME98  COLUMN 75   PIC X(005)   VALUE ""27"J"05"".
+003590         03  E-ME99  COLUMN 75   PIC X(005)   VALUE ""27"B"05"".
+003600         03  E-STAT  COLUMN 10   PIC X(002)   FROM  ERR-STAT.
+003610         03  E-CL    COLUMN 10   PIC X(050)   VALUE
+003620             "                                                  ".
+003630 PROCEDURE           DIVISION.
+003640 M-05.
+003650     ACCEPT JS-SIGN.                                              I.970618
+003660*****IF JS-SIGN > 1                                               D.051029
+003670     IF JS-SIGN > 2                                               I.051029
+003680         STOP RUN.                                                I.970618
+003690     DISPLAY  C-CLEAR.
+003700     DISPLAY  C-MID.
+003710     OPEN  OUTPUT  SP-F.
+003720 M-10.
+003730     ACCEPT  A-TPC.
+003740     IF  ESTAT = PF9
+003750         CLOSE  SP-F
+003760         DISPLAY  C-CLEAR
+003770         STOP  RUN.
+003780     IF  ESTAT NOT = HTB AND SKP
+003790         GO  TO  M-10.
+003800     IF  W-TPC = 1
+003810         GO  TO  M-12.                                            I.970618
+003820*****    OPEN  INPUT  TC-M                                        D.970618
+003830*****    OPEN  INPUT  T-M                                         D.970618
+003840*****    GO  TO  M-15.                                            D.970618
+003850     IF  W-TPC NOT = 9
+003860         GO  TO  M-10.
+003870*****MOVE  SPACE       TO  W-P1    W-P2    W-P3    W-P4    W-P5   D.020422
+003880*****                      W-P6    W-NSR.                         D.020422
+003890     MOVE  SPACE       TO  W-P1    W-P2    W-P3    W-P5    W-P6.  I.020422
+003900     MOVE  W-15K       TO  P-15K.
+003910     MOVE  NC"〒　"    TO  P-UM1     P-UM2     P-UM3     P-UM4.
+003920*****MOVE  "XXXXXX"    TO  P-UB1     P-UB2     P-UB3     P-UB4.   D.970128
+003930     MOVE  "XXXXXXXX"  TO  P-UB1     P-UB2     P-UB3     P-UB4.   I.970128
+003940     MOVE  ALL NC"Ｎ"  TO  P-JU1     P-JU2     P-JU3     P-JU4
+003950                           P-JS1     P-JS2     P-JS3     P-JS4.   I.020422
+003960     MOVE  NC"ＮＮＮＮＮＮＮＮＮＮＮＮＮＮＮＮＮＮＮ　"  TO       I.020422
+003970         P-NA1  P-NA2  P-NA3  P-NA4  P-NA5  P-NA6  P-NA7  P-NA8.  I.020422
+003980*****                      P-JS1     P-JS2     P-JS3     P-JS4    D.020422
+003990*****                      P-JC1     P-JC2     P-JC3     P-JC4    D.020422
+004000*****                      P-NA1     P-NA2     P-NA3     P-NA4.   D.020422
+004010*****PERFORM  S-110  THRU  S-120.                                 D.020422
+004020*****MOVE  W-NSR      TO  P-NA5  P-NA6  P-NA7  P-NA8.             D.020422
+004030     PERFORM  S-05  THRU  S-10.
+004040     GO  TO  M-10.
+004050 M-12.                                                            I.970618
+004060     IF JS-SIGN = 0                                               I.970618
+004070         MOVE ZERO TO W-OLD                                       I.980629
+004080         OPEN  INPUT  TC-M                                        I.970618
+004090         OPEN  INPUT  T-M                                         I.051029
+004100       ELSE                                                       I.051029
+004110         CALL "CBLSTNNO" USING STN-NO                             I.051029
+004120         MOVE STN-NO2 TO W-FID2                                   I.051029
+004130         MOVE W-FID TO WK0512ID                                   I.051029
+004140         OPEN  INPUT  TMW.                                        I.970618
+004150     INITIALIZE W-BD.                                             I.990602
+004160 M-15.
+004170     DISPLAY  C-CLEAR.
+004180     IF JS-SIGN = 0                                               I.970618
+004190         DISPLAY  C-MID1.
+004200     IF JS-SIGN = 1                                               I.970618
+004210         DISPLAY  C-MID2.                                         I.970618
+004220     IF JS-SIGN = 2                                               I.051029
+004230         DISPLAY  C-MID3.                                         I.051029
+004240     MOVE  ZERO  TO  W-C  W-EC.
+004250     PERFORM  S-15  THRU  S-25.
+004260     IF JS-SIGN = 1                                               I.970618
+004270         GO TO M-41.                                              I.970618
+004280     IF JS-SIGN = 2                                               I.051029
+004290         GO TO M-60.                                              I.051029
+004300     MOVE  3     TO  W-L.
+004310 M-20.
+004320     ADD  1  TO  W-C  W-L.
+004330     IF  W-C > 16
+004340         GO  TO  M-50.
+004350     IF  W-EC NOT = ZERO
+004360         GO  TO  M-40.
+004370 M-25.
+004380     ACCEPT  A-KEY.
+004390     DISPLAY  E-CL.
+004400     IF  ESTAT = BTB
+004410         GO  TO  M-35.
+004420*****IF  ESTAT = C2                                               D.091015
+004430     IF  ESTAT = PF5                                              I.091015
+004440         IF W-OLD NOT = ZERO                                      I.980629
+004450             MOVE W-OLD TO W-KEY(W-C)                             I.980629
+004460             DISPLAY A-KEY                                        I.980629
+004470             GO TO M-27.                                          I.980629
+004480     IF  ESTAT = ADV
+004490         MOVE  1  TO  W-EC
+004500         GO  TO  M-40.
+004510     IF  ESTAT = PF9
+004520         IF  W-C = 1
+004530             GO  TO  M-95.
+004540     IF  ESTAT NOT = HTB AND SKP
+004550         GO  TO  M-25.
+004560 M-27.                                                            I.980629
+004570     MOVE  W-KEY(W-C)  TO  TC-KEY
+004580     READ  TC-M  WITH  UNLOCK  INVALID  KEY
+004590         GO  TO  M-30.
+004600     MOVE  TC-NAME  TO  W-NAME(W-C).
+004610     MOVE  TC-JSU   TO  W-JSU(W-C).
+004620     MOVE  TC-JSS   TO  W-JSS(W-C).
+004630     MOVE  TC-UNO   TO  W-UNO(W-C).
+004640     DISPLAY  D-NAME.
+004650     MOVE  W-KEY(W-C)  TO  W-OLD.                                 I.980629
+004660     GO  TO  M-20.
+004670 M-30.
+004680     MOVE  W-KEY1(W-C)  TO  T-KEY.
+004690     READ  T-M  WITH  UNLOCK  INVALID  KEY
+004700         DISPLAY  E-ME1  E-ME98                                   I.970618
+004710         GO  TO  M-25.                                            I.970618
+004720*****    GO  TO  M-31.                                            D.970618
+004730     MOVE  T-NAME  TO  W-NAME(W-C).
+004740     MOVE  T-JSU   TO  W-JSU(W-C).
+004750     MOVE  T-JSS   TO  W-JSS(W-C).
+004760     MOVE  T-UNO   TO  W-UNO(W-C).
+004770     DISPLAY  D-NAME.
+004780     MOVE  W-KEY(W-C)  TO  W-OLD.                                 I.020422
+004790     GO  TO  M-20.
+004800*M-31.                                                            D.970618
+004810*****DISPLAY  E-ME1  E-ME98.                                      D.970618
+004820*****GO  TO  M-25.                                                D.970618
+004830 M-35.
+004840     SUBTRACT  1  FROM  W-C  W-L.
+004850     IF  W-C = ZERO
+004860         GO  TO  M-15.
+004870     IF  W-KEY(W-C) = ZERO
+004880         GO  TO  M-35.
+004890     GO  TO  M-25.
+004900 M-40.
+004910     MOVE  ZERO   TO  W-KEY(W-C).
+004920     MOVE  SPACE  TO  W-NAME(W-C)  W-JSU(W-C)  W-JSS(W-C).
+004930     MOVE  SPACE  TO  W-UNO(W-C).
+004940     DISPLAY  D-CLEAR.
+004950     GO  TO  M-20.
+004960 M-41.                                                            I.970618
+004970     ADD  1  TO  W-C.                                             I.970618
+004980     IF W-C = 17                                                  I.970618
+004990         GO TO M-52.                                              I.970618
+005000     IF W-C = 1                                                   I.990602
+005010         IF W-BNAME NOT = SPACE                                   I.990602
+005020             MOVE W-BD TO W-D(W-C)                                I.990602
+005030             DISPLAY A-UNO A-JSU A-JSS A-NAME.                    I.990602
+005040 M-42.                                                            I.970618
+005050     ACCEPT A-UNO.                                                I.970618
+005060     IF ESTAT = PF9                                               I.970618
+005070         MOVE 9 TO W-END                                          I.970618
+005080         GO TO M-52.                                              I.970618
+005090     IF ESTAT NOT = HTB AND SKP                                   I.970618
+005100         GO TO M-42.                                              I.970618
+005110 M-43.                                                            I.970618
+005120     ACCEPT A-JSU.                                                I.970618
+005130     IF ESTAT = BTB                                               I.970618
+005140         GO TO M-42.                                              I.970618
+005150     IF ESTAT NOT = HTB AND SKP                                   I.970618
+005160         GO TO M-43.                                              I.970618
+005170 M-44.                                                            I.970618
+005180     ACCEPT A-JSS.                                                I.970618
+005190     IF ESTAT = BTB                                               I.970618
+005200         GO TO M-43.                                              I.970618
+005210     IF ESTAT NOT = HTB AND SKP                                   I.970618
+005220         GO TO M-44.                                              I.970618
+005230 M-45.                                                            I.970618
+005240     ACCEPT A-NAME.                                               I.970618
+005250     IF ESTAT = BTB                                               I.970618
+005260         GO TO M-44.                                              I.970618
+005270     IF ESTAT NOT = HTB AND SKP                                   I.970618
+005280         GO TO M-45.                                              I.970618
+005290 M-50.
+005300     ACCEPT  A-DMM.
+005310     IF  ESTAT = BTB
+005320         IF JS-SIGN = 1                                           I.970618
+005330             GO TO M-45                                           I.970618
+005340           ELSE                                                   I.970618
+005350             MOVE  ZERO  TO  W-EC
+005360             GO  TO  M-35.
+005370     IF  ESTAT NOT = HTB AND SKP
+005380         GO  TO  M-50.
+005390     IF  W-DMM = 9
+005400         IF JS-SIGN = 1                                           I.970618
+005410             GO TO M-42                                           I.970618
+005420           ELSE                                                   I.970618
+005430             MOVE  ZERO  TO  W-C  W-EC
+005440             MOVE  3     TO  W-L
+005450             GO  TO  M-20.
+005460     IF  W-DMM NOT = 1
+005470         GO  TO  M-50.
+005480     IF JS-SIGN = 1                                               I.970618
+005490         MOVE 9999999 TO W-KEY(W-C)                               I.970618
+005500         MOVE W-D(W-C) TO W-BD                                    I.990602
+005510         DISPLAY  C-MID2                                          I.970618
+005520         GO TO M-41.                                              I.970618
+005530 M-52.                                                            I.970618
+005540     MOVE  ZERO  TO  W-C  CNT.
+005550 M-55.
+005560     ADD  1  TO  W-C.
+005570     IF  W-C > 16
+005580         GO  TO  M-80.
+005590     IF  W-KEY(W-C) = ZERO
+005600         GO  TO  M-80.
+005610*****PERFORM  S-30  THRU  S-40.                                   D.020422
+005620*****PERFORM  S-90  THRU  S-105.                                  D.020422
+005630     MOVE W-NAME(W-C) TO WN-NAME.                                 I.020422
+005640     PERFORM NAM-RTN THRU NAM-EX.                                 I.020422
+005650     IF  CNT = ZERO
+005660         MOVE  SPACE  TO  W-P1  W-P2  W-P3  W-P5  W-P6            I.020422
+005670*****    MOVE  SPACE  TO  W-P1  W-P2  W-P3  W-P4  W-P5  W-P6      D.020422
+005680         MOVE  W-15K  TO  P-15K.
+005690     ADD  1  TO  CNT.
+005700     IF  CNT = 1
+005710         MOVE  NC"〒　"    TO  P-UM1
+005720         MOVE  W-UNO(W-C)  TO  P-UB1
+005730         MOVE  W-JSU(W-C)  TO  P-JU1                              I.020422
+005740         MOVE  W-JSS(W-C)  TO  P-JS1                              I.020422
+005750         MOVE  WN-ONAME    TO  P-NA1                              I.020422
+005760         MOVE  WN-UNAME    TO  P-NA5                              I.020422
+005770*****    MOVE  W-ADRU      TO  P-JU1                              D.020422
+005780*****    MOVE  W-ADRN      TO  P-JS1                              D.020422
+005790*****    MOVE  W-JSS(W-C)  TO  P-JC1                              D.020422
+005800*****    MOVE  W-NUR       TO  P-NA1                              D.020422
+005810*****    MOVE  W-NSR       TO  P-NA5                              D.020422
+005820         GO  TO  M-55.
+005830     IF  CNT = 2
+005840         MOVE  NC"〒　"    TO  P-UM2
+005850         MOVE  W-UNO(W-C)  TO  P-UB2
+005860         MOVE  W-JSU(W-C)  TO  P-JU2                              I.020422
+005870         MOVE  W-JSS(W-C)  TO  P-JS2                              I.020422
+005880         MOVE  WN-ONAME    TO  P-NA2                              I.020422
+005890         MOVE  WN-UNAME    TO  P-NA6                              I.020422
+005900*****    MOVE  W-ADRU      TO  P-JU2                              D.020422
+005910*****    MOVE  W-ADRN      TO  P-JS2                              D.020422
+005920*****    MOVE  W-JSS(W-C)  TO  P-JC2                              D.020422
+005930*****    MOVE  W-NUR       TO  P-NA2                              D.020422
+005940*****    MOVE  W-NSR       TO  P-NA6                              D.020422
+005950         GO  TO  M-55.
+005960     IF  CNT = 3
+005970         MOVE  NC"〒　"    TO  P-UM3
+005980         MOVE  W-UNO(W-C)  TO  P-UB3
+005990         MOVE  W-JSU(W-C)  TO  P-JU3                              I.020422
+006000         MOVE  W-JSS(W-C)  TO  P-JS3                              I.020422
+006010         MOVE  WN-ONAME    TO  P-NA3                              I.020422
+006020         MOVE  WN-UNAME    TO  P-NA7                              I.020422
+006030*****    MOVE  W-ADRU      TO  P-JU3                              D.020422
+006040*****    MOVE  W-ADRN      TO  P-JS3                              D.020422
+006050*****    MOVE  W-JSS(W-C)  TO  P-JC3                              D.020422
+006060*****    MOVE  W-NUR       TO  P-NA3                              D.020422
+006070*****    MOVE  W-NSR       TO  P-NA7                              D.020422
+006080         GO  TO  M-55.
+006090     MOVE  NC"〒　"    TO  P-UM4.
+006100     MOVE  W-UNO(W-C)  TO  P-UB4.
+006110     MOVE  W-JSU(W-C)  TO  P-JU4.                                 I.020422
+006120     MOVE  W-JSS(W-C)  TO  P-JS4.                                 I.020422
+006130     MOVE  WN-ONAME    TO  P-NA4.                                 I.020422
+006140     MOVE  WN-UNAME    TO  P-NA8.                                 I.020422
+006150*****MOVE  W-ADRU      TO  P-JU4.                                 D.020422
+006160*****MOVE  W-ADRN      TO  P-JS4.                                 D.020422
+006170*****MOVE  W-JSS(W-C)  TO  P-JC4.                                 D.020422
+006180*****MOVE  W-NUR       TO  P-NA4.                                 D.020422
+006190*****MOVE  W-NSR       TO  P-NA8.                                 D.020422
+006200     PERFORM  S-05  THRU  S-10.
+006210     MOVE  ZERO  TO  CNT.
+006220     GO  TO  M-55.
+006230 M-60.                                                            I.051029
+006240     ACCEPT A-STCD.                                               I.051029
+006250     DISPLAY  E-CL.                                               I.051029
+006260     IF  ESTAT = PF9                                              I.051029
+006270             GO  TO  M-95.                                        I.051029
+006280     IF  ESTAT NOT = HTB AND SKP                                  I.051029
+006290         GO  TO  M-60.                                            I.051029
+006300 M-62.                                                            I.051029
+006310     ACCEPT A-ETCD.                                               I.051029
+006320     DISPLAY  E-CL.                                               I.051029
+006330     IF  ESTAT = BTB                                              I.051029
+006340         GO  TO  M-60.                                            I.051029
+006350     IF  ESTAT NOT = HTB AND SKP                                  I.051029
+006360         GO  TO  M-62.                                            I.051029
+006370     IF  W-STCD > W-ETCD                                          I.051029
+006380         GO  TO  M-62.                                            I.051029
+006390 M-65.                                                            I.051029
+006400     ACCEPT A-DMM.                                                I.051029
+006410     DISPLAY  E-CL.                                               I.051029
+006420     IF  ESTAT = BTB                                              I.051029
+006430         GO  TO  M-62.                                            I.051029
+006440     IF  ESTAT NOT = HTB AND SKP                                  I.051029
+006450         GO  TO  M-65.                                            I.051029
+006460     IF  W-DMM = 9                                                I.051029
+006470         GO  TO  M-60.                                            I.051029
+006480     IF  W-DMM NOT = 1                                            I.051029
+006490         GO  TO  M-65.                                            I.051029
+006500*
+006510     MOVE  ZERO  TO  CNT.                                         I.051029
+006520 M-70.                                                            I.051029
+006530     READ TMW AT END                                              I.051029
+006540         GO TO M-80.                                              I.051029
+006550     IF TMW-TCD < W-STCD                                          I.051029
+006560         GO TO M-70.                                              I.051029
+006570     IF TMW-TCD > W-ETCD                                          I.051029
+006580         GO TO M-80.                                              I.051029
+006590     IF TMW-ENG NOT = ZERO                                        I.051029
+006600         GO TO M-70.                                              I.051029
+006610     IF TMW-JSU = SPACE                                           I.051029
+006620         GO TO M-70.                                              I.051029
+006630     PERFORM SET2-RTN THRU SET2-EX.                               I.051029
+006640     GO TO M-70.                                                  I.051029
+006650 M-80.
+006660     IF  CNT NOT = ZERO
+006670         PERFORM  S-05  THRU  S-10.
+006680     IF JS-SIGN = 1                                               I.970618
+006690         IF W-END = 9                                             I.970618
+006700             GO TO M-95.                                          I.970618
+006710     IF JS-SIGN = 2                                               I.051029
+006720         GO TO M-95.                                              I.051029
+006730     GO  TO  M-15.
+006740 M-95.
+006750     CLOSE  SP-F.                                                 I.970618
+006760     IF JS-SIGN = 0                                               I.970618
+006770         CLOSE  TC-M  T-M.                                        I.970618
+006780     IF JS-SIGN = 2                                               I.051029
+006790         CLOSE  TMW.                                              I.051029
+006800*****CLOSE  TC-M  T-M  SP-F.                                      D.970618
+006810     DISPLAY  C-CLEAR.
+006820     STOP  RUN.
+006830 S-05.
+006840     MOVE   SPACE  TO  SP-R.
+006850     MOVE   W-P1   TO  SP-R.
+006860     WRITE  SP-R  AFTER  2.                                       I.020422
+006870*****WRITE  SP-R.                                                 D.020422
+006880     MOVE   SPACE  TO  SP-R.
+006890     MOVE   W-P2   TO  SP-R.
+006900     WRITE  SP-R   AFTER  2.
+006910     MOVE   SPACE  TO  SP-R.
+006920     MOVE   W-P3   TO  SP-R.
+006930     WRITE  SP-R.
+006940     MOVE   SPACE  TO  SP-R.
+006950*****MOVE   W-P4   TO  SP-R.                                      D.020422
+006960*****WRITE  SP-R.                                                 D.020422
+006970     MOVE   SPACE  TO  SP-R.
+006980     MOVE   W-P5   TO  SP-R.
+006990     WRITE  SP-R   AFTER  2.
+007000     MOVE   SPACE  TO  SP-R.
+007010     MOVE   W-P6   TO  SP-R.
+007020     WRITE  SP-R.
+007030     MOVE   SPACE  TO  SP-R.
+007040     WRITE  SP-R   AFTER  2.
+007050 S-10.
+007060     EXIT.
+007070 S-15.
+007080     MOVE  ZERO  TO  W-ZC.
+007090 S-20.
+007100     ADD  1  TO  W-ZC.
+007110     IF  W-ZC > 16
+007120         MOVE  ZERO   TO  W-KEY(W-ZC)
+007130         MOVE  SPACE  TO  W-NAME(W-ZC)  W-JSU(W-ZC)  W-JSS(W-ZC)
+007140         MOVE  SPACE  TO  W-UNO(W-ZC)
+007150         GO  TO  S-20.
+007160 S-25.
+007170     EXIT.
+007180 NAM-RTN.                                                         I.020422
+007190     MOVE 0 TO WN-DCHK.                                           I.020422
+007200 NAM-010.                                                         I.020422
+007210     MOVE SPACE TO WN-ONAME WN-UNAME.                             I.020422
+007220     MOVE 27 TO WN-CNT1.                                          I.020422
+007230 NAM-020.                                                         I.020422
+007240     SUBTRACT 1 FROM WN-CNT1.                                     I.020422
+007250     IF WN-CNT1 = 17                                              I.020422
+007260         MOVE SPACE TO WN-ONAME                                   I.020422
+007270         MOVE WN-NAME TO WN-UNAME                                 I.020422
+007280         GO TO NAM-510.                                           I.020422
+007290     IF WN-NA(WN-CNT1) = SPACE                                    I.020422
+007300         GO TO NAM-020.                                           I.020422
+007310     IF WN-DCHK = 1                                               I.020422
+007320         GO TO NAM-310.                                           I.020422
+007330     IF WN-DCHK = 2                                               I.020422
+007340         GO TO NAM-410.                                           I.020422
+007350 NAM-100.                                                         I.020422
+007360     MOVE 18 TO WN-CNT2.                                          I.020422
+007370 NAM-110.                                                         I.020422
+007380     IF WN-CNT1 < 9                                               I.020422
+007390         GO TO NAM-210.                                           I.020422
+007400     IF WN-NA(WN-CNT1) = SPACE                                    I.020422
+007410         GO TO NAM-120.                                           I.020422
+007420     SUBTRACT 1 FROM WN-CNT2.                                     I.020422
+007430     IF WN-CNT2 NOT = ZERO                                        I.020422
+007440         MOVE WN-NA(WN-CNT1) TO WN-UNA(WN-CNT2)                   I.020422
+007450         SUBTRACT 1 FROM WN-CNT1                                  I.020422
+007460         GO TO NAM-110.                                           I.020422
+007470     GO TO NAM-210.                                               I.020422
+007480 NAM-120.                                                         I.020422
+007490     IF WN-CNT1 > 20                                              I.020422
+007500         SUBTRACT 1 FROM WN-CNT1                                  I.020422
+007510         GO TO NAM-110.                                           I.020422
+007520*
+007530     MOVE ZERO TO WN-CNT3.                                        I.020422
+007540 NAM-130.                                                         I.020422
+007550     ADD 1 TO WN-CNT3.                                            I.020422
+007560     IF WN-CNT1 = WN-CNT3                                         I.020422
+007570         GO TO NAM-510.                                           I.020422
+007580     IF WN-CNT3 < 20                                              I.020422
+007590         MOVE WN-NA(WN-CNT3) TO WN-ONA(WN-CNT3)                   I.020422
+007600         GO TO NAM-130.                                           I.020422
+007610 NAM-210.                                                         I.020422
+007620     MOVE WN-NAME TO WN-WNAME.                                    I.020422
+007630     MOVE SPACE TO WN-NAME.                                       I.020422
+007640     MOVE ZERO TO WN-CNT1 WN-CNT2.                                I.020422
+007650 NAM-220.                                                         I.020422
+007660     ADD 1 TO WN-CNT1.                                            I.020422
+007670     IF WN-CNT1 > 26                                              I.020422
+007680         MOVE 1 TO WN-DCHK                                        I.020422
+007690         GO TO NAM-010.                                           I.020422
+007700     IF WN-WNA(WN-CNT1) NOT = SPACE                               I.020422
+007710         ADD 1 TO WN-CNT2                                         I.020422
+007720         MOVE WN-WNA(WN-CNT1) TO WN-NA(WN-CNT2).                  I.020422
+007730     GO TO NAM-220.                                               I.020422
+007740 NAM-310.                                                         I.020422
+007750     MOVE WN-NAME TO WN-WNAME.                                    I.020422
+007760     MOVE SPACE TO WN-NAME.                                       I.020422
+007770     MOVE ZERO TO WN-CNT1.                                        I.020422
+007780 NAM-320.                                                         I.020422
+007790     ADD 1 TO WN-CNT1.                                            I.020422
+007800     IF WN-CNT1 > 23                                              I.020422
+007810         MOVE SPACE TO WN-NAME                                    I.020422
+007820         MOVE WN-WNAME TO WN-NAME                                 I.020422
+007830         GO TO NAM-410.                                           I.020422
+007840     MOVE WN-WNA(WN-CNT1) TO WN-NA(WN-CNT1).                      I.020422
+007850     MOVE SPACE TO WN-KUM.                                        I.020422
+007860     MOVE WN-CNT1 TO WN-CNT2.                                     I.020422
+007870     MOVE ZERO TO WN-CNT3.                                        I.020422
+007880 NAM-330.                                                         I.020422
+007890     ADD 1 TO WN-CNT3.                                            I.020422
+007900     IF WN-CNT3 NOT = 5                                           I.020422
+007910         MOVE WN-WNA(WN-CNT2) TO WN-KU(WN-CNT3)                   I.020422
+007920         ADD 1 TO WN-CNT2                                         I.020422
+007930         GO TO NAM-330.                                           I.020422
+007940     IF WN-KUM NOT = NC"株式会社" AND NC"有限会社"                I.020422
+007950         GO TO NAM-320.                                           I.020422
+007960*
+007970     IF WN-KUM = NC"株式会社"                                     I.020422
+007980         MOVE NC"㈱" TO WN-NA(WN-CNT1).                           I.020422
+007990     IF WN-KUM = NC"有限会社"                                     I.020422
+008000         MOVE NC"㈲" TO WN-NA(WN-CNT1).                           I.020422
+008010     MOVE WN-CNT1 TO WN-CNT2.                                     I.020422
+008020     ADD 4 TO WN-CNT2.                                            I.020422
+008030 NAM-340.                                                         I.020422
+008040     ADD 1 TO WN-CNT1 WN-CNT2.                                    I.020422
+008050     IF WN-CNT2 < 27                                              I.020422
+008060         MOVE WN-WNA(WN-CNT2) TO WN-NA(WN-CNT1)                   I.020422
+008070         GO TO NAM-340.                                           I.020422
+008080     MOVE 2 TO WN-DCHK.                                           I.020422
+008090     GO TO NAM-010.                                               I.020422
+008100 NAM-410.                                                         I.020422
+008110     MOVE SPACE TO WN-ONAME WN-UNAME.                             I.020422
+008120     MOVE ZERO TO WN-CNT1.                                        I.020422
+008130 NAM-420.                                                         I.020422
+008140     ADD 1 TO WN-CNT1.                                            I.020422
+008150     IF WN-CNT1 > 26                                              I.020422
+008160         GO TO NAM-510.                                           I.020422
+008170     IF WN-CNT1 < 19                                              I.020422
+008180         MOVE WN-NA(WN-CNT1) TO WN-ONA(WN-CNT1)                   I.020422
+008190         GO TO NAM-420.                                           I.020422
+008200     IF WN-CNT1 = 19                                              I.020422
+008210         MOVE 9 TO WN-CNT2.                                       I.020422
+008220     ADD 1 TO WN-CNT2.                                            I.020422
+008230     MOVE WN-NA(WN-CNT1) TO WN-UNA(WN-CNT2)                       I.020422
+008240     GO TO NAM-420.                                               I.020422
+008250 NAM-510.                                                         I.020422
+008260     IF JS-SIGN = 1                                               I.120720
+008270         GO TO NAM-EX.                                            I.120720
+008280     MOVE 20 TO WN-CNT1.                                          I.020422
+008290 NAM-520.                                                         I.020422
+008300     SUBTRACT 1 FROM WN-CNT1.                                     I.020422
+008310     IF WN-CNT1 = ZERO                                            I.020422
+008320         MOVE NC"殿" TO WN-UNA(19)                                I.020422
+008330         GO TO NAM-EX.                                            I.020422
+008340     IF WN-UNA(WN-CNT1) = SPACE                                   I.020422
+008350         GO TO NAM-520.                                           I.020422
+008360     ADD 2 TO WN-CNT1.                                            I.020422
+008370     IF WN-CNT1 > 19                                              I.020422
+008380         MOVE 19 TO WN-CNT1.                                      I.020422
+008390     MOVE NC"殿" TO WN-UNA(WN-CNT1).                              I.020422
+008400 NAM-EX.                                                          I.020422
+008410     EXIT.                                                        I.020422
+008420 SET2-RTN.                                                        I.051029
+008430     MOVE TMW-NAME TO WN-NAME.                                    I.051029
+008440     PERFORM NAM-RTN THRU NAM-EX.                                 I.051029
+008450     IF  CNT = ZERO                                               I.051029
+008460         MOVE  SPACE  TO  W-P1  W-P2  W-P3  W-P5  W-P6            I.051029
+008470         MOVE  W-15K  TO  P-15K.                                  I.051029
+008480     ADD  1  TO  CNT.                                             I.051029
+008490     IF  CNT = 1                                                  I.051029
+008500         MOVE  NC"〒　"    TO  P-UM1                              I.051029
+008510         MOVE  TMW-UNO     TO  P-UB1                              I.051029
+008520         MOVE  TMW-JSU     TO  P-JU1                              I.051029
+008530         MOVE  TMW-JSS     TO  P-JS1                              I.051029
+008540         MOVE  WN-ONAME    TO  P-NA1                              I.051029
+008550         MOVE  WN-UNAME    TO  P-NA5                              I.051029
+008560         GO  TO  SET2-EX.                                         I.051029
+008570     IF  CNT = 2                                                  I.051029
+008580         MOVE  NC"〒　"    TO  P-UM2                              I.051029
+008590         MOVE  TMW-UNO     TO  P-UB2                              I.051029
+008600         MOVE  TMW-JSU     TO  P-JU2                              I.051029
+008610         MOVE  TMW-JSS     TO  P-JS2                              I.051029
+008620         MOVE  WN-ONAME    TO  P-NA2                              I.051029
+008630         MOVE  WN-UNAME    TO  P-NA6                              I.051029
+008640         GO  TO  SET2-EX.                                         I.051029
+008650     IF  CNT = 3                                                  I.051029
+008660         MOVE  NC"〒　"    TO  P-UM3                              I.051029
+008670         MOVE  TMW-UNO     TO  P-UB3                              I.051029
+008680         MOVE  TMW-JSU     TO  P-JU3                              I.051029
+008690         MOVE  TMW-JSS     TO  P-JS3                              I.051029
+008700         MOVE  WN-ONAME    TO  P-NA3                              I.051029
+008710         MOVE  WN-UNAME    TO  P-NA7                              I.051029
+008720         GO  TO  SET2-EX.                                         I.051029
+008730     MOVE  NC"〒　"    TO  P-UM4.                                 I.051029
+008740     MOVE  TMW-UNO     TO  P-UB4.                                 I.051029
+008750     MOVE  TMW-JSU     TO  P-JU4.                                 I.051029
+008760     MOVE  TMW-JSS     TO  P-JS4.                                 I.051029
+008770     MOVE  WN-ONAME    TO  P-NA4.                                 I.051029
+008780     MOVE  WN-UNAME    TO  P-NA8.                                 I.051029
+008790     PERFORM  S-05  THRU  S-10.                                   I.051029
+008800     MOVE  ZERO  TO  CNT.                                         I.051029
+008810 SET2-EX.                                                         I.051029
+008820     EXIT.                                                        I.051029
+008830*S-30.                                                            D.020422
+008840*****MOVE  SPACE        TO  W-NMD  W-NUR  W-NSR.                  D.020422
+008850*****MOVE  W-NAME(W-C)  TO  W-NMD.                                D.020422
+008860*****MOVE  25  TO  CNTD.                                          D.020422
+008870*S-35.                                                            D.020422
+008880*****SUBTRACT  1  FROM  CNTD.                                     D.020422
+008890*****IF  CNTD NOT = ZERO                                          D.020422
+008900*****    IF  W-NA(CNTD) = SPACE                                   D.020422
+008910*****        GO  TO  S-35.                                        D.020422
+008920*****ADD  3  TO  CNTD.                                            D.020422
+008930*****MOVE  NC"様"  TO  W-NA(CNTD).                                D.020422
+008940*****IF  CNTD < 21                                                D.020422
+008950*****    MOVE  W-NMD  TO  W-NSR                                   D.020422
+008960*****    GO  TO  S-40.                                            D.020422
+008970*****IF  CNTD > 20                                                D.020422
+008980*****    MOVE  6  TO  CNTE                                        D.020422
+008990*****    PERFORM  S-45  THRU  S-50.                               D.020422
+009000*S-40.                                                            D.020422
+009010*****EXIT.                                                        D.020422
+009020*S-45.                                                            D.020422
+009030*****ADD  1  TO  CNTE.                                            D.020422
+009040*****IF  CNTE < 28                                                D.020422
+009050*****    IF  W-NA(CNTE) NOT = SPACE                               D.020422
+009060*****        GO  TO  S-45.                                        D.020422
+009070*****    IF  CNTE > 20                                            D.020422
+009080*****        MOVE  ZERO  TO  CNTF                                 D.020422
+009090*****        PERFORM  S-75  THRU  S-85                            D.020422
+009100*****        GO  TO  S-50.                                        D.020422
+009110*****    IF  CNTE < 21                                            D.020422
+009120*****        PERFORM  S-55  THRU  S-70.                           D.020422
+009130*S-50.                                                            D.020422
+009140*****EXIT.                                                        D.020422
+009150*S-55.                                                            D.020422
+009160*****MOVE  ZERO  TO  CNTF.                                        D.020422
+009170*S-60.                                                            D.020422
+009180*****ADD  1  TO  CNTF.                                            D.020422
+009190*****IF  CNTF < CNTE                                              D.020422
+009200*****    MOVE  W-NA(CNTF)  TO  W-NU(CNTF)                         D.020422
+009210*****    GO  TO  S-60.                                            D.020422
+009220*****MOVE  CNTE  TO  CNTG.                                        D.020422
+009230*****MOVE  ZERO  TO  CNTH.                                        D.020422
+009240*S-65.                                                            D.020422
+009250*****ADD  1  TO  CNTG  CNTH.                                      D.020422
+009260*****IF  CNTG < 28                                                D.020422
+009270*****    MOVE  W-NA(CNTG)  TO  W-NS(CNTH)                         D.020422
+009280*****    GO  TO  S-65.                                            D.020422
+009290*S-70.                                                            D.020422
+009300*****EXIT.                                                        D.020422
+009310*S-75.                                                            D.020422
+009320*****ADD  1  TO  CNTF.                                            D.020422
+009330*****IF  CNTF < 8                                                 D.020422
+009340*****    MOVE  W-NA(CNTF)  TO  W-NU(CNTF)                         D.020422
+009350*****    GO  TO  S-75.                                            D.020422
+009360*****MOVE  1  TO  CNTG.                                           D.020422
+009370*****MOVE  W-NA(CNTF)  TO  W-NS(CNTG).                            D.020422
+009380*S-80.                                                            D.020422
+009390*****ADD  1  TO  CNTF  CNTG.                                      D.020422
+009400*****IF  CNTF < 28                                                D.020422
+009410*****    MOVE  W-NA(CNTF)  TO  W-NS(CNTG)                         D.020422
+009420*****    GO  TO  S-80.                                            D.020422
+009430*S-85.                                                            D.020422
+009440*****EXIT.                                                        D.020422
+009450*S-90.                                                            D.020422
+009460*****MOVE  SPACE       TO  W-JUR  W-ADRU  W-ADRN.                 D.020422
+009470*****MOVE  W-JSU(W-C)  TO  W-JUR.                                 D.020422
+009480*****IF  SPACE = W-JU(21) AND W-JU(22) AND W-JU(23) AND W-JU(24)  D.020422
+009490*****    MOVE  W-JUR  TO  W-ADRU                                  D.020422
+009500*****    GO  TO  S-105.                                           D.020422
+009510*****MOVE  ZERO  TO  CNTE.                                        D.020422
+009520*S-95.                                                            D.020422
+009530*****ADD  1  TO  CNTE.                                            D.020422
+009540*****IF  CNTE > 20                                                D.020422
+009550*****    MOVE  W-JU(21)  TO  W-ADN(01)                            D.020422
+009560*****    MOVE  W-JU(22)  TO  W-ADN(02)                            D.020422
+009570*****    MOVE  W-JU(23)  TO  W-ADN(03)                            D.020422
+009580*****    MOVE  W-JU(24)  TO  W-ADN(04)                            D.020422
+009590*****    GO  TO  S-105.                                           D.020422
+009600*****MOVE  W-JU(CNTE)  TO  W-ADU(CNTE).                           D.020422
+009610*****IF  W-JU(CNTE) NOT = SPACE                                   D.020422
+009620*****    GO  TO  S-95.                                            D.020422
+009630*****IF  CNTE < 4                                                 D.020422
+009640*****    GO  TO  S-95.                                            D.020422
+009650*****IF  CNTE = 4                                                 D.020422
+009660*****    MOVE  W-JU(CNTE)  TO  W-ADU(CNTE).                       D.020422
+009670*****MOVE  ZERO  TO  CNTF.                                        D.020422
+009680*S-100.                                                           D.020422
+009690*****ADD  1  TO  CNTE  CNTF.                                      D.020422
+009700*****IF  CNTE < 25                                                D.020422
+009710*****    MOVE  W-JU(CNTE)  TO  W-ADN(CNTF)                        D.020422
+009720*****    GO  TO  S-100.                                           D.020422
+009730*S-105.                                                           D.020422
+009740*****EXIT.                                                        D.020422
+009750*S-110.                                                           D.020422
+009760*****MOVE  ZERO  TO  CNT.                                         D.020422
+009770*S-115.                                                           D.020422
+009780*****ADD  1  TO  CNT.                                             D.020422
+009790*****IF  CNT < 20                                                 D.020422
+009800*****    MOVE  NC"Ｎ"  TO  W-NS(CNT)                              D.020422
+009810*****    GO  TO  S-115.                                           D.020422
+009820*****MOVE  NC"様"  TO  W-NS(CNT).                                 D.020422
+009830*S-120.                                                           D.020422
+009840*****EXIT.                                                        D.020422

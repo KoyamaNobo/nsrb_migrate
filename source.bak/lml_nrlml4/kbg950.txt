@@ -1,0 +1,638 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. KBG950.
+000030*******************************************************
+000040*    PROGRAM        :  購買月次更新クリア (JS-SIGN:0) *
+000050*                   :  購買棚卸更新       (JS-SIGN:1) *
+000060*    PRINTER TYPE   :  ****                           *
+000070*    SCREEN         :  ******                         *
+000080*        変更　　　 :  62/06/11                       *
+000090*    COMPILE TYPE   :  COBOL                          *
+000100*******************************************************
+000110 ENVIRONMENT DIVISION.
+000120 CONFIGURATION SECTION.
+000130 SOURCE-COMPUTER. SYSTEM3100.
+000140 OBJECT-COMPUTER. SYSTEM3100.
+000150 INPUT-OUTPUT SECTION.
+000160 FILE-CONTROL.
+000170     COPY LIBCSE.
+000180     SELECT ST-M ASSIGN TO ST-MSD
+000190         ORGANIZATION INDEXED
+000200         RECORD KEY ST-KEY
+000210         ACCESS MODE SEQUENTIAL
+000220         FILE STATUS IS ERR-STAT.
+000230     SELECT J-M ASSIGN TO J-MSD
+000240         ORGANIZATION INDEXED
+000250         RECORD KEY J-KEY
+000260         ACCESS MODE RANDOM
+000270         FILE STATUS IS ERR-STAT.
+000280     SELECT JT-M ASSIGN TO JT-MSD
+000290         ORGANIZATION INDEXED
+000300         RECORD KEY JT-KEY
+000310         ACCESS MODE SEQUENTIAL
+000320         FILE STATUS IS ERR-STAT.
+000330*****SELECT STY-F ASSIGN TO STY-MSD                               D.020918
+000340*****    FILE STATUS IS ERR-STAT.                                 D.020918
+000350*****SELECT JTY-F ASSIGN TO JTY-MSD                               D.020918
+000360*****    FILE STATUS IS ERR-STAT.                                 D.020918
+000370*****SELECT JUH-F ASSIGN TO JUH-MSD                               D.990427
+000380*****    FILE STATUS IS ERR-STAT.                                 D.990427
+000390     SELECT JSSR-F ASSIGN TO JSSR-MSD.
+000400     SELECT HAR-F ASSIGN TO HAR-MSD.                              I.990521
+000410*****SELECT JSSRYR ASSIGN TO JSSRYR-MSD                           D.020918
+000420*****    FILE STATUS IS ERR-STAT.                                 D.020918
+000430*****SELECT HARYR ASSIGN TO HARY-MSD                              D.020918
+000440*****    FILE STATUS IS ERR-STAT.                                 D.020918
+000450*****SELECT JSS-F ASSIGN TO JSS-MSD                               D.020918
+000460*****    ORGANIZATION INDEXED                                     D.020918
+000470*****    ACCESS MODE SEQUENTIAL                                   D.020918
+000480*****    RECORD KEY JSS-KEY                                       D.020918
+000490*****    FILE STATUS IS ERR-STAT.                                 D.020918
+000500*****SELECT HA-F ASSIGN TO HA-MSD                                 D.020918
+000510*****    ORGANIZATION INDEXED                                     D.020918
+000520*****    ACCESS MODE SEQUENTIAL                                   D.020918
+000530*****    RECORD KEY HA-KEY                                        D.020918
+000540*****    FILE STATUS IS ERR-STAT.                                 D.020918
+000550     SELECT HSS-F ASSIGN TO HSS-MSD                               I.011001
+000560         ORGANIZATION INDEXED                                     I.011001
+000570         ACCESS MODE DYNAMIC                                      I.011001
+000580         RECORD KEY HSS-KEY                                       I.011001
+000590         FILE STATUS IS ERR-STAT.                                 I.011001
+000600*****SELECT HA-F ASSIGN TO HA-MSD.                                D.010111
+000610 I-O-CONTROL.
+000620     APPLY SHARED-MODE ON J-M
+000630     APPLY SHARED-MODE ON M-DATE.
+000640 DATA DIVISION.
+000650 FILE SECTION.
+000660     COPY LIBFDD.
+000670     COPY LIJM.
+000680     COPY LIJTM.
+000690     COPY LISTM.
+000700     COPY LIHSSF.                                                 I.011001
+000710*FD  STY-F                                                        D.020918
+000720*****BLOCK  3 RECORDS                                             D.020918
+000730*****LABEL RECORD IS STANDARD                                     D.020918
+000740*****VALUE OF IDENTIFICATION "STYF".                              D.020918
+000750*01  STY-R.                                                       D.020918
+000760*****02  STY-KEY.                                                 D.020918
+000770*****  03  STY-KEY1     PIC  9(001).                              D.020918
+000780*****  03  STY-KEY2     PIC  9(003).                              D.020918
+000790*****02  STY-ZKZ        PIC S9(008).                              D.020918
+000800*****02  STY-ZKZZ       PIC S9(007).                              D.020918
+000810*****02  STY-ZKZZ       PIC S9(006).                              D.990531
+000820*****02  STY-KZ         PIC S9(008).                              D.020918
+000830*****02  STY-KZZ        PIC S9(007).                              D.020918
+000840*****02  STY-KZZ        PIC S9(006).                              D.990531
+000850*****02  STY-TSK        PIC S9(008).                              D.020918
+000860*****02  STY-TSKZ       PIC S9(007).                              D.020918
+000870*****02  STY-TSKZ       PIC S9(006).                              D.990531
+000880*****02  STY-THK        PIC S9(008).                              D.020918
+000890*****02  STY-THKZ       PIC S9(007).                              D.020918
+000900*****02  STY-THKZ       PIC S9(006).                              D.990531
+000910*****02  STY-PC         PIC  9(004).                              D.020918
+000920*****02  F              PIC  X(011).                              D.020918
+000930*****02  F              PIC  X(015).                              D.990531
+000940*****02  STY-NG         PIC  9(006).                              D.020918
+000950*FD  JTY-F                                                        D.020918
+000960*****BLOCK  3 RECORDS                                             D.020918
+000970*****LABEL RECORD IS STANDARD                                     D.020918
+000980*****VALUE OF IDENTIFICATION "JTYF".                              D.020918
+000990*01  JTY-R.                                                       D.020918
+001000*****02  JTY-KEY.                                                 D.020918
+001010*****  03  JTY-KEYD.                                              D.020918
+001020*****    04  JTY-BC     PIC  9(001).                              D.020918
+001030*****    04  JTY-RC     PIC  9(002).                              D.020918
+001040*****  03  JTY-JC       PIC  9(003).                              D.020918
+001050*****02  JTY-TSU        PIC S9(007)V9(02).                        D.020918
+001060*****02  JTY-SSU        PIC S9(007)V9(02).                        D.020918
+001070*****02  JTY-SIK        PIC S9(008).                              D.020918
+001080*****02  JTY-HSU        PIC S9(007)V9(02).                        D.020918
+001090*****02  JTY-ZKS        PIC S9(007)V9(02).                        D.020918
+001100*****02  JTY-ZKK        PIC S9(008).                              D.020918
+001110*****02  JTY-YC         PIC  9(001).                              D.020918
+001120*****02  JTY-ZC         PIC  9(001).                              D.020918
+001130*****02  JTY-SC         PIC  9(001).                              D.020918
+001140*****02  JTY-CSU        PIC S9(007)V9(02).                        D.020918
+001150*****02  F              PIC  X(009).                              D.020918
+001160*****02  JTY-NG         PIC  9(006).                              D.020918
+001170*FD  JUH-F                                                        D.990427
+001180*****BLOCK  4 RECORDS                                             D.990427
+001190*****LABEL RECORD IS STANDARD                                     D.990427
+001200*****VALUE OF IDENTIFICATION "JUHF".                              D.990427
+001210*01  JUH-R.                                                       D.990427
+001220*****02  UH-JCD         PIC  9(006).                              D.990427
+001230*****02  UH-DATE        PIC  9(008).                              D.990427
+001240*****02  UH-DATE        PIC  9(006).                              D.970826
+001250*****02  UH-ZNSC        PIC  9(001).                              D.990427
+001260*****02  UH-SU          PIC S9(007)V9(02).                        D.990427
+001270*****02  UH-T           PIC S9(006)V9(02).                        D.990427
+001280*****02  UH-KIN         PIC S9(009).                              D.990427
+001290*****02  UH-SD          PIC  9(006).                              D.990427
+001300*****02  F              PIC  X(017).                              D.990427
+001310*****02  F              PIC  X(019).                              D.970826
+001320 FD  JSSR-F
+001330*****BLOCK  3 RECORDS                                             D.950418
+001340     BLOCK  5 RECORDS                                             I.950418
+001350     LABEL RECORD IS STANDARD
+001360     VALUE OF IDENTIFICATION "JSSRF".                             C 62/06
+001370 01  JSSR-R.
+001380     02  JS-DK          PIC  9(002).
+001390     02  JS-SD          PIC  9(008).                              I.970826
+001400*****02  JS-SD          PIC  9(006).                              D.970826
+001410     02  JS-SCD         PIC  9(004).
+001420     02  JS-JCD         PIC  9(006).
+001430     02  JS-SSU         PIC S9(007)V9(02).
+001440     02  JS-TN          PIC S9(006)V9(02).
+001450     02  JS-KIN         PIC S9(008).                              I.990531
+001460     02  F              PIC  X(007).                              I.990531
+001470*****02  JS-KIN         PIC S9(009).                              D.990531
+001480     02  JS-CD          PIC  9(006).
+001490     02  F              PIC  X(013).                              I.990531
+001500     02  JS-YOC         PIC  9(001).
+001510     02  JS-TNC         PIC  9(001).
+001520     02  JS-SEC         PIC  9(001).                              A 62/06
+001530     02  JS-SC          PIC  9(001).
+001540     02  F              PIC  X(027).                              I.990531
+001550*****02  F              PIC  X(046).                              D.990531
+001560*****02  F              PIC  X(031).                              D.950418
+001570*****02  F              PIC  X(048).                              D.970826
+001580 FD  HAR-F                                                        I.990521
+001590     BLOCK  8 RECORDS                                             I.990521
+001600     LABEL RECORD IS STANDARD                                     I.990521
+001610     VALUE OF IDENTIFICATION "HARF".                              I.990521
+001620 01  HAR-R              PIC  X(032).                              I.990521
+001630*FD  JSSRYR                                                       D.020918
+001640*****BLOCK  5 RECORDS                                             D.020918
+001650*****LABEL RECORD IS STANDARD                                     D.020918
+001660*****VALUE OF IDENTIFICATION "JSSRYR".                            D.020918
+001670*01  JSSRYR-R           PIC  X(102).                              D.020918
+001680*FD  HARYR                                                        D.020918
+001690*****BLOCK  8 RECORDS                                             D.020918
+001700*****LABEL RECORD IS STANDARD                                     D.020918
+001710*****VALUE OF IDENTIFICATION "HARYR".                             D.020918
+001720*01  HARYR-R            PIC  X(032).                              D.020918
+001730*FD  JSS-F                                                        D.020918
+001740*****BLOCK  5 RECORDS                                             D.020918
+001750*****LABEL RECORD IS STANDARD                                     D.020918
+001760*****VALUE OF IDENTIFICATION "JSSF".                              D.020918
+001770*01  JSS-R.                                                       D.020918
+001780*****02  F              PIC  X(094).                              D.020918
+001790*****02  JSS-KEY        PIC  X(007).                              D.020918
+001800*****02  F              PIC  X(001).                              D.020918
+001810*FD  HA-F                                                         D.020918
+001820*****BLOCK  8 RECORDS                                             D.020918
+001830*****LABEL RECORD IS STANDARD                                     D.020918
+001840*****VALUE OF IDENTIFICATION "HAF".                               D.020918
+001850*01  HA-R.                                                        D.020918
+001860*****02  F              PIC  X(023).                              D.020918
+001870*****02  HA-KEY         PIC  X(007).                              D.020918
+001880*****02  F              PIC  X(002).                              D.020918
+001890*01  HA-R               PIC  X(032).                              D.010111
+001900 WORKING-STORAGE SECTION.
+001910 77  JS-SIGN            PIC  9(001).                              I.951121
+001920 01  W-DATA.
+001930*****02  W-R.                                                     D.990427
+001940*****  03  W-UHC        PIC  9(001).                              D.990427
+001950*****  03  F            PIC  X(010).                              D.990427
+001960*****  03  W-HCD        PIC  9(006).                              D.990427
+001970*****  03  W-SUD.                                                 D.990427
+001980*****    04  W-SU    OCCURS  28  PIC S9(004).                     D.990427
+001990*****  03  W-SUT        PIC S9(005).                              D.990427
+002000*****  03  F            PIC  X(036).                              D.990427
+002010*****02  CNT            PIC  9(002).                              D.020918
+002020*****02  W-NG           PIC  9(004).                              D.990519
+002030     02  W-NG           PIC  9(006).                              I.990519
+002040     02  W-NGD   REDEFINES W-NG.
+002050*****  03  W-NEN        PIC  9(002).                              D.990519
+002060       03  W-NEN        PIC  9(004).                              I.990519
+002070       03  W-NENL  REDEFINES W-NEN.                               I.990519
+002080         04  W-NEN1     PIC  9(002).                              I.990519
+002090         04  W-NEN2     PIC  9(002).                              I.990519
+002100       03  W-GET        PIC  9(002).
+002110     02  W-NGL   REDEFINES W-NG.                                  I.990519
+002120       03  F            PIC  9(002).                              I.990519
+002130       03  W-NGS        PIC  9(004).                              I.990519
+002140*****02  W-DMM          PIC  9(001).                              D.020918
+002150     02  W-DNG.                                                   I.011001
+002160       03  W-DNEN       PIC  9(004).                              I.011001
+002170       03  W-DGET       PIC  9(002).                              I.011001
+002180     02  W-FILE         PIC  X(013).                              I.930903
+002190 01  ERR-STAT           PIC  X(002).
+002200*****COPY LSTAT.                                                  D.020918
+002210 SCREEN SECTION.
+002220 SD  C-CRT
+002230     END STATUS IS ESTAT.
+002240 01  C-CLEAR.
+002250     02  C-CL    LINE   1  CLEAR SCREEN.
+002260 01  C-MID.
+002270     02  LINE   3  COLUMN  10  PIC  N(021) VALUE
+002280          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002290     02  LINE   4  COLUMN  10  PIC  N(021) VALUE
+002300          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002310     02  LINE   5  COLUMN  10  PIC  N(021) VALUE
+002320          NC"＊＊＊　　　　　　　　　　　　　　　＊＊＊".
+002330     02  LINE   7  COLUMN  10  PIC  N(021) VALUE
+002340          NC"＊＊＊　　　　　　　　　　　　　　　＊＊＊".
+002350     02  LINE   8  COLUMN  10  PIC  N(021) VALUE
+002360          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002370     02  LINE   9  COLUMN  10  PIC  N(021) VALUE
+002380          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002390     02  LINE  20  COLUMN  20  PIC  X(022) VALUE
+002400            "確認  OK=1 NO=9   ﾘﾀｰﾝ".
+002410 01  C-MID1.
+002420     02  LINE   6  COLUMN  10  PIC  N(021) VALUE
+002430          NC"＊＊＊　　購買　月次更新　クリア　　＊＊＊".
+002440     02  LINE  12  COLUMN  22  PIC  X(018) VALUE
+002450            "［　  年  月分　］".
+002460 01  C-MID2.
+002470     02  LINE   6  COLUMN  10  PIC  N(021) VALUE
+002480          NC"＊＊＊　　　　購買　棚卸更新　　　　＊＊＊".
+002490*01  C-ACP.                                                       D.020918
+002500*****02  A-DMM   LINE  20  COLUMN  37  PIC  9(001)                D.020918
+002510*****     USING W-DMM   CHECK OVERFLOW NO IFC.                    D.020918
+002520 01  C-DSP.
+002530     02  D-NG    LINE  12.
+002540       03  COLUMN  26  PIC  9(002) FROM  W-NEN2.                  I.990519
+002550       03  COLUMN  30  PIC Z9      FROM  W-GET.                   I.990519
+002560*****  03  COLUMN  26  PIC  9(002) FROM  W-NEN.                   D.990519
+002570*****  03  COLUMN  30  PIC  9(002) FROM  W-GET.                   D.990519
+002580 01  E-ERR.
+002590     02  LINE  24.
+002600*****  03  E-STAT  COLUMN  10  PIC  X(002) FROM  ERR-STAT.        D.940606
+002610       03  E-ME1   COLUMN  15  PIC  X(025) VALUE
+002620            "***  STM REWRITE ｴﾗｰ  ***".
+002630       03  E-ME2   COLUMN  15  PIC  X(025) VALUE
+002640            "***  JTM REWRITE ｴﾗｰ  ***".
+002650*****  03  E-ME3   COLUMN  15  PIC  X(024) VALUE                  D.990427
+002660*****       "***  JUHF WRITE ｴﾗｰ  ***".                           D.990427
+002670*****  03  E-ME4   COLUMN  15  PIC  X(021) VALUE                  D.020918
+002680*****       "***  PROGRAM ｴﾗｰ  ***".                              D.020918
+002690       03  E-ME5   COLUMN  15  PIC  X(018) VALUE
+002700            "***  DATEM ﾅｼ  ***".
+002710       03  E-ME6   COLUMN  15  PIC  X(027) VALUE
+002720            "***  DATEM REWRITE ｴﾗｰ  ***".
+002730       03  E-ME7   COLUMN  15  PIC  X(015) VALUE
+002740            "***  JM ﾅｼ  ***".
+002750*****  03  E-ME8   COLUMN  15  PIC  X(024) VALUE                  D.020918
+002760*****       "***  STYF WRITE ｴﾗｰ  ***".                           D.020918
+002770*****  03  E-ME9   COLUMN  15  PIC  X(024) VALUE                  D.020918
+002780*****       "***  JTYF WRITE ｴﾗｰ  ***".                           D.020918
+002790*****  03  E-ME10  COLUMN  15  PIC  X(026) VALUE                  D.020918
+002800*****       "***  JSSRYR WRITE ｴﾗｰ  ***".                         D.020918
+002810*****  03  E-ME11  COLUMN  15  PIC  X(025) VALUE                  D.020918
+002820*****       "***  HARYR WRITE ｴﾗｰ  ***".                          D.020918
+002830*****  03  E-ME12  COLUMN  15  PIC  N(008) VALUE                  D.020918
+002840*****       NC"未更新データあり".                                 D.020918
+002850       03  E-ME13  COLUMN  15  PIC  X(025) VALUE                  I.011001
+002860            "***  HSSF DELETE ｴﾗｰ  ***".                          I.011001
+002870*****  03  E-ME19  COLUMN  50  PIC  N(009) VALUE                  D.020918
+002880*****       NC"［　業務　放棄　］".                               D.020918
+002890       03  E-SCD   COLUMN  50  PIC  9(004) FROM  ST-KEY.
+002900       03  E-JCD   COLUMN  50  PIC  9(006) FROM  JT-KEY.
+002910*****  03  E-ME71.                                                D.940606
+002920*****    04  COLUMN   1  PIC  X(013) FROM  W-FILE.                D.940606
+002930*****    04  COLUMN  15  PIC  N(021) VALUE                        D.940606
+002940*****         NC"オーバーフロー、領域を拡張後、ＦＮＣ＋再開".     D.940606
+002950*****  03  E-ME78  COLUMN   5  PIC  N(002) VALUE NC"連絡".        D.940606
+002960*****  03  E-ME98  COLUMN  15  PIC  X(005) VALUE ""27"J"05"".     D.940606
+002970*****  03  E-ME99  COLUMN  15  PIC  X(005) VALUE ""27"B"05"".     D.940606
+002980*****  03  E-CL1   COLUMN 10  PIC X(50) VALUE                     D.930903
+002990*****       "                                                  ". D.930903
+003000*****  03  E-CL.                                                  D.940606
+003010*****    04  COLUMN   1  PIC  X(040) VALUE                        D.940606
+003020*****         "                                        ".         D.940606
+003030*****    04  COLUMN  41  PIC  X(040) VALUE                        D.940606
+003040*****         "                                        ".         D.940606
+003050     COPY LSSEM.                                                  I.940606
+003060     COPY LIBSCR.                                                 I.980406
+003070 PROCEDURE DIVISION.
+003080 M-05.
+003090     ACCEPT JS-SIGN.                                              I.951121
+003100     IF JS-SIGN > 1                                               I.951121
+003110         GO TO M-05.                                              I.951121
+003120     DISPLAY C-CLEAR.
+003130     DISPLAY C-MID.
+003140*****IF COMPLETION-CODE = 200                                     D.951121
+003150     IF JS-SIGN = 1                                               I.951121
+003160         DISPLAY C-MID2
+003170         GO TO M-20.                                              I.020918
+003180*****    GO TO M-06.                                              D.020918
+003190     DISPLAY C-MID1.
+003200*****PERFORM CHK-RTN THRU CHK-EX.                                 D.020918
+003210*****IF COMPLETION-CODE = 255                                     D.020919
+003220*****    GO TO M-95.                                              D.020918
+003230*****OPEN I-O M-DATE.                                             D.980406
+003240*****MOVE "01" TO DATE-KEY.                                       D.980406
+003250*****READ M-DATE INVALID KEY                                      D.980406
+003260*****    DISPLAY E-ME78 E-ME5 E-ME99                              D.980406
+003270*****    GO TO M-07.                                              D.980406
+003280     INITIALIZE W-DATA.                                           I.990519
+003290     COPY LIBCPR.                                                 I.980406
+003300     MOVE D-NBNG TO W-NGS.                                        I.990519
+003310     IF W-NEN2 >= DATE-NF1 AND <= DATE-NT1                        I.990519
+003320         ADD DATE-NC1 TO W-NEN.                                   I.990519
+003330     IF W-NEN2 >= DATE-NF2 AND <= DATE-NT2                        I.990519
+003340         ADD DATE-NC2 TO W-NEN.                                   I.990519
+003350*****MOVE D-NBNG TO W-NG.                                         D.990519
+003360     DISPLAY D-NG.
+003370*M-06.                                                            D.020918
+003380*****ACCEPT A-DMM.                                                D.020918
+003390*****IF ESTAT NOT = HTB AND SKP                                   D.020918
+003400*****    GO TO M-06.                                              D.020918
+003410*****IF W-DMM = 9                                                 D.020918
+003420*****    DISPLAY E-ME19 E-ME99                                    D.020918
+003430*****    GO TO M-06.                                              D.020918
+003440*****IF W-DMM NOT = 1                                             D.020918
+003450*****    GO TO M-06.                                              D.020918
+003460*
+003470*****IF COMPLETION-CODE = 200                                     D.951121
+003480*****IF JS-SIGN = 1                                               D.020918
+003490*****    GO TO M-20.                                              D.020918
+003500*****    GO TO M-08.                                              D.990427
+003510*
+003520*****ADD 1 TO W-GET.                                              D.990519
+003530*****IF W-GET = 13                                                D.990519
+003540*****    ADD 1 TO W-NEN                                           D.990519
+003550*****    MOVE 1 TO W-GET.                                         D.990519
+003560*****OPEN I-O M-DATE.                                             D.990519
+003570*****MOVE "01" TO DATE-KEY.                                       D.990519
+003580*****READ M-DATE INVALID KEY                                      D.990519
+003590*****    DISPLAY E-ME78 E-ME5 E-ME99                              D.990519
+003600*****    GO TO M-07.                                              D.990519
+003610*****MOVE W-NG TO D-NBNG.                                         D.990519
+003620*****REWRITE DATE-R INVALID KEY                                   D.990519
+003630*****    DISPLAY E-ME78 E-ME6 E-ME99                              D.990519
+003640*****    GO TO M-07.                                              D.990519
+003650*****CLOSE M-DATE.                                                D.990519
+003660*****GO TO M-08.                                                  D.990519
+003670*M-07.                                                            D.990519
+003680*****DISPLAY E-ME19 E-ME99.                                       D.990519
+003690*****GO TO M-07.                                                  D.990519
+003700*M-08.                                                            D.990519
+003710     OPEN I-O ST-M.
+003720*****OPEN EXTEND STY-F.                                           D.020918
+003730 M-10.
+003740     READ ST-M NEXT RECORD AT END
+003750         GO TO M-15.
+003760*M-11.                                                            D.020918
+003770*****INITIALIZE STY-R.                                            D.020918
+003780*****MOVE ST-R TO STY-R.                                          D.020918
+003790*****MOVE W-NG TO STY-NG.                                         D.020918
+003800*****WRITE STY-R.                                                 D.020918
+003810*****IF ERR-STAT = "00"                                           D.020918
+003820*****    GO TO M-12.                                              D.020918
+003830*
+003840*****DISPLAY E-STAT E-ME8 E-ME99.                                 D.020918
+003850*****IF ERR-STAT = "34"                                           D.020918
+003860*****    DISPLAY E-CL                                             D.020918
+003870*****    CLOSE STY-F                                              D.020918
+003880*****    MOVE "STYF         " TO W-FILE                           D.020918
+003890*****    DISPLAY E-ME71 E-ME98 STOP " "                           D.020918
+003900*****    DISPLAY E-CL                                             D.020918
+003910*****    OPEN EXTEND STY-F                                        D.020918
+003920*****    GO TO M-11.                                              D.020918
+003930*****DISPLAY E-ME78 E-ME99.                                       D.020918
+003940*****CLOSE ST-M.                                                  D.020918
+003950*****CLOSE STY-F.                                                 D.020918
+003960*****GO TO M-95.                                                  D.020918
+003970*M-12.                                                            D.020918
+003980     MOVE ST-KZ TO ST-ZKZ.
+003990     MOVE ST-KZZ TO ST-ZKZZ.
+004000*****ADD ST-TSK TO ST-YSK.                                        D.990519
+004010*****ADD ST-TSKZ TO ST-YSKZ.                                      D.990519
+004020     MOVE ZERO TO ST-TSK ST-TSKZ ST-THK ST-THKZ.
+004030     REWRITE ST-R INVALID KEY
+004040         MOVE 255 TO COMPLETION-CODE                              I.020918
+004050         DISPLAY E-ME78 E-STAT E-ME1 E-SCD E-ME99                 C.930903
+004060         GO TO M-95.
+004070     GO TO M-10.
+004080 M-15.
+004090     CLOSE ST-M.
+004100*****CLOSE STY-F.                                                 D.020918
+004110 M-20.                                                            I.990427
+004120     OPEN INPUT J-M.
+004130     OPEN I-O JT-M.
+004140*****IF JS-SIGN = 0                                               D.020918
+004150*****    OPEN EXTEND JTY-F.                                       D.020918
+004160*****OPEN OUTPUT JUH-F.                                           D.990427
+004170 M-25.
+004180     READ JT-M NEXT RECORD AT END
+004190         GO TO M-30.                                              I.990519
+004200*****    GO TO M-95.                                              D.990519
+004210*****IF JS-SIGN NOT = 0                                           D.020918
+004220*****    GO TO M-27.                                              D.020918
+004230*M-26.                                                            D.020918
+004240*****INITIALIZE JTY-R.                                            D.020918
+004250*****MOVE JT-R TO JTY-R.                                          D.020918
+004260*****MOVE W-NG TO JTY-NG.                                         D.020918
+004270*****WRITE JTY-R.                                                 D.020918
+004280*****IF ERR-STAT = "00"                                           D.020918
+004290*****    GO TO M-27.                                              D.020918
+004300*
+004310*****DISPLAY E-STAT E-ME9 E-ME99.                                 D.020918
+004320*****IF ERR-STAT = "34"                                           D.020918
+004330*****    DISPLAY E-CL                                             D.020918
+004340*****    CLOSE JTY-F                                              D.020918
+004350*****    MOVE "JTYF         " TO W-FILE                           D.020918
+004360*****    DISPLAY E-ME71 E-ME98 STOP " "                           D.020918
+004370*****    DISPLAY E-CL                                             D.020918
+004380*****    OPEN EXTEND JTY-F                                        D.020918
+004390*****    GO TO M-26.                                              D.020918
+004400*****DISPLAY E-ME78 E-ME99.                                       D.020918
+004410*****CLOSE J-M.                                                   D.020918
+004420*****CLOSE JT-M.                                                  D.020918
+004430*****CLOSE JTY-F.                                                 D.020918
+004440*****GO TO M-95.                                                  D.020918
+004450*M-27.                                                            D.020918
+004460     IF JS-SIGN = 0                                               I.990427
+004470         COMPUTE JT-ZKS = JT-ZKS + JT-SSU - JT-HSU                I.990427
+004480         MOVE ZERO TO JT-SSU JT-SIK JT-HSU                        I.990427
+004490       ELSE                                                       I.990427
+004500         MOVE JT-TSU TO JT-ZKS.                                   I.990427
+004510*****COMPUTE JT-ZKS = JT-ZKS + JT-SSU - JT-HSU.                   D.990427
+004520*****MOVE ZERO TO JT-SSU JT-SIK JT-HSU.                           D.990427
+004530*****MOVE JT-ZSU TO JT-ZKS.                                       D.990426
+004540     MOVE JT-KEY TO J-KEY.
+004550     READ J-M INVALID KEY
+004560         DISPLAY E-ME7 E-JCD E-ME99
+004570         MOVE ZERO TO J-ST.
+004580     COMPUTE JT-ZKK = JT-ZKS * J-ST.                              I.990426
+004590*****COMPUTE JT-ZKK = JT-ZSU * J-ST.                              D.990426
+004600     IF JS-SIGN = 0                                               I.990428
+004610*****    IF W-GET = 5                                             D.000516
+004620         IF W-GET = 4                                             I.000516
+004630             MOVE JT-ZKS TO JT-CSU.                               I.990428
+004640     REWRITE JT-R INVALID KEY
+004650         MOVE 255 TO COMPLETION-CODE                              I.020918
+004660         DISPLAY E-ME78 E-STAT E-ME2 E-JCD E-ME99                 C.930903
+004670         GO TO M-95.
+004680*****IF JT-ZC NOT = ZERO                                          D.990427
+004690     GO TO M-25.
+004700*****IF JT-ZKS = ZERO                                             D.990427
+004710*****    GO TO M-25.                                              D.990427
+004720*M-28.                                                            D.990427
+004730*****MOVE ZERO TO JUH-R.                                          D.990427
+004740*****MOVE J-KEY TO UH-JCD.                                        D.990427
+004750*****MOVE JT-ZKS TO UH-SU.                                        D.990427
+004760*****MOVE J-ST TO UH-T.                                           D.990427
+004770*****MOVE JT-ZKK TO UH-KIN.                                       D.990427
+004780*****WRITE JUH-R.                                                 D.990427
+004790*****IF ERR-STAT NOT = "00"                                       D.990427
+004800*****    GO TO M-29.                                              D.990427
+004810*****CALL "CBLTCLS" USING JUH-F.                                  D.990427
+004820*****GO TO M-25.                                                  D.990427
+004830*M-29.                                                            D.990427
+004840*****DISPLAY E-STAT E-ME3 E-ME99.                                 D.990427
+004850*****IF ERR-STAT = "34"                                           D.990427
+004860*****    DISPLAY E-CL                                             D.990427
+004870*****    CLOSE JUH-F                                              D.990427
+004880*****    MOVE "JUHF         " TO W-FILE                           D.990427
+004890*****    DISPLAY E-ME71 E-ME98 STOP " "                           D.990427
+004900*****    DISPLAY E-CL                                             D.990427
+004910*****    OPEN EXTEND JUH-F                                        D.990427
+004920*****    GO TO M-28.                                              D.990427
+004930*****DISPLAY E-ME78 E-ME99.                                       D.990427
+004940 M-30.                                                            I.990519
+004950     CLOSE J-M.                                                   I.990519
+004960     CLOSE JT-M.                                                  I.990519
+004970     IF JS-SIGN NOT = 0                                           I.990519
+004980         GO TO M-95.                                              I.990519
+004990*****CLOSE JTY-F.                                                 D.020918
+005000*
+005010*****OPEN INPUT JSSR-F.                                           D.020918
+005020*****OPEN INPUT HAR-F.                                            D.020918
+005030*****OPEN EXTEND JSSRYR.                                          D.020918
+005040*****OPEN EXTEND HARYR.                                           D.020918
+005050*M-31.                                                            D.020918
+005060*****READ JSSR-F NEXT RECORD AT END                               D.020918
+005070*****    GO TO M-33.                                              D.020918
+005080*****DISPLAY E-CL.                                                D.020918
+005090*M-32.                                                            D.020918
+005100*****MOVE ZERO TO JSSRYR-R.                                       D.020918
+005110*****MOVE JSSR-R TO JSSRYR-R.                                     D.020918
+005120*****WRITE JSSRYR-R.                                              D.020918
+005130*****IF ERR-STAT = "00"                                           D.020918
+005140*****    GO TO M-31.                                              D.020918
+005150*
+005160*****DISPLAY E-STAT E-ME10 E-ME99.                                D.020918
+005170*****IF ERR-STAT = "34"                                           D.020918
+005180*****    DISPLAY E-CL                                             D.020918
+005190*****    CLOSE JSSRYR                                             D.020918
+005200*****    MOVE "JSSRYR       " TO W-FILE                           D.020918
+005210*****    DISPLAY E-ME71 E-ME98 STOP " "                           D.020918
+005220*****    DISPLAY E-CL                                             D.020918
+005230*****    OPEN EXTEND JSSRYR                                       D.020918
+005240*****    GO TO M-32.                                              D.020918
+005250*****DISPLAY E-ME78 E-ME99.                                       D.020918
+005260*****CLOSE JSSR-F.                                                D.020918
+005270*****CLOSE HAR-F.                                                 D.020918
+005280*****CLOSE JSSRYR.                                                D.020918
+005290*****CLOSE HARYR.                                                 D.020918
+005300*****GO TO M-95.                                                  D.020918
+005310*M-33.                                                            D.020918
+005320*****READ HAR-F NEXT RECORD AT END                                D.020918
+005330*****    GO TO M-36.                                              D.020918
+005340*****DISPLAY E-CL.                                                D.020918
+005350*M-34.                                                            D.020918
+005360*****MOVE ZERO TO HARYR-R.                                        D.020918
+005370*****MOVE HAR-R TO HARYR-R.                                       D.020918
+005380*****WRITE HARYR-R.                                               D.020918
+005390*****IF ERR-STAT = "00"                                           D.020918
+005400*****    GO TO M-33.                                              D.020918
+005410*
+005420*****DISPLAY E-STAT E-ME11 E-ME99.                                D.020918
+005430*****IF ERR-STAT = "34"                                           D.020918
+005440*****    DISPLAY E-CL                                             D.020918
+005450*****    CLOSE HARYR                                              D.020918
+005460*****    MOVE "HARYR        " TO W-FILE                           D.020918
+005470*****    DISPLAY E-ME71 E-ME98 STOP " "                           D.020918
+005480*****    DISPLAY E-CL                                             D.020918
+005490*****    OPEN EXTEND HARYR                                        D.020918
+005500*****    GO TO M-34.                                              D.020918
+005510*****DISPLAY E-ME78 E-ME99.                                       D.020918
+005520*****CLOSE JSSR-F.                                                D.020918
+005530*****CLOSE HAR-F.                                                 D.020918
+005540*****CLOSE JSSRYR.                                                D.020918
+005550*****CLOSE HARYR.                                                 D.020918
+005560*****GO TO M-95.                                                  D.020918
+005570*M-36.                                                            D.020918
+005580*****CLOSE JSSR-F.                                                D.020918
+005590*****CLOSE HAR-F.                                                 D.020918
+005600*****CLOSE JSSRYR.                                                D.020918
+005610*****CLOSE HARYR.                                                 D.020918
+005620*
+005630     OPEN OUTPUT JSSR-F.                                          I.990519
+005640     OPEN OUTPUT HAR-F.                                           I.990521
+005650     CLOSE JSSR-F.                                                I.990519
+005660     CLOSE HAR-F.                                                 I.990521
+005670*
+005680     MOVE W-NG TO W-DNG.                                          I.011001
+005690     SUBTRACT 1 FROM W-DGET.                                      I.011001
+005700     IF W-DGET = ZERO                                             I.011001
+005710         SUBTRACT 1 FROM W-DNEN                                   I.011001
+005720         MOVE 12 TO W-DGET.                                       I.011001
+005730     SUBTRACT 1 FROM W-DGET.                                      I.011001
+005740     IF W-DGET = ZERO                                             I.011001
+005750         SUBTRACT 1 FROM W-DNEN                                   I.011001
+005760         MOVE 12 TO W-DGET.                                       I.011001
+005770     OPEN I-O HSS-F.                                              I.011001
+005780 M-85.                                                            I.011001
+005790     READ HSS-F NEXT RECORD AT END                                I.011001
+005800         GO TO M-90.                                              I.011001
+005810     IF W-DNG <= HSS-NG                                           I.011001
+005820         GO TO M-85.                                              I.011001
+005830     DELETE HSS-F INVALID KEY                                     I.011001
+005840         MOVE 255 TO COMPLETION-CODE                              I.020918
+005850         DISPLAY E-STAT E-ME13 E-ME99                             I.011001
+005860         GO TO M-90.                                              I.011001
+005870     GO TO M-85.                                                  I.011001
+005880 M-90.                                                            I.011001
+005890     CLOSE HSS-F.                                                 I.011001
+005900*
+005910     ADD 1 TO W-GET.                                              I.990519
+005920     IF W-GET = 13                                                I.990519
+005930         ADD 1 TO W-NEN                                           I.990519
+005940         MOVE 1 TO W-GET.                                         I.990519
+005950     OPEN I-O M-DATE.                                             I.990519
+005960     MOVE "01" TO DATE-KEY.                                       I.990519
+005970     READ M-DATE INVALID KEY                                      I.990519
+005980         MOVE 255 TO COMPLETION-CODE                              I.020918
+005990         CLOSE M-DATE                                             I.990519
+006000         DISPLAY E-ME78 E-ME5 E-ME99                              I.990519
+006010         GO TO M-95.                                              I.990519
+006020     MOVE W-NGS TO D-NBNG.                                        I.990519
+006030     REWRITE DATE-R INVALID KEY                                   I.990519
+006040         MOVE 255 TO COMPLETION-CODE                              I.020918
+006050         DISPLAY E-ME78 E-ME6 E-ME99.                             I.990519
+006060     CLOSE M-DATE.                                                I.990519
+006070 M-95.
+006080*****CLOSE J-M.                                                   D.990519
+006090*****CLOSE JT-M.                                                  D.990519
+006100*****IF JS-SIGN = 0                                               D.990519
+006110*****    OPEN OUTPUT JSSR-F                                       D.990519
+006120*****    CLOSE JSSR-F.                                            D.990519
+006130*****OPEN OUTPUT JSSR-F.                                          D.990427
+006140*****CLOSE JUH-F.                                                 D.990427
+006150*****CLOSE JSSR-F.                                                D.990427
+006160     DISPLAY C-CLEAR.
+006170     STOP RUN.
+006180*CHK-RTN.                                                         D.020918
+006190*****OPEN INPUT JSS-F.                                            D.020918
+006200*****READ JSS-F AT END                                            D.020918
+006210*****    GO TO CHK-010.                                           D.020918
+006220*****CLOSE JSS-F.                                                 D.020918
+006230*****GO TO CHK-020.                                               D.020918
+006240*CHK-010.                                                         D.020918
+006250*****CLOSE JSS-F.                                                 D.020918
+006260*****OPEN INPUT HA-F.                                             D.020918
+006270*****READ HA-F AT END                                             D.020918
+006280*****    GO TO CHK-030.                                           D.020918
+006290*****CLOSE HA-F.                                                  D.020918
+006300*CHK-020.                                                         D.020918
+006310*****DISPLAY E-ME12 E-ME99.                                       D.020918
+006320*****MOVE 255 TO COMPLETION-CODE.                                 D.020918
+006330*****GO TO CHK-EX.                                                D.020918
+006340*CHK-030.                                                         D.020918
+006350*****CLOSE HA-F.                                                  D.020918
+006360*CHK-EX.                                                          D.020918
+006370*****EXIT.                                                        D.020918
+

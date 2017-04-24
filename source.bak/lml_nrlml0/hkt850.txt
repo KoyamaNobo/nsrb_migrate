@@ -1,0 +1,412 @@
+000010 IDENTIFICATION      DIVISION.
+000020 PROGRAM-ID.         HKT850.
+000030**************************************************************
+000040*    PROGRAM         :  担当別　売上･粗利前年対比　問合せ    *
+000050*    PRINTER TYPE    :  JIPS                                 *
+000060*    SCREEN          :  SCHK85                               *
+000070*    COMPILE TYPE    :  COBOL                                *
+000080*    JS-SIGN         :  通常=0 , 参考=1                      *
+000090**************************************************************
+000100 ENVIRONMENT         DIVISION.
+000110 CONFIGURATION       SECTION.
+000120 SOURCE-COMPUTER.    SYSTEM3100.
+000130 OBJECT-COMPUTER.    SYSTEM3100.
+000140 INPUT-OUTPUT        SECTION.
+000150 FILE-CONTROL.
+000160     COPY LIBCSE.
+000170     SELECT HKBM ASSIGN TO HKB-MSD
+000180         ORGANIZATION INDEXED
+000190         ACCESS MODE DYNAMIC
+000200         RECORD KEY HKB-KEY
+000210         FILE STATUS IS ERR-STAT.
+000220     SELECT HTHKF ASSIGN TO HTHK-MSD
+000230         ORGANIZATION INDEXED
+000240         ACCESS MODE DYNAMIC
+000250         RECORD KEY HTHK-KEY
+000260         FILE STATUS IS ERR-STAT.
+000270     SELECT THY-M ASSIGN TO THY-MSD
+000280         FILE STATUS IS ERR-STAT.
+000290 I-O-CONTROL.
+000300     APPLY SHARED-MODE ON M-DATE
+000310     APPLY SHARED-MODE ON HKBM
+000320     APPLY SHARED-MODE ON HTHKF.
+000330 DATA                DIVISION.
+000340 FILE                SECTION.
+000350     COPY LIBFDD.
+000360     COPY LIHKBM.
+000370 FD  HTHKF
+000380     BLOCK  1 RECORDS
+000390     LABEL RECORD IS STANDARD
+000400     VALUE OF IDENTIFICATION "HTHKF".
+000410 01  HTHK-R.
+000420     02  HTHK-KEY.
+000430       03  HTHK-NEN     PIC  9(004).
+000440       03  HTHK-TNC     PIC  9(001).
+000450     02  HTHK-ATKG.
+000460       03  HTHK-TKGD  OCCURS  12.
+000470         04  HTHK-KG.
+000480           05  HTHK-KEI PIC S9(010).
+000490           05  HTHK-ZIT PIC S9(010).
+000500     02  F              PIC  X(011).
+000510 FD  THY-M
+000520     BLOCK  1 RECORDS
+000530     LABEL RECORD IS STANDARD
+000540     VALUE OF IDENTIFICATION IS WK0512ID.
+000550 01  TH-R.
+000560     02  TH-KEY         PIC  9(004).
+000570     02  TH-IKC         PIC  9(001).
+000580     02  TH-UD.
+000590       03  TH-UK.
+000600         04  TH-OUK.
+000610           05  TH-OU    OCCURS  12  PIC  9(009).
+000620         04  TH-NUK.
+000630           05  TH-NU    OCCURS  12  PIC  9(009).
+000640       03  TH-U     REDEFINES TH-UK.
+000650         04  TH-UKD   OCCURS  24  PIC S9(009).
+000660       03  TH-TU.
+000670         04  TH-AOTU    PIC S9(010).
+000680         04  TH-ANTU    PIC S9(010).
+000690     02  TH-AD.
+000700       03  TH-AK.
+000710         04  TH-OAK.
+000720           05  TH-OA    OCCURS  12  PIC  9(009).
+000730         04  TH-NAK.
+000740           05  TH-NA    OCCURS  12  PIC  9(009).
+000750       03  TH-A  REDEFINES TH-AK.
+000760         04  TH-AKD   OCCURS  24  PIC S9(009).
+000770       03  TH-TA.
+000780         04  TH-AOTA    PIC S9(010).
+000790         04  TH-ANTA    PIC S9(010).
+000800     02  TH-NG.
+000810       03  TH-N         PIC  9(004).
+000820       03  TH-G         PIC  9(002).
+000830     02  TH-TC.
+000840       03  TH-TC1       PIC  9(001).
+000850       03  TH-TC2       PIC  9(001).
+000860     02  TH-BC          PIC  9(001).
+000870     02  F              PIC  X(025).
+000880     02  TH-SEN         PIC  9(001).
+000890 WORKING-STORAGE     SECTION.
+000900 77  JS-SIGN            PIC  9(001).                              I.130712
+000910 77  WK0512ID           PIC  X(009) VALUE SPACE.
+000920 77  ATAI               PIC S9(009)V9(003) VALUE 1.
+000930 01  STN-NO.
+000940     02  STN-NO1        PIC  X(003).
+000950     02  STN-NO2        PIC  X(003).
+000960 01  W-FID.
+000970     02  W-FID1         PIC  X(006) VALUE "WK0512".
+000980     02  W-FID2         PIC  X(003).
+000990 01  W-DATA.
+001000     02  W-TNC          PIC  9(001).
+001010     02  W-DMM          PIC  9(001).
+001020     02  W-TNCD.
+001030       03  W-TNC1       PIC  9(001).
+001040       03  W-TNC2       PIC  9(001).
+001050     02  CNT.
+001060       03  CNT1         PIC  9(002).
+001070       03  CNT2         PIC  9(002).
+001080     02  CHK            PIC  9(001).
+001090     02  W-NG.
+001100       03  W-N          PIC  9(004).
+001110       03  W-ND    REDEFINES W-N.
+001120         04  W-N1       PIC  9(002).
+001130         04  W-N2       PIC  9(002).
+001140       03  W-G          PIC  9(002).
+001150     02  W-NGL   REDEFINES W-NG.
+001160       03  F            PIC  9(002).
+001170       03  W-NGS        PIC  9(004).
+001180     02  W-L            PIC  9(002).
+001190     02  W-MD.
+001200       03  W-NU         PIC S9(009).
+001210       03  W-KEI        PIC S9(009).
+001220       03  W-OU         PIC S9(009).
+001230       03  W-NA         PIC S9(009).
+001240       03  W-OA         PIC S9(009).
+001250       03  W-RNU        PIC S9(009).
+001260       03  W-RKEI       PIC S9(009).
+001270       03  W-ROU        PIC S9(009).
+001280       03  W-RNA        PIC S9(009).
+001290       03  W-ROA        PIC S9(009).
+001300       03  W-UKR        PIC S9(003)V9(01).
+001310       03  W-UZR        PIC S9(003)V9(01).
+001320       03  W-AZR        PIC S9(003)V9(01).
+001330       03  W-RUKR       PIC S9(003)V9(01).
+001340       03  W-RUZR       PIC S9(003)V9(01).
+001350       03  W-RAZR       PIC S9(003)V9(01).
+001360     02  W-HD.
+001370       03  WH-NU         PIC S9(009).
+001380       03  WH-KEI        PIC S9(009).
+001390       03  WH-OU         PIC S9(009).
+001400       03  WH-NA         PIC S9(009).
+001410       03  WH-OA         PIC S9(009).
+001420       03  WH-UKR        PIC S9(003)V9(01).
+001430       03  WH-UZR        PIC S9(003)V9(01).
+001440       03  WH-AZR        PIC S9(003)V9(01).
+001450     02  W-TD.
+001460       03  WT-NU         PIC S9(009).
+001470       03  WT-KEI        PIC S9(009).
+001480       03  WT-OU         PIC S9(009).
+001490       03  WT-NA         PIC S9(009).
+001500       03  WT-OA         PIC S9(009).
+001510       03  WT-UKR        PIC S9(003)V9(01).
+001520       03  WT-UZR        PIC S9(003)V9(01).
+001530       03  WT-AZR        PIC S9(003)V9(01).
+001540 01  ERR-STAT           PIC  X(002).
+001550     COPY  LSTAT.
+001560 SCREEN              SECTION.
+001570 SD  C-CRT
+001580     END  STATUS  IS  ESTAT.
+001590 01  C-CLEAR.
+001600     02  C-CL    LINE   1  CLEAR SCREEN.
+001610 01  C-ACP.
+001620     02  A-TNC   LINE   3  COLUMN  10  PIC  9(001)
+001630           USING W-TNC   CHECK OVERFLOW NO IFC.
+001640     02  A-DMM   LINE  23  COLUMN  67  PIC  9(001)
+001650           USING W-DMM   CHECK OVERFLOW NO IFC.
+001660 01  C-DSP.
+001670     02  D-TNNA  LINE   3  COLUMN  13  PIC  N(014) FROM  HKB-TNNA.
+001680     02  D-NEN   LINE   5  COLUMN   4  PIC  9(002) FROM  W-N2.
+001690     02  D-MEI   LINE W-L.
+001700       03  COLUMN   9  PIC ----,---,---  FROM  W-NU.
+001710       03  COLUMN  22  PIC ----.-        FROM  W-UKR.
+001720       03  COLUMN  29  PIC ----.-        FROM  W-RUKR.
+001730       03  COLUMN  36  PIC ----.-        FROM  W-UZR.
+001740       03  COLUMN  43  PIC ----.-        FROM  W-RUZR.
+001750       03  COLUMN  51  PIC ----,---,---  FROM  W-NA.
+001760       03  COLUMN  64  PIC ----.-        FROM  W-AZR.
+001770       03  COLUMN  71  PIC ----.-        FROM  W-RAZR.
+001780     02  D-HT    LINE W-L.
+001790       03  COLUMN   9  PIC ----,---,---  FROM  WH-NU.
+001800       03  COLUMN  22  PIC ----.-        FROM  WH-UKR.
+001810       03  COLUMN  36  PIC ----.-        FROM  WH-UZR.
+001820       03  COLUMN  51  PIC ----,---,---  FROM  WH-NA.
+001830       03  COLUMN  64  PIC ----.-        FROM  WH-AZR.
+001840     02  D-AT    LINE  22.
+001850       03  COLUMN   9  PIC ----,---,---  FROM  WT-NU.
+001860       03  COLUMN  22  PIC ----.-        FROM  WT-UKR.
+001870       03  COLUMN  36  PIC ----.-        FROM  WT-UZR.
+001880       03  COLUMN  51  PIC ----,---,---  FROM  WT-NA.
+001890       03  COLUMN  64  PIC ----.-        FROM  WT-AZR.
+001900 01  C-ERR.
+001910     02  LINE  24.
+001920       03  E-ME1   COLUMN  15  PIC  X(017) VALUE
+001930             "***  ﾃﾞｰﾀ ﾅｼ  ***".
+001940       03  E-ME2   COLUMN  15  PIC  X(017) VALUE
+001950             "***  ﾗｲﾝ ｴﾗｰ  ***".
+001960       03  E-ME98  COLUMN  75  PIC  X(005) VALUE ""27"J"05"".
+001970       03  E-ME99  COLUMN  75  PIC  X(005) VALUE ""27"B"05"".
+001980       03  E-CL    COLUMN  10  PIC  X(050) VALUE
+001990            "                                                  ".
+002000     COPY  LIBSCR.
+002010 PROCEDURE           DIVISION.
+002020 M-05.
+002030     ACCEPT JS-SIGN.                                              I.130712
+002040     IF JS-SIGN > 1                                               I.130712
+002050         STOP RUN.                                                I.130712
+002060     MOVE ZERO TO W-DATA.
+002070     COPY LIBCPR.
+002080     MOVE ZERO TO W-NG.
+002090     MOVE D-NHNG TO W-NGS.
+002100     IF W-N2 >= DATE-NF1 AND <= DATE-NT1
+002110         ADD DATE-NC1 TO W-N.
+002120     IF W-N2 >= DATE-NF2 AND <= DATE-NT2
+002130         ADD DATE-NC2 TO W-N.
+002140     SUBTRACT 1 FROM W-G.
+002150     IF W-G = ZERO
+002160         MOVE 12 TO W-G
+002170         SUBTRACT 1 FROM W-N.
+002180*****IF W-G < 5                                                   D.110512
+002190     IF W-G < 4                                                   I.110512
+002200         SUBTRACT 1 FROM W-N.
+002210*
+002220     OPEN INPUT HKBM HTHKF.
+002230     CALL "CBLSTNNO" USING STN-NO.
+002240     MOVE STN-NO2 TO W-FID2.
+002250     MOVE W-FID TO WK0512ID.
+002260     OPEN INPUT THY-M.
+002270 M-15.
+002280     DISPLAY C-CLEAR.
+002290     CALL "SCHK85".
+002300     DISPLAY D-NEN.
+002310 M-20.
+002320     ACCEPT A-TNC.
+002330     DISPLAY E-CL.
+002340     IF ESTAT = PF9
+002350         GO TO M-90.
+002360     IF ESTAT NOT = HTB AND SKP
+002370         GO TO M-20.
+002380     IF W-TNC > 7
+002390         GO TO M-20.
+002400 M-22.
+002410     MOVE SPACE TO HKB-KEY.
+002420     MOVE 04 TO HKB-NO.
+002430     MOVE ZERO TO W-TNCD.
+002440     MOVE W-TNC TO W-TNC1.
+002450     MOVE W-TNCD TO HKB-TNC.
+002460     START HKBM KEY NOT < HKB-KEY INVALID KEY
+002470         GO TO M-20.
+002480     READ HKBM NEXT RECORD WITH UNLOCK AT END
+002490         GO TO M-20.
+002500     IF HKB-NO NOT = 4
+002510         GO TO M-20.
+002520     IF HKB-TNC > (W-TNC * 10 + 9)
+002530         GO TO M-20.
+002540     DISPLAY D-TNNA.
+002550*
+002560     MOVE W-N TO HTHK-NEN.
+002570     MOVE W-TNC TO HTHK-TNC.
+002580     READ HTHKF WITH UNLOCK INVALID KEY
+002590         MOVE ZERO TO HTHK-ATKG.
+002600*
+002610     CLOSE THY-M.
+002620     OPEN INPUT THY-M.
+002630*
+002640     MOVE ZERO TO W-MD W-HD W-TD.
+002650 M-30.
+002660     READ THY-M AT END
+002670         DISPLAY E-ME1 E-ME99
+002680         GO TO M-15.
+002690*****IF TH-TC = ZERO                                              D.150601
+002700*****    GO TO M-30.                                              I.150601
+002710     IF TH-TC1 NOT = W-TNC
+002720         GO TO M-30.
+002730     MOVE ZERO TO CNT.
+002740     MOVE 7 TO W-L.
+002750 M-35.
+002760     ADD 1 TO CNT1.
+002770     IF CNT1 = 7 OR 13
+002780         GO TO M-45.
+002790 M-40.
+002800     MOVE TH-NU(CNT1) TO W-NU.
+002810     MOVE HTHK-KEI(CNT1) TO W-KEI.
+002820     MOVE TH-OU(CNT1) TO W-OU.
+002830     MOVE TH-NA(CNT1) TO W-NA.
+002840     MOVE TH-OA(CNT1) TO W-OA.
+002850     ADD TH-NU(CNT1) TO W-RNU.
+002860     ADD HTHK-KEI(CNT1) TO W-RKEI.
+002870     ADD TH-OU(CNT1) TO W-ROU.
+002880     ADD TH-NA(CNT1) TO W-RNA.
+002890     ADD TH-OA(CNT1) TO W-ROA.
+002900     MOVE ZERO TO W-UKR W-UZR W-RUKR W-RUZR W-AZR W-RAZR.         I.100722
+002910     IF W-NU NOT = ZERO
+002920         IF W-KEI NOT = ZERO                                      I.100722
+002930             COMPUTE W-UKR ROUNDED = W-NU * 100 / W-KEI * ATAI.   I.100722
+002940*****    COMPUTE W-UKR ROUNDED = W-NU * 100 / W-KEI * ATAI        D.100722
+002950     IF W-NU NOT = ZERO                                           I.100722
+002960         IF W-OU NOT = ZERO                                       I.100722
+002970             COMPUTE W-UZR ROUNDED = W-NU * 100 / W-OU * ATAI.
+002980     IF W-RNU NOT = ZERO
+002990         IF W-RKEI NOT = ZERO                                     I.100722
+003000             COMPUTE W-RUKR ROUNDED = W-RNU * 100 / W-RKEI * ATAI.I.100722
+003010*****    COMPUTE W-RUKR ROUNDED = W-RNU * 100 / W-RKEI * ATAI     D.100722
+003020     IF W-RNU NOT = ZERO
+003030         IF W-ROU NOT = ZERO                                      I.100722
+003040             COMPUTE W-RUZR ROUNDED = W-RNU * 100 / W-ROU * ATAI.
+003050     IF JS-SIGN = 0                                               I.130712
+003060         IF W-NA NOT = ZERO
+003070             IF W-OA NOT = ZERO                                   I.100722
+003080                 COMPUTE W-AZR ROUNDED = W-NA * 100 / W-OA * ATAI.
+003090     IF JS-SIGN = 0                                               I.130712
+003100         IF W-RNA NOT = ZERO
+003110             IF W-ROA NOT = ZERO                                  I.100722
+003120             COMPUTE W-RAZR ROUNDED = W-RNA * 100 / W-ROA * ATAI.
+003130*****IF W-NU = ZERO                                               D.100722
+003140*****    MOVE ZERO TO W-UKR W-RUKR W-UZR W-RUZR.                  D.100722
+003150*****IF W-NA = ZERO                                               D.100722
+003160*****    MOVE ZERO TO W-AZR W-RAZR.                               D.100722
+003170*
+003180     ADD 1 TO W-L.
+003190     IF W-L > 22
+003200         DISPLAY E-ME2 E-ME99
+003210         GO TO M-90.
+003220     DISPLAY D-MEI.
+003230     ADD TH-NU(CNT1) TO WH-NU.
+003240     ADD HTHK-KEI(CNT1) TO WH-KEI.
+003250     ADD TH-OU(CNT1) TO WH-OU.
+003260     ADD TH-NA(CNT1) TO WH-NA.
+003270     ADD TH-OA(CNT1) TO WH-OA.
+003280     GO TO M-35.
+003290 M-45.
+003300     MOVE ZERO TO WH-UKR WH-UZR WH-AZR.                           I.100722
+003310*****IF WH-NU = ZERO                                              D.110512
+003320*****    IF WH-KEI = ZERO                                         D.110512
+003330     IF WH-NU NOT = ZERO                                          I.110512
+003340         IF WH-KEI NOT = ZERO                                     I.110512
+003350             COMPUTE WH-UKR ROUNDED = WH-NU * 100 / WH-KEI * ATAI.I.100722
+003360*****    MOVE ZERO TO WH-UKR WH-UZR                               D.100722
+003370*****  ELSE                                                       D.100722
+003380*****    COMPUTE WH-UKR ROUNDED = WH-NU * 100 / WH-KEI * ATAI     D.100722
+003390*****IF WH-NU = ZERO                                              D.110512
+003400*****    IF WH-OU = ZERO                                          D.110512
+003410     IF WH-NU NOT = ZERO                                          I.110512
+003420         IF WH-OU NOT = ZERO                                      I.110512
+003430             COMPUTE WH-UZR ROUNDED = WH-NU * 100 / WH-OU * ATAI.
+003440*****IF WH-NA = ZERO                                              D.110512
+003450*****    IF WH-OA = ZERO                                          D.110512
+003460*****    MOVE ZERO TO WH-AZR                                      D.100722
+003470*****  ELSE                                                       D.100722
+003480     IF JS-SIGN = 0                                               I.130712
+003490         IF WH-NA NOT = ZERO                                      I.110512
+003500             IF WH-OA NOT = ZERO                                  I.110512
+003510             COMPUTE WH-AZR ROUNDED = WH-NA * 100 / WH-OA * ATAI.
+003520*
+003530     ADD 1 TO W-L.
+003540     IF W-L > 22
+003550         DISPLAY E-ME2 E-ME99
+003560         GO TO M-90.
+003570     DISPLAY D-HT.
+003580     ADD WH-NU TO WT-NU.
+003590     ADD WH-KEI TO WT-KEI.
+003600     ADD WH-OU TO WT-OU.
+003610     ADD WH-NA TO WT-NA.
+003620     ADD WH-OA TO WT-OA.
+003630     MOVE ZERO TO W-HD.                                           I.100319
+003640     IF CNT1 = 7
+003650         GO TO M-40.
+003660*
+003670     MOVE ZERO TO WT-UKR WT-UZR WT-AZR.                           I.100722
+003680*****IF WT-NU = ZERO                                              D.110512
+003690*****    IF WT-KEI = ZERO                                         D.110512
+003700*****    MOVE ZERO TO WT-UKR                                      D.100722
+003710*****  ELSE                                                       D.100722
+003720     IF WT-NU NOT = ZERO                                          I.110512
+003730         IF WT-KEI NOT = ZERO                                     I.110512
+003740             COMPUTE WT-UKR ROUNDED = WT-NU * 100 / WT-KEI * ATAI.
+003750*****IF WT-NU = ZERO                                              D.110512
+003760*****    IF WT-OU = ZERO                                          D.110512
+003770*****    MOVE ZERO TO WT-UZR                                      D.100722
+003780*****  ELSE                                                       D.100722
+003790     IF WT-NU NOT = ZERO                                          I.110512
+003800         IF WT-OU NOT = ZERO                                      I.110512
+003810             COMPUTE WT-UZR ROUNDED = WT-NU * 100 / WT-OU * ATAI.
+003820*****IF WT-NA = ZERO                                              D.110512
+003830*****    IF WT-OA = ZERO                                          D.110512
+003840*****    MOVE ZERO TO WT-AZR                                      D.100722
+003850*****  ELSE                                                       D.100722
+003860     IF JS-SIGN = 0                                               I.130712
+003870         IF WT-NA NOT = ZERO                                      I.110512
+003880             IF WT-OA NOT = ZERO                                  I.110512
+003890             COMPUTE WT-AZR ROUNDED = WT-NA * 100 / WT-OA * ATAI.
+003900*
+003910     DISPLAY D-AT.
+003920 M-50.
+003930     ACCEPT A-DMM.
+003940     DISPLAY E-CL.
+003950     IF ESTAT = PF9
+003960         GO TO M-90.
+003970     IF ESTAT = ADV
+003980         GO TO M-15.
+003990     IF ESTAT NOT = HTB
+004000         GO TO M-50.
+004010     ADD 1 TO W-TNC.
+004020     IF W-TNC = 8
+004030         MOVE 0 TO W-TNC.
+004040     DISPLAY A-TNC.
+004050     GO TO M-22.
+004060 M-90.
+004070     CLOSE HKBM HTHKF.
+004080     CLOSE THY-M.
+004090 M-95.
+004100     DISPLAY C-CLEAR.
+004110     STOP RUN.
+

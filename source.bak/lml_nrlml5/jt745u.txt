@@ -1,0 +1,306 @@
+000010 IDENTIFICATION   DIVISION.
+000020 PROGRAM-ID.      JT750U.
+000030*********************************************************
+000040*    PROGRAM         :  受注合計表抽出（月得意先品名別）*
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    DATA WRITTN     :  98/02/12                        *
+000070*    COMPILE TYPE    :  CBL85 (74MODE)                  *
+000080*********************************************************
+000090 ENVIRONMENT      DIVISION.
+000100 CONFIGURATION    SECTION.
+000110 SOURCE-COMPUTER. NEAC-SYSTEM3100.
+000120 OBJECT-COMPUTER. NEAC-SYSTEM3100.
+000130 INPUT-OUTPUT     SECTION.
+000140 FILE-CONTROL.
+000150     SELECT  JT-WK07   ASSIGN  TO  WK07-MSD.
+000160     SELECT  JMSTD     ASSIGN  TO  F1-MSD F2-MSD F3-MSD
+000170         ORGANIZATION  IS INDEXED
+000180         ACCESS MODE   IS DYNAMIC
+000190         RECORD KEY    IS JMSTD-KEY1
+000200         ALTERNATE     RECORD KEY    IS JMSTD-KEY2
+000210         ALTERNATE     RECORD KEY    IS JMSTD-KEY3
+000220         FILE STATUS IS ERR-STAT.
+000230*****SELECT  SHM       ASSIGN  TO  F5-MSD                         D.010818
+000240     SELECT  HI2-M     ASSIGN  TO  F5-MSD                         I.010818
+000250         ORGANIZATION  IS INDEXED
+000260         ACCESS MODE   IS RANDOM
+000270         RECORD KEY    IS HI-KEY2                                 I.010818
+000280*****    RECORD KEY    IS SHM-KEY                                 D.010818
+000290         FILE STATUS IS ERR-STAT.
+000300 I-O-CONTROL.
+000310     APPLY SHARED-MODE    ON  JMSTD
+000320     APPLY SHARED-MODE    ON  HI2-M                               I.010818
+000330*****APPLY SHARED-MODE    ON  SHM                                 D.010818
+000340     APPLY EXCLUSIVE-MODE ON  JT-WK07.
+000350 DATA    DIVISION.
+000360 FILE    SECTION.
+000370     COPY  LTWK07.
+000380     COPY  LJMSTD.
+000390     COPY  LIHIM2.                                                I.010818
+000400*****COPY  L-SHM.                                                 D.010818
+000410 WORKING-STORAGE  SECTION.
+000420 77  ERR-STAT             PIC X(2).
+000430 77  WK0128ID             PIC  X(009) VALUE SPACE.
+000440 01  STN-NO.
+000450     02  STN-NO1          PIC  X(003).
+000460     02  STN-NO2          PIC  X(003).
+000470 01  W-FID.
+000480     02  W-FID1           PIC  X(006) VALUE "WK0128".
+000490     02  W-FID2           PIC  X(003).
+000500 01  W-DATA.
+000510     02  W-NG.
+000520       03  W-NEN          PIC  9(02).
+000530       03  W-GET          PIC  9(02).
+000540     02  W-TCD.
+000550       03  W-STCD         PIC  9(04).
+000560       03  W-ETCD         PIC  9(04).
+000570     02  W-HCD.
+000580       03  W-SHCD         PIC  9(06).
+000590       03  W-EHCD         PIC  9(06).
+000600     02  W-SEN            PIC  9(01).
+000610     02  W-DMM            PIC  9(01).                             確認　
+000620 COPY  LWMSG.
+000630 SCREEN      SECTION.
+000640 SD  C-CRT
+000650     END  STATUS  IS  ESTAT.
+000660 01  C-CLEAR.
+000670     02  C-CL     LINE   1  CLEAR SCREEN.
+000680 01  CLR-01.
+000690     02  LINE  6.
+000700       03  COLUMN 12  VALUE "  ".
+000710       03  COLUMN 16  VALUE "  ".
+000720     02  LINE  8.
+000730       03  COLUMN 21  VALUE "    ".
+000740       03  COLUMN 30  VALUE "      ".
+000750     02  LINE 10.
+000760       03  COLUMN 21  VALUE "    ".
+000770       03  COLUMN 30  VALUE "      ".
+000780     02  LINE 14  COLUMN 61  VALUE " ".                           I.030728
+000790*****02  LINE 12  COLUMN 60  VALUE " ".                           D.030728
+000800     02  LINE 23  COLUMN 61  VALUE " ".
+000810 01  DSP-AREA.
+000820     02  LINE  1  COLUMN 20  VALUE
+000830          "                                  "  REVERSE.
+000840     02  LINE  1  COLUMN 21  VALUE
+000850         NC"受注数合計表（得意先品名別）抽出".
+000860     02  LINE  6  COLUMN 11  VALUE  "'  年   月分".
+000870     02  LINE  8.
+000880       03  COLUMN 18  VALUE  "得意先ｺｰﾄﾞ".
+000890       03  COLUMN 29  VALUE  "品名ｺｰﾄﾞ".
+000900       03  COLUMN 43  VALUE  "0　教　育".                         I.030728
+000910*****  03  COLUMN 43  VALUE  "0　教育".                           D.030728
+000920     02  LINE 10.
+000930       03  COLUMN 11  VALUE  "ＦＲＯＭ".
+000940       03  COLUMN 43  VALUE  "1　ワーク".                         I.030728
+000950*****  03  COLUMN 43  VALUE  "1　一般".                           D.030728
+000960     02  LINE 12.
+000970       03  COLUMN 11  VALUE  "ＴＯ".
+000980       03  COLUMN 43  VALUE  "2　一　般".                         I.070420
+000990*****  03  COLUMN 43  VALUE  "2　".                               D.070420
+001000*****  03  COLUMN 46  VALUE  NC"カジュアル".                      D.070420
+001010*****  03  COLUMN 43  VALUE  "2　全件".                           D.030728
+001020     02  LINE 14.                                                 I.030728
+001030       03  COLUMN 43  VALUE  "9　全　件".                         I.030728
+001040       03  COLUMN 55  VALUE  "選択 [ ]".
+001050     02  LINE 23  COLUMN 41  VALUE  "確認(OK=1,NO=9)-->   ﾘﾀｰﾝ".
+001060 01  ACP-AREA.
+001070     02  LINE  6.
+001080       03  A-NEN     COLUMN 12     PIC 9(02)
+001090                     USING W-NEN     CHECK OVERFLOW NO IFC.
+001100       03  A-GET     COLUMN 17     PIC 9(02)
+001110                     USING W-GET     CHECK OVERFLOW NO IFC.
+001120     02  LINE 10.
+001130       03  A-STCD    COLUMN 21     PIC 9(04)
+001140                     USING W-STCD    CHECK OVERFLOW NO IFC.
+001150       03  A-SHCD    COLUMN 30     PIC 9(06)
+001160                     USING W-SHCD    CHECK OVERFLOW NO IFC.
+001170     02  LINE 12.
+001180       03  A-ETCD    COLUMN 21     PIC 9(04)
+001190                     USING W-ETCD    CHECK OVERFLOW NO IFC.
+001200       03  A-EHCD    COLUMN 30     PIC 9(06)
+001210                     USING W-EHCD    CHECK OVERFLOW NO IFC.
+001220     02  LINE 14.                                                 I.030728
+001230       03  A-SEN     COLUMN 61     PIC 9(01)
+001240                     USING W-SEN     CHECK OVERFLOW NO IFC.
+001250     02  A-DMM       LINE 23  COLUMN 61     PIC 9(01)
+001260                     USING W-DMM     CHECK OVERFLOW NO IFC.
+001270 01  DISP-MSG-SPACE1     LINE 24.
+001280     02  COLUMN 1        PIC X(40)     VALUE " ".
+001290 COPY  LSMSG.
+001300 PROCEDURE   DIVISION.
+001310 MR-RTN.
+001320     PERFORM  INI-RTN     THRU   INI-EX.
+001330     PERFORM  UPD-RTN     THRU   UPD-EX.
+001340     PERFORM  END-RTN     THRU   END-EX.
+001350     STOP  RUN.
+001360 INI-RTN.
+001370     DISPLAY  C-CLEAR.
+001380     DISPLAY  DSP-AREA.
+001390*
+001400     CALL "CBLSTNNO" USING STN-NO.
+001410     MOVE STN-NO2 TO W-FID2.
+001420     MOVE W-FID TO WK0128ID.
+001430*****OPEN  INPUT   JMSTD  SHM.                                    D.010818
+001440     OPEN  INPUT   JMSTD  HI2-M.                                  I.010818
+001450     OPEN  OUTPUT  JT-WK07.
+001460 INI-EX.
+001470      EXIT.
+001480 UPD-RTN.
+001490     PERFORM  GAMEN-RTN     THRU  GAMEN-EX.
+001500     IF  ESTAT  =  "P9"
+001510         MOVE  255  TO  COMPLETION-CODE
+001520         GO  TO  UPD-EX.
+001530     INITIALIZE                 JMSTD-KEY2.
+001540     MOVE  W-STCD           TO  JMSTD-04.
+001550     MOVE  W-SHCD           TO  JMSTD-05.
+001560     START  JMSTD  KEY  NOT <  JMSTD-KEY2  INVALID
+001570         GO  TO  UPD-EX.
+001580 UPD-010.
+001590     READ  JMSTD  NEXT  UNLOCK  AT  END
+001600         GO  TO  UPD-EX.
+001610     IF  JMSTD-04  >  W-ETCD
+001620         GO  TO  UPD-EX.
+001630     IF  JMSTD-05  <  W-SHCD  OR  >  W-EHCD
+001640         GO  TO  UPD-010.
+001650*****IF  (JMSTD-021 NOT = W-NEN)  OR  (JMSTD-022 NOT = W-GET)     D.980527
+001660     IF  (JMSTD-0212 NOT = W-NEN)  OR  (JMSTD-022 NOT = W-GET)    I.980527
+001670         GO  TO  UPD-010.
+001680*****IF  W-SEN  =  2                                              D.030728
+001690     IF  W-SEN  =  9                                              I.030728
+001700         GO  TO  UPD-020.
+001710*****MOVE  JMSTD-05     TO  SHM-KEY.                              D.010818
+001720*****READ  SHM  UNLOCK  INVALID                                   D.010818
+001730     MOVE  JMSTD-05     TO  HI-MHCD HI-HCD.                       I.010818
+001740     READ  HI2-M  UNLOCK  INVALID                                 I.010818
+001750         GO  TO  UPD-010.
+001760     IF  W-SEN  =  0
+001770*****    IF  SHM-05  <  20  OR  >  29                             D.010601
+001780*****    IF  SHM-05  <  30  OR  >  39                             D.010818
+001790         IF  HI-BC3  <  30  OR  >  39                             I.010818
+001800             GO  TO  UPD-010.
+001810     IF  W-SEN  =  1
+001820*****    IF  SHM-05  >  19  AND  < 30                             D.010601
+001830*****    IF  SHM-05  >  29  AND  < 40                             D.010818
+001840*****    IF  HI-BC3  >  29  AND  < 40                             D.030728
+001850         IF  HI-BC3  <  20  OR   > 29                             I.030728
+001860             GO  TO  UPD-010.
+001870     IF  W-SEN  =  2                                              I.030728
+001880         IF  HI-BC3  > 19                                         I.030728
+001890             GO  TO  UPD-010.                                     I.030728
+001900 UPD-020.
+001910     MOVE  SPACE     TO  WK07-R.
+001920     INITIALIZE  WK07-R.
+001930     MOVE  W-NG           TO  WK07-01.
+001940     MOVE  JMSTD-04       TO  WK07-02.
+001950     MOVE  JMSTD-05       TO  WK07-03.
+001960     MOVE  JMSTD-09       TO  WK07-04.
+001970     MOVE  JMSTD-1111(01) TO  WK07-0511(01).
+001980     MOVE  JMSTD-1111(02) TO  WK07-0511(02).
+001990     MOVE  JMSTD-1111(03) TO  WK07-0511(03).
+002000     MOVE  JMSTD-1111(04) TO  WK07-0511(04).
+002010     MOVE  JMSTD-1111(05) TO  WK07-0511(05).
+002020     MOVE  JMSTD-1111(06) TO  WK07-0511(06).
+002030     MOVE  JMSTD-1111(07) TO  WK07-0511(07).
+002040     MOVE  JMSTD-1111(08) TO  WK07-0511(08).
+002050     MOVE  JMSTD-1111(09) TO  WK07-0511(09).
+002060     MOVE  JMSTD-1111(10) TO  WK07-0511(10).
+002070     PERFORM  WRI-RTN       THRU  WRI-EX.
+002080     GO  TO  UPD-010.
+002090 UPD-EX.
+002100     EXIT.
+002110 GAMEN-RTN.
+002120     DISPLAY  DSP-AREA.
+002130 GAMEN-010.
+002140     ACCEPT  A-NEN.
+002150     DISPLAY  DISP-MSG-SPACE.
+002160     IF  ESTAT  =  "P9"
+002170         GO  TO  GAMEN-EX.
+002180     IF  ESTAT  NOT =  "01"  AND  "06"
+002190         GO  TO  GAMEN-010.
+002200     DISPLAY  A-NEN.
+002210 GAMEN-020.
+002220     ACCEPT  A-GET.
+002230     IF  ESTAT  =  "09"
+002240         GO  TO  GAMEN-010.
+002250     IF  ESTAT  NOT =  "01"  AND  "06"
+002260         GO  TO  GAMEN-020.
+002270     DISPLAY  A-GET.
+002280     IF  W-GET  <  1  OR  > 12
+002290         GO  TO  GAMEN-020.
+002300*
+002310 GAMEN-030.
+002320     ACCEPT  A-STCD.
+002330     IF  ESTAT  =  "09"
+002340         GO  TO  GAMEN-020.
+002350     IF  ESTAT  NOT =  "01"  AND  "06"
+002360         GO  TO  GAMEN-030.
+002370     DISPLAY  A-STCD.
+002380 GAMEN-040.
+002390     ACCEPT  A-ETCD.
+002400     IF  ESTAT  =  "09"
+002410         GO  TO  GAMEN-030.
+002420     IF  ESTAT  NOT =  "01"  AND  "06"
+002430         GO  TO  GAMEN-040.
+002440     DISPLAY  A-ETCD.
+002450     IF  W-STCD  >  W-ETCD
+002460         GO  TO  GAMEN-040.
+002470*
+002480 GAMEN-050.
+002490     ACCEPT  A-SHCD.
+002500     IF  ESTAT  =  "09"
+002510         GO  TO  GAMEN-040.
+002520     IF  ESTAT  NOT =  "01"  AND  "06"
+002530         GO  TO  GAMEN-050.
+002540     DISPLAY  A-SHCD.
+002550 GAMEN-060.
+002560     ACCEPT  A-EHCD.
+002570     IF  ESTAT  =  "09"
+002580         GO  TO  GAMEN-050.
+002590     IF  ESTAT  NOT =  "01"  AND  "06"
+002600         GO  TO  GAMEN-060.
+002610     DISPLAY  A-EHCD.
+002620     IF  W-SHCD  >  W-EHCD
+002630         GO  TO  GAMEN-060.
+002640 GAMEN-070.
+002650     ACCEPT  A-SEN.
+002660     IF  ESTAT  =  "09"
+002670         GO  TO  GAMEN-060.
+002680     IF  ESTAT  NOT =  "01"  AND  "06"
+002690         GO  TO  GAMEN-070.
+002700     DISPLAY  A-SEN.
+002710*****IF  W-SEN  NOT =  0 AND 1 AND 2                              D.030728
+002720     IF  W-SEN  NOT =  0 AND 1 AND 2 AND 9                        I.030728
+002730         GO  TO  GAMEN-070.
+002740 GAMEN-900.
+002750     ACCEPT  A-DMM.
+002760     IF  ESTAT  =  "09"
+002770         GO  TO  GAMEN-070.
+002780     IF  ESTAT  NOT =  "01"  AND  "06"
+002790         GO  TO  GAMEN-900.
+002800     DISPLAY  A-DMM.
+002810     IF  W-DMM  =  9
+002820         DISPLAY  CAN-01
+002830         DISPLAY  CLR-01
+002840         INITIALIZE  W-DATA
+002850         GO  TO  GAMEN-RTN.
+002860     IF  W-DMM  NOT =  1
+002870         GO  TO  GAMEN-900.
+002880 GAMEN-EX.
+002890     EXIT.
+002900 END-RTN.
+002910*****CLOSE   JT-WK07  JMSTD  SHM.                                 D.010818
+002920     CLOSE   JT-WK07  JMSTD  HI2-M.                               I.010818
+002930     DISPLAY  C-CLEAR.
+002940 END-EX.
+002950     EXIT.
+002960 WRI-RTN.
+002970     WRITE    WK07-R.
+002980     IF  ERR-STAT  NOT = "00"
+002990              MOVE  255          TO  COMPLETION-CODE
+003000              MOVE  "W"          TO  ERR-M
+003010              MOVE  "JT-WK07"    TO  ERR-F
+003020              PERFORM  ERR-RTN   THRU  ERR-EX.
+003030 WRI-EX.
+003040     EXIT.
+003050 COPY  LPMSG.
+

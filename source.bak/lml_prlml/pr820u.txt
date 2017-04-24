@@ -1,0 +1,156 @@
+000010 IDENTIFICATION      DIVISION.
+000020 PROGRAM-ID.         PR820U.
+000030*
+000040 ENVIRONMENT         DIVISION.
+000050 CONFIGURATION       SECTION.
+000060 SOURCE-COMPUTER.    SYSTEM100.
+000070 OBJECT-COMPUTER.    SYSTEM100.
+000080 INPUT-OUTPUT        SECTION.
+000090 FILE-CONTROL.
+000100*
+000110*****SELECT  SK-M    ASSIGN    TO  F1-MSD                         D.980721
+000120*****                ORGANIZATION  INDEXED                        D.980721
+000130*****                ACCESS  MODE  DYNAMIC                        D.980721
+000140*****                RECORD   KEY  SKM-KEY                        D.980721
+000150*****                FILE  STATUS  IS  ERR-STAT.                  D.980721
+000160*
+000170     SELECT  FCTL-F  ASSIGN    TO  FCTL-MSD
+000180                     ORGANIZATION  INDEXED
+000190                     ACCESS  MODE  RANDOM
+000200                     RECORD   KEY  FCTL-KEY
+000210                     FILE  STATUS  IS  ERR-STAT.
+000220 I-O-CONTROL.
+000230     APPLY   EXCLUSIVE-MODE   ON   FCTL-F.                        I.980721
+000240*****APPLY   EXCLUSIVE-MODE   ON   SK-M FCTL-F.                   D.980721
+000250 DATA                DIVISION.
+000260 FILE                SECTION.
+000270*
+000280*****COPY    SIKINM.                                              D.980721
+000290     COPY    FCTL.
+000300**********************************
+000310 WORKING-STORAGE     SECTION.
+000320**********************************
+000330 77  ERR-STAT        PIC  X(02).
+000340 01  SOEJI.
+000350     02  I           PIC  9(02).
+000360     02  SOE         PIC  9(02).
+000370 01  W-DATA.                                                      I.090305
+000380     02  W-SUUTI     PIC  9(03).                                  I.090305
+000390     02  W-AMARI     PIC  9(01).                                  I.090305
+000400*****
+000410 COPY  LWMSG.
+000420**********************************
+000430 SCREEN          SECTION.
+000440**********************************
+000450 SD  SCR-D
+000460     END STATUS  IS    ESTAT.
+000470 COPY  LSMSG.
+000480**********************************
+000490 PROCEDURE           DIVISION.
+000500**********************************
+000510 ST.
+000520*****OPEN  I-O    SK-M                                            D.980721
+000530*****             FCTL-F.                                         D.980721
+000540     OPEN  I-O    FCTL-F.                                         I.980721
+000550*
+000560     PERFORM  INI-RTN     THRU     INI-EX.
+000570*
+000580*****PERFORM  UPD-RTN     THRU     UPD-EX.                        D.980721
+000590*
+000600     PERFORM  FCTL-RTN    THRU     FCTL-EX.
+000610*
+000620     PERFORM  CLSE-ENT    THRU     CLSE-EXT.
+000630 ED.
+000640     STOP     RUN.
+000650**********************************
+000660*    初期　処理                  *
+000670**********************************
+000680 INI-RTN.
+000690     MOVE   "DATE  "      TO  FCTL-KEY1.
+000700     READ   FCTL-F            INVALID
+000710            PERFORM  CLSE-ENT THRU  CLSE-EXT
+000720            MOVE     255      TO    COMPLETION-CODE
+000730            DISPLAY  INV-CON  DISP-BUZ-B
+000740            STOP     RUN.
+000750*****MOVE FCTL-REC1     TO Z-R.                                   D.980721
+000760 INI-EX.
+000770     EXIT.
+000780**********************************
+000790*    更新　処理                  *
+000800**********************************
+000810*UPD-RTN.                                                         D.980721
+000820*****READ   SK-M     NEXT AT  END                                 D.980721
+000830*****       GO  TO   UPD-EX.                                      D.980721
+000840*****MOVE   SKM-KEY       TO  ERR-K.                              D.980721
+000850*
+000860*****PERFORM  ZENKI-RTN   THRU     ZENKI-EX                       D.980721
+000870*****         VARYING     I   FROM  1  BY  1                      D.980721
+000880*****         UNTIL       I   >    12.                            D.980721
+000890*
+000900*****MOVE 13     TO I.                                            D.980721
+000910*UPD-000.                                                         D.980721
+000920*****COMPUTE SOE = Z-KSMM + ( I - 12 ).                           D.980721
+000930*****IF SOE > 12                                                  D.980721
+000940*****   COMPUTE SOE = SOE - 12.                                   D.980721
+000950*****MOVE SK-KAL(I)     TO SK-KAL(SOE).                           D.980721
+000960*****INITIALIZE  SK-KAL(I).                                       D.980721
+000970*****IF I NOT = 15                                                D.980721
+000980*****   ADD  1     TO I                                           D.980721
+000990*****   GO TO UPD-000.                                            D.980721
+001000*
+001010*****MOVE   YYOKU         TO  YTOUKI.                             D.980721
+001020*****INITIALIZE  YYOKU.                                           D.980721
+001030*
+001040*****REWRITE   SKM-REC    INVALID                                 D.980721
+001050*****          MOVE  "SKM-F"   TO   ERR-F                         D.980721
+001060*****          MOVE  "R"       TO   ERR-M                         D.980721
+001070*****          PERFORM  ERR-ENT     THRU     ERR-EXT.             D.980721
+001080*****GO TO UPD-RTN.                                               D.980721
+001090*UPD-EX.                                                          D.980721
+001100*****EXIT.                                                        D.980721
+001110**********************************
+001120*    コントロールＦ　更新        *
+001130**********************************
+001140 FCTL-RTN.
+001150     PERFORM  YY-RTN      THRU     YY-EX
+001160              VARYING     I   FROM  1  BY  1
+001170              UNTIL       I   >    15.
+001180     DIVIDE 4 INTO FCTL-TOUTYY(2)  GIVING W-SUUTI                 I.090305
+001190                                          REMAINDER W-AMARI.      I.090305
+001200     IF  W-AMARI        =  0                                      I.090305
+001210         MOVE  29             TO  FCTL-TOUTDD(2)                  I.090305
+001220     ELSE                                                         I.090305
+001230         MOVE  28             TO  FCTL-TOUTDD(2).                 I.090305
+001240     MOVE   FCTL-KEY1     TO  ERR-K.
+001250     REWRITE   FCTL-REC1  INVALID
+001260               MOVE  "FCTL-F"  TO   ERR-F
+001270               MOVE  "R"       TO   ERR-M
+001280               PERFORM  ERR-ENT     THRU     ERR-EXT.
+001290 FCTL-EX.
+001300     EXIT.
+001310**********************************
+001320*    終了　処理                  *
+001330**********************************
+001340 CLSE-ENT.
+001350     CLOSE  FCTL-F.                                               I.980721
+001360*****CLOSE  SK-M  FCTL-F.                                         D.980721
+001370 CLSE-EXT.
+001380     EXIT.
+001390**
+001400**********************************
+001410*    当期　→　前期              *
+001420**********************************
+001430*ZENKI-RTN.                                                       D.980721
+001440*****MOVE   SK-KAL(I)     TO  SK-ZEL(I).                          D.980721
+001450*****INITIALIZE SK-KAL(I).                                        D.980721
+001460*ZENKI-EX.                                                        D.980721
+001470*****EXIT.                                                        D.980721
+001480**********************************
+001490*    当期／翌期の年　＋　１      *
+001500**********************************
+001510 YY-RTN.
+001520     ADD    1             TO  FCTL-TOUFYY(I) FCTL-TOUTYY(I).
+001530 YY-EX.
+001540     EXIT.
+001550**
+001560 COPY  LPMSG.

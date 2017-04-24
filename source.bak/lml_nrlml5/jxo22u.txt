@@ -1,0 +1,550 @@
+000010 IDENTIFICATION   DIVISION.
+000020******************************************************************
+000030*    新倉庫向け送信確認                                          *
+000040*                          ０５／０９／０１　                    *
+000050*            [JXO22U]      T.ISHISHITA                           *
+000060*    CALL   "SJXO22".                                            *
+000070*    JS-SIGN  :  0=伝送 , 1=生成(NEW)                            *
+000080*    W-JS     :  1=玉島 , 2=津山 , 3=早島                        *
+000090******************************************************************
+000100 PROGRAM-ID.            JTO22U.
+000110 ENVIRONMENT            DIVISION.
+000120 CONFIGURATION          SECTION.
+000130 SOURCE-COMPUTER.       SYSTEM3100.
+000140 OBJECT-COMPUTER.       SYSTEM3100.
+000150 INPUT-OUTPUT           SECTION.
+000160 FILE-CONTROL.
+000170*----Ｏ／Ｌ送信Ｆ２
+000180     SELECT   JOLSF2    ASSIGN  F1-MSD
+000190                        ORGANIZATION  RELATIVE
+000200                        ACCESS        SEQUENTIAL
+000210                        FILE  STATUS  ERR-STAT.
+000220     SELECT   JOLSF     ASSIGN  F11-MSD                           I.100219
+000230                        FILE  STATUS  ERR-STAT.                   I.100219
+000240*----Ｏ／Ｌ状況Ｆ
+000250     SELECT   JOJF      ASSIGN  F2-MSD
+000260                        ORGANIZATION  INDEXED
+000270                        ACCESS        DYNAMIC
+000280                        RECORD        JOJF-KEY
+000290                        FILE  STATUS  ERR-STAT.
+000300*----コントロールファイル                                         I.900411
+000310     SELECT   JCON      ASSIGN  F3-MSD
+000320                        ORGANIZATION  INDEXED
+000330                        ACCESS        DYNAMIC
+000340                        RECORD        JCON4-KEY
+000350                        FILE  STATUS  ERR-STAT.
+000360 I-O-CONTROL.
+000370     APPLY    SHARED-MODE  ON  JOJF  JCON.                        R.900411
+000380 DATA                DIVISION.
+000390 FILE                SECTION.
+000400 COPY    L-JOS2.
+000410 COPY    L-JOSF.                                                  I.100219
+000420 COPY    L-JOJF.
+000430 COPY    L-JCON.                                                  I.900411
+000440*
+000450 WORKING-STORAGE  SECTION.
+000460 01  JS-SIGN                 PIC  9(01).                          I.090930
+000470 01  W-JS                    PIC  9(01).                          I.980312
+000480 01  ERR-STAT                PIC  X(02).
+000490 01  WORK-ARIA.
+000500     02  W-OKURI.                                                 I.980312
+000510       03  F                 PIC  9(02).                          I.980312
+000520       03  W-OKURISAKI       PIC  9(01).                          I.980312
+000530     02  LIN-W               PIC  9(02).
+000540     02  MM                  PIC  9(02).
+000550     02  NN                  PIC  9(02).
+000560     02  NA                  PIC  9(02).
+000570     02  SW                  PIC  X(01).
+000580*****02  W-PF9               PIC  X(01).                          D.090930
+000590     02  STR-TIME            PIC  9(08).
+000600     02  STR-TIMER           REDEFINES  STR-TIME.
+000610         03  STR-JF          PIC  9(04).
+000620         03  F               PIC  X(04).
+000630     02  END-TIME            PIC  9(08).
+000640     02  END-TIMER           REDEFINES  END-TIME.
+000650         03  END-JF          PIC  9(04).
+000660         03  F               PIC  X(04).
+000670     02  JOJF-RECW           PIC  X(512).
+000680*****02  TAMEKOMI-WORK       OCCURS  10.                          D.080327
+000690     02  TAMEKOMI-WORK       OCCURS  13.                          I.080327
+000700         03  STR-CODE        PIC  X(10).
+000710         03  END-CODE        PIC  X(10).
+000720         03  KEN-W           PIC  N(01).
+000730         03  MSG-N           PIC  X(22).
+000740         03  JOJF-08W        PIC  9(02).
+000750     02  W-SNM               PIC  N(06).                          I.900411
+000760     02  W-ACD               PIC  9(03).                          I.900411
+000770*
+000780 01  W-DATE.
+000790     02  W-YY                PIC  9(02).
+000800     02  W-MD                PIC  9(04).
+000810     02  W-MDR               REDEFINES  W-MD.
+000820         03  W-MM            PIC  9(02).
+000830         03  W-DD            PIC  9(02).
+000840*----SCREEN WORK
+000850 01  SCREEN-ARIA.
+000860     02  KAKU-W              PIC  X(01).                          確認
+000870     02  DKS-W.                                                   ﾃﾞｰﾀ件数
+000880         03  DKS01           PIC  9(06).                          C/F
+000890         03  DKS02           PIC  9(06).                          直送先
+000900         03  DKS03           PIC  9(06).                          品名
+000910         03  DKS04           PIC  9(06).                          I.080327
+000920         03  DKS05           PIC  9(06).                          出荷指図
+000930         03  DKS06           PIC  9(06).                          荷札
+000940         03  DKS07           PIC  9(06).                          送り状
+000950         03  DKS08           PIC  9(06).                          I.040922
+000960         03  DKS09           PIC  9(06).                          I.050119
+000970         03  DKS10           PIC  9(06).                          I.080327
+000980         03  DKS11           PIC  9(06).                          I.090930
+000990         03  DKS99           PIC  9(06).                          合計
+001000     02  DKS-WR              REDEFINES  DKS-W.
+001010         03  DKS-T           OCCURS 12  PIC  9(06).               I.090930
+001020*****    03  DKS-T           OCCURS 11  PIC  9(06).               D.090930
+001030*****    03  DKS-T           OCCURS  9  PIC  9(06).               D.080327
+001040*****    03  DKS-T           OCCURS  8  PIC  9(06).               D.050119
+001050*****    03  DKS-T           OCCURS  7  PIC  9(06).               D.040922
+001060*
+001070     02  SKS-W.                                                   送信件数
+001080         03  SKS01           PIC  9(06).                          C/F
+001090         03  SKS02           PIC  9(06).                          直送先
+001100         03  SKS03           PIC  9(06).                          品名
+001110         03  SKS04           PIC  9(06).                          I.080327
+001120         03  SKS05           PIC  9(06).                          出荷指図
+001130         03  SKS06           PIC  9(06).                          荷札
+001140         03  SKS07           PIC  9(06).                          送り状
+001150         03  SKS08           PIC  9(06).                          I.040922
+001160         03  SKS09           PIC  9(06).                          I.050119
+001170         03  SKS10           PIC  9(06).                          I.080327
+001180         03  SKS11           PIC  9(06).                          I.090930
+001190         03  SKS99           PIC  9(06).                          合計
+001200     02  SKS-WR              REDEFINES  SKS-W.
+001210         03  SKS-T           OCCURS 12  PIC  9(06).               I.090930
+001220*****    03  SKS-T           OCCURS 11  PIC  9(06).               D.090930
+001230*****    03  SKS-T           OCCURS  9  PIC  9(06).               D.080327
+001240*****    03  SKS-T           OCCURS  8  PIC  9(06).               D.050119
+001250*****    03  SKS-T           OCCURS  7  PIC  9(06).               D.040922
+001260     02  MSG-W2              PIC  N(20).
+001270*
+001280     02  W-JKYO              PIC  N(04).                          通信状況
+001290*****02  W-EMGA.                                                  D.090930
+001300*****    03  W-EMGA1         PIC  X(02).                          D.090930
+001310*****    03  W-EMGA2         PIC  X(01).                          D.090930
+001320*****02  W-EMGN              PIC  N(10).                          D.090930
+001330*    02  OKC                 PIC  X(01).
+001340 01  SW-AREA.
+001350     02  END-SW                  PIC  9(01).
+001360     02  ERR-SW                  PIC  9(01).
+001370     02  GAMEN-M.
+001380         03  F         PIC X(22) VALUE  "Ｃ／Ｆ　　　　        ".
+001390         03  F         PIC X(22) VALUE  "直　送　先　　        ".
+001400         03  F         PIC X(22) VALUE  "品　　　名　　        ".
+001410         03  F         PIC X(22) VALUE  "ワークマン店名        ". I.080327
+001420         03  F         PIC X(22) VALUE  "出　荷　指　図        ".
+001430         03  F         PIC X(22) VALUE  "荷　　　札　　        ".
+001440         03  F         PIC X(22) VALUE  "送　り　状　　        ".
+001450         03  F         PIC X(22) VALUE  "ワークマン　　        ". I.040922
+001460         03  F         PIC X(22) VALUE  "ナ　フ　コ　　        ". I.050119
+001470         03  F         PIC X(22) VALUE  "トラスコ他　　        ". I.080327
+001480         03  F         PIC X(22) VALUE  "赤ちゃん本舗　        ". I.090930
+001490         03  F         PIC X(22) VALUE  "合　　　計 (ﾚｺｰﾄﾞ件数)".
+001500     02  GAMEN-MR      REDEFINES  GAMEN-M.
+001510         03  MSG-W     PIC  X(22)    OCCURS 12.                   I.090930
+001520*****    03  MSG-W     PIC  X(22)    OCCURS 11.                   D.090930
+001530*****    03  MSG-W     PIC  X(22)    OCCURS  9.                   D.080327
+001540*****    03  MSG-W     PIC  X(22)    OCCURS  8.                   D.050119
+001550*****    03  MSG-W     PIC  X(22)    OCCURS  7.                   D.040922
+001560*
+001570     02  MSG-WORK.
+001580         03  F         PIC N(07) VALUE  NC"送信データ無し".
+001590         03  F         PIC N(07) VALUE  NC"送　　信　　中".
+001600         03  F         PIC N(07) VALUE  NC"正常　終了　　".
+001610         03  F         PIC N(07) VALUE  NC"通信不可　　　".
+001620         03  F         PIC N(07) VALUE  NC"送信先エラー　".       I.980312
+001630         03  F         PIC N(07) VALUE  NC"区分エラー　　".       I.090930
+001640         03  F         PIC N(07) VALUE  NC"取　　消　　中".       I.100219
+001650     02  MSG-WORKR     REDEFINES  MSG-WORK.
+001660         03  MSG-M     OCCURS  7  PIC  N(07).                     I.100219
+001670*****    03  MSG-M     OCCURS  6  PIC  N(07).                     D.100219
+001680*****    03  MSG-M     OCCURS  5  PIC  N(07).                     D.090930
+001690*****    03  MSG-M     OCCURS  4  PIC  N(07).                     D.980312
+001700***
+001710 COPY    LWMSG.
+001720***
+001730*-----------------------------------------------------------------*
+001740*----            << SCREEN  SECTION >>                        ----*
+001750*-----------------------------------------------------------------*
+001760 SCREEN             SECTION.
+001770 SD  CRT-X
+001780     END STATUS     END-STS.
+001790*
+001800 01  ACP-AREA.
+001810     02  ACP-KAKU   LINE  24   COLUMN  77     PIC  X(01)
+001820                          USING KAKU-W  CHECK OVERFLOW  NO IFC.
+001830*****02  ACP-01     LINE  24   COLUMN  01     PIC  X(01)          D.090930
+001840*****                     INTO  SW      CHECK OVERFLOW  NO IFC.   D.090930
+001850*****02  ACP-PF9    LINE  23   COLUMN  32     PIC  9(01)          D.090930
+001860*****                     USING W-PF9   CHECK OVERFLOW  NO IFC.   D.090930
+001870*****02  DSP-PF9    LINE  23   COLUMN   1     PIC  X(30)          D.090930
+001880*****                     VALUE "処理を中断しますか　YES=1,NO=9". D.090930
+001890*
+001900*----データ件数表示
+001910     02  DSP-DKS.
+001920         03  LINE LIN-W COLUMN   2  PIC  X(22)    FROM  MSG-N(NN).
+001930         03  LINE LIN-W COLUMN  36  PIC  ZZZ,ZZ9  FROM  DKS-T(NN).
+001940         03  LINE LIN-W COLUMN  44  PIC  N(02)    FROM  KEN-W(NN).
+001950*****02  DSP-SKS    LINE LIN-W.                                   D.090930
+001960*****    03  COLUMN  60  PIC  ZZZ,ZZ9      FROM   SKS-T(NA).      D.090930
+001970*****    03  COLUMN  68  PIC  N(02)        VALUE NC"件".          D.090930
+001980     02  DSP-SNM    LINE  1   COLUMN  59   PIC  N(06)             I.900411
+001990                    FROM  W-SNM.                                  I.900411
+002000     02  DSP-MSG    LINE 23.
+002010         03  DSP-MSG1 COLUMN 10 PIC  N(20) FROM  MSG-M(MM).
+002020         03  COLUMN  41  PIC  X(03)        VALUE ""27"B"03"".
+002030         03  COLUMN  10  PIC  X(40)        VALUE " ".
+002040*
+002050*01  CLR-AREA.                                                    D.090930
+002060*****02  CLR-01      LINE  5.                                     D.090930
+002070*****    03  CLR-011           COLUMN  29  PIC X(02)  VALUE  " ". D.090930
+002080*****    03  CLR-012           COLUMN  33  PIC X(20)  VALUE  " ". D.090930
+002090*****02  C-AREA.                                                  D.090930
+002100*****    03  CLR-02  LINE  8   COLUMN  47  PIC X(06)  VALUE  " ". D.090930
+002110*****    03  CLR-03  LINE 11   COLUMN  47  PIC X(06)  VALUE  " ". D.090930
+002120*****    03  CLR-04  LINE 14   COLUMN  45  PIC X(08)  VALUE  " ". D.090930
+002130*****    03  CLR-05  LINE 17.                                     D.090930
+002140*****        04  CLR-051       COLUMN  28  PIC X(03)  VALUE  " ". D.090930
+002150*****        04  CLR-052       COLUMN  33  PIC X(20)  VALUE  " ". D.090930
+002160*****    03  CLR-OKC LINE 20   COLUMN  52  PIC X(01)  VALUE  " ". D.090930
+002170*
+002180*****02  DSP-04      LINE 23   COLUMN   1  PIC N(04)              D.090930
+002190*****                                      FROM  W-JKYO.          D.090930
+002200*****02  DSP-05      LINE  23.                                    D.090930
+002210*****    03  DSP-051           COLUMN  10  PIC  X(03)             D.090930
+002220*****                                      FROM  W-EMGA.          D.090930
+002230*****    03  DSP-052           COLUMN  14  PIC  N(10)             D.090930
+002240*****                                      FROM  W-EMGN.          D.090930
+002250*****02  DSP-CLER    LINE  23  COLUMN   1  PIC  X(80)             D.090930
+002260*****                                      VALUE  "  ".           D.090930
+002270***
+002280 COPY    LSERR.                                                   R.900411
+002290***
+002300 PROCEDURE        DIVISION.
+002310******************************************************************
+002320*    ＭＡＩＮ　ＲＯＵＴＩＮＥ　　　　　　                        *
+002330******************************************************************
+002340 MAIN.
+002350     PERFORM  INI-RTN        THRU  INI-EX.
+002360     IF  ERR-SW  =  1                  GO  TO  MR999.
+002370**
+002380     PERFORM  UPD-RTN        THRU  UPD-EX.
+002390 MR999.
+002400     PERFORM  END-RTN        THRU  END-EX.
+002410     STOP  RUN.
+002420******************************************************************
+002430*    ＩＮＩ－ＲＴＮ　　（初期＆画面処理）            　
+002440******************************************************************
+002450 INI-RTN.
+002460     ACCEPT JS-SIGN.                                              I.090930
+002470     IF  JS-SIGN      >  1                                        I.090930
+002480                        MOVE  6       TO  MM                      I.090930
+002490                        DISPLAY   DSP-MSG                         I.090930
+002500                        MOVE   255    TO  COMPLETION-CODE         I.090930
+002510                        MOVE  1       TO  ERR-SW                  I.090930
+002520                        GO  TO  INI-EX.                           I.090930
+002530     ACCEPT W-JS.
+002540*
+002550     IF  ERR-SW  =  1   MOVE  ZERO     TO  ERR-SW
+002560                        GO  TO  INI-100.
+002570*
+002580     CALL   "SJXO22".                                             I.080327
+002590*****CALL   "SJTO20".                                             D.080327
+002600*----ﾌｧｲﾙ  OPEN
+002610*****OPEN     INPUT     JOLSF2  JCON                              D.090930
+002620     IF  JS-SIGN      =  0                                        I.090930
+002630         OPEN     INPUT     JOLSF2.                               I.090930
+002640     OPEN     INPUT     JCON                                      I.090930
+002650              I-O       JOJF.
+002660*
+002670     MOVE  0001     TO  JOJF-01.
+002680*----O/Lﾌｧｲﾙ READ
+002690     READ   JOJF        INVALID
+002700                        MOVE  1       TO  MM
+002710                        DISPLAY   DSP-MSG
+002720                        MOVE   255    TO  COMPLETION-CODE
+002730                        MOVE  1       TO  ERR-SW
+002740                        GO  TO  INI-EX.
+002750     MOVE  JOJF-REC     TO  JOJF-RECW.
+002760     MOVE  JOJF-07  TO  W-OKURI.                                  I.980312
+002770     IF    W-JS    NOT  =  W-OKURISAKI                            I.980312
+002780                        MOVE  5       TO  MM                      I.980312
+002790                        DISPLAY   DSP-MSG                         I.980312
+002800                        MOVE   255    TO  COMPLETION-CODE         I.980312
+002810                        MOVE  1       TO  ERR-SW                  I.980312
+002820                        GO  TO  INI-EX.                           I.980312
+002830     MOVE  4        TO  JCON4-01.                                 I.900411
+002840     MOVE  JOJF-07  TO  JCON4-02  W-ACD.                          I.900411
+002850     READ  JCON     UNLOCK  INVALID                               I.900411
+002860                        MOVE  1       TO  MM                      I.900411
+002870                        DISPLAY   DSP-MSG                         I.900411
+002880                        MOVE   255    TO  COMPLETION-CODE         I.900411
+002890                        MOVE  1       TO  ERR-SW                  I.900411
+002900                        GO  TO  INI-EX.                           I.900411
+002910     MOVE  JCON4-03 TO  W-SNM.                                    I.900411
+002920     DISPLAY  DSP-SNM.                                            I.900411
+002930*
+002940     IF (JOJF-08(1) = ZERO) AND (JOJF-08(2) = ZERO)  AND
+002950        (JOJF-08(3) = ZERO) AND (JOJF-08(4) = ZERO)  AND
+002960        (JOJF-08(5) = ZERO) AND (JOJF-08(6) = ZERO)  AND
+002970        (JOJF-08(7) = ZERO) AND (JOJF-08(8) = ZERO)  AND
+002980        (JOJF-08(9) = ZERO) AND (JOJF-08(10) = ZERO) AND          I.080327
+002990        (JOJF-08(11) = ZERO) AND (JOJF-08(12) = ZERO)             I.080327
+003000*****   (JOJF-08(9) = ZERO) AND (JOJF-08(10) = ZERO)              D.080327
+003010                        MOVE  1       TO  MM
+003020                        DISPLAY   DSP-MSG
+003030                        MOVE   255    TO  COMPLETION-CODE
+003040                        MOVE  1       TO  ERR-SW
+003050                        GO  TO  INI-EX.
+003060*
+003070     MOVE  1        TO  NN  NA.
+003080 INI-010.
+003090     IF  JOJF-08(NN)  =  01
+003100                        MOVE  01           TO  JOJF-08W(NA)
+003110                        MOVE  MSG-W(01)    TO  MSG-N(NA)
+003120                        MOVE  NC"件"       TO  KEN-W(NA)
+003130                        MOVE  JOJF-09(NN)  TO  DKS-T(NA)
+003140                        ADD   1            TO  NA
+003150                        GO  TO  INI-020.
+003160     IF  JOJF-08(NN)  =  02
+003170                        MOVE  02           TO  JOJF-08W(NA)
+003180                        MOVE  MSG-W(02)    TO  MSG-N(NA)
+003190                        MOVE  NC"件"       TO  KEN-W(NA)
+003200                        MOVE  JOJF-09(NN)  TO  DKS-T(NA)
+003210                        ADD   1            TO  NA
+003220                        GO  TO  INI-020.
+003230     IF  JOJF-08(NN)  =  03
+003240                        MOVE  03           TO  JOJF-08W(NA)
+003250                        MOVE  MSG-W(03)    TO  MSG-N(NA)
+003260                        MOVE  NC"件"       TO  KEN-W(NA)
+003270                        MOVE  JOJF-09(NN)  TO  DKS-T(NA)
+003280                        ADD   1            TO  NA
+003290                        GO  TO  INI-020.
+003300     IF  JOJF-08(NN)  =  04                                       I.080327
+003310                        MOVE  04           TO  JOJF-08W(NA)       I.080327
+003320                        MOVE  MSG-W(04)    TO  MSG-N(NA)          I.080327
+003330                        MOVE  NC"件"       TO  KEN-W(NA)          I.080327
+003340                        MOVE  JOJF-09(NN)  TO  DKS-T(NA)          I.080327
+003350                        ADD   1            TO  NA                 I.080327
+003360                        GO  TO  INI-020.                          I.080327
+003370     IF  JOJF-08(NN)  =  11
+003380                        MOVE  11           TO  JOJF-08W(NA)
+003390*****                   MOVE  MSG-W(04)    TO  MSG-N(NA)          D.080327
+003400                        MOVE  MSG-W(05)    TO  MSG-N(NA)          I.080327
+003410                        MOVE  NC"件"       TO  KEN-W(NA)
+003420                        MOVE  JOJF-09(NN)  TO  DKS-T(NA)
+003430                        MOVE  JOJF-11(NN)  TO  STR-CODE(NA)       I.100121
+003440                        MOVE  JOJF-12(NN)  TO  END-CODE(NA)       I.100121
+003450                        ADD   1            TO  NA
+003460                        GO  TO  INI-020.
+003470     IF  JOJF-08(NN)  =  12
+003480                        MOVE  12           TO  JOJF-08W(NA)
+003490*****                   MOVE  MSG-W(05)    TO  MSG-N(NA)          D.080327
+003500                        MOVE  MSG-W(06)    TO  MSG-N(NA)          I.080327
+003510                        MOVE  NC"件"       TO  KEN-W(NA)
+003520                        MOVE  JOJF-09(NN)  TO  DKS-T(NA)
+003530                        MOVE  JOJF-11(NN)  TO  STR-CODE(NA)       I.100121
+003540                        MOVE  JOJF-12(NN)  TO  END-CODE(NA)       I.100121
+003550                        ADD   1            TO  NA
+003560                        GO  TO  INI-020.
+003570     IF  JOJF-08(NN)  =  13
+003580                        MOVE  13           TO  JOJF-08W(NA)
+003590*****                   MOVE  MSG-W(06)    TO  MSG-N(NA)          D.080327
+003600                        MOVE  MSG-W(07)    TO  MSG-N(NA)          I.080327
+003610                        MOVE  NC"件"       TO  KEN-W(NA)
+003620                        MOVE  JOJF-09(NN)  TO  DKS-T(NA)
+003630                        MOVE  JOJF-11(NN)  TO  STR-CODE(NA)       I.100121
+003640                        MOVE  JOJF-12(NN)  TO  END-CODE(NA)       I.100121
+003650                        ADD   1            TO  NA.
+003660     IF  JOJF-08(NN)  =  14                                       I.040922
+003670                        MOVE  14           TO  JOJF-08W(NA)       I.040922
+003680*****                   MOVE  MSG-W(07)    TO  MSG-N(NA)          D.080327
+003690                        MOVE  MSG-W(08)    TO  MSG-N(NA)          I.080327
+003700                        MOVE  NC"件"       TO  KEN-W(NA)          I.040922
+003710                        MOVE  JOJF-09(NN)  TO  DKS-T(NA)          I.040922
+003720                        MOVE  JOJF-11(NN)  TO  STR-CODE(NA)       I.100121
+003730                        MOVE  JOJF-12(NN)  TO  END-CODE(NA)       I.100121
+003740                        ADD   1            TO  NA.                I.040922
+003750     IF  JOJF-08(NN)  =  15                                       I.050119
+003760                        MOVE  15           TO  JOJF-08W(NA)       I.050119
+003770*****                   MOVE  MSG-W(08)    TO  MSG-N(NA)          D.080327
+003780                        MOVE  MSG-W(09)    TO  MSG-N(NA)          D.080327
+003790                        MOVE  NC"件"       TO  KEN-W(NA)          I.050119
+003800                        MOVE  JOJF-09(NN)  TO  DKS-T(NA)          I.050119
+003810                        MOVE  JOJF-11(NN)  TO  STR-CODE(NA)       I.100121
+003820                        MOVE  JOJF-12(NN)  TO  END-CODE(NA)       I.100121
+003830                        ADD   1            TO  NA.                I.050119
+003840     IF  JOJF-08(NN)  =  16                                       I.080327
+003850                        MOVE  16           TO  JOJF-08W(NA)       I.080327
+003860                        MOVE  MSG-W(10)    TO  MSG-N(NA)          I.080327
+003870                        MOVE  NC"件"       TO  KEN-W(NA)          I.080327
+003880                        MOVE  JOJF-09(NN)  TO  DKS-T(NA)          I.080327
+003890                        MOVE  JOJF-11(NN)  TO  STR-CODE(NA)       I.100121
+003900                        MOVE  JOJF-12(NN)  TO  END-CODE(NA)       I.100121
+003910                        ADD   1            TO  NA.                I.080327
+003920     IF  JOJF-08(NN)  =  17                                       I.090930
+003930                        MOVE  17           TO  JOJF-08W(NA)       I.090930
+003940                        MOVE  MSG-W(11)    TO  MSG-N(NA)          I.090930
+003950                        MOVE  NC"件"       TO  KEN-W(NA)          I.090930
+003960                        MOVE  JOJF-09(NN)  TO  DKS-T(NA)          I.090930
+003970                        MOVE  JOJF-11(NN)  TO  STR-CODE(NA)       I.100121
+003980                        MOVE  JOJF-12(NN)  TO  END-CODE(NA)       I.100121
+003990                        ADD   1            TO  NA.                I.090930
+004000 INI-020.
+004010*****IF  NA  =  7       GO  TO  INI-030.                          D.040922
+004020*****IF  NA  =  8       GO  TO  INI-030.                          D.050119
+004030*****IF  NA  =  9       GO  TO  INI-030.                          D.080327
+004040*****IF  NN  NOT  =  10 ADD   1            TO  NN                 D.080327
+004050*****IF  NA  =  11      GO  TO  INI-030.                          D.090930
+004060     IF  NA  =  12      GO  TO  INI-030.                          I.090930
+004070     IF  NN  NOT  =  12 ADD   1            TO  NN                 I.080327
+004080                        GO  TO  INI-010.
+004090 INI-030.
+004100*****COMPUTE  DKS99 = DKS01 + DKS02 + DKS03 +                     D.040922
+004110*****                 DKS05 + DKS06 + DKS07.                      D.040922
+004120*****MOVE  NC"件"       TO  KEN-W(07).                            D.040922
+004130*****MOVE  MSG-W(07)    TO  MSG-N(07).                            D.040922
+004140*****COMPUTE  DKS99 = DKS01 + DKS02 + DKS03 +                     D.080327
+004150*****                 DKS05 + DKS06 + DKS07 + DKS08 + DKS09.      D.080327
+004160*****                 DKS05 + DKS06 + DKS07 + DKS08.              D.050119
+004170*****MOVE  NC"件"       TO  KEN-W(08).                            D.050119
+004180*****MOVE  MSG-W(08)    TO  MSG-N(08).                            D.050119
+004190*****MOVE  NC"件"       TO  KEN-W(09).                            D.080327
+004200*****MOVE  MSG-W(09)    TO  MSG-N(09).                            D.080327
+004210     COMPUTE  DKS99 = DKS01 + DKS02 + DKS03 + DKS04 +             I.080327
+004220           DKS05 + DKS06 + DKS07 + DKS08 + DKS09 + DKS10 + DKS11. I.090911
+004230*****              DKS05 + DKS06 + DKS07 + DKS08 + DKS09 + DKS10. D.090911
+004240*****MOVE  NC"件"       TO  KEN-W(11).                            D.090930
+004250*****MOVE  MSG-W(11)    TO  MSG-N(11).                            D.090930
+004260     MOVE  NC"件"       TO  KEN-W(12).                            I.090930
+004270     MOVE  MSG-W(12)    TO  MSG-N(12).                            I.090930
+004280     MOVE  1            TO  NN.
+004290 INI-040.
+004300*****COMPUTE  LIN-W  =  2  *  NN  +  3.                           D.080327
+004310     COMPUTE  LIN-W  =  NN  +  3.                                 I.080327
+004320     IF  DKS-T(NN)  =  ZERO
+004330                        GO  TO  INI-050.
+004340     DISPLAY  DSP-DKS.
+004350 INI-050.
+004360*****IF  NN  NOT  =  6  ADD   1       TO  NN                      D.040922
+004370*****IF  NN  NOT  =  7  ADD   1       TO  NN                      D.050119
+004380*****IF  NN  NOT  =  8  ADD   1       TO  NN                      D.080327
+004390*****IF  NN  NOT  = 10  ADD   1       TO  NN                      D.090930
+004400     IF  NN  NOT  = 11  ADD   1       TO  NN                      I.090930
+004410                        GO  TO  INI-040.
+004420*****MOVE  7            TO  NN.                                   D.040922
+004430*****MOVE  8            TO  NN.                                   D.050119
+004440*****MOVE  9            TO  NN.                                   D.080327
+004450*****MOVE  11           TO  NN.                                   D.090930
+004460     MOVE  12           TO  NN.                                   I.090930
+004470     MOVE  21           TO  LIN-W.
+004480     DISPLAY  DSP-DKS.
+004490*----確認入力
+004500 INI-100.
+004510     ACCEPT  ACP-KAKU.
+004520     IF  END-STS  NOT  =  "01"
+004530                        GO  TO  INI-100.
+004540     IF  KAKU-W  NOT  =  1  AND  9
+004550                        GO  TO  INI-100.
+004560     IF  JS-SIGN =  1                                             I.100219
+004570         IF  KAKU-W  =  9   MOVE  100   TO  COMPLETION-CODE       I.100219
+004580                            GO  TO  INI-EX.                       I.100219
+004590     IF  KAKU-W  =  9   MOVE  255   TO  COMPLETION-CODE
+004600                        MOVE  1     TO  ERR-SW.
+004610 INI-EX.
+004620     EXIT.
+004630******************************************************************
+004640*    ＵＰＤ－ＲＴＮ　　（Ｏ／Ｌ状況Ｆ更新）　　　　　　　        *
+004650******************************************************************
+004660 UPD-RTN.
+004670     IF  JS-SIGN =  1                                             I.100219
+004680         IF  KAKU-W  =  9                 GO  TO  UPD-020.        I.100219
+004690     MOVE  3            TO  MM.
+004700     DISPLAY   DSP-MSG1.
+004710*
+004720     MOVE  JOJF-RECW    TO  JOJF-REC.
+004730     MOVE  JOJF-90      TO  JOJF-01.
+004740     ACCEPT  W-DATE     FROM  DATE.
+004750     MOVE  W-MD         TO  JOJF-02.
+004760     ACCEPT  STR-TIME   FROM  TIME.
+004770     MOVE  STR-JF       TO  JOJF-03.
+004780     ACCEPT  END-TIME   FROM  TIME.
+004790     MOVE  END-JF       TO  JOJF-04.
+004800     MOVE  1            TO  JOJF-061.
+004810     MOVE  SPACE        TO  JOJF-062.
+004820     MOVE  ZERO         TO  JOJF-063.
+004830*****MOVE  ZERO         TO  JOJF-07.                              D.900411
+004840     MOVE  1            TO  NA.
+004850 UPD-010.
+004860     MOVE  SKS-T(NA)    TO  JOJF-10(NA).
+004870     MOVE  STR-CODE(NA) TO  JOJF-11(NA).
+004880     MOVE  END-CODE(NA) TO  JOJF-12(NA).
+004890*****IF  NA  NOT  =   6      ADD   1       TO  NA                 D.040922
+004900*****IF  NA  NOT  =   7      ADD   1       TO  NA                 D.050119
+004910*****IF  NA  NOT  =   8      ADD   1       TO  NA                 D.080327
+004920*****IF  NA  NOT  =  10      ADD   1       TO  NA                 D.090930
+004930     IF  NA  NOT  =  11      ADD   1       TO  NA                 I.090930
+004940                             GO TO  UPD-010.
+004950     MOVE  ZERO         TO  JOJF-90.
+004960     MOVE  W-ACD        TO  JOJF-07.                              I.900411
+004970*
+004980     WRITE  JOJF-REC    INVALID
+004990                        MOVE  "JOJF"     TO  ERR-F
+005000                        MOVE  JOJF-KEY   TO  ERR-K
+005010                        MOVE  "W"        TO  ERR-M
+005020                        MOVE  1          TO  ERR-SW
+005030                        MOVE  255        TO  COMPLETION-CODE
+005040                        PERFORM  ERR-RTN  THRU  ERR-EX
+005050                        GO  TO  UPD-EX.
+005060 UPD-020.                                                         I.100219
+005070     MOVE  0001         TO  JOJF-01.
+005080     READ  JOJF         INVALID
+005090                        MOVE  "JOJF"     TO  ERR-F
+005100                        MOVE  JOJF-KEY   TO  ERR-K
+005110                        MOVE  "A"        TO  ERR-M
+005120                        MOVE  1          TO  ERR-SW
+005130                        MOVE  255        TO  COMPLETION-CODE
+005140                        PERFORM  ERR-RTN  THRU  ERR-EX
+005150                        GO  TO  UPD-EX.
+005160*
+005170     IF  KAKU-W  NOT =  9                                         I.100219
+005180         ADD   1            TO  JOJF-90.
+005190     MOVE  ZERO         TO  JOJF-02  JOJF-03  JOJF-04 JOJF-05
+005200                            JOJF-061 JOJF-063 JOJF-07.
+005210     MOVE  SPACE        TO  JOJF-062.
+005220     INITIALIZE             JOJF-TBL.
+005230*
+005240     REWRITE  JOJF-REC  INVALID
+005250                        MOVE  "JOJF"     TO  ERR-F
+005260                        MOVE  JOJF-KEY   TO  ERR-K
+005270                        MOVE  "R"        TO  ERR-M
+005280                        MOVE  1          TO  ERR-SW
+005290                        MOVE  255        TO  COMPLETION-CODE
+005300                        PERFORM  ERR-RTN  THRU  ERR-EX.
+005310     IF  KAKU-W      =  9                                         I.100219
+005320         OPEN  OUTPUT  JOLSF                                      I.100219
+005330         CLOSE  JOLSF.                                            I.100219
+005340 UPD-EX.
+005350     EXIT.
+005360******************************************************************
+005370*    ＥＮＤ－ＲＴＮ　　（終了処理）                              *
+005380******************************************************************
+005390 END-RTN.
+005400*****CLOSE    JOLSF2  JOJF  JCON.                                 D.090930
+005410     CLOSE    JOJF  JCON.                                         I.090930
+005420     IF  JS-SIGN      =  0                                        I.090930
+005430         CLOSE    JOLSF2.                                         I.090930
+005440 END-EX.
+005450     EXIT.
+005460***
+005470 COPY    LPERR.                                                   R.900411
+005480***
+005490 END
+

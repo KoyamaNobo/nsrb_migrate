@@ -1,0 +1,1993 @@
+000010 IDENTIFICATION   DIVISION.
+000020 PROGRAM-ID. JTN05I.
+000030************************************************************
+000040*    PROGRAM         :  統一伝票入力（トラスコ他ＦＡＸ分） *
+000050*    PRINTER TYPE    :  JIPS                               *
+000060*    SCREEN          :  SJN05I                             *
+000070*    COMPILE TYPE    :  COBOL                              *
+000080************************************************************
+000090 ENVIRONMENT DIVISION.
+000100 CONFIGURATION SECTION.
+000110 SOURCE-COMPUTER. SYSTEM3100.
+000120 OBJECT-COMPUTER. SYSTEM3100.
+000130 INPUT-OUTPUT SECTION.
+000140 FILE-CONTROL.
+000150     SELECT TDIF ASSIGN TO TDI-MSD
+000160         ORGANIZATION INDEXED
+000170         ACCESS MODE DYNAMIC
+000180         RECORD KEY TDI-KEY
+000190         FILE STATUS IS ERR-STAT.
+000200     SELECT JCON ASSIGN TO JCON-MSD
+000210         ORGANIZATION INDEXED
+000220         ACCESS MODE RANDOM
+000230         RECORD KEY JCON1-KEY
+000240         FILE STATUS IS ERR-STAT.
+000250     SELECT TC-M ASSIGN TO TC-MSD
+000260         ORGANIZATION INDEXED
+000270         ACCESS MODE RANDOM
+000280         RECORD KEY TC-KEY
+000290         FILE STATUS IS ERR-STAT.
+000300     SELECT HI2-M ASSIGN TO HI2-MSD
+000310         ORGANIZATION INDEXED
+000320         ACCESS MODE RANDOM
+000330         RECORD KEY HI-KEY2
+000340         FILE STATUS IS ERR-STAT.
+000350     SELECT WTNAF ASSIGN TO WTNA-MSD
+000360         ORGANIZATION INDEXED
+000370         ACCESS MODE RANDOM
+000380         RECORD KEY WTNA-KEY
+000390         FILE STATUS IS ERR-STAT.
+000400     SELECT THTM ASSIGN TO THT1-MSD THT2-MSD
+000410         ORGANIZATION INDEXED
+000420         ACCESS MODE DYNAMIC
+000430         RECORD KEY THT-KEY
+000440         ALTERNATE RECORD KEY THT-KEY2
+000450         FILE STATUS IS ERR-STAT.
+000460     SELECT JMSTD ASSIGN TO JMSTD1-MSD JMSTD2-MSD JMSTD3-MSD
+000470         ORGANIZATION INDEXED
+000480         ACCESS MODE DYNAMIC
+000490         RECORD KEY JMSTD-KEY1
+000500         ALTERNATE RECORD KEY JMSTD-KEY2
+000510         ALTERNATE RECORD KEY JMSTD-KEY3
+000520         FILE STATUS IS ERR-STAT.
+000530     SELECT JT-RUIJ ASSIGN TO RUIJ-MSD
+000540         ORGANIZATION INDEXED
+000550         ACCESS MODE RANDOM
+000560         RECORD KEY RUIJ-KEY
+000570         FILE STATUS IS ERR-STAT.
+000580     SELECT NJZAI ASSIGN TO NJZAI-MSD
+000590         ORGANIZATION INDEXED
+000600         ACCESS MODE DYNAMIC
+000610         RECORD KEY NJZAI-KEY
+000620         FILE STATUS IS ERR-STAT.
+000630     SELECT CODEF ASSIGN TO CODEF-RDB
+000640         FILE STATUS IS ERR-STAT.
+000650     SELECT SP-F ASSIGN TO P-PRN999.
+000660 I-O-CONTROL.
+000670     APPLY SHARED-MODE ON TDIF
+000680     APPLY SHARED-MODE ON JCON
+000690     APPLY SHARED-MODE ON NJZAI
+000700     APPLY SHARED-MODE ON JMSTD
+000710     APPLY SHARED-MODE ON JT-RUIJ
+000720     APPLY SHARED-MODE ON THTM
+000730     APPLY SHARED-MODE ON WTNAF
+000740     APPLY SHARED-MODE ON CODEF
+000750     APPLY SHARED-MODE ON TC-M
+000760     APPLY SHARED-MODE ON HI2-M
+000770     APPLY SHIFT-CODE  ON SP-F.
+000780 DATA DIVISION.
+000790 FILE SECTION.
+000800     COPY L-TDIF.
+000810     COPY L-JCON.
+000820     COPY LIDTHT.
+000830     COPY LITCM.
+000840     COPY LWTNAF.
+000850     COPY LIHIM2.
+000860     COPY LJMSTD.
+000870     COPY LTRUIJ.
+000880     COPY LNJZAI.
+000890     COPY LRCODE.
+000900     COPY LSPF.
+000910 WORKING-STORAGE  SECTION.
+000920 77  ERR-STAT           PIC  X(002).
+000930 77  W-FILE             PIC  X(013).
+000940 77  W-END              PIC  9(001) VALUE 0.
+000950 01  W-DATEA.                                                     I.110622
+000960     02  W-NNGP         PIC  9(006).                              I.110622
+000970     02  W-TIMED        PIC  9(008).                              I.110622
+000980     02  W-TIMEW REDEFINES W-TIMED.                               I.110622
+000990       03  W-TIME       PIC  9(006).                              I.110622
+001000       03  F            PIC  9(002).                              I.110622
+001010 01  HEAD1.
+001020     02  F              PIC  X(005) VALUE ""3FE04FE080"".
+001030     02  H-FNGP         PIC  99/99/99.
+001040     02  F              PIC  X(004) VALUE " ～ ".
+001050     02  H-TNGP         PIC  99/99/99.
+001060     02  F              PIC  X(024) VALUE SPACE.
+001070     02  F              PIC  N(020) VALUE
+001080          NC"＊＊＊　　統一伝票　入力リスト　　＊＊＊".
+001090     02  F              PIC  X(029) VALUE SPACE.
+001100     02  F              PIC  X(005) VALUE "DATE ".
+001110     02  H-DATE         PIC 99B99B99.
+001120     02  F              PIC  X(007) VALUE "     P.".
+001130     02  H-PAGE         PIC ZZ9.
+001140 01  HEAD2.
+001150     02  F              PIC  X(005) VALUE ""3FE04F40A0"".
+001160     02  F              PIC  N(004) VALUE NC"　伝票№".
+001170     02  F              PIC  X(003) VALUE SPACE.
+001180     02  F              PIC  N(004) VALUE NC"日　　付".
+001190     02  F              PIC  X(007) VALUE "  ｺｰﾄﾞ ".
+001200     02  F              PIC  N(008) VALUE NC"得　意　先　名　".
+001210     02  F              PIC  X(028) VALUE SPACE.
+001220     02  F              PIC  X(004) VALUE "ｺｰﾄﾞ".
+001230     02  F              PIC  N(014) VALUE
+001240          NC"直　送　先　名　・　店　名　".
+001250     02  F              PIC  X(019) VALUE SPACE.
+001260     02  F              PIC  N(004) VALUE NC"倉　庫　".
+001270     02  F              PIC  X(004) VALUE SPACE.
+001280     02  F              PIC  N(004) VALUE NC"運　送　".
+001290     02  F              PIC  X(004) VALUE SPACE.
+001300     02  F              PIC  N(004) VALUE NC"発注№　".
+001310     02  F              PIC  X(004) VALUE SPACE.
+001320 01  HEAD3.
+001330     02  F              PIC  X(006) VALUE SPACE.
+001340     02  F              PIC  X(001) VALUE "-".
+001350     02  F              PIC  N(002) VALUE NC"行　".
+001360     02  F              PIC  X(007) VALUE SPACE.
+001370     02  F              PIC  N(004) VALUE NC"　受注№".
+001380     02  F              PIC  X(001) VALUE "-".
+001390     02  F              PIC  N(002) VALUE NC"行　".
+001400     02  F              PIC  X(006) VALUE "ｺｰﾄﾞ  ".
+001410     02  F              PIC  N(008) VALUE NC"品　　　　　名　".
+001420     02  F              PIC  X(025) VALUE SPACE.
+001430     02  F              PIC  X(006) VALUE "ｻｲｽﾞ  ".
+001440     02  F              PIC  N(002) VALUE NC"名称".
+001450     02  F              PIC  X(006) VALUE "(ﾄﾗｽｺ)".
+001460     02  F              PIC  X(014) VALUE SPACE.
+001470     02  F              PIC  N(002) VALUE NC"数量".
+001480     02  F              PIC  X(001) VALUE SPACE.
+001490     02  F              PIC  N(004) VALUE NC"　原単価".
+001500     02  F              PIC  X(004) VALUE SPACE.
+001510     02  F              PIC  N(004) VALUE NC"原価金額".
+001520     02  F              PIC  X(001) VALUE SPACE.
+001530     02  F              PIC  N(004) VALUE NC"　売単価".
+001540     02  F              PIC  X(004) VALUE SPACE.
+001550     02  F              PIC  N(004) VALUE NC"売価金額".
+001560 01  W-P1.
+001570     02  P-DNO          PIC  9(006).
+001580     02  F              PIC  X(002).
+001590     02  P-DATE         PIC  99/99/99.
+001600     02  F              PIC  X(001).
+001610     02  P-TCD          PIC  9(004).
+001620     02  F              PIC  X(001).
+001630     02  P-TNA          PIC  N(026).
+001640     02  F              PIC  X(001).
+001650     02  P-TPC          PIC  9(004).                              I.100921
+001660     02  P-CCDD  REDEFINES P-TPC.                                 I.100921
+001670       03  P-CCD        PIC  9(003).                              I.100921
+001680       03  F            PIC  X(001).                              I.100921
+001690*****02  P-CCD          PIC  9(003).                              D.100921
+001700*****02  F              PIC  X(001).                              D.100921
+001710     02  P-CNA          PIC  N(026).
+001720     02  F              PIC  X(001).
+001730     02  P-SNA          PIC  N(006).
+001740     02  F              PIC  X(001).
+001750     02  P-UNA          PIC  N(006).
+001760     02  F              PIC  X(001).
+001770     02  P-HNO          PIC  X(010).
+001780 01  W-P2.
+001790     02  F              PIC  X(006).
+001800     02  P-V1           PIC  X(001).
+001810     02  P-GNO          PIC  9.
+001820     02  F              PIC  X(009).
+001830     02  P-JNO          PIC  9(006).
+001840     02  P-V2           PIC  X(001).
+001850     02  P-JGN          PIC  9.
+001860     02  F              PIC  X(001).
+001870     02  P-HCD          PIC  9(006).
+001880     02  F              PIC  X(001).
+001890     02  P-HNA          PIC  N(024).
+001900     02  F              PIC  X(001).
+001910     02  P-SIZ          PIC  X(004).
+001920     02  F              PIC  X(002).
+001930     02  P-TMS          PIC  X(020).
+001940     02  P-SU           PIC ------.
+001950     02  P-GT           PIC ZZZ,ZZZ.
+001960     02  P-GKIN         PIC --,---,---.
+001970     02  P-UT           PIC ZZZ,ZZZ.
+001980     02  P-UKIN         PIC --,---,---.
+001990 01  W-P3.
+002000     02  F              PIC  X(037) VALUE SPACE.
+002010     02  F              PIC  N(002) VALUE NC"配達".
+002020     02  F              PIC  X(001) VALUE ":".
+002030     02  P-THT          PIC  N(010).
+002040     02  F              PIC  N(002) VALUE NC"摘要".
+002050     02  F              PIC  X(001) VALUE ":".
+002060     02  P-TTE          PIC  N(020).
+002070     02  F              PIC  X(002).
+002080     02  F              PIC  N(002) VALUE NC"合計".
+002090     02  F              PIC  X(001) VALUE ":".
+002100     02  P-TSU          PIC ------.
+002110     02  F              PIC  X(007).
+002120     02  P-TGKIN        PIC --,---,---.
+002130     02  F              PIC  X(007).
+002140     02  P-TUKIN        PIC --,---,---.
+002150 01  W-DATA.
+002160     02  W-CRT.
+002170       03  W-ACT        PIC  9(001).
+002180       03  W-JCN        PIC  9(006).                              I.060804
+002190       03  W-DNO        PIC  9(006).
+002200       03  W-TCD        PIC  9(004).
+002210       03  W-CCD        PIC  9(003).
+002220*****  03  W-TPC        PIC  9(003).                              D.100921
+002230       03  W-TPC        PIC  9(004).                              I.100921
+002240       03  W-DATE       PIC  9(006).
+002250       03  W-NGPD REDEFINES W-DATE.
+002260         04  W-NEN      PIC  9(002).
+002270         04  W-GET      PIC  9(002).
+002280         04  W-PEY      PIC  9(002).
+002290       03  W-HNO        PIC  X(010).
+002300       03  W-SOK        PIC  9(001).
+002310       03  W-UNS        PIC  9(001).
+002320       03  W-TEKI       PIC  N(028).
+002330       03  W-TEKD  REDEFINES W-TEKI.
+002340         04  W-THT      PIC  N(009).
+002350         04  W-TTE      PIC  N(019).
+002360       03  W-PRC        PIC  9(001).
+002370       03  W-UPC        PIC  9(001).
+002380       03  W-MEI.
+002390         04  W-MEID  OCCURS    6.
+002400           05  W-JNOD.
+002410             06  W-JNO  PIC  9(006).
+002420             06  W-JGN  PIC  9(001).
+002430           05  W-HCD    PIC  9(006).
+002440           05  W-SZN    PIC  X(003).
+002450           05  W-SKB    PIC  9(001).
+002460           05  W-SNO    PIC  9(002).
+002470           05  W-SU     PIC S9(005).
+002480           05  W-GT     PIC  9(007).
+002490           05  W-UT     PIC  9(007).
+002500           05  W-GKIN   PIC S9(008).
+002510           05  W-UKIN   PIC S9(008).
+002520           05  W-ISU    PIC  9(003).
+002530           05  W-TRN    PIC  X(020).
+002540           05  W-JAN    PIC  X(013).                              I.100921
+002550*****      05  W-TRND  REDEFINES W-TRN.                           D.100921
+002560*****        06  W-JAN  PIC  X(013).                              D.100921
+002570*****        06  W-JANS PIC  X(007).                              D.100921
+002580       03  W-DMM        PIC  9(001).
+002590       03  W-SEN        PIC  9(001).
+002600       03  W-FNGP       PIC  9(006).
+002610       03  W-FNGPD REDEFINES W-FNGP.
+002620         04  W-FNEN     PIC  9(002).
+002630         04  W-FGET     PIC  9(002).
+002640         04  W-FPEY     PIC  9(002).
+002650*****  03  W-TNGP       PIC  9(006).                              D.151106
+002660       03  W-TNGP       PIC  9(006) VALUE 999999.                 I.151106
+002670       03  W-TNGPD REDEFINES W-TNGP.
+002680         04  W-TNEN     PIC  9(002).
+002690         04  W-TGET     PIC  9(002).
+002700         04  W-TPEY     PIC  9(002).
+002710       03  W-DNOF       PIC  9(006).
+002720       03  W-DNOT       PIC  9(006) VALUE 999999.                 I.151106
+002730*****  03  W-DNOT       PIC  9(006).                              D.151106
+002740*
+002750     02  W-PAGE         PIC  9(003).
+002760     02  W-SNGP         PIC  9(006).
+002770     02  W-ENGP         PIC  9(006).
+002780     02  W-NGP          PIC  9(006).
+002790     02  W-INV          PIC  9(001).
+002800     02  W-LC1          PIC  9(002).
+002810     02  W-LC2          PIC  9(002).
+002820     02  W-GN           PIC  9(001).
+002830     02  W-GND          PIC  9(001).
+002840     02  W-DC           PIC  9(001).
+002850     02  W-SUC          PIC  9(001).
+002860*****02  W-MDNO         PIC  9(006).                              D.091202
+002870     02  W-FHCD         PIC  9(006).
+002880     02  W-TNA          PIC  N(026).
+002890     02  W-SNA          PIC  N(006).
+002900     02  W-UNA          PIC  N(006).
+002910     02  W-SIZM         PIC  X(003).
+002920     02  W-SIZN         PIC  X(004).
+002930     02  WT-D.
+002940       03  WT-SU        PIC  9(006).
+002950       03  WT-GKIN      PIC  9(009).
+002960       03  WT-UKIN      PIC  9(009).
+002970     02  CNT            PIC  9(002).
+002980     02  W-UCHK         PIC  9(001).                              I.110907
+002990     02  W-SCC          PIC  9(001).
+003000     02  W-SC           PIC  9(001).
+003010     02  W-C            PIC  9(002).
+003020     02  W-ASZD.
+003030       03  W-ASZ   OCCURS   5.
+003040         04  W-SZD   OCCURS  10.
+003050           05  W-SZ     PIC  X(003).
+003060     02  W-MSZ.
+003070       03  F            PIC  X(030) VALUE
+003080            "000   SS S  M  L  LL XL XXL   ".
+003090       03  F            PIC  X(030) VALUE
+003100            "                     280290300".
+003110       03  F            PIC  X(030) VALUE
+003120            "125130135140150160170180190200".
+003130       03  F            PIC  X(030) VALUE
+003140            "210215220225230235240245250   ".
+003150       03  F            PIC  X(030) VALUE
+003160            "240245250255260265270275      ".
+003170     02  W-ASIZD.
+003180       03  W-ASIZ  OCCURS   5.
+003190         04  W-SIZD  OCCURS  10.
+003200           05  W-SIZ    PIC  X(004).
+003210     02  W-MSIZ.
+003220       03  F            PIC  X(040) VALUE
+003230            "----      SS   S   M   L  LL  XL XXL    ".
+003240       03  F            PIC  X(040) VALUE
+003250            "                            28.029.030.0".
+003260       03  F            PIC  X(040) VALUE
+003270            "12.513.013.514.015.016.017.018.019.020.0".
+003280       03  F            PIC  X(040) VALUE
+003290            "21.021.522.022.523.023.524.024.525.0    ".
+003300       03  F            PIC  X(040) VALUE
+003310            "24.024.525.025.526.026.527.027.5    ----".
+003320     02  W-ATYD.                                                  I.080604
+003330       03  W-TYD   OCCURS  56.                                    I.080604
+003340         04  W-TY       PIC  X(001).                              I.080604
+003350     COPY LSTAT.
+003360 SCREEN SECTION.
+003370 SD  C-CRT
+003380     END STATUS IS ESTAT.
+003390 01  C-CLEAR.
+003400     02  C-CL    LINE   1  CLEAR SCREEN.
+003410 01  C-ACP.
+003420     02  A-ACT   LINE   2  COLUMN  53  PIC  9(001)
+003430          USING W-ACT   CHECK OVERFLOW NO IFC.
+003440*****02  A-TCD   LINE   3  COLUMN  08  PIC  9(004)                D.080604
+003450     02  LINE   3.                                                I.080604
+003460       03  A-TCD   COLUMN  08  PIC  9(004)                        I.080604
+003470            USING W-TCD   CHECK OVERFLOW NO IFC.
+003480       03  A-JCN   COLUMN  75  PIC  9(006)                        I.080604
+003490            USING W-JCN   CHECK OVERFLOW NO IFC.                  I.080604
+003500     02  LINE   4.
+003510*****  03  A-TPC   COLUMN  09  PIC  9(003)                        D.100921
+003520       03  A-TPC   COLUMN  08  PIC  9(004)                        I.100921
+003530            USING W-TPC   CHECK OVERFLOW NO IFC.
+003540       03  A-DNO   COLUMN  75  PIC  9(006)
+003550            USING W-DNO   CHECK OVERFLOW NO IFC.
+003560     02  LINE   5.
+003570       03  A-CCD   COLUMN  09  PIC  9(003)
+003580            USING W-CCD   CHECK OVERFLOW NO IFC.
+003590       03  A-DATE  COLUMN  75  PIC  9(006)
+003600            USING W-DATE  CHECK OVERFLOW NO IFC.
+003610     02  LINE   6.
+003620       03  A-HNO   COLUMN  08  PIC  X(010)
+003630            USING W-HNO   CHECK OVERFLOW NO IFC.
+003640       03  A-SOK   COLUMN  24  PIC  9(001)
+003650            USING W-SOK   CHECK OVERFLOW NO IFC.
+003660       03  A-UNS   COLUMN  44  PIC  9(001)
+003670            USING W-UNS   CHECK OVERFLOW NO IFC.
+003680     02  A-HM    LINE  W-LC1.
+003690       03  A-JNO   COLUMN   1  PIC  9(006)
+003700            USING  W-JNO(W-GN) CHECK OVERFLOW NO IFC.
+003710       03  A-JGN   COLUMN   8  PIC  9(001)
+003720            USING  W-JGN(W-GN) CHECK OVERFLOW NO IFC.
+003730       03  A-SZN   COLUMN  60  PIC  X(003)
+003740            USING  W-SZN(W-GN) CHECK OVERFLOW NO IFC.
+003750     02  LINE  W-LC2.
+003760       03  A-HCD   COLUMN   2  PIC  9(006)
+003770            USING  W-HCD(W-GN) CHECK OVERFLOW NO IFC.
+003780       03  A-SU    COLUMN  38  PIC  9(005)
+003790            USING  W-SU(W-GN)  CHECK OVERFLOW NO IFC.
+003800       03  A-GT    COLUMN  44  PIC  9(007)
+003810            USING  W-GT(W-GN)  CHECK OVERFLOW NO IFC.
+003820       03  A-GKIN  COLUMN  52  PIC  9(008)
+003830            USING  W-GKIN(W-GN) CHECK OVERFLOW NO IFC.
+003840       03  A-UT    COLUMN  63  PIC  9(007)
+003850            USING  W-UT(W-GN)  CHECK OVERFLOW NO IFC.
+003860     02  LINE  22.
+003870       03  A-THT   COLUMN  06  PIC  N(009)
+003880            USING W-THT   CHECK OVERFLOW NO IFC.
+003890       03  A-TTE   COLUMN  30  PIC  N(019)
+003900            USING W-TTE   CHECK OVERFLOW NO IFC.
+003910*
+003920     02  A-SEN   LINE   8  COLUMN  43  PIC  9(001)
+003930          USING W-SEN   CHECK OVERFLOW NO IFC.
+003940     02  LINE  11.
+003950       03  A-FNEN  COLUMN  26  PIC  9(002)
+003960            USING W-FNEN  CHECK OVERFLOW NO IFC.
+003970       03  A-FGET  COLUMN  30  PIC  9(002)
+003980            USING W-FGET  CHECK OVERFLOW NO IFC.
+003990       03  A-FPEY  COLUMN  34  PIC  9(002)
+004000            USING W-FPEY  CHECK OVERFLOW NO IFC.
+004010       03  A-TNEN  COLUMN  44  PIC  9(002)
+004020            USING W-TNEN  CHECK OVERFLOW NO IFC.
+004030       03  A-TGET  COLUMN  48  PIC  9(002)
+004040            USING W-TGET  CHECK OVERFLOW NO IFC.
+004050       03  A-TPEY  COLUMN  52  PIC  9(002)
+004060            USING W-TPEY  CHECK OVERFLOW NO IFC.
+004070     02  LINE  13.
+004080       03  A-DNOF  COLUMN  36  PIC  9(006)
+004090            USING W-DNOF  CHECK OVERFLOW NO IFC.
+004100       03  A-DNOT  COLUMN  46  PIC  9(006)
+004110            USING W-DNOT  CHECK OVERFLOW NO IFC.
+004120*
+004130     02  A-DMM   LINE  23  COLUMN  65  PIC  9(001)
+004140          USING W-DMM   CHECK OVERFLOW NO IFC.
+004150 01  C-DSP.
+004160*****02  D-TNA   LINE   3  COLUMN  13  PIC  N(026) FROM  W-TNA.   D.080604
+004170     02  LINE   3.                                                I.080604
+004180       03  D-TNA   COLUMN  13  PIC  N(026) FROM  W-TNA.           I.080604
+004190       03  D-JCNC  COLUMN  75  PIC  X(006) VALUE "      ".        I.080604
+004200     02  LINE   4.
+004210       03  D-MNA   COLUMN  13  PIC  N(026) FROM  WTNA-NAME.
+004220       03  D-TPCC.
+004230*****    04  COLUMN   9  PIC  X(040) VALUE                        D.100921
+004240*****         "                                        ".         D.100921
+004250         04  COLUMN   8  PIC  X(041) VALUE                        I.100921
+004260              "                                         ".        I.100921
+004270         04  COLUMN  49  PIC  X(016) VALUE
+004280              "                ".
+004290       03  D-DNOC  COLUMN  75  PIC  X(006) VALUE "      ".        I.080604
+004300     02  LINE   5.
+004310       03  D-CNA   COLUMN  13  PIC  N(026) FROM  TC-NAME.
+004320       03  D-CNAC.
+004330         04  COLUMN  13  PIC  X(040) VALUE
+004340              "                                        ".
+004350         04  COLUMN  53  PIC  X(012) VALUE
+004360              "            ".
+004370     02  LINE   6.
+004380       03  D-HNOC  COLUMN  08  PIC  X(010) VALUE "          ".
+004390       03  D-SNA   COLUMN  26  PIC  N(006) FROM  W-SNA.
+004400       03  D-UNA   COLUMN  46  PIC  N(006) FROM  W-UNA.
+004410     02  LINE W-LC1.
+004420       03  D-JNOC  COLUMN   1  PIC  X(008) VALUE "        ".
+004430       03  D-JNOV  COLUMN   7  PIC  X(001) VALUE "-".
+004440       03  D-HNA   COLUMN  10  PIC  N(024) FROM  HI-NAME.
+004450       03  D-SIZD  COLUMN  64  PIC  X(004) FROM  W-SIZN.
+004460     02  LINE W-LC2.
+004470       03  D-TRN   COLUMN  13  PIC  X(020) FROM  W-TRN(W-GN).
+004480       03  D-TRNC  COLUMN  13  PIC  X(020) VALUE
+004490            "                    ".
+004500     02  D-MEI   LINE W-LC2.
+004510       03  D-SU    COLUMN  37  PIC -----9      FROM  W-SU(W-GN).
+004520       03  D-GT    COLUMN  44  PIC ZZZZZZZ     FROM  W-GT(W-GN).
+004530       03  D-GKIN  COLUMN  52  PIC --,---,---  FROM  W-GKIN(W-GN).
+004540       03  D-UT    COLUMN  63  PIC ZZZZZZZ     FROM  W-UT(W-GN).
+004550       03  D-UKIN  COLUMN  71  PIC --,---,---  FROM  W-UKIN(W-GN).
+004560     02  D-KEI   LINE  21.
+004570       03          COLUMN  37  PIC -----9      FROM  WT-SU.
+004580       03          COLUMN  52  PIC --,---,---  FROM  WT-GKIN.
+004590       03          COLUMN  71  PIC --,---,---  FROM  WT-UKIN.
+004600*****02  D-DNOC  LINE   4  COLUMN  75  PIC  X(006) VALUE "      ".D.080604
+004610     02  D-BDNO  LINE  23  COLUMN  75  PIC  9(006) FROM  W-DNO.   I.080513
+004620     02  D-MEIC.
+004630       03  LINE W-LC1.
+004640         04  COLUMN   1  PIC  X(040) VALUE
+004650              "                                        ".
+004660         04  COLUMN  41  PIC  X(040) VALUE
+004670              "                                        ".
+004680       03  LINE W-LC2.
+004690         04  COLUMN   1  PIC  X(040) VALUE
+004700              "                                        ".
+004710         04  COLUMN  41  PIC  X(040) VALUE
+004720              "                                        ".
+004730     02  D-PRM.
+004740       03  LINE   1  COLUMN  16  PIC  N(024) VALUE
+004750            NC"＊＊＊　　統一伝票入力　チェックリスト　　＊＊＊".
+004760       03  LINE   6  COLUMN  26  PIC  X(012) VALUE
+004770            "未印字分 = 1".
+004780       03  LINE   8  COLUMN  26  PIC  X(018) VALUE
+004790            "印字済分 = 2 ...  ".
+004800       03  LINE  11  COLUMN  24  PIC  X(032) VALUE
+004810            "’00年00月00日 ～ ’99年99月99日".
+004820       03  LINE  23.
+004830         04  COLUMN  43  PIC  N(002) VALUE NC"確認".
+004840         04  COLUMN  47  PIC  X(023) VALUE
+004850              "(OK=1,NO=9) --->   ﾘﾀｰﾝ".
+004860     02  LINE  13.
+004870       03  D-DNM   COLUMN  28  PIC  X(024) VALUE
+004880            "伝票№  000000 ～ 999999".
+004890       03  D-DNC   COLUMN  28  PIC  X(024) VALUE
+004900            "                        ".
+004910 01  C-ERR.
+004920     02  LINE  24.
+004930       03  E-ME1   COLUMN  15  PIC  X(017) VALUE
+004940            "***  DATA ﾅｼ  ***".
+004950       03  E-ME2   COLUMN  15  PIC  X(018) VALUE
+004960            "***  DATA ｴﾗｰ  ***".
+004970       03  E-ME3   COLUMN  15  PIC  X(018) VALUE
+004980            "***  ﾄｸｲｻｷ ﾅｼ  ***".
+004990       03  E-ME4   COLUMN  15  PIC  X(018) VALUE
+005000            "***  ﾁｮｸｿｳ ﾅｼ  ***".
+005010       03  E-ME5   COLUMN  15  PIC  X(017) VALUE
+005020            "***  ﾋﾝﾒｲ ﾅｼ  ***".
+005030       03  E-ME6   COLUMN  15  PIC  X(017) VALUE
+005040            "***  ｻｲｽﾞ ﾅｼ  ***".
+005050       03  E-ME7   COLUMN  15  PIC  N(005) VALUE
+005060            NC"キャンセル".
+005070       03  E-ME8   COLUMN  15  PIC  X(018) VALUE
+005080            "***  JCON ﾅｼ   ***".
+005090       03  E-ME9   COLUMN  15  PIC  X(027) VALUE
+005100            "***  JCON REWRITE ｴﾗｰ   ***".
+005110       03  E-ME10  COLUMN  15  PIC  X(023) VALUE
+005120            "***  TDIF DATA ｴﾗｰ  ***".
+005130       03  E-ME11  COLUMN  15  PIC  X(024) VALUE
+005140            "***  TDIF WRITE ｴﾗｰ  ***".
+005150       03  E-ME12  COLUMN  15  PIC  X(026) VALUE
+005160            "***  TDIF REWRITE ｴﾗｰ  ***".
+005170       03  E-ME13  COLUMN  15  PIC  X(025) VALUE
+005180            "***  TDIF DELETE ｴﾗｰ  ***".
+005190       03  E-ME14  COLUMN  15  PIC  X(018) VALUE
+005200            "***  JMSTD ﾅｼ  ***".
+005210       03  E-ME15  COLUMN  15  PIC  X(019) VALUE
+005220            "***  ｱｽﾞｶﾘ ｴﾗｰ  ***".
+005230       03  E-ME16  COLUMN  15  PIC  X(018) VALUE
+005240            "***  ﾋﾝﾒｲ ｴﾗｰ  ***".
+005250       03  E-ME17  COLUMN  15  PIC  X(022) VALUE
+005260            "***  ﾄﾗｽｺ ﾋﾝﾒｲ ﾅｼ  ***".
+005270       03  E-ME18  COLUMN  15  PIC  X(022) VALUE
+005280            "***  ｻｲｽﾞｸﾌﾞﾝ ｴﾗｰ  ***".
+005290       03  E-ME19  COLUMN  15  PIC  X(021) VALUE
+005300            "***  ﾁｮｸｿｳｻｷ ｴﾗｰ  ***".
+005310       03  E-ME20  COLUMN  15  PIC  X(019) VALUE
+005320            "***  ﾄｸｲｻｷ ｴﾗｰ  ***".
+005330       03  E-ME21  COLUMN  15  PIC  X(026) VALUE
+005340            "***  ｺｳｼﾝｽﾞﾐ ｼｭｳｾｲ ﾌｶ  ***".
+005350       03  E-ME22  COLUMN  15  PIC  X(018) VALUE
+005360            "***  NJZAI ﾅｼ  ***".
+005370       03  E-ME23  COLUMN  15  PIC  X(019) VALUE
+005380            "***  ﾀﾝｶ ﾐﾄｳﾛｸ  ***".
+005390       03  E-ME24  COLUMN  15  PIC  X(019) VALUE
+005400            "***  ｽｳﾘｮｳ ｴﾗｰ  ***".
+005410       03  E-ME25  COLUMN  15  PIC  X(027) VALUE
+005420            "***  JMSTD REWRITE ｴﾗｰ  ***".
+005430       03  E-ME26  COLUMN  15  PIC  X(027) VALUE
+005440            "***  NJZAI REWRITE ｴﾗｰ  ***".
+005450       03  E-ME27  COLUMN  15  PIC  X(025) VALUE
+005460            "***  NJZAI WRITE ｴﾗｰ  ***".
+005470       03  E-ME28  COLUMN  15  PIC  X(022) VALUE                  I.080604
+005480            "***  ｼﾞｭﾁｭｳNO ｴﾗｰ  ***".                             I.080604
+005490       03  E-ME29  COLUMN  15  PIC  X(020) VALUE                  I.080605
+005500            "***  JANｺｰﾄﾞ ﾅｼ  ***".                               I.080605
+005510       03  E-ME30  COLUMN  15  PIC  X(018) VALUE                  I.100511
+005520            "***  ﾀﾝｶ ﾁｪｯｸ  ***".                                 I.100511
+005530       03  E-KEY   COLUMN  45  PIC  X(007) FROM  TDI-KEY.
+005540       03  E-NJZAI COLUMN  53  PIC  X(008) FROM  NJZAI-KEY.
+005550       03  E-JMST  COLUMN  62  PIC  X(007) FROM  JMSTD-KEY1.
+005560     COPY LSSEM.
+005570 PROCEDURE DIVISION.
+005580 M-020.
+005590     DISPLAY C-CLEAR.
+005600     CALL "SJN05I".
+005610     MOVE ZERO TO W-CRT W-FHCD.
+005620     MOVE SPACE TO W-TEKI W-TNA W-SNA W-UNA.
+005630     DISPLAY A-THT A-TTE.
+005640*
+005650     OPEN I-O JCON.
+005660*****MOVE "19" TO JCON1-KEY.                                      D.091202
+005670*****READ JCON UNLOCK INVALID                                     D.091202
+005680*****    CLOSE JCON                                               D.091202
+005690*****    DISPLAY E-ME8 E-ME99                                     D.091202
+005700*****    GO TO M-980.                                             D.091202
+005710*****MOVE JCON1-03 TO W-MDNO.                                     D.091202
+005720*
+005730     OPEN I-O TDIF.
+005740     OPEN INPUT TC-M HI2-M WTNAF THTM CODEF JT-RUIJ.
+005750     OPEN I-O JMSTD NJZAI.
+005760     MOVE W-MSZ TO W-ASZD.
+005770     MOVE W-MSIZ TO W-ASIZD.
+005780     ACCEPT W-NGP FROM DATE.
+005790     MOVE W-NGP TO W-NNGP.                                        I.110622
+005800     MOVE W-NGP TO W-DATE.
+005810     SUBTRACT 1 FROM W-GET.
+005820     IF W-GET = ZERO
+005830         MOVE 12 TO W-GET
+005840         SUBTRACT 1 FROM W-NEN.
+005850     MOVE W-DATE TO W-SNGP.
+005860     MOVE W-NGP TO W-DATE.
+005870     ADD 1 TO W-GET.
+005880     IF W-GET = 13
+005890         MOVE 1 TO W-GET
+005900         ADD 1 TO W-NEN.
+005910     MOVE W-DATE TO W-ENGP.
+005920 M-040.
+005930     ACCEPT A-ACT.
+005940     IF ESTAT = PF9
+005950         GO TO M-420.
+005960     IF ESTAT NOT = HTB AND SKP
+005970         GO TO M-040.
+005980     IF W-ACT = 9
+005990         GO TO M-420.
+006000     IF W-ACT NOT = 1 AND 2 AND 3
+006010         GO TO M-040.
+006020     IF W-ACT NOT = 1                                             I.080604
+006030         MOVE ZERO TO W-JCN                                       I.080604
+006040         DISPLAY D-JCNC                                           I.080604
+006050         GO TO M-060.                                             I.080604
+006060 M-050.                                                           I.080604
+006070     ACCEPT A-JCN.                                                I.080604
+006080     DISPLAY E-CL.                                                I.080604
+006090     IF ESTAT = BTB                                               I.080604
+006100         GO TO M-040.                                             I.080604
+006110     IF ESTAT NOT = HTB AND SKP                                   I.080604
+006120         GO TO M-050.                                             I.080604
+006130     IF W-JCN = ZERO                                              I.080604
+006140         DISPLAY D-JCNC                                           I.080604
+006150         GO TO M-080.                                             I.080604
+006160*
+006170     MOVE SPACE TO JMSTD-KEY1.                                    I.080604
+006180     MOVE W-JCN TO JMSTD-07.                                      I.080604
+006190     START JMSTD KEY NOT < JMSTD-KEY1 INVALID KEY                 I.080604
+006200         DISPLAY E-ME14 E-ME98                                    I.080604
+006210         GO TO M-050.                                             I.080604
+006220     READ JMSTD NEXT RECORD WITH UNLOCK AT END                    I.080604
+006230         DISPLAY E-ME14 E-ME98                                    I.080604
+006240         GO TO M-050.                                             I.080604
+006250     IF W-JCN NOT = JMSTD-07                                      I.080604
+006260         DISPLAY E-ME14 E-ME98                                    I.080604
+006270         GO TO M-050.                                             I.080604
+006280     IF JMSTD-01 NOT = 0 AND 6                                    I.080604
+006290         DISPLAY E-ME28 E-ME98                                    I.080604
+006300         GO TO M-050.                                             I.080604
+006310*****IF JMSTD-04 NOT = 4990 AND 9850                              D.080605
+006320*****IF JMSTD-04 NOT = 4990 AND 5000 AND 9850                     D.120203
+006330*****IF JMSTD-04 NOT = 4990 AND 5000 AND 9850 AND 6010            D.141007
+006340     IF JMSTD-04 NOT = 4990 AND 9850 AND 6010                     I.141007
+006350         DISPLAY E-ME28 E-ME98                                    I.080604
+006360         GO TO M-050.                                             I.080604
+006370     PERFORM JCS-RTN THRU JCS-EX.                                 I.080604
+006380     IF W-TCD NOT = 9850                                          I.080604
+006390         MOVE ZERO TO W-TPC                                       I.080604
+006400         DISPLAY D-TPCC                                           I.080604
+006410         GO TO M-120.                                             I.080604
+006420     DISPLAY D-DNOC.                                              I.080604
+006430     GO TO M-100.                                                 I.080604
+006440*****IF W-ACT = 1                                                 D.080604
+006450*****    DISPLAY D-DNOC                                           D.080604
+006460*****GO TO M-080.                                                 D.080604
+006470 M-060.
+006480     ACCEPT A-DNO.
+006490     DISPLAY E-CL.
+006500     IF ESTAT = BTB
+006510         GO TO M-040.
+006520     IF ESTAT NOT = HTB AND SKP
+006530         GO TO M-060.
+006540     IF W-DNO = ZERO
+006550         GO TO M-060.
+006560*
+006570     PERFORM SET-RTN THRU SET-EX.
+006580*
+006590     IF W-INV NOT = 0
+006600         GO TO M-060.
+006610     IF W-UPC NOT = 0
+006620         DISPLAY E-ME21 E-ME98
+006630         GO TO M-060.
+006640     IF W-ACT = 3
+006650         GO TO M-340.
+006660 M-080.
+006670     ACCEPT A-TCD.
+006680     DISPLAY E-CL.
+006690     IF ESTAT = BTB
+006700         IF W-ACT = 1
+006710             GO TO M-050                                          I.080604
+006720*****        GO TO M-040                                          D.080604
+006730           ELSE
+006740             GO TO M-060.
+006750     IF ESTAT NOT = HTB AND SKP
+006760         GO TO M-080.
+006770*
+006780*****IF W-TCD NOT = 4990 AND 9850                                 D.080605
+006790*****IF W-TCD NOT = 4990 AND 5000 AND 9850                        D.120203
+006800*****IF W-TCD NOT = 4990 AND 5000 AND 9850 AND 6010               D.141007
+006810     IF W-TCD NOT = 4990 AND 9850 AND 6010                        I.141007
+006820         GO TO M-080.
+006830     MOVE W-TCD TO TC-TCD.
+006840     MOVE 001 TO TC-CCD.
+006850     READ TC-M WITH UNLOCK INVALID KEY
+006860         DISPLAY E-ME3 E-ME98
+006870         GO TO M-080.
+006880     MOVE TC-NAME TO W-TNA.
+006890     DISPLAY D-TNA.
+006900     IF W-TCD NOT = 9850
+006910         MOVE ZERO TO W-TPC
+006920         DISPLAY D-TPCC
+006930         GO TO M-120.
+006940 M-100.
+006950     ACCEPT A-TPC.
+006960     DISPLAY E-CL.
+006970     IF ESTAT = BTB
+006980         IF W-JCN NOT = ZERO                                      I.080604
+006990             GO TO M-050                                          I.080604
+007000           ELSE                                                   I.080604
+007010             GO TO M-080.
+007020     IF ESTAT NOT = HTB AND SKP
+007030         GO TO M-100.
+007040     IF W-TPC = ZERO
+007050         DISPLAY D-TPCC
+007060         GO TO M-120.
+007070*
+007080     MOVE W-TPC TO WTNA-KEY.
+007090     READ WTNAF WITH UNLOCK INVALID KEY
+007100         DISPLAY E-ME4 E-ME98
+007110         GO TO M-100.
+007120     DISPLAY D-MNA.
+007130     IF WTNA-OSN = 9                                              I.091215
+007140         GO TO M-120.                                             I.091215
+007150     IF WTNA-OSN = 0
+007160         MOVE 002 TO W-CCD
+007170       ELSE
+007180         IF WTNA-OSN = 1
+007190             MOVE 003 TO W-CCD
+007200           ELSE
+007210             MOVE 000 TO W-CCD.
+007220     MOVE W-TCD TO TC-TCD.
+007230     MOVE W-CCD TO TC-CCD.
+007240     READ TC-M WITH UNLOCK INVALID KEY
+007250         DISPLAY E-ME3 E-ME98
+007260         GO TO M-100.
+007270     DISPLAY A-CCD D-CNA.
+007280     GO TO M-140.
+007290 M-120.
+007300     ACCEPT A-CCD.
+007310     DISPLAY E-CL.
+007320     IF ESTAT = BTB
+007330         IF W-TCD = 9850
+007340             GO TO M-100
+007350           ELSE
+007360             IF W-JCN NOT = ZERO                                  I.080604
+007370                 GO TO M-050                                      I.080604
+007380               ELSE                                               I.080604
+007390                 GO TO M-080.
+007400     IF ESTAT NOT = HTB AND SKP
+007410         GO TO M-120.
+007420     IF W-TCD NOT = 6010                                          I.120217
+007430         IF W-CCD = 001
+007440             GO TO M-120.
+007450     IF W-TCD NOT = 6010                                          I.120217
+007460         IF W-CCD = ZERO
+007470             DISPLAY D-CNAC
+007480             GO TO M-140.
+007490     MOVE W-TCD TO TC-TCD.
+007500     MOVE W-CCD TO TC-CCD.
+007510     READ TC-M WITH UNLOCK INVALID KEY
+007520         DISPLAY E-ME3 E-ME98
+007530         GO TO M-120.
+007540     DISPLAY D-CNA.
+007550 M-140.
+007560     ACCEPT A-DATE.
+007570     DISPLAY E-CL.
+007580     IF ESTAT = BTB
+007590         GO TO M-120.
+007600     IF ESTAT NOT = HTB AND SKP
+007610         GO TO M-140.
+007620     IF W-DATE = ZERO
+007630         MOVE W-NGP TO W-DATE
+007640         DISPLAY A-DATE.
+007650     IF (W-NEN < 08) OR (W-GET < 01 OR > 12)
+007660                     OR (W-PEY < 01 OR > 31)
+007670         GO TO M-140.
+007680     IF W-DATE < W-SNGP OR > W-ENGP                               I.081226
+007690         GO TO M-140.                                             I.081226
+007700     IF W-TCD NOT = 4990
+007710         MOVE SPACE TO W-HNO
+007720         DISPLAY A-HNO
+007730         GO TO M-150.
+007740 M-145.
+007750     ACCEPT A-HNO.
+007760     DISPLAY E-CL.
+007770     IF ESTAT = BTB
+007780         GO TO M-140.
+007790     IF ESTAT NOT = HTB AND SKP
+007800         GO TO M-145.
+007810 M-150.
+007820     ACCEPT A-SOK.
+007830     DISPLAY E-CL.
+007840     IF ESTAT = BTB
+007850         IF W-TCD NOT = 4990
+007860             GO TO M-140
+007870           ELSE
+007880             GO TO M-145.
+007890     IF ESTAT NOT = HTB AND SKP
+007900         GO TO M-150.
+007910*
+007920     MOVE 3 TO JCON3-01.
+007930     MOVE W-SOK TO JCON3-02.
+007940     READ JCON WITH UNLOCK INVALID KEY
+007950         MOVE NC"倉庫　なし　" TO JCON3-03.
+007960     MOVE JCON3-03 TO W-SNA.
+007970     DISPLAY D-SNA.
+007980 M-155.
+007990     ACCEPT A-UNS.
+008000     DISPLAY E-CL.
+008010     IF ESTAT = BTB
+008020         GO TO M-150.
+008030     IF ESTAT NOT = HTB AND SKP
+008040         GO TO M-155.
+008050*
+008060     MOVE 2 TO JCON2-01.
+008070     MOVE W-UNS TO JCON2-02.
+008080     READ JCON WITH UNLOCK INVALID KEY
+008090         MOVE NC"運送　なし　" TO JCON2-03.
+008100     MOVE JCON2-03 TO W-UNA.
+008110     DISPLAY D-UNA.
+008120*
+008130     MOVE ZERO TO W-GN W-DC.
+008140     MOVE 7 TO W-LC1.
+008150     MOVE 8 TO W-LC2.
+008160 M-160.
+008170     ADD 1 TO W-GN.
+008180     ADD 2 TO W-LC1 W-LC2.
+008190     IF W-GN = 7
+008200         GO TO M-300.
+008210     IF W-DC NOT = 0
+008220         MOVE ZERO TO W-MEID(W-GN)
+008230         DISPLAY D-MEIC
+008240         GO TO M-160.
+008250 M-165.
+008260     ACCEPT A-JNO.
+008270     DISPLAY E-CL.
+008280     IF W-GN > 1
+008290         IF ESTAT = ADV
+008300             MOVE ZERO TO W-MEID(W-GN)
+008310             DISPLAY D-MEIC
+008320             MOVE 1 TO W-DC
+008330             GO TO M-160.
+008340     IF ESTAT = BTB
+008350         GO TO M-280.
+008360     IF ESTAT NOT = HTB AND SKP
+008370         GO TO M-165.
+008380     IF W-JNO(W-GN) = ZERO
+008390         MOVE ZERO TO W-JGN(W-GN)                                 I.080724
+008400         DISPLAY D-JNOC
+008410         GO TO M-175.
+008420     DISPLAY D-JNOV.
+008430     MOVE SPACE TO JMSTD-KEY1.
+008440     MOVE W-JNO(W-GN) TO JMSTD-07.
+008450     START JMSTD KEY NOT < JMSTD-KEY1 INVALID KEY
+008460         DISPLAY E-ME14 E-ME99
+008470         GO TO M-165.
+008480     READ JMSTD NEXT RECORD WITH UNLOCK AT END
+008490         DISPLAY E-ME14 E-ME99
+008500         GO TO M-165.
+008510     IF W-JNO(W-GN) NOT = JMSTD-07
+008520         DISPLAY E-ME14 E-ME99
+008530         GO TO M-165.
+008540     IF JMSTD-01 NOT = 0 AND 6
+008550         DISPLAY E-ME14 E-ME99
+008560         GO TO M-165.
+008570     IF JMSTD-04 NOT = W-TCD
+008580         DISPLAY E-ME20 E-ME98
+008590         GO TO M-165.
+008600 M-170.
+008610     ACCEPT A-JGN.
+008620     DISPLAY E-CL.
+008630     IF ESTAT = BTB
+008640         GO TO M-165.
+008650     IF ESTAT NOT = HTB AND SKP
+008660         GO TO M-170.
+008670     MOVE SPACE TO JMSTD-KEY1.
+008680     MOVE W-JNO(W-GN) TO JMSTD-07.
+008690     MOVE W-JGN(W-GN) TO JMSTD-08.
+008700     READ JMSTD WITH UNLOCK INVALID KEY
+008710         DISPLAY E-ME14 E-ME99
+008720         GO TO M-165.
+008730     IF JMSTD-01 NOT = 0 AND 6
+008740         DISPLAY E-ME15 E-ME99
+008750         GO TO M-165.
+008760     MOVE JMSTD-03 TO W-HCD(W-GN).
+008770     MOVE W-HCD(W-GN) TO HI-MHCD HI-HCD.
+008780     READ HI2-M WITH UNLOCK INVALID KEY
+008790         MOVE SPACE TO HI-NAME.
+008800     MOVE 0 TO HI-S(4,10).                                        I.091002
+008810     DISPLAY A-HCD D-HNA.
+008820     IF JMSTD-10 NOT = 001
+008830         IF JMSTD-10 NOT = W-CCD
+008840             DISPLAY E-ME19 E-ME98.
+008850     IF W-ACT = 1                                                 I.080508
+008860         MOVE JMSTD-13 TO W-TEKI                                  I.080508
+008870         DISPLAY A-THT A-TTE.                                     I.080508
+008880     GO TO M-180.
+008890 M-175.
+008900     IF W-ACT = 1
+008910         IF W-FHCD NOT = ZERO
+008920             MOVE W-FHCD TO W-HCD(W-GN)
+008930             DISPLAY A-HCD.
+008940 M-180.
+008950     ACCEPT A-HCD.
+008960     DISPLAY E-CL.
+008970     IF ESTAT = BTB
+008980         GO TO M-165.
+008990     IF ESTAT NOT = HTB AND SKP
+009000         GO TO M-180.
+009010     IF W-HCD(W-GN) = ZERO
+009020         MOVE W-FHCD TO W-HCD(W-GN)
+009030         DISPLAY A-HCD.
+009040*
+009050     MOVE W-HCD(W-GN) TO HI-MHCD HI-HCD.
+009060     READ HI2-M WITH UNLOCK INVALID KEY
+009070         DISPLAY E-ME5 E-ME98
+009080         GO TO M-180.
+009090     MOVE HI-ISU TO W-ISU(W-GN).
+009100     MOVE 0 TO HI-S(4,10).
+009110     DISPLAY D-HNA.
+009120*****IF W-TCD NOT = 4990                                          D.120203
+009130     IF W-TCD NOT = 4990 AND 6010                                 I.120203
+009140         IF W-HCD(W-GN) = 999999
+009150             GO TO M-180.
+009160*
+009170     IF W-JNO(W-GN) = ZERO
+009180         GO TO M-200.
+009190     IF JMSTD-03 = W-HCD(W-GN)
+009200         GO TO M-200.
+009210     MOVE 20 TO RUIJ-01.
+009220     MOVE JMSTD-03 TO RUIJ-02.
+009230     MOVE W-HCD(W-GN) TO RUIJ-03.
+009240     READ JT-RUIJ WITH UNLOCK INVALID KEY
+009250         DISPLAY E-ME16 E-ME98
+009260         GO TO M-165.
+009270 M-200.
+009280     ACCEPT A-SZN.
+009290     DISPLAY E-CL.
+009300     IF ESTAT = BTB
+009310         GO TO M-180.
+009320     IF ESTAT NOT = HTB AND SKP
+009330         GO TO M-200.
+009340*
+009350     MOVE W-SZN(W-GN) TO W-SIZM.
+009360     PERFORM SIZ-RTN THRU SIZ-EX.
+009370     DISPLAY D-SIZD.
+009380     IF W-INV NOT = 0
+009390         GO TO M-200.
+009400     MOVE W-SCC TO W-SKB(W-GN).
+009410     MOVE W-C TO W-SNO(W-GN).
+009420     IF W-ACT = 1
+009430         IF W-JNO(W-GN) NOT = ZERO
+009440             PERFORM JMS-RTN THRU JMS-EX
+009450           ELSE
+009460             PERFORM NJS-RTN THRU NJS-EX.
+009470     IF W-INV NOT = 0
+009480         GO TO M-200.
+009490     IF (W-ACT = 1) OR ((W-ACT = 2) AND (W-GT(W-GN) = ZERO))
+009500         PERFORM TAN-RTN THRU TAN-EX.
+009510*****IF W-TCD NOT = 4990                                          D.080605
+009520     IF W-TCD = 9850                                              I.080605
+009530         MOVE SPACE TO W-TRN(W-GN)
+009540         DISPLAY D-TRNC
+009550         GO TO M-220.
+009560     CLOSE CODEF.
+009570     OPEN INPUT CODEF.
+009580     SELECT CODEF WHERE 0000 = CODE-TCD AND
+009590                        W-HCD(W-GN) = CODE-HCD AND
+009600                        W-SCC = CODE-SIZ AND W-C = CODE-SNO.
+009610     READ CODEF AT END SCRATCH CODEF
+009620         MOVE SPACE TO CODE-JAN CODE-NAME.                        I.080605
+009630*****    MOVE SPACE TO CODE-NAME.                                 D.080605
+009640     MOVE CODE-JAN  TO W-JAN(W-GN).                               I.100921
+009650     MOVE CODE-NAME TO W-TRN(W-GN).                               I.100921
+009660     IF W-TCD NOT = 4990                                          I.080605
+009670*****    MOVE CODE-JAN  TO W-JAN(W-GN)                            D.100921
+009680*****    MOVE SPACE TO W-JANS(W-GN)                               D.100921
+009690         DISPLAY D-TRNC                                           I.080605
+009700       ELSE                                                       I.080605
+009710*****    MOVE CODE-NAME TO W-TRN(W-GN).                           D.080605
+009720*****    MOVE CODE-NAME TO W-TRN(W-GN)                            D.100921
+009730         DISPLAY D-TRN.
+009740     IF W-TCD = 4990                                              I.080605
+009750         IF CODE-NAME = SPACE
+009760             DISPLAY E-ME17 E-ME98
+009770             GO TO M-200.
+009780*****IF W-TCD = 4990                                              D.120203
+009790     IF W-TCD = 4990 OR 6010                                      I.120203
+009800         IF W-HCD(W-GN) = 999999
+009810             MOVE ZERO TO W-SU(W-GN) W-GT(W-GN)
+009820             DISPLAY D-SU D-GT
+009830             GO TO M-250.
+009840 M-220.
+009850     ACCEPT A-SU.
+009860     DISPLAY E-CL.
+009870     IF ESTAT = BTB
+009880         GO TO M-200.
+009890     IF ESTAT NOT = HTB AND SKP
+009900         GO TO M-220.
+009910     IF W-SU(W-GN) <= ZERO
+009920         GO TO M-220.
+009930     DISPLAY D-SU.
+009940 M-240.
+009950     ACCEPT A-GT.
+009960     DISPLAY E-CL.
+009970     IF ESTAT = BTB
+009980         GO TO M-220.
+009990     IF ESTAT NOT = HTB AND SKP
+010000         GO TO M-240.
+010010     IF W-GT(W-GN) = ZERO
+010020         DISPLAY E-ME30 E-ME99                                    I.101015
+010030         DISPLAY E-CL.                                            I.110609
+010040*****    DISPLAY E-CL                                             D.110609
+010050*****    GO TO M-240.                                             D.110609
+010060     COMPUTE W-GKIN(W-GN) = W-SU(W-GN) * W-GT(W-GN).
+010070     DISPLAY D-GT D-GKIN.
+010080*****IF W-TCD = 4990                                              D.120203
+010090     IF W-TCD = 4990 OR 6010                                      I.120203
+010100         MOVE ZERO TO W-UT(W-GN) W-UKIN(W-GN)
+010110         DISPLAY D-UT D-UKIN
+010120         GO TO M-270.
+010130     GO TO M-260.
+010140 M-250.
+010150     DISPLAY A-GKIN.
+010160     ACCEPT A-GKIN.
+010170     DISPLAY E-CL.
+010180     IF ESTAT = BTB
+010190         GO TO M-200.
+010200     IF ESTAT NOT = HTB AND SKP
+010210         GO TO M-250.
+010220     MOVE ZERO TO W-UT(W-GN) W-UKIN(W-GN)
+010230     DISPLAY D-GKIN D-UT D-UKIN
+010240     GO TO M-270.
+010250 M-260.
+010260     ACCEPT A-UT.
+010270     DISPLAY E-CL.
+010280     IF ESTAT = BTB
+010290         GO TO M-240.
+010300     IF ESTAT NOT = HTB AND SKP
+010310         GO TO M-260.
+010320     IF W-UT(W-GN) = ZERO
+010330         DISPLAY E-ME30 E-ME99                                    I.100511
+010340         DISPLAY E-CL.                                            I.100511
+010350*****    GO TO M-260.                                             D.100511
+010360     COMPUTE W-UKIN(W-GN) = W-SU(W-GN) * W-UT(W-GN).
+010370     DISPLAY D-UT D-UKIN.
+010380 M-270.
+010390     MOVE W-HCD(W-GN) TO W-FHCD.
+010400     GO TO M-160.
+010410 M-280.
+010420     SUBTRACT 1 FROM W-GN.
+010430     SUBTRACT 2 FROM W-LC1 W-LC2.
+010440     IF W-GN = 0
+010450         GO TO M-140.
+010460     IF W-HCD(W-GN) = ZERO
+010470         GO TO M-280.
+010480*****IF W-TCD = 4990                                              D.120203
+010490     IF W-TCD = 4990 OR 6010                                      I.120203
+010500         IF W-HCD(W-GN) = 999999
+010510             GO TO M-250
+010520           ELSE
+010530             GO TO M-240.
+010540     GO TO M-260.
+010550 M-300.
+010560*****MOVE ZERO TO W-GN WT-D W-SUC.                                D.110907
+010570     MOVE ZERO TO W-GN WT-D W-SUC W-UCHK.                         I.110907
+010580 M-310.
+010590     ADD 1 TO W-GN.
+010600     IF W-GN = 7
+010610         GO TO M-320.
+010620     IF W-HCD(1) = 999999                                         I.110906
+010630         MOVE 1 TO W-UCHK.                                        I.110906
+010640     IF W-UCHK = 1                                                I.110906
+010650         IF W-GN NOT = 1                                          I.110906
+010660             IF W-HCD(W-GN) NOT = 000000 AND 999999               I.110906
+010670                 MOVE 0 TO W-UCHK.                                I.110906
+010680     ADD W-SU(W-GN) TO WT-SU
+010690     ADD W-GKIN(W-GN) TO WT-GKIN
+010700     ADD W-UKIN(W-GN) TO WT-UKIN
+010710     IF W-GN = 1
+010720         IF W-SU(W-GN) < ZERO
+010730             MOVE 1 TO W-SUC
+010740           ELSE
+010750             MOVE 0 TO W-SUC.
+010760     IF W-SU(W-GN) < ZERO
+010770         IF W-SUC = 0
+010780             DISPLAY E-ME24 E-ME98
+010790             MOVE 7 TO W-GN
+010800             GO TO M-280.
+010810     IF W-SU(W-GN) >= ZERO
+010820         IF W-SUC = 1
+010830             DISPLAY E-ME24 E-ME98
+010840             MOVE 7 TO W-GN
+010850             GO TO M-280.
+010860     GO TO M-310.
+010870 M-320.
+010880     DISPLAY D-KEI.
+010890     IF W-JCN NOT = ZERO                                          I.080604
+010900         IF (W-JCN NOT = W-JNO(1)) AND (W-JCN NOT = W-JNO(2)) AND I.080604
+010910            (W-JCN NOT = W-JNO(3)) AND (W-JCN NOT = W-JNO(4)) AND I.080604
+010920            (W-JCN NOT = W-JNO(5)) AND (W-JCN NOT = W-JNO(6))     I.080604
+010930             DISPLAY E-ME28 E-ME98                                I.080604
+010940             GO TO M-280.                                         I.080604
+010950     MOVE 0 TO W-DC.
+010960 M-325.
+010970     ACCEPT A-THT.
+010980     DISPLAY E-CL.
+010990     IF ESTAT = BTB
+011000         GO TO M-280.
+011010     IF ESTAT NOT = HTB AND SKP
+011020         GO TO M-325.
+011030     MOVE W-TEKI TO W-ATYD.                                       I.080604
+011040     IF SPACE = W-TY(01) OR W-TY(03) OR W-TY(05) OR W-TY(07)      I.080604
+011050             OR W-TY(09) OR W-TY(11) OR W-TY(13) OR W-TY(15)      I.080604
+011060             OR W-TY(17)                                          I.080604
+011070         GO TO M-325.
+011080 M-330.
+011090     ACCEPT A-TTE.
+011100     DISPLAY E-CL.
+011110     IF ESTAT = BTB
+011120         GO TO M-325.
+011130     IF ESTAT NOT = HTB AND SKP
+011140         GO TO M-330.
+011150     MOVE W-TEKI TO W-ATYD.                                       I.080604
+011160     IF SPACE = W-TY(19) OR W-TY(21) OR W-TY(23) OR W-TY(25)      I.080604
+011170             OR W-TY(27) OR W-TY(29) OR W-TY(31) OR W-TY(33)      I.080604
+011180             OR W-TY(35) OR W-TY(37) OR W-TY(39) OR W-TY(41)      I.080604
+011190             OR W-TY(43) OR W-TY(45) OR W-TY(47) OR W-TY(49)      I.080604
+011200             OR W-TY(51) OR W-TY(53) OR W-TY(55)                  I.080604
+011210         GO TO M-330.
+011220 M-340.
+011230     ACCEPT A-DMM.
+011240     DISPLAY E-CL.
+011250     IF ESTAT = BTB
+011260         IF W-ACT = 3
+011270             GO TO M-060
+011280           ELSE
+011290             GO TO M-330.
+011300     IF ESTAT NOT = HTB AND SKP
+011310         GO TO M-340.
+011320     IF W-DMM = 9
+011330         DISPLAY E-ME7 E-ME98
+011340         GO TO M-080.
+011350     IF W-DMM NOT = 1
+011360         GO TO M-340.
+011370*
+011380     ACCEPT W-TIMED FROM TIME.                                    I.110622
+011390     MOVE ZERO TO W-GN.
+011400     IF W-ACT NOT = 1                                             I.091202
+011410         GO TO M-350.                                             I.091202
+011420*****IF W-ACT = 1                                                 D.091202
+011430*****    ADD 1 TO W-MDNO                                          D.091202
+011440*****    MOVE W-MDNO TO W-DNO                                     D.091202
+011450     MOVE "19" TO JCON1-KEY.                                      I.091202
+011460     READ JCON INVALID KEY                                        I.091202
+011470         DISPLAY E-ME8 E-ME99                                     I.091202
+011480         GO TO M-420.                                             I.091202
+011490     ADD 1 TO JCON1-04.                                           I.091202
+011500     IF JCON1-04 = ZERO                                           I.121128
+011510         ADD 1 TO JCON1-04.                                       I.121128
+011520     REWRITE JCON1-R INVALID KEY                                  I.091202
+011530         DISPLAY E-ME9 E-ME99                                     I.091202
+011540         GO TO M-420.                                             I.091202
+011550     MOVE JCON1-04 TO W-DNO.                                      I.091202
+011560     GO TO M-380.
+011570 M-350.                                                           I.091202
+011580     MOVE ZERO TO TDI-KEY.
+011590     MOVE W-DNO TO TDI-DNO.
+011600     START TDIF KEY NOT < TDI-KEY INVALID KEY
+011610         DISPLAY E-ME1 E-ME98
+011620         DISPLAY E-CL
+011630         GO TO M-380.
+011640 M-360.
+011650     READ TDIF NEXT RECORD AT END
+011660         GO TO M-380.
+011670     IF W-DNO NOT = TDI-DNO
+011680         GO TO M-380.
+011690     IF TDI-JNO NOT = ZERO
+011700         PERFORM JMD-RTN THRU JMD-EX.
+011710     IF W-END NOT = 0
+011720         GO TO M-420.
+011730     IF TDI-HCD < 999900
+011740         PERFORM NJD-RTN THRU NJD-EX.
+011750     IF W-END NOT = 0
+011760         GO TO M-420.
+011770     DELETE TDIF INVALID KEY
+011780         DISPLAY E-STAT E-ME13 E-KEY E-ME99
+011790         GO TO M-420.
+011800     GO TO M-360.
+011810 M-380.
+011820     IF W-ACT = 3
+011830         GO TO M-400.
+011840     ADD 1 TO W-GN.
+011850     IF W-GN = 7
+011860         GO TO M-400.
+011870     IF W-HCD(W-GN) = ZERO
+011880         GO TO M-400.
+011890*
+011900     IF W-JNO(W-GN) NOT = ZERO
+011910         PERFORM JMW-RTN THRU JMW-EX.
+011920     IF W-END NOT = 0
+011930         GO TO M-420.
+011940     IF W-HCD(W-GN) < 999900
+011950         PERFORM NJW-RTN THRU NJW-EX.
+011960     IF W-END NOT = 0
+011970         GO TO M-420.
+011980 M-385.
+011990     INITIALIZE TDI-R.
+012000     MOVE W-DNO TO TDI-DNO.
+012010     MOVE W-GN TO TDI-GNO.
+012020     MOVE W-DATE TO TDI-DATE.
+012030     MOVE W-TCD TO TDI-TCD.
+012040     MOVE W-CCD TO TDI-CCD.
+012050     MOVE W-TPC TO TDI-TPC.
+012060     MOVE W-SOK TO TDI-SOK.
+012070     MOVE W-UNS TO TDI-UNS.
+012080     MOVE W-HNO TO TDI-HNO.
+012090     MOVE W-THT TO TDI-THT.
+012100     MOVE W-TTE TO TDI-TTE.
+012110     IF W-ACT NOT = 1
+012120         MOVE W-PRC TO TDI-PRC
+012130         MOVE W-UPC TO TDI-UPC
+012140       ELSE
+012150         MOVE 0 TO TDI-PRC TDI-UPC.
+012160     MOVE W-JNO(W-GN) TO TDI-JNO.
+012170     MOVE W-JGN(W-GN) TO TDI-JGN.
+012180     MOVE W-HCD(W-GN) TO TDI-HCD.
+012190     MOVE W-SZN(W-GN) TO TDI-SIZ.
+012200     MOVE W-SKB(W-GN) TO TDI-SKB.
+012210     MOVE W-SNO(W-GN) TO TDI-SNO.
+012220     MOVE W-SU(W-GN) TO TDI-SU.
+012230     MOVE W-GT(W-GN) TO TDI-GT.
+012240     MOVE W-UT(W-GN) TO TDI-UT.
+012250     MOVE W-GKIN(W-GN) TO TDI-GKIN.
+012260     MOVE W-UKIN(W-GN) TO TDI-UKIN.
+012270     MOVE W-ISU(W-GN) TO TDI-ISU.
+012280     MOVE W-TRN(W-GN) TO TDI-TRN.
+012290     MOVE W-JAN(W-GN) TO TDI-JAN.                                 I.100921
+012300     MOVE W-NNGP TO TDI-NNGP.                                     I.110622
+012310     MOVE W-TIME TO TDI-NHMS.                                     I.110622
+012320     IF W-UCHK = 1                                                I.110906
+012330         MOVE 1 TO TDI-UPC.                                       I.110906
+012340     WRITE TDI-R INVALID KEY
+012350         GO TO M-390.
+012360     GO TO M-380.
+012370 M-390.
+012380     DISPLAY E-STAT E-ME11 E-KEY E-ME99
+012390     IF ERR-STAT NOT = 24
+012400         DISPLAY E-ME78 E-ME99
+012410         GO TO M-420.
+012420     CLOSE TDIF.
+012430     MOVE "TDIF         " TO W-FILE.
+012440     DISPLAY E-CL.
+012450     DISPLAY E-ME71 E-ME98.
+012460     STOP " ".
+012470     DISPLAY E-CL.
+012480     OPEN I-O TDIF.
+012490     GO TO M-385.
+012500 M-400.
+012510     DISPLAY C-CLEAR.
+012520     CALL "SJN05I".
+012530     DISPLAY A-ACT D-BDNO.
+012540     IF W-ACT NOT = 1
+012550         GO TO M-060.
+012560     DISPLAY A-TCD D-TNA A-CCD A-DATE A-SOK A-UNS
+012570                                            A-THT A-TTE.
+012580     IF W-TCD = 4990
+012590         DISPLAY A-HNO.
+012600     IF W-CCD NOT = ZERO
+012610         DISPLAY D-CNA.
+012620     IF W-TPC NOT = ZERO
+012630         DISPLAY A-TPC D-MNA.
+012640     GO TO M-050.                                                 I.080604
+012650*****GO TO M-080.                                                 D.080604
+012660 M-420.
+012670     CLOSE TDIF.
+012680     CLOSE TC-M HI2-M WTNAF THTM CODEF JT-RUIJ.
+012690     CLOSE JMSTD NJZAI.
+012700*****MOVE "19" TO JCON1-KEY.                                      D.091202
+012710*****READ JCON INVALID KEY                                        D.091202
+012720*****    CLOSE JCON                                               D.091202
+012730*****    DISPLAY E-ME8 E-ME99                                     D.091202
+012740*****    GO TO M-980.                                             D.091202
+012750*****MOVE W-MDNO TO JCON1-03.                                     D.091202
+012760*****REWRITE JCON1-R INVALID KEY                                  D.091202
+012770*****    DISPLAY E-ME9 E-ME99.                                    D.091202
+012780     CLOSE JCON.
+012790*
+012800     DISPLAY C-CLEAR.
+012810     DISPLAY D-PRM.
+012820 M-520.
+012830     ACCEPT A-SEN.
+012840     IF ESTAT = PF9
+012850         GO TO M-980.
+012860     IF ESTAT NOT = HTB AND SKP
+012870         GO TO M-520.
+012880     IF W-SEN NOT = 1 AND 2
+012890         GO TO M-520.
+012900 M-522.
+012910     ACCEPT A-FNEN.
+012920     IF ESTAT = BTB
+012930         GO TO M-520.
+012940     IF ESTAT NOT = HTB AND SKP
+012950         GO TO M-522.
+012960 M-524.
+012970     ACCEPT A-FGET.
+012980     IF ESTAT = BTB
+012990         GO TO M-522.
+013000     IF ESTAT NOT = HTB AND SKP
+013010         GO TO M-524.
+013020 M-526.
+013030     ACCEPT A-FPEY.
+013040     IF ESTAT = BTB
+013050         GO TO M-524.
+013060     IF ESTAT NOT = HTB AND SKP
+013070         GO TO M-526.
+013080 M-528.
+013090     ACCEPT A-TNEN.
+013100     IF ESTAT = BTB
+013110         GO TO M-526.
+013120     IF ESTAT NOT = HTB AND SKP
+013130         GO TO M-528.
+013140     IF W-FNEN > W-TNEN
+013150         GO TO M-528.
+013160 M-530.
+013170     ACCEPT A-TGET.
+013180     IF ESTAT = BTB
+013190         GO TO M-528.
+013200     IF ESTAT NOT = HTB AND SKP
+013210         GO TO M-530.
+013220 M-532.
+013230     ACCEPT A-TPEY.
+013240     IF ESTAT = BTB
+013250         GO TO M-530.
+013260     IF ESTAT NOT = HTB AND SKP
+013270         GO TO M-532.
+013280     IF W-FNGP > W-TNGP
+013290         GO TO M-528.
+013300     IF W-SEN = 1
+013310         DISPLAY D-DNC
+013320         GO TO M-580.
+013330     DISPLAY D-DNM.
+013340 M-540.
+013350     ACCEPT A-DNOF.
+013360     IF ESTAT = BTB
+013370         GO TO M-532.
+013380     IF ESTAT NOT = HTB AND SKP
+013390         GO TO M-540.
+013400 M-560.
+013410     ACCEPT A-DNOT.
+013420     IF ESTAT = BTB
+013430         GO TO M-540.
+013440     IF ESTAT NOT = HTB AND SKP
+013450         GO TO M-560.
+013460     IF W-DNOF > W-DNOT
+013470         GO TO M-540.
+013480 M-580.
+013490     ACCEPT A-DMM.
+013500     IF ESTAT = BTB
+013510         IF W-SEN = 1
+013520             GO TO M-532
+013530           ELSE
+013540             GO TO M-560.
+013550     IF ESTAT NOT = HTB AND SKP
+013560         GO TO M-580.
+013570     IF W-DMM = 9
+013580         GO TO M-520.
+013590     IF W-DMM NOT = 1
+013600         GO TO M-580.
+013610*
+013620     OPEN I-O TDIF.
+013630 M-600.
+013640     READ TDIF NEXT RECORD AT END
+013650         CLOSE TDIF
+013660         DISPLAY E-ME1 E-ME99
+013670         GO TO M-980.
+013680     IF TDI-DATE < W-FNGP OR > W-TNGP
+013690         GO TO M-600.
+013700     IF W-SEN = 1
+013710         IF TDI-PRC NOT = 0
+013720             GO TO M-600.
+013730     IF W-SEN = 2
+013740         IF TDI-PRC = 0
+013750             GO TO M-600
+013760           ELSE
+013770             IF TDI-DNO < W-DNOF OR > W-DNOT
+013780                 GO TO M-600
+013790               ELSE
+013800                 IF TDI-UPC NOT = 0
+013810                     GO TO M-600.
+013820     OPEN INPUT JCON TC-M HI2-M WTNAF CODEF.
+013830     OPEN OUTPUT SP-F.
+013840     MOVE ZERO TO W-PAGE.
+013850     MOVE W-FNGP TO H-FNGP.
+013860     MOVE W-TNGP TO H-TNGP.
+013870     ACCEPT H-DATE FROM DATE.
+013880     PERFORM MID-10 THRU MID-EX.
+013890 M-620.
+013900     MOVE TDI-DNO TO W-DNO.
+013910     MOVE ZERO TO WT-D.
+013920*
+013930     MOVE SPACE TO W-P1.
+013940     MOVE SPACE TO P-TNA P-CNA P-SNA P-UNA P-THT P-TTE.
+013950     MOVE W-DNO TO P-DNO.
+013960     MOVE TDI-DATE TO P-DATE.
+013970     MOVE TDI-TCD TO P-TCD.
+013980     IF TDI-TPC NOT = ZERO
+013990         IF TDI-CCD = 2 OR 3
+014000             MOVE TDI-TPC TO P-TPC                                I.100921
+014010*****        MOVE TDI-TPC TO P-CCD                                D.100921
+014020           ELSE
+014030             IF TDI-CCD NOT = ZERO AND 001
+014040                 MOVE TDI-CCD TO P-CCD.
+014050     IF TDI-TPC = ZERO
+014060         IF TDI-CCD NOT = ZERO AND 001
+014070             MOVE TDI-CCD TO P-CCD.
+014080     IF TDI-HNO NOT = SPACE AND ZERO
+014090         MOVE TDI-HNO TO P-HNO.
+014100     MOVE TDI-THT TO P-THT.
+014110     MOVE TDI-TTE TO P-TTE.
+014120*
+014130     MOVE 2 TO JCON2-01.
+014140     MOVE TDI-UNS TO JCON2-02.
+014150     READ JCON WITH UNLOCK INVALID KEY
+014160         MOVE NC"運送　なし　" TO JCON2-03.
+014170     MOVE JCON2-03 TO P-UNA.
+014180*
+014190     MOVE 3 TO JCON3-01.
+014200     MOVE TDI-SOK TO JCON3-02.
+014210     READ JCON WITH UNLOCK INVALID KEY
+014220         MOVE NC"倉庫　なし　" TO JCON3-03.
+014230     MOVE JCON3-03 TO P-SNA.
+014240*
+014250     MOVE TDI-TCD TO TC-TCD.
+014260     MOVE 1 TO TC-CCD.
+014270     READ TC-M WITH UNLOCK INVALID KEY
+014280         MOVE SPACE TO TC-NAME
+014290         MOVE NC"＊　得意先なし　＊" TO TC-NAME.
+014300     MOVE TC-NAME TO P-TNA.
+014310*
+014320*****IF TDI-TPC NOT = ZERO AND 999                                D.100921
+014330     IF TDI-TPC NOT = ZERO AND 9998 AND 9999                      I.100921
+014340         IF TDI-CCD = 2 OR 3
+014350             GO TO M-640.
+014360     IF TDI-CCD = ZERO OR 001
+014370         GO TO M-660.
+014380     MOVE TDI-TCD TO TC-TCD.
+014390     MOVE TDI-CCD TO TC-CCD.
+014400     READ TC-M WITH UNLOCK INVALID KEY
+014410         MOVE SPACE TO TC-NAME
+014420         MOVE NC"＊　直送先なし　＊" TO TC-NAME.
+014430     MOVE TC-NAME TO P-CNA.
+014440     GO TO M-660.
+014450 M-640.
+014460     MOVE TDI-TPC TO WTNA-KEY.
+014470     READ WTNAF WITH UNLOCK INVALID KEY
+014480         MOVE SPACE TO WTNA-NAME
+014490         MOVE NC"＊　店名　なし　＊" TO WTNA-NAME.
+014500     MOVE WTNA-NAME TO P-CNA.
+014510 M-660.
+014520     PERFORM PR2-RTN THRU PR2-EX.
+014530     IF W-SEN = 2
+014540         GO TO M-680.
+014550     MOVE 1 TO TDI-PRC.
+014560     REWRITE TDI-R INVALID KEY
+014570         DISPLAY E-STAT E-ME12 E-KEY E-ME99
+014580         DISPLAY E-CL.
+014590 M-680.
+014600     READ TDIF NEXT RECORD AT END
+014610         GO TO M-700.
+014620     IF TDI-DATE < W-FNGP OR > W-TNGP
+014630         GO TO M-680.
+014640     IF W-SEN = 1
+014650         IF TDI-PRC NOT = 0
+014660             GO TO M-680.
+014670     IF W-SEN = 2
+014680         IF TDI-PRC = 0
+014690             GO TO M-680
+014700           ELSE
+014710             IF TDI-DNO < W-DNOF OR > W-DNOT
+014720                 GO TO M-680
+014730               ELSE
+014740                 IF TDI-UPC NOT = 0
+014750                     GO TO M-680.
+014760     IF TDI-DNO = W-DNO
+014770         GO TO M-660.
+014780     PERFORM PR3-RTN THRU PR3-EX.
+014790     GO TO M-620.
+014800 M-700.
+014810     PERFORM PR3-RTN THRU PR3-EX.
+014820     CLOSE SP-F.
+014830     CLOSE TDIF.
+014840     CLOSE JCON TC-M HI2-M WTNAF CODEF.
+014850 M-980.
+014860     DISPLAY C-CLEAR.
+014870     STOP RUN.
+014880**************************************************************************
+014890 JCS-RTN.                                                         I.080604
+014900     MOVE JMSTD-04 TO W-TCD.                                      I.080604
+014910     MOVE JMSTD-10 TO W-CCD.                                      I.080604
+014920     MOVE JMSTD-23 TO W-TPC.                                      I.080604
+014930     MOVE JMSTD-13 TO W-TEKI.                                     I.080604
+014940     MOVE W-JCN TO W-JNO(1).                                      I.080604
+014950     MOVE W-TCD TO TC-TCD.                                        I.080604
+014960     MOVE 001 TO TC-CCD.                                          I.080604
+014970     READ TC-M WITH UNLOCK INVALID KEY                            I.080604
+014980         MOVE SPACE TO TC-NAME                                    I.080604
+014990         MOVE NC"得意先　なし" TO TC-NAME.                        I.080604
+015000     MOVE TC-NAME TO W-TNA.                                       I.080604
+015010*
+015020     IF W-TPC = ZERO                                              I.080604
+015030         GO TO JCS-10.                                            I.080604
+015040     MOVE W-TPC TO WTNA-KEY.                                      I.080604
+015050     READ WTNAF WITH UNLOCK INVALID KEY                           I.080604
+015060         MOVE SPACE TO WTNA-NAME                                  I.080604
+015070         MOVE 9 TO WTNA-OSN                                       I.080604
+015080         MOVE NC"店名　なし" TO WTNA-NAME.                        I.080604
+015090 JCS-10.                                                          I.080604
+015100     MOVE W-TCD TO TC-TCD.                                        I.080604
+015110     MOVE W-CCD TO TC-CCD.                                        I.080604
+015120     READ TC-M WITH UNLOCK INVALID KEY                            I.080604
+015130         MOVE SPACE TO TC-NAME                                    I.080604
+015140         MOVE NC"直送先　なし" TO TC-NAME.                        I.080604
+015150     DISPLAY A-TCD D-TNA A-CCD D-CNA A-THT A-TTE.                 I.080604
+015160     IF W-TPC = ZERO                                              I.080604
+015170         DISPLAY D-TPCC                                           I.080604
+015180       ELSE                                                       I.080604
+015190         DISPLAY A-TPC D-MNA.                                     I.080604
+015200     IF W-CCD = ZERO OR 001                                       I.080604
+015210         DISPLAY D-CNAC                                           I.080604
+015220       ELSE                                                       I.080604
+015230         DISPLAY D-CNA.                                           I.080604
+015240*****IF W-TCD = 9850                                              D.080605
+015250     IF W-TCD NOT = 4990                                          I.080605
+015260         DISPLAY D-HNOC.                                          I.080604
+015270     MOVE 1 TO W-GN.                                              I.080604
+015280     MOVE 9 TO W-LC1.                                             I.080604
+015290     DISPLAY A-JNO.                                               I.080604
+015300 JCS-EX.                                                          I.080604
+015310     EXIT.                                                        I.080604
+015320 SET-RTN.
+015330     MOVE ZERO TO TDI-KEY W-INV.
+015340     MOVE W-DNO TO TDI-DNO.
+015350     START TDIF KEY NOT < TDI-KEY INVALID KEY
+015360         MOVE 1 TO W-INV
+015370         DISPLAY E-ME1 E-ME98
+015380         GO TO SET-EX.
+015390     READ TDIF NEXT RECORD AT END
+015400         MOVE 1 TO W-INV
+015410         DISPLAY E-ME1 E-ME98
+015420         GO TO SET-EX.
+015430     IF W-DNO NOT = TDI-DNO
+015440         MOVE 1 TO W-INV
+015450         DISPLAY E-ME1 E-ME98
+015460         GO TO SET-EX.
+015470*
+015480     MOVE TDI-TCD TO W-TCD.
+015490     MOVE TDI-CCD TO W-CCD.
+015500     MOVE TDI-TPC TO W-TPC.
+015510     MOVE TDI-DATE TO W-DATE.
+015520     MOVE TDI-SOK TO W-SOK.
+015530     MOVE TDI-UNS TO W-UNS.
+015540     MOVE TDI-HNO TO W-HNO.
+015550     MOVE TDI-THT TO W-THT.
+015560     MOVE TDI-TTE TO W-TTE.
+015570     MOVE TDI-PRC TO W-PRC.
+015580     MOVE TDI-UPC TO W-UPC.
+015590     MOVE ZERO TO W-MEI W-GN.
+015600 SET-10.
+015610     ADD 1 TO W-GN.
+015620     IF W-GN > 6
+015630         MOVE 1 TO W-INV
+015640         DISPLAY E-ME2 E-ME9
+015650         GO TO SET-EX.
+015660     IF W-GN NOT = TDI-GNO
+015670         DISPLAY E-ME2 E-ME9
+015680         GO TO SET-EX.
+015690     MOVE TDI-JNO TO W-JNO(W-GN).
+015700     MOVE TDI-JGN TO W-JGN(W-GN).
+015710     MOVE TDI-HCD TO W-HCD(W-GN).
+015720     MOVE TDI-SIZ TO W-SZN(W-GN).
+015730     MOVE TDI-SKB TO W-SKB(W-GN).
+015740     MOVE TDI-SNO TO W-SNO(W-GN).
+015750     MOVE TDI-SU TO W-SU(W-GN).
+015760     MOVE TDI-GT TO W-GT(W-GN).
+015770     MOVE TDI-UT TO W-UT(W-GN).
+015780     MOVE TDI-GKIN TO W-GKIN(W-GN).
+015790     MOVE TDI-UKIN TO W-UKIN(W-GN).
+015800     MOVE TDI-ISU TO W-ISU(W-GN).
+015810     MOVE TDI-TRN TO W-TRN(W-GN).
+015820     MOVE TDI-JAN TO W-JAN(W-GN).                                 I.100921
+015830*
+015840     READ TDIF NEXT RECORD AT END
+015850         GO TO SET-20.
+015860     IF W-DNO NOT = TDI-DNO
+015870         GO TO SET-20.
+015880     IF (TDI-TCD NOT = W-TCD) OR (TDI-TPC NOT = W-TPC) OR
+015890        (TDI-DATE NOT = W-DATE) OR (TDI-CCD NOT = W-CCD) OR
+015900        (TDI-HNO NOT = W-HNO)
+015910         MOVE 1 TO W-INV
+015920         DISPLAY E-ME2 E-ME9
+015930         GO TO SET-EX.
+015940     GO TO SET-10.
+015950 SET-20.
+015960     MOVE W-TCD TO TC-TCD.
+015970     MOVE 001 TO TC-CCD.
+015980     READ TC-M WITH UNLOCK INVALID KEY
+015990         MOVE SPACE TO TC-NAME
+016000         MOVE NC"得意先　なし" TO TC-NAME.
+016010     MOVE TC-NAME TO W-TNA.
+016020*
+016030     IF W-TPC = ZERO
+016040         GO TO SET-30.
+016050     MOVE W-TPC TO WTNA-KEY.
+016060     READ WTNAF WITH UNLOCK INVALID KEY
+016070         MOVE SPACE TO WTNA-NAME
+016080         MOVE 9 TO WTNA-OSN
+016090         MOVE NC"店名　なし" TO WTNA-NAME.
+016100*****IF WTNA-OSN = 0                                              D.080604
+016110*****    MOVE 002 TO W-CCD                                        D.080604
+016120*****  ELSE                                                       D.080604
+016130*****    IF WTNA-OSN = 1                                          D.080604
+016140*****        MOVE 003 TO W-CCD                                    D.080604
+016150*****      ELSE                                                   D.080604
+016160*****        MOVE 000 TO W-CCD.                                   D.080604
+016170 SET-30.
+016180     IF W-CCD = ZERO
+016190         GO TO SET-40.
+016200     MOVE W-TCD TO TC-TCD.
+016210     MOVE W-CCD TO TC-CCD.
+016220     READ TC-M WITH UNLOCK INVALID KEY
+016230         MOVE SPACE TO TC-NAME
+016240         MOVE NC"直送先　なし" TO TC-NAME.
+016250 SET-40.
+016260     MOVE 2 TO JCON2-01.
+016270     MOVE W-UNS TO JCON2-02.
+016280     READ JCON WITH UNLOCK INVALID KEY
+016290         MOVE NC"運送　なし　" TO JCON2-03.
+016300     MOVE JCON2-03 TO W-UNA.
+016310*
+016320     MOVE 3 TO JCON3-01.
+016330     MOVE W-SOK TO JCON3-02.
+016340     READ JCON WITH UNLOCK INVALID KEY
+016350         MOVE NC"倉庫　なし　" TO JCON3-03.
+016360     MOVE JCON3-03 TO W-SNA.
+016370*
+016380     DISPLAY A-TCD D-TNA A-CCD D-CNA A-DATE
+016390             A-SOK D-SNA A-UNS D-UNA A-THT A-TTE.
+016400     IF W-TPC = ZERO
+016410         DISPLAY D-TPCC
+016420       ELSE
+016430         DISPLAY A-TPC D-MNA.
+016440     IF W-CCD = ZERO OR 001
+016450         DISPLAY D-CNAC
+016460       ELSE
+016470         DISPLAY D-CNA.
+016480*****IF W-TCD = 9850                                              D.080605
+016490     IF W-TCD NOT = 4990                                          I.080605
+016500         DISPLAY D-HNOC
+016510       ELSE
+016520         DISPLAY A-HNO.
+016530     MOVE ZERO TO W-GN WT-D.
+016540     MOVE 7 TO W-LC1.
+016550     MOVE 8 TO W-LC2.
+016560 SET-50.
+016570     ADD 1 TO W-GN.
+016580     IF W-GN = 7
+016590         DISPLAY D-KEI
+016600         GO TO SET-EX.
+016610     ADD 2 TO W-LC1 W-LC2.
+016620     IF W-HCD(W-GN) = ZERO
+016630         DISPLAY D-MEIC
+016640         GO TO SET-50.
+016650     IF W-JNO(W-GN) = ZERO
+016660         DISPLAY D-JNOC
+016670       ELSE
+016680         DISPLAY A-JNO A-JGN.
+016690*
+016700     MOVE W-HCD(W-GN) TO HI-MHCD HI-HCD.
+016710     READ HI2-M WITH UNLOCK INVALID KEY
+016720         MOVE SPACE TO HI-NAME
+016730         MOVE NC"品名　なし" TO HI-NAME.
+016740     MOVE 0 TO HI-S(4,10).                                        I.091002
+016750*
+016760     MOVE W-SZN(W-GN) TO W-SIZM.
+016770     PERFORM SIZ-RTN THRU SIZ-EX.
+016780*
+016790     DISPLAY A-HCD D-HNA A-SZN D-SIZD D-MEI.
+016800     IF W-INV = 1
+016810         DISPLAY E-ME99.
+016820     IF W-TCD = 4990
+016830         DISPLAY D-TRN
+016840       ELSE
+016850         DISPLAY D-TRNC.
+016860*
+016870     ADD W-SU(W-GN) TO WT-SU.
+016880     ADD W-GKIN(W-GN) TO WT-GKIN.
+016890     ADD W-UKIN(W-GN) TO WT-UKIN.
+016900     GO TO SET-50.
+016910 SET-EX.
+016920     EXIT.
+016930 SIZ-RTN.
+016940     MOVE SPACE TO W-SIZN.
+016950     MOVE ZERO TO W-SC W-INV.
+016960 SIZ-10.
+016970     ADD 1 TO W-SC.
+016980     IF W-SC = 6
+016990         MOVE 5 TO W-SC
+017000         MOVE 10 TO W-C
+017010         GO TO SIZ-30.
+017020     MOVE ZERO TO W-C.
+017030 SIZ-20.
+017040     ADD 1 TO W-C.
+017050     IF W-C = 11
+017060         GO TO SIZ-10.
+017070     IF W-SIZM NOT = W-SZ(W-SC,W-C)
+017080         GO TO SIZ-20.
+017090 SIZ-30.
+017100     COMPUTE W-SCC = W-SC - 1.
+017110     IF W-SCC = 0
+017120         MOVE 1 TO W-SCC.
+017130     IF HI-S(W-SCC,W-C) = 0
+017140         IF (W-SIZM = 240 OR 245 OR 250) AND (W-SCC = 3)
+017150             GO TO SIZ-10
+017160           ELSE
+017170             MOVE 1 TO W-INV
+017180             DISPLAY E-ME6 E-ME98
+017190             GO TO SIZ-EX.
+017200     MOVE W-SIZ(W-SC,W-C) TO W-SIZN.
+017210     IF W-SC = 1
+017220         IF (HI-SS2 NOT = ZERO) OR (HI-SS3 NOT = ZERO)
+017230                                OR (HI-SS4 NOT = ZERO)
+017240         MOVE 1 TO W-INV
+017250         DISPLAY E-ME6 E-ME98
+017260         GO TO SIZ-EX.
+017270     IF W-SC = 2
+017280         IF (HI-SS2 = ZERO) AND (HI-SS3 = ZERO)
+017290                            AND (HI-SS4 = ZERO)
+017300         MOVE 1 TO W-INV
+017310         DISPLAY E-ME6 E-ME98
+017320         GO TO SIZ-EX.
+017330 SIZ-EX.
+017340     EXIT.
+017350 TAN-RTN.
+017360     MOVE W-TCD TO THT-TCD.
+017370     MOVE W-HCD(W-GN) TO THT-HCD.
+017380     MOVE W-SCC TO THT-SIZ.
+017390     READ THTM WITH UNLOCK INVALID KEY
+017400         GO TO TAN-10.
+017410     GO TO TAN-20.
+017420 TAN-10.
+017430     MOVE W-TCD TO THT-TCD.
+017440     MOVE W-HCD(W-GN) TO THT-HCD.
+017450     MOVE 9 TO THT-SIZ.
+017460     READ THTM WITH UNLOCK INVALID KEY
+017470         DISPLAY E-ME23 E-ME98
+017480         MOVE ZERO TO THT-T THT-TT.
+017490 TAN-20.
+017500     MOVE THT-T TO W-GT(W-GN).
+017510     MOVE THT-TT TO W-UT(W-GN).
+017520     IF W-JCN NOT = ZERO                                          I.080604
+017530         IF JMSTD-17 NOT = ZERO                                   I.080604
+017540             MOVE JMSTD-17 TO W-GT(W-GN).                         I.080604
+017550     DISPLAY D-GT D-UT.
+017560 TAN-EX.
+017570     EXIT.
+017580 JMS-RTN.
+017590     MOVE 0 TO W-INV.
+017600     IF W-SCC NOT = JMSTD-09
+017610         DISPLAY E-ME18 E-ME98
+017620         MOVE 1 TO W-INV
+017630       ELSE
+017640         COMPUTE W-SU(W-GN) = JMSTD-1111(W-C) - JMSTD-1211(W-C)
+017650                            - JMSTD-141(W-C)  - JMSTD-151(W-C)
+017660         DISPLAY D-SU.
+017670 JMS-EX.
+017680     EXIT.
+017690 NJS-RTN.
+017700     MOVE 0 TO W-INV.
+017710     MOVE SPACE TO NJZAI-KEY.
+017720     MOVE W-SOK TO NJZAI-01.
+017730     MOVE W-HCD(W-GN) TO NJZAI-02.
+017740     MOVE W-SKB(W-GN) TO NJZAI-03.
+017750     READ NJZAI WITH UNLOCK INVALID KEY
+017760         MOVE ZERO TO NJZAI-0411(W-C) NJZAI-0511(W-C)
+017770                      NJZAI-0611(W-C) NJZAI-0711(W-C)
+017780                      NJZAI-0811(W-C) NJZAI-0911(W-C)
+017790                      NJZAI-1111(W-C).
+017800     COMPUTE W-SU(W-GN) = NJZAI-0411(W-C) - NJZAI-0511(W-C)
+017810                        + NJZAI-0611(W-C) + NJZAI-0711(W-C)
+017820                        - NJZAI-0811(W-C) - NJZAI-0911(W-C)
+017830                        + NJZAI-1111(W-C).
+017840     DISPLAY D-SU.
+017850 NJS-EX.
+017860     EXIT.
+017870 JMW-RTN.
+017880     MOVE SPACE TO JMSTD-KEY1.
+017890     MOVE W-JNO(W-GN) TO JMSTD-07.
+017900     MOVE W-JGN(W-GN) TO JMSTD-08.
+017910     READ JMSTD INVALID KEY
+017920         DISPLAY E-ME14 E-JMST E-ME99
+017930         GO TO JMW-EX.
+017940     MOVE W-SNO(W-GN) TO CNT.
+017950     ADD W-SU(W-GN) TO JMSTD-151(CNT).
+017960     REWRITE JMSTD-R INVALID KEY
+017970         MOVE 1 TO W-END
+017980         DISPLAY E-STAT E-ME25 E-JMST E-ME99.
+017990 JMW-EX.
+018000     EXIT.
+018010 JMD-RTN.
+018020     MOVE SPACE TO JMSTD-KEY1.
+018030     MOVE TDI-JNO TO JMSTD-07.
+018040     MOVE TDI-JGN TO JMSTD-08.
+018050     READ JMSTD INVALID KEY
+018060         DISPLAY E-ME14 E-JMST E-ME99
+018070         GO TO JMD-EX.
+018080     SUBTRACT TDI-SU FROM JMSTD-151(TDI-SNO).
+018090     REWRITE JMSTD-R INVALID KEY
+018100         MOVE 1 TO W-END
+018110         DISPLAY E-STAT E-ME25 E-JMST E-ME99.
+018120 JMD-EX.
+018130     EXIT.
+018140 NJW-RTN.
+018150     INITIALIZE NJZAI-R.
+018160     MOVE W-SOK TO NJZAI-01.
+018170     MOVE W-HCD(W-GN) TO NJZAI-02.
+018180     MOVE W-SKB(W-GN) TO NJZAI-03.
+018190     READ NJZAI INVALID KEY
+018200         DISPLAY E-ME22 E-NJZAI E-ME99
+018210         GO TO NJW-10.
+018220     MOVE W-SNO(W-GN) TO CNT.
+018230     ADD W-SU(W-GN) TO NJZAI-0911(CNT).
+018240     REWRITE NJZAI-R INVALID KEY
+018250         MOVE 1 TO W-END
+018260         DISPLAY E-STAT E-ME26 E-NJZAI E-ME99
+018270         GO TO NJW-EX.
+018280     GO TO NJW-30.
+018290 NJW-10.
+018300     MOVE W-SNO(W-GN) TO CNT.
+018310     ADD W-SU(W-GN) TO NJZAI-0911(CNT).
+018320     WRITE NJZAI-R INVALID KEY
+018330         GO TO NJW-20.
+018340     GO TO NJW-30.
+018350 NJW-20.
+018360     DISPLAY E-STAT E-ME27 E-NJZAI E-ME99
+018370     IF ERR-STAT NOT = 24
+018380         MOVE 1 TO W-END
+018390         DISPLAY E-ME78 E-ME99
+018400         GO TO NJW-EX.
+018410     CLOSE NJZAI.
+018420     MOVE "NJZAI        " TO W-FILE.
+018430     DISPLAY E-CL.
+018440     DISPLAY E-ME71 E-ME98.
+018450     STOP " ".
+018460     DISPLAY E-CL.
+018470     OPEN I-O NJZAI
+018480     GO TO NJW-RTN.
+018490 NJW-30.
+018500     INITIALIZE NJZAI-R.
+018510     MOVE 9 TO NJZAI-01.
+018520     MOVE W-HCD(W-GN) TO NJZAI-02.
+018530     MOVE W-SKB(W-GN) TO NJZAI-03.
+018540     READ NJZAI INVALID KEY
+018550         DISPLAY E-ME22 E-NJZAI E-ME99
+018560         GO TO NJW-40.
+018570     MOVE W-SNO(W-GN) TO CNT.
+018580     ADD W-SU(W-GN) TO NJZAI-0911(CNT).
+018590     REWRITE NJZAI-R INVALID KEY
+018600         MOVE 1 TO W-END
+018610         DISPLAY E-STAT E-ME26 E-NJZAI E-ME99.
+018620     GO TO NJW-EX.
+018630 NJW-40.
+018640     MOVE W-SNO(W-GN) TO CNT.
+018650     ADD W-SU(W-GN) TO NJZAI-0911(CNT).
+018660     WRITE NJZAI-R INVALID KEY
+018670         GO TO NJW-50.
+018680     GO TO NJW-EX.
+018690 NJW-50.
+018700     DISPLAY E-STAT E-ME27 E-NJZAI E-ME99
+018710     IF ERR-STAT NOT = 24
+018720         MOVE 1 TO W-END
+018730         DISPLAY E-ME78 E-ME99
+018740         GO TO NJW-EX.
+018750     CLOSE NJZAI.
+018760     MOVE "NJZAI        " TO W-FILE.
+018770     DISPLAY E-CL.
+018780     DISPLAY E-ME71 E-ME98.
+018790     STOP " ".
+018800     DISPLAY E-CL.
+018810     OPEN I-O NJZAI
+018820     GO TO NJW-30.
+018830 NJW-EX.
+018840     EXIT.
+018850 NJD-RTN.
+018860     MOVE SPACE TO NJZAI-KEY.
+018870     MOVE TDI-SOK TO NJZAI-01.
+018880     MOVE TDI-HCD TO NJZAI-02.
+018890     MOVE TDI-SKB TO NJZAI-03.
+018900     READ NJZAI INVALID KEY
+018910         DISPLAY E-ME22 E-NJZAI E-ME99
+018920         GO TO NJD-EX.
+018930     SUBTRACT TDI-SU FROM NJZAI-0911(TDI-SNO).
+018940     REWRITE NJZAI-R INVALID KEY
+018950         MOVE 1 TO W-END
+018960         DISPLAY E-STAT E-ME26 E-NJZAI E-ME99
+018970         GO TO NJD-EX.
+018980*
+018990     MOVE SPACE TO NJZAI-KEY.
+019000     MOVE 9 TO NJZAI-01.
+019010     MOVE TDI-HCD TO NJZAI-02.
+019020     MOVE TDI-SKB TO NJZAI-03.
+019030     READ NJZAI INVALID KEY
+019040         DISPLAY E-ME22 E-NJZAI E-ME99
+019050         GO TO NJD-EX.
+019060     SUBTRACT TDI-SU FROM NJZAI-0911(TDI-SNO).
+019070     REWRITE NJZAI-R INVALID KEY
+019080         MOVE 1 TO W-END
+019090         DISPLAY E-STAT E-ME26 E-NJZAI E-ME99
+019100         GO TO NJD-EX.
+019110 NJD-EX.
+019120     EXIT.
+019130 MID-RTN.
+019140     MOVE SPACE TO SP-R.
+019150     WRITE SP-R AFTER PAGE.
+019160 MID-10.
+019170     ADD 1 TO W-PAGE.
+019180     MOVE W-PAGE TO H-PAGE.
+019190     MOVE SPACE TO SP-R.
+019200     MOVE HEAD1 TO SP-R.
+019210     WRITE SP-R.
+019220     MOVE SPACE TO SP-R.
+019230     MOVE HEAD2 TO SP-R.
+019240     WRITE SP-R AFTER 2.
+019250     MOVE SPACE TO SP-R.
+019260     MOVE HEAD3 TO SP-R.
+019270     WRITE SP-R.
+019280     MOVE SPACE TO SP-R.
+019290 MID-EX.
+019300     EXIT.
+019310 PR1-RTN.
+019320     IF LINAGE-COUNTER > 63
+019330         PERFORM MID-RTN THRU MID-EX.
+019340     MOVE SPACE TO SP-R.
+019350     MOVE W-P1 TO SP-R.
+019360     WRITE SP-R.
+019370     MOVE SPACE TO SP-R.
+019380 PR1-EX.
+019390     EXIT.
+019400 PR2-RTN.
+019410     MOVE TDI-HCD TO HI-MHCD HI-HCD.
+019420     READ HI2-M WITH UNLOCK INVALID KEY
+019430         MOVE SPACE TO HI-NAME
+019440         MOVE NC"＊　品名なし　＊" TO HI-NAME.
+019450     MOVE 0 TO HI-S(4,10).                                        I.091002
+019460     IF TDI-GNO = 1
+019470         PERFORM PR1-RTN THRU PR1-EX.
+019480     MOVE SPACE TO W-P2.
+019490     MOVE SPACE TO P-HNA
+019500     MOVE "-" TO P-V1.
+019510     MOVE TDI-GNO TO P-GNO.
+019520     IF TDI-JNO NOT = ZERO
+019530         MOVE TDI-JNO TO P-JNO
+019540         MOVE "-" TO P-V2
+019550         MOVE TDI-JGN TO P-JGN.
+019560     MOVE TDI-HCD TO P-HCD.
+019570     MOVE HI-NAME TO P-HNA.
+019580     MOVE TDI-SIZ TO W-SIZM.
+019590     PERFORM SIZ-RTN THRU SIZ-EX.
+019600     MOVE W-SIZN TO P-SIZ.
+019610     MOVE TDI-SU TO P-SU.
+019620     MOVE TDI-GT TO P-GT.
+019630     MOVE TDI-GKIN TO P-GKIN.
+019640     IF ZERO NOT = TDI-UT AND TDI-UKIN
+019650         MOVE TDI-UT TO P-UT
+019660         MOVE TDI-UKIN TO P-UKIN.
+019670     IF TDI-TCD = 4990
+019680         MOVE TDI-TRN TO P-TMS.
+019690     IF LINAGE-COUNTER > 64
+019700         PERFORM MID-RTN THRU MID-EX.
+019710     MOVE SPACE TO SP-R.
+019720     MOVE W-P2 TO SP-R.
+019730     WRITE SP-R.
+019740     MOVE SPACE TO SP-R.
+019750*
+019760     ADD TDI-SU TO WT-SU.
+019770     ADD TDI-GKIN TO WT-GKIN.
+019780     ADD TDI-UKIN TO WT-UKIN.
+019790 PR2-EX.
+019800     EXIT.
+019810 PR3-RTN.
+019820     MOVE WT-SU TO P-TSU.
+019830     MOVE WT-GKIN TO P-TGKIN.
+019840     MOVE WT-UKIN TO P-TUKIN.
+019850     IF LINAGE-COUNTER > 63
+019860         PERFORM MID-RTN THRU MID-EX.
+019870     MOVE SPACE TO SP-R.
+019880     MOVE W-P3 TO SP-R.
+019890     WRITE SP-R.
+019900     MOVE SPACE TO SP-R.
+019910 PR3-EX.
+019920     EXIT.
+

@@ -1,0 +1,654 @@
+000010 IDENTIFICATION   DIVISION.
+000020 PROGRAM-ID.      HMM750.
+000030*********************************************************
+000040*    PROGRAM         :  履物振替単価修正更新            *
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :  ______                          *
+000070*    DATA WRITTN     :  00/06/01                        *
+000080*    COMPILE TYPE    :  COBOL                           *
+000090*    JS-SIGN         :  1=評価替え , 2=単発更新         *
+000100*********************************************************
+000110 ENVIRONMENT      DIVISION.
+000120 CONFIGURATION    SECTION.
+000130 SOURCE-COMPUTER. SYSTEM3100.
+000140 OBJECT-COMPUTER. SYSTEM3100.
+000150 INPUT-OUTPUT     SECTION.
+000160 FILE-CONTROL.
+000170     COPY LIBCSE.
+000180     SELECT HFTSF ASSIGN TO HFTS-MSD
+000190         ORGANIZATION IS INDEXED
+000200         ACCESS MODE IS DYNAMIC
+000210         RECORD KEY IS HFTS-KEY
+000220         FILE STATUS IS ERR-STAT.
+000230*****SELECT HI-M ASSIGN TO HI-MSD                                 D.010806
+000240     SELECT HI-M ASSIGN TO HI1-MSD HI2-MSD                        I.010806
+000250         ORGANIZATION IS INDEXED
+000260         ACCESS MODE IS RANDOM
+000270         RECORD KEY IS HI-KEY
+000280         ALTERNATE RECORD KEY IS HI-KEY2                          I.010806
+000290         FILE STATUS IS ERR-STAT.
+000300     SELECT HUH-M ASSIGN TO HUH-MSD
+000310         ORGANIZATION IS INDEXED
+000320         ACCESS MODE IS DYNAMIC
+000330         RECORD KEY IS HUH-KEY
+000340         FILE STATUS IS ERR-STAT.
+000350     SELECT TT-M ASSIGN TO TT-MSD
+000360         ORGANIZATION IS INDEXED
+000370         ACCESS MODE IS RANDOM
+000380         RECORD KEY IS TT-KEY
+000390         FILE STATUS IS ERR-STAT.
+000400     SELECT STRANYR ASSIGN TO STRANYR-MSD.
+000410     SELECT RSTRANYR ASSIGN TO RSTRANYR-RDB.                      I.040402
+000420     SELECT SNTRF ASSIGN TO SNTR-MSD.
+000430*****SELECT UTRYR ASSIGN TO UTRYR-MSD.                            D.040402
+000440     SELECT UTRYR ASSIGN TO UTRYR-RDB.                            I.040402
+000450     SELECT UTRF ASSIGN TO UTR-MSD.
+000460     SELECT STRAN ASSIGN TO STRAN-MSD.                            I.060524
+000470     SELECT UTRAN ASSIGN TO UTRAN-MSD.                            I.060524
+000480 I-O-CONTROL.
+000490     APPLY SHARED-MODE ON M-DATE.
+000500 DATA DIVISION.
+000510 FILE SECTION.
+000520     COPY LIBFDD.
+000530     COPY LIHIM.
+000540     COPY LITTM.
+000550     COPY LIHUHM.
+000560 FD  HFTSF
+000570     BLOCK  4 RECORDS
+000580     LABEL RECORD IS STANDARD
+000590     VALUE OF IDENTIFICATION "HFTSF".
+000600 01  HFTS-R.
+000610     02  HFTS-KEY.
+000620       03  HFTS-NC      PIC  9(001).                              I.010319
+000630       03  HFTS-HCD     PIC  9(006).
+000640       03  HFTS-HCDD  REDEFINES HFTS-HCD.
+000650         04  HFTS-HCD1  PIC  9(004).
+000660         04  HFTS-HCD2  PIC  9(002).
+000670     02  HFTS-OLD.
+000680       03  HFTS-FTO     PIC  9(005).
+000690       03  F            PIC  X(019).                              I.141104
+000700*****  03  HFTS-ZRGO    PIC  9(005).                              D.141104
+000710*****  03  HFTS-SKGO    PIC  9(005).                              D.141104
+000720*****  03  HFTS-GKGO    PIC  9(005).                              D.141104
+000730*****  03  HFTS-KNCO    PIC  9(001).                              D.010806
+000740*****  03  HFTS-KNGO    PIC  9(004).                              D.141104
+000750     02  HFTS-NEW.
+000760       03  HFTS-FT      PIC  9(005).
+000770       03  F            PIC  X(019).                              I.141104
+000780*****  03  HFTS-ZRG     PIC  9(005).                              D.141104
+000790*****  03  HFTS-SKG     PIC  9(005).                              D.141104
+000800*****  03  HFTS-GKG     PIC  9(005).                              D.141104
+000810*****  03  HFTS-KNC     PIC  9(001).                              D.010806
+000820*****  03  HFTS-KNG     PIC  9(004).                              D.141104
+000830     02 HFTS-BC.
+000840       03  HFTS-BC1     PIC  9(002).
+000850       03  HFTS-BC2.
+000860         04  HFTS-BC21  PIC  9(001).
+000870         04  HFTS-BC22  PIC  9(001).
+000880       03  HFTS-BC3     PIC  9(002).
+000890     02  F              PIC  X(003).                              I.010806
+000900*****02  F              PIC  X(001).                              D.010806
+000910*****02  HFTS-NC        PIC  9(001).                              D.010319
+000920 FD  STRANYR
+000930     BLOCK  2 RECORDS
+000940     LABEL RECORD IS STANDARD
+000950     VALUE OF IDENTIFICATION "STRANYR".
+000960 01  STRANY-R.
+000970     02  STRANY-DNO     PIC  9(006).                              I.000817
+000980     02  STRANY-GNO     PIC  9(001).                              I.000817
+000990     02  STRANY-DATE    PIC  9(008).
+001000     02  STRANY-NGP   REDEFINES STRANY-DATE.
+001010       03  STRANY-NG    PIC  9(006).
+001020       03  F            PIC  9(002).
+001030     02  STRANY-TCD     PIC  9(004).
+001040     02  STRANY-HCD     PIC  9(006).
+001050*****02  F              PIC  X(041).                              D.000817
+001060     02  F              PIC  X(031).                              I.000817
+001070     02  STRANY-SU      PIC S9(005).
+001080     02  F              PIC  X(014).
+001090     02  STRANY-DC      PIC  9(001).
+001100     02  STRANY-FT      PIC  9(005).
+001110     02  F              PIC  X(046).                              I.000817
+001120     02  STRANY-UNC     PIC  9(001).                              I.000817
+001130*****02  F              PIC  X(019).                              D.000817
+001140*****02  STRANY-DNO     PIC  9(006).                              D.000817
+001150*****02  F              PIC  X(019).                              D.000817
+001160 FD  RSTRANYR                                                     I.040402
+001170     BLOCK  2 RECORDS                                             I.040402
+001180     LABEL RECORD IS STANDARD                                     I.040402
+001190     VALUE OF IDENTIFICATION "STRANYR-RDB".                       I.040402
+001200 01  RSTRANY-R.                                                   I.040402
+001210     02  RSTRANY-DNO    PIC  9(006).                              I.040402
+001220     02  RSTRANY-GNO    PIC  9(001).                              I.040402
+001230     02  RSTRANY-DATE   PIC  9(008).                              I.040402
+001240     02  RSTRANY-NGP   REDEFINES RSTRANY-DATE.                    I.040402
+001250       03  RSTRANY-NG   PIC  9(006).                              I.040402
+001260       03  F            PIC  9(002).                              I.040402
+001270     02  RSTRANY-TCD    PIC  9(004).                              I.040402
+001280     02  RSTRANY-HCD    PIC  9(006).                              I.040402
+001290     02  F              PIC  X(031).                              I.040402
+001300     02  RSTRANY-SU     PIC S9(005).                              I.040402
+001310     02  F              PIC  X(014).                              I.040402
+001320     02  RSTRANY-DC     PIC  9(001).                              I.040402
+001330     02  RSTRANY-FT     PIC  9(005).                              I.040402
+001340     02  F              PIC  X(046).                              I.040402
+001350     02  RSTRANY-UNC    PIC  9(001).                              I.040402
+001360 FD  SNTRF
+001370     BLOCK  2 RECORDS
+001380     LABEL RECORD IS STANDARD
+001390     VALUE OF IDENTIFICATION "SNTRF".
+001400 01  SNTR-R.
+001410     02  SNTR-DNO       PIC  9(006).                              I.000817
+001420     02  SNTR-GNO       PIC  9(001).                              I.000817
+001430     02  SNTR-DATE      PIC  9(008).
+001440     02  SNTR-TCD       PIC  9(004).
+001450     02  SNTR-HCD       PIC  9(006).
+001460*****02  F              PIC  X(041).                              D.000817
+001470     02  F              PIC  X(031).                              I.000817
+001480     02  SNTR-SU        PIC S9(005).
+001490     02  F              PIC  X(014).
+001500     02  SNTR-DC        PIC  9(001).
+001510     02  SNTR-FT        PIC  9(005).
+001520     02  F              PIC  X(046).                              I.000817
+001530*****02  F              PIC  X(019).                              D.000817
+001540*****02  SNTR-DNO       PIC  9(006).                              D.000817
+001550*****02  F              PIC  X(018).                              D.000817
+001560     02  SNTR-SNC       PIC  9(001).
+001570 FD  UTRF
+001580*****BLOCK  5 RECORDS                                             D.020516
+001590     BLOCK  2 RECORDS                                             I.020516
+001600     LABEL RECORD IS STANDARD
+001610     VALUE OF IDENTIFICATION "UTRF".
+001620 01  UTR-R.
+001630     02  UTR-DNO        PIC  9(007).
+001640     02  UTR-DATE       PIC  9(008).
+001650     02  UTR-HCD        PIC  9(006).
+001660     02  F              PIC  X(041).
+001670     02  UTR-SU         PIC S9(005).
+001680     02  F              PIC  X(008).
+001690     02  UTR-KIN        PIC S9(008).
+001700     02  UTR-NC         PIC  9(001).
+001710     02  UTR-SC         PIC  9(001).
+001720     02  F              PIC  X(043).                              I.020516
+001730*****02  F              PIC  X(017).                              D.020516
+001740 FD  UTRYR
+001750*****BLOCK  5 RECORDS                                             D.020516
+001760     BLOCK  2 RECORDS                                             I.020516
+001770     LABEL RECORD IS STANDARD
+001780     VALUE OF IDENTIFICATION "UTRYR-RDB".                         I.040402
+001790*****VALUE OF IDENTIFICATION "UTRYR".                             D.040402
+001800 01  UTRY-R.
+001810     02  UTRY-DNO       PIC  9(007).
+001820     02  UTRY-DATE      PIC  9(008).
+001830     02  UTRY-NGP   REDEFINES UTRY-DATE.
+001840       03  UTRY-NG      PIC  9(006).
+001850       03  F            PIC  9(002).
+001860     02  UTRY-HCD       PIC  9(006).
+001870     02  F              PIC  X(041).
+001880     02  UTRY-SU        PIC S9(005).
+001890     02  F              PIC  X(008).
+001900     02  UTRY-KIN       PIC S9(008).
+001910     02  UTRY-NC        PIC  9(001).
+001920     02  UTRY-SC        PIC  9(001).
+001930     02  F              PIC  X(043).                              I.020516
+001940*****02  F              PIC  X(017).                              D.020516
+001950 FD  STRAN                                                        I.060524
+001960     BLOCK  2 RECORDS                                             I.060524
+001970     LABEL RECORD IS STANDARD                                     I.060524
+001980     VALUE OF IDENTIFICATION "STRAN".                             I.060524
+001990 01  STRAN-R            PIC  X(128).                              I.060524
+002000 FD  UTRAN                                                        I.060524
+002010     BLOCK  2 RECORDS                                             I.060524
+002020     LABEL RECORD IS STANDARD                                     I.060524
+002030     VALUE OF IDENTIFICATION "UTRAN".                             I.060524
+002040 01  UTRAN-R            PIC  X(128).                              I.060524
+002050 WORKING-STORAGE  SECTION.
+002060 77  JS-SIGN            PIC  9(001).                              I.010319
+002070 77  ERR-STAT           PIC  X(002).
+002080 77  W-FILE             PIC  X(013).
+002090 01  W-DATA.
+002100     02  CHK            PIC  9(001).
+002110     02  W-DMM          PIC  9(001).
+002120     02  W-NC           PIC  9(001).
+002130     02  W-DC           PIC  9(001).
+002140     02  W-KIN          PIC S9(009).
+002150     02  W-KIND         PIC S9(009).
+002160     02  W-NG           PIC  9(006).
+002170     02  W-NGD   REDEFINES W-NG.
+002180       03  W-NEN        PIC  9(004).
+002190       03  W-NENL  REDEFINES W-NEN.
+002200         04  W-NEN1     PIC  9(002).
+002210         04  W-NEN2     PIC  9(002).
+002220       03  W-GET        PIC  9(002).
+002230     02  W-NGL  REDEFINES W-NG.
+002240       03  F            PIC  9(002).
+002250       03  W-NGS        PIC  9(004).
+002260     02  W-SM           PIC  N(004).
+002270     COPY LSTAT.
+002280 SCREEN      SECTION.
+002290 SD  C-CRT
+002300     END  STATUS IS  ESTAT.
+002310 01  C-CLEAR.
+002320     02  C-CL    LINE   1  CLEAR SCREEN.
+002330 01  C-MID.
+002340     02  LINE   1  COLUMN  12  PIC  N(022) VALUE
+002350          NC"＊＊＊　　履物　振替単価　更新　　＊＊＊".
+002360     02  LINE  20  COLUMN  36  PIC  X(022) VALUE
+002370          "確認  OK=1 NO=9   ﾘﾀｰﾝ".
+002380 01  C-ACP.
+002390     02  A-DMM   LINE  20  COLUMN  53  PIC  9(001)
+002400          USING W-DMM   CHECK OVERFLOW NO IFC.
+002410 01  C-DSP.
+002420     02  D-SM    LINE  12  COLUMN  30  PIC  N(004) FROM  W-SM.
+002430 01  C-ERR.
+002440     02  LINE  24.
+002450       03  E-ME1   COLUMN  15  PIC  X(016) VALUE
+002460            "***  TTM ﾅｼ  ***".
+002470       03  E-ME2   COLUMN  15  PIC  X(017) VALUE
+002480            "***  HUHM ﾅｼ  ***".
+002490       03  E-ME3   COLUMN  15  PIC  X(016) VALUE
+002500            "***  HIM ﾅｼ  ***".
+002510       03  E-ME4   COLUMN  15  PIC  X(017) VALUE
+002520            "***  DATA ﾅｼ  ***".
+002530       03  E-ME5   COLUMN  15  PIC  X(023) VALUE                  I.060524
+002540            "***  ﾐｺｳｼﾝ ﾃﾞｰﾀ ｱﾘ  ***".                            I.060524
+002550       03  E-ME9   COLUMN  15  PIC  X(018) VALUE
+002560            "***  DATA ｴﾗｰ  ***".
+002570       03  E-ME10  COLUMN  15  PIC  X(025) VALUE
+002580            "***  HIM REWRITE ｴﾗｰ  ***".
+002590       03  E-ME11  COLUMN  15  PIC  X(025) VALUE
+002600            "***  TTM REWRITE ｴﾗｰ  ***".
+002610       03  E-ME12  COLUMN  15  PIC  X(034) VALUE
+002620            "***  HUHM REWRITE ｴﾗｰ (SNRAN)  ***".
+002630       03  E-ME13  COLUMN  15  PIC  X(033) VALUE
+002640            "***  HUHM REWRITE ｴﾗｰ (UTRF)  ***".
+002650       03  E-ME21  COLUMN  15  PIC  X(028) VALUE
+002660            "***  HUHM ｷﾝｶﾞｸ ｴﾗｰ (+)  ***".
+002670       03  E-ME22  COLUMN  15  PIC  X(028) VALUE
+002680            "***  HUHM ｷﾝｶﾞｸ ｴﾗｰ (X)  ***".
+002690       03  E-HCD   COLUMN  50  PIC  9(006) FROM  HI-HCD.
+002700       03  E-TCD   COLUMN  50  PIC  9(004) FROM  SNTR-TCD.
+002710     COPY LSSEM.
+002720     COPY LIBSCR.
+002730 PROCEDURE DIVISION.
+002740 M-05.
+002750     ACCEPT JS-SIGN.                                              I.010319
+002760     IF JS-SIGN NOT = 1 AND 2                                     I.010319
+002770         STOP RUN.                                                I.010319
+002780     DISPLAY C-CLEAR.
+002790     DISPLAY C-MID.
+002800*****PERFORM S-05 THRU S-25.                                      D.010319
+002810     PERFORM S-05 THRU S-30.                                      I.010319
+002820     IF CHK = 1
+002830         MOVE 255 TO COMPLETION-CODE
+002840         GO TO M-95.
+002850*****IF W-NC = 1                                                  D.010319
+002860     IF JS-SIGN = 1                                               I.010319
+002870         MOVE NC"評価替え" TO W-SM
+002880       ELSE
+002890         MOVE NC"単発修正" TO W-SM.
+002900     DISPLAY D-SM.
+002910 M-10.
+002920     ACCEPT A-DMM.
+002930     IF ESTAT NOT = HTB AND SKP
+002940         GO TO M-10.
+002950     IF W-DMM = 9
+002960         MOVE 255 TO COMPLETION-CODE                              I.010319
+002970         GO TO M-95.
+002980     IF W-DMM NOT = 1
+002990         GO TO M-10.
+003000*
+003010     OPEN INPUT HFTSF.
+003020     OPEN I-O HI-M.
+003030*****IF W-NC = 2                                                  D.010319
+003040     IF JS-SIGN = 2                                               I.010319
+003050         GO TO M-25.
+003060     MOVE SPACE TO HFTS-KEY.                                      I.010319
+003070     MOVE JS-SIGN TO HFTS-NC.                                     I.010319
+003080     START HFTSF KEY NOT < HFTS-KEY INVALID KEY                   I.010319
+003090         MOVE 255 TO COMPLETION-CODE                              I.010319
+003100         DISPLAY E-ME4 E-ME99                                     I.010319
+003110         GO TO M-90.                                              I.010319
+003120 M-15.
+003130     READ HFTSF NEXT RECORD AT END
+003140         GO TO M-90.
+003150     IF JS-SIGN NOT = HFTS-NC                                     I.010319
+003160         GO TO M-90.                                              I.010319
+003170*
+003180     MOVE HFTS-HCD TO HI-KEY.
+003190     READ HI-M INVALID KEY
+003200         MOVE 255 TO COMPLETION-CODE
+003210         DISPLAY E-ME3 E-HCD E-ME99
+003220         DISPLAY E-CL
+003230         GO TO M-90.
+003240     MOVE HFTS-FT TO HI-FT.
+003250*****MOVE HFTS-ZRG TO HI-ZRG.                                     D.140808
+003260*****MOVE HFTS-SKG TO HI-SKG.                                     D.140808
+003270*****MOVE HFTS-GKG TO HI-GKG.                                     D.140808
+003280*****MOVE HFTS-KNC TO HI-KNC.                                     D.010806
+003290*****MOVE HFTS-KNG TO HI-KNG.                                     D.140808
+003300     REWRITE HI-R INVALID KEY
+003310         MOVE 255 TO COMPLETION-CODE
+003320         DISPLAY E-STAT E-ME10 E-HCD E-ME99
+003330         GO TO M-90.
+003340     GO TO M-15.
+003350 M-25.
+003360     MOVE ZERO TO W-NG.
+003370     COPY LIBCPR.
+003380     MOVE D-NHNG TO W-NGS.
+003390     IF W-NEN2 >= DATE-NF1 AND <= DATE-NT1
+003400         ADD DATE-NC1 TO W-NEN.
+003410     IF W-NEN2 >= DATE-NF2 AND <= DATE-NT2
+003420         ADD DATE-NC2 TO W-NEN.
+003430*
+003440     OPEN I-O TT-M HUH-M.
+003450     OPEN I-O STRANYR RSTRANYR SNTRF UTRYR UTRF.                  I.040402
+003460*****OPEN I-O STRANYR SNTRF UTRYR UTRF.                           D.040402
+003470     MOVE 0 TO W-DC.
+003480 M-30.
+003490     READ SNTRF AT END
+003500         GO TO M-35.
+003510     IF SNTR-GNO = 9                                              I.000829
+003520         GO TO M-30.                                              I.000829
+003530     IF SNTR-SNC = 1
+003540         GO TO M-30.
+003550*****IF SNTR-DC = 2 OR 4                                          D.150926
+003560     IF SNTR-DC = 2                                               I.150926
+003570         GO TO M-30.
+003580     IF SNTR-DC = 4                                               I.150926
+003590         IF SNTR-FT = ZERO                                        I.150926
+003600             GO TO M-30.                                          I.150926
+003610*
+003620     MOVE JS-SIGN TO HFTS-NC.                                     I.010319
+003630     MOVE SNTR-HCD TO HFTS-HCD.
+003640     READ HFTSF INVALID KEY
+003650         GO TO M-30.
+003660     IF W-DC = 0
+003670         MOVE 1 TO W-DC.
+003680*
+003690     MOVE HFTS-HCD TO HI-KEY.
+003700     READ HI-M INVALID KEY
+003710         MOVE 255 TO COMPLETION-CODE
+003720         DISPLAY E-ME3 E-HCD E-ME99
+003730         DISPLAY E-CL
+003740         GO TO M-90.
+003750*
+003760     MOVE SNTR-TCD TO TT-KEY.
+003770     READ TT-M INVALID KEY
+003780         MOVE 255 TO COMPLETION-CODE
+003790         DISPLAY E-ME1 E-TCD E-ME99
+003800         DISPLAY E-CL
+003810         GO TO M-90.
+003820     IF SNTR-DC = 1 OR 5
+003830         COMPUTE TT-TUG = TT-TUG - (SNTR-SU * SNTR-FT * -1)
+003840                                 + (SNTR-SU * HFTS-FT * -1)
+003850       ELSE
+003860         COMPUTE TT-TUG = TT-TUG - (SNTR-SU * SNTR-FT)
+003870                                 + (SNTR-SU * HFTS-FT).
+003880     REWRITE TT-R INVALID KEY
+003890         MOVE 255 TO COMPLETION-CODE
+003900         DISPLAY E-STAT E-ME11 E-TCD E-ME99
+003910         GO TO M-90.
+003920*
+003930     IF SNTR-DC = 6 OR 8
+003940         GO TO M-30.
+003950     MOVE HFTS-HCD TO HUH-KEY.
+003960     READ HUH-M INVALID KEY
+003970         MOVE 255 TO COMPLETION-CODE
+003980         DISPLAY E-ME2 E-HCD E-ME99
+003990         DISPLAY E-CL
+004000         GO TO M-90.
+004010     IF SNTR-DC = 1 OR 5
+004020         COMPUTE HUH-UG = HUH-UG - (SNTR-SU * SNTR-FT * -1)
+004030                                 + (SNTR-SU * HFTS-FT * -1)
+004040         COMPUTE HUH-YK = HUH-YK + (SNTR-SU * SNTR-FT * -1)       I.000801
+004050                                 - (SNTR-SU * HFTS-FT * -1)       I.000801
+004060       ELSE
+004070         COMPUTE HUH-UG = HUH-UG - (SNTR-SU * SNTR-FT)
+004080                                 + (SNTR-SU * HFTS-FT)            I.000801
+004090         COMPUTE HUH-YK = HUH-YK + (SNTR-SU * SNTR-FT)            I.000801
+004100                                 - (SNTR-SU * HFTS-FT).           I.000801
+004110*****                            + (SNTR-SU * HFTS-FT).           D.000801
+004120     REWRITE HUH-R INVALID KEY
+004130         MOVE 255 TO COMPLETION-CODE
+004140         DISPLAY E-STAT E-ME12 E-HCD E-ME99
+004150         GO TO M-90.
+004160*
+004170     MOVE HFTS-FT TO SNTR-FT.
+004180     REWRITE SNTR-R.
+004190     GO TO M-30.
+004200 M-35.
+004210     IF W-DC = 0
+004220         GO TO M-45.
+004230 M-40.
+004240     READ STRANYR AT END
+004250         GO TO M-41.                                              I.040402
+004260*****    MOVE 0 TO W-DC                                           D.040402
+004270*****    GO TO M-45.                                              D.040402
+004280     IF STRANY-GNO = 9                                            I.000817
+004290         GO TO M-40.                                              I.000817
+004300     IF STRANY-UNC = 1                                            I.000817
+004310         GO TO M-40.                                              I.000817
+004320     IF STRANY-NG < W-NG
+004330         GO TO M-40.
+004340     MOVE JS-SIGN TO HFTS-NC.                                     I.010319
+004350     MOVE STRANY-HCD TO HFTS-HCD.
+004360     READ HFTSF INVALID KEY
+004370         GO TO M-40.
+004380     MOVE HFTS-FT TO STRANY-FT.
+004390     REWRITE STRANY-R.
+004400     GO TO M-40.
+004410 M-41.                                                            I.040402
+004420     SELECT RSTRANYR WHERE RSTRANY-NG = W-NG AND                  I.040402
+004430                           RSTRANY-UNC NOT = 1.                   I.040402
+004440 M-42.                                                            I.040402
+004450     READ RSTRANYR AT END                                         I.040402
+004460         MOVE 0 TO W-DC                                           I.040402
+004470         GO TO M-45.                                              I.040402
+004480     MOVE JS-SIGN TO HFTS-NC.                                     I.040402
+004490     MOVE RSTRANY-HCD TO HFTS-HCD.                                I.040402
+004500     READ HFTSF INVALID KEY                                       I.040402
+004510         GO TO M-42.                                              I.040402
+004520     MOVE HFTS-FT TO RSTRANY-FT.                                  I.040402
+004530     REWRITE RSTRANY-R.                                           I.040402
+004540     GO TO M-42.                                                  I.040402
+004550 M-45.
+004560     READ UTRF AT END
+004570         GO TO M-50.
+004580*****IF UTR-NC = 2 OR 4 OR 5                                      D.070322
+004590     IF UTR-NC = 2 OR 4                                           I.070322
+004600         GO TO M-45.
+004610     MOVE JS-SIGN TO HFTS-NC.                                     I.010319
+004620     MOVE UTR-HCD TO HFTS-HCD.
+004630     READ HFTSF INVALID KEY
+004640         GO TO M-45.
+004650     IF W-DC = 0
+004660         MOVE 1 TO W-DC.
+004670*
+004680     MOVE HFTS-HCD TO HI-KEY.
+004690     READ HI-M INVALID KEY
+004700         MOVE 255 TO COMPLETION-CODE
+004710         DISPLAY E-ME3 E-HCD E-ME99
+004720         DISPLAY E-CL
+004730         GO TO M-90.
+004740*
+004750     MOVE HFTS-HCD TO HUH-KEY.
+004760     READ HUH-M INVALID KEY
+004770         MOVE 255 TO COMPLETION-CODE
+004780         DISPLAY E-ME2 E-HCD E-ME99
+004790         DISPLAY E-CL
+004800         GO TO M-90.
+004810     COMPUTE HUH-NK = HUH-NK - UTR-KIN + (UTR-SU * HFTS-FT).
+004820     COMPUTE HUH-YK = HUH-YK - UTR-KIN + (UTR-SU * HFTS-FT).
+004830     REWRITE HUH-R INVALID KEY
+004840         MOVE 255 TO COMPLETION-CODE
+004850         DISPLAY E-STAT E-ME12 E-HCD E-ME99
+004860         GO TO M-90.
+004870*
+004880     COMPUTE UTR-KIN = UTR-SU * HFTS-FT.
+004890     REWRITE UTR-R.
+004900     GO TO M-45.
+004910 M-50.
+004920     IF W-DC = 0
+004930         GO TO M-60.
+004940     SELECT UTRYR WHERE UTRY-NG = W-NG.                           I.040402
+004950 M-55.
+004960     READ UTRYR AT END
+004970         SCRATCH UTRYR                                            I.040402
+004980         GO TO M-60.
+004990*****IF UTRY-NG < W-NG                                            D.040402
+005000*****    GO TO M-55.                                              D.040402
+005010     MOVE JS-SIGN TO HFTS-NC.                                     I.010319
+005020     MOVE UTRY-HCD TO HFTS-HCD.
+005030     READ HFTSF INVALID KEY
+005040         GO TO M-55.
+005050     COMPUTE UTRY-KIN = UTRY-SU * HFTS-FT.
+005060     REWRITE UTRY-R.
+005070     GO TO M-55.
+005080 M-60.
+005090     CLOSE HFTSF.
+005100     OPEN INPUT HFTSF.
+005110     MOVE SPACE TO HFTS-KEY.                                      I.010319
+005120     MOVE JS-SIGN TO HFTS-NC.                                     I.010319
+005130     START HFTSF KEY NOT < HFTS-KEY INVALID KEY                   I.010319
+005140         DISPLAY E-ME4 E-ME99                                     I.010319
+005150         GO TO M-70.                                              I.010319
+005160 M-65.
+005170     READ HFTSF NEXT RECORD AT END
+005180         GO TO M-70.
+005190     IF JS-SIGN NOT = HFTS-NC                                     I.010319
+005200         GO TO M-70.                                              I.010319
+005210*
+005220     MOVE HFTS-HCD TO HI-KEY.
+005230     READ HI-M INVALID KEY
+005240         MOVE 255 TO COMPLETION-CODE
+005250         DISPLAY E-ME3 E-HCD E-ME99
+005260         DISPLAY E-CL
+005270         GO TO M-90.
+005280     MOVE HFTS-FT TO HI-FT.
+005290*****MOVE HFTS-ZRG TO HI-ZRG.                                     D.140808
+005300*****MOVE HFTS-SKG TO HI-SKG.                                     D.140808
+005310*****MOVE HFTS-GKG TO HI-GKG.                                     D.140808
+005320*****MOVE HFTS-KNC TO HI-KNC.                                     D.010806
+005330*****MOVE HFTS-KNG TO HI-KNG.                                     D.140808
+005340     REWRITE HI-R INVALID KEY
+005350         MOVE 255 TO COMPLETION-CODE
+005360         DISPLAY E-STAT E-ME10 E-HCD E-ME99
+005370         GO TO M-90.
+005380     GO TO M-65.
+005390 M-70.
+005400     CLOSE HUH-M.
+005410     OPEN INPUT HUH-M.
+005420 M-75.
+005430     READ HUH-M NEXT RECORD AT END
+005440         GO TO M-90.
+005450     MOVE HUH-HCD TO HI-KEY.
+005460     READ HI-M INVALID KEY
+005470         MOVE 255 TO COMPLETION-CODE
+005480         DISPLAY E-ME3 E-HCD E-ME99
+005490         DISPLAY E-CL
+005500         GO TO M-90.
+005510*****COMPUTE W-KIN = HUH-ZK + HUH-NK - HUH-SK.                    D.000801
+005520     COMPUTE W-KIN = HUH-ZK + HUH-NK - HUH-UG.                    I.000801
+005530     IF HUH-YK NOT = W-KIN
+005540         MOVE 255 TO COMPLETION-CODE
+005550         DISPLAY E-ME21 E-HCD E-ME99
+005560         GO TO M-90.
+005570     COMPUTE W-KIN = HUH-YS * HI-FT.
+005580     IF HUH-YK NOT = W-KIN
+005590         MOVE 255 TO COMPLETION-CODE
+005600         DISPLAY E-ME22 E-HCD E-ME99
+005610         GO TO M-90.
+005620     GO TO M-75.
+005630 M-90.
+005640     CLOSE HFTSF.
+005650     CLOSE HI-M.
+005660*****IF W-NC = 2                                                  D.010319
+005670     IF JS-SIGN = 2                                               I.010319
+005680         CLOSE TT-M HUH-M
+005690         CLOSE STRANYR RSTRANYR SNTRF UTRYR UTRF.                 I.040402
+005700*****    CLOSE STRANYR SNTRF UTRYR UTRF.                          D.040402
+005710 M-95.
+005720     DISPLAY C-CLEAR.
+005730     STOP RUN.
+005740 S-05.
+005750     OPEN INPUT STRAN.                                            I.060524
+005760     READ STRAN AT END                                            I.060524
+005770         CLOSE STRAN                                              I.060524
+005780         GO TO S-10.                                              I.060524
+005790     CLOSE STRAN.                                                 I.060524
+005800     MOVE 1 TO CHK.                                               I.060524
+005810     DISPLAY E-ME5 E-ME99.                                        I.060524
+005820     GO TO S-30.                                                  I.060524
+005830 S-10.                                                            I.060524
+005840     OPEN INPUT UTRAN.                                            I.060524
+005850     READ UTRAN AT END                                            I.060524
+005860         CLOSE UTRAN                                              I.060524
+005870         GO TO S-15.                                              I.060524
+005880     CLOSE UTRAN.                                                 I.060524
+005890     MOVE 1 TO CHK.                                               I.060524
+005900     DISPLAY E-ME5 E-ME99.                                        I.060524
+005910     GO TO S-30.                                                  I.060524
+005920 S-15.
+005930     MOVE 0 TO CHK.
+005940     OPEN INPUT HFTSF.
+005950     OPEN INPUT HI-M.                                             I.010319
+005960*
+005970     MOVE SPACE TO HFTS-KEY.                                      I.010319
+005980     MOVE JS-SIGN TO HFTS-NC.                                     I.010319
+005990     START HFTSF KEY NOT < HFTS-KEY INVALID KEY                   I.010319
+006000         MOVE 1 TO CHK                                            I.010319
+006010         DISPLAY E-ME4 E-ME99                                     I.010319
+006020         GO TO S-25.                                              I.010319
+006030 S-20.                                                            I.010319
+006040     READ HFTSF NEXT RECORD AT END
+006050*****    CLOSE HFTSF                                              D.010319
+006060*****    MOVE 1 TO CHK                                            D.010319
+006070*****    DISPLAY E-ME4 E-ME99                                     D.010319
+006080         GO TO S-25.
+006090     IF JS-SIGN NOT = HFTS-NC                                     I.010319
+006100         GO TO S-25.                                              I.010319
+006110*****MOVE HFTS-NC TO W-NC.                                        D.010319
+006120*****OPEN INPUT HI-M.                                             D.010319
+006130*S-22.                                                            D.010319
+006140     MOVE HFTS-HCD TO HI-KEY.
+006150     READ HI-M WITH UNLOCK INVALID KEY
+006160*****    CLOSE HFTSF                                              D.010319
+006170*****    CLOSE HI-M                                               D.010319
+006180         MOVE 1 TO CHK
+006190         DISPLAY E-ME3 E-HCD E-ME99
+006200         GO TO S-25.
+006210*****IF (HI-FT NOT = HFTS-FTO)   OR (HI-ZRG NOT = HFTS-ZRGO) OR   D.140808
+006220*****   (HI-SKG NOT = HFTS-SKGO) OR (HI-GKG NOT = HFTS-GKGO) OR   D.140808
+006230*****   (HI-KNG NOT = HFTS-KNGO)                                  D.140808
+006240*****   (HI-KNC NOT = HFTS-KNCO) OR (HI-KNG NOT = HFTS-KNGO)      D.010806
+006250*****    CLOSE HFTSF                                              D.010319
+006260*****    CLOSE HI-M                                               D.010319
+006270     IF  HI-FT NOT = HFTS-FTO                                     I.140808
+006280         MOVE 1 TO CHK
+006290         DISPLAY E-ME1 E-HCD E-ME99
+006300         GO TO S-25.
+006310     IF CHK = 0                                                   I.010319
+006320         MOVE 9 TO CHK.                                           I.010319
+006330     GO TO S-20.                                                  I.010319
+006340*
+006350*****READ HFTSF NEXT RECORD AT END                                D.010319
+006360*****    CLOSE HFTSF                                              D.010319
+006370*****    CLOSE HI-M                                               D.010319
+006380*****    GO TO S-25.                                              D.010319
+006390*****IF HFTS-NC NOT = W-NC                                        D.010319
+006400*****    CLOSE HFTSF                                              D.010319
+006410*****    CLOSE HI-M                                               D.010319
+006420*****    MOVE 1 TO CHK                                            D.010319
+006430*****    DISPLAY E-ME9 E-ME99                                     D.010319
+006440*****    GO TO S-25.                                              D.010319
+006450*****GO TO S-22.                                                  D.010319
+006460 S-25.
+006470     IF CHK = 0                                                   I.010319
+006480         MOVE 1 TO CHK                                            I.010319
+006490         DISPLAY E-ME4 E-ME99.                                    I.010319
+006500     CLOSE HFTSF.                                                 I.010319
+006510     CLOSE HI-M.                                                  I.010319
+006520 S-30.                                                            I.010319
+006530     EXIT.
+

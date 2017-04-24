@@ -1,0 +1,647 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. HKG240.
+000030*******************************************************************
+000040*    PROGRAM         :  請求チェックデータ　抽出                  *
+000050*    PRINTER TYPE    :  JIPS                                      *
+000060*    SCREEN          :  ******                                    *
+000070*    JS-SIGN         :  0=請求書 , 1=再請求書                     *
+000080*    COMPLETION-CODE :  000=その他 , 010=ワークマン・ナフコ       *
+000090*******************************************************************
+000100 ENVIRONMENT DIVISION.
+000110 CONFIGURATION SECTION.
+000120 SOURCE-COMPUTER. SYSTEM3100.
+000130 OBJECT-COMPUTER. SYSTEM3100.
+000140 INPUT-OUTPUT SECTION.
+000150 FILE-CONTROL.
+000160     COPY LIBCSE.
+000170     SELECT SKDF ASSIGN TO SKD-MSD
+000180         ORGANIZATION IS INDEXED
+000190         ACCESS MODE IS DYNAMIC
+000200         RECORD KEY IS SKD-KEY
+000210         FILE STATUS IS ERR-STAT.
+000220     SELECT TSKF ASSIGN TO TSK-MSD
+000230         ORGANIZATION IS INDEXED
+000240         ACCESS MODE IS DYNAMIC
+000250         RECORD KEY IS TSK-KEY
+000260         FILE STATUS IS ERR-STAT.
+000270     SELECT T-M ASSIGN TO T1-MSD T2-MSD
+000280         ORGANIZATION IS INDEXED
+000290         ACCESS MODE IS RANDOM
+000300         RECORD KEY IS T-KEY
+000310         ALTERNATE RECORD KEY T-KEY2
+000320         FILE STATUS IS ERR-STAT.
+000330     SELECT SKDPF ASSIGN TO SKDP-MSD
+000340         ORGANIZATION IS INDEXED
+000350         ACCESS MODE IS RANDOM
+000360         RECORD KEY IS SKDP-KEY
+000370         FILE STATUS IS ERR-STAT.
+000380     SELECT NGPF ASSIGN TO NGP-MSD.
+000390 I-O-CONTROL.
+000400     APPLY SHARED-MODE ON M-DATE
+000410     APPLY SHARED-MODE ON T-M
+000420     APPLY SHARED-MODE ON TSKF
+000430     APPLY SHARED-MODE ON SKDF.
+000440 DATA DIVISION.
+000450 FILE SECTION.
+000460     COPY LIBFDD.
+000470     COPY LITM.
+000480     COPY LISKDF.
+000490     COPY LITSKF.
+000500 FD  SKDPF
+000510     BLOCK  4 RECORDS
+000520     LABEL RECORD IS STANDARD
+000530     VALUE OF IDENTIFICATION "SKDPF".
+000540 01  SKDP-R.
+000550     02  SKDP-KEY.                                                KEY
+000560       03  SKDP-TCD     PIC  9(004).                              得意先C
+000570       03  SKDP-DATE    PIC  9(008).                              日付
+000580       03  SKDP-DTC     PIC  9(001).                              区分
+000590       03  SKDP-DNO     PIC  9(006).                              伝票№
+000600       03  SKDP-HCD     PIC  X(006).
+000610       03  SKDP-T       PIC S9(006)V9(02).                        単価
+000620       03  SKDP-DC      PIC  9(001).                              伝区
+000630       03  SKDP-CSC     PIC  9(001).
+000640     02  SKDP-SU        PIC S9(006)V9(02).                        数量
+000650     02  SKDP-KIN       PIC S9(009).                              金額
+000660     02  SKDP-SKD       PIC  9(008).                              請求日
+000670     02  SKDP-TNC       PIC  9(002).                              担当Ｃ
+000680     02  SKDP-BMC       PIC  9(001).                              部門C
+000690     02  SKDP-DCC       PIC  9(001).
+000700     02  F              PIC  X(002).
+000710     02  SKDP-TCD2      PIC  9(004).
+000720     02  SKDP-CCD       PIC  9(003).                              直送№
+000730     02  SKDP-BI        PIC  N(024).                              備考
+000740     02  SKDP-HNO       PIC  9(006).                              I.090105
+000750     02  F              PIC  X(030).                              I.090105
+000760*****02  SKDP-HNO       PIC  X(036).                              D.090105
+000770     02  SKDP-SHZ       PIC S9(007).                              消費税
+000780     02  SKDP-KSU       PIC  9(003).                              個数
+000790     02  SKDP-JCD       PIC  9(006).
+000800     02  F              PIC  X(013).
+000810     02  SKDP-SNO       PIC  9(006).
+000820 FD  NGPF
+000830     BLOCK  4 RECORDS
+000840     LABEL RECORD IS STANDARD
+000850     VALUE OF IDENTIFICATION WK0064ID.
+000860 01  NGP-R.
+000870     02  NGP-DATE       PIC  9(008).
+000880     02  F              PIC  X(056).
+000890 WORKING-STORAGE SECTION.
+000900 77  JS-SIGN            PIC  9(001).
+000910 77  W-JR               PIC  9(001) VALUE 0.                      I.080225
+000920 77  W-FILE             PIC  X(013).
+000930 77  WK0064ID           PIC  X(009) VALUE SPACE.
+000940 01  STN-NO.
+000950     02  STN-NO1        PIC  X(003).
+000960     02  STN-NO2        PIC  X(003).
+000970 01  W-FID.
+000980     02  W-FID1         PIC  X(006) VALUE "WK0064".
+000990     02  W-FID2         PIC  X(003).
+001000 01  W-DATA.
+001010     02  W-DATE         PIC  9(008).
+001020     02  W-NGP   REDEFINES W-DATE.
+001030       03  W-NEN        PIC  9(004).
+001040       03  W-NENL  REDEFINES W-NEN.
+001050         04  W-NEN1     PIC  9(002).
+001060         04  W-NEN2     PIC  9(002).
+001070       03  W-GET        PIC  9(002).
+001080       03  W-PEY        PIC  9(002).
+001090     02  W-NGPL  REDEFINES W-DATE.
+001100       03  F            PIC  9(002).
+001110       03  W-NGPS       PIC  9(006).
+001120       03  W-NGPM  REDEFINES W-NGPS.
+001130         04  W-NGS      PIC  9(004).
+001140         04  F          PIC  9(002).
+001150     02  W-DMM          PIC  9(001).
+001160     02  W-DC           PIC  9(001).
+001170     02  W-ZC           PIC  9(001).
+001180     02  W-TCD          PIC  9(004).
+001190     02  W-NGPD         PIC  9(008).
+001200     02  W-C            PIC  9(001).
+001210     02  W-INV          PIC  9(001).
+001220 01  ERR-STAT           PIC  X(002).
+001230     COPY LSTAT.
+001240 SCREEN SECTION.
+001250 SD  C-CRT
+001260     END STATUS IS ESTAT.
+001270 01  C-CLEAR.
+001280     02  C-CL    LINE   1  CLEAR SCREEN.
+001290 01  C-MID.
+001300     02  LINE   3  COLUMN  10  PIC  N(022) VALUE
+001310          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001320     02  LINE   4  COLUMN  10  PIC  N(022) VALUE
+001330          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001340     02  LINE   5  COLUMN  10  PIC  N(022) VALUE
+001350          NC"＊＊＊　　　　　　　　　　　　　　　　＊＊＊".
+001360     02  LINE   6  COLUMN  10  PIC  N(022) VALUE
+001370          NC"＊＊＊　　　　請求データ　抽出　　　　＊＊＊".
+001380     02  LINE   7  COLUMN  10  PIC  N(022) VALUE
+001390          NC"＊＊＊　　　　　　　　　　　　　　　　＊＊＊".
+001400     02  LINE   8  COLUMN  10  PIC  N(022) VALUE
+001410          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001420     02  LINE   9  COLUMN  10  PIC  N(022) VALUE
+001430          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001440     02  LINE  20  COLUMN  21  PIC  X(022) VALUE
+001450          "確認  OK=1 NO=9   ﾘﾀｰﾝ".
+001460 01  C-MID1.
+001470     02  LINE  13.
+001480       03  COLUMN  22  PIC  X(019) VALUE
+001490            "    年   月   日 分".
+001500       03  COLUMN  22  PIC  9(004) FROM  W-NEN.
+001510       03  COLUMN  29  PIC Z9      FROM  W-GET.
+001520       03  COLUMN  34  PIC Z9      FROM  W-PEY.
+001530 01  C-MID2.                                                      I.080225
+001540     02  LINE  05  COLUMN  22  PIC  N(009) VALUE                  I.080225
+001550          NC"ナフコ・ワークマン".                                 I.080225
+001560 01  C-MID3.
+001570     02  LINE  07  COLUMN  26  PIC  N(005) VALUE NC"（再発行）".
+001580     02  LINE  13  COLUMN  10  PIC  N(003) VALUE NC"得意先".
+001590     02  LINE  15  COLUMN  30  PIC  X(019) VALUE
+001600          "    年   月   日 分".
+001610 01  C-ACP.
+001620     02  A-TCD   LINE  13  COLUMN  17  PIC  9(004)
+001630          USING W-TCD   CHECK OVERFLOW NO IFC.
+001640     02  LINE  15.
+001650       03  A-RNEN  COLUMN  30  PIC  9(004)
+001660            USING W-NEN   CHECK OVERFLOW NO IFC.
+001670       03  A-RGET  COLUMN  37  PIC  9(002)
+001680            USING W-GET   CHECK OVERFLOW NO IFC.
+001690       03  A-RPEY  COLUMN  42  PIC  9(002)
+001700            USING W-PEY   CHECK OVERFLOW NO IFC.
+001710*
+001720     02  A-DMM   LINE  20  COLUMN  38  PIC  9(001)
+001730          USING W-DMM   CHECK OVERFLOW NO IFC.
+001740 01  C-DSP.
+001750     02  D-NAME  LINE  13  COLUMN  22  PIC  N(026) FROM  T-NAME.
+001760 01  C-ERR.
+001770     02  LINE  24.
+001780       03  E-ME1   COLUMN  15  PIC  X(017) VALUE
+001790            "***  DATA ﾅｼ  ***".
+001800       03  E-ME2   COLUMN  15  PIC  X(026) VALUE
+001810            "***  TSKF REWRITE ｴﾗｰ  ***".
+001820       03  E-ME3   COLUMN  15  PIC  X(024) VALUE
+001830            "***  TSKF WRITE ｴﾗｰ  ***".
+001840       03  E-ME4   COLUMN  15  PIC  X(018) VALUE
+001850            "***  ﾄｸｲｻｷ ﾅｼ  ***".
+001860       03  E-ME5   COLUMN  15  PIC  X(025) VALUE
+001870            "***  SKDPF WRITE ｴﾗｰ  ***".
+001880       03  E-ME6   COLUMN  15  PIC  X(027) VALUE
+001890            "***  SKDPF REWRITE ｴﾗｰ  ***".
+001900       03  E-ME7   COLUMN  15  PIC  X(023) VALUE
+001910            "***  ﾐﾊｯｺｳ ﾃﾞｰﾀ ﾅｼ  ***".
+001920       03  E-ME8   COLUMN  15  PIC  X(026) VALUE
+001930            "***  ｾｲｷｭｳｼｮ ﾊｯｺｳ ｽﾞﾐ  ***".
+001940       03  E-TCD   COLUMN  45  PIC  9(004) FROM  TSK-TCD.
+001950       03  E-SKDP  COLUMN  45  PIC  X(035) FROM  SKDP-KEY.
+001960     COPY LSSEM.
+001970     COPY LIBSCR.
+001980 PROCEDURE DIVISION.
+001990 M-05.
+002000     ACCEPT JS-SIGN.
+002010     IF JS-SIGN NOT = 0 AND 1
+002020         MOVE 255 TO COMPLETION-CODE
+002030         STOP RUN.
+002040     MOVE ZERO TO W-DATA.
+002050     COPY LIBCPR.
+002060     DISPLAY C-CLEAR.
+002070     DISPLAY C-MID.
+002080     IF COMPLETION-CODE = 010                                     I.080225
+002090         MOVE 1 TO W-JR                                           I.080225
+002100         DISPLAY C-MID2.                                          I.080225
+002110*
+002120     PERFORM ACP-RTN THRU ACP-EX.
+002130     IF COMPLETION-CODE = 255
+002140         GO TO M-95.
+002150*
+002160     OPEN I-O TSKF.
+002170     OPEN INPUT T-M.
+002180 M-10.
+002190     READ TSKF NEXT RECORD AT END
+002200         GO TO M-15.
+002210     MOVE TSK-TCD TO T-KEY.
+002220     READ T-M WITH UNLOCK INVALID KEY
+002230         CLOSE T-M
+002240         CLOSE TSKF
+002250         MOVE 255 TO COMPLETION-CODE
+002260         DISPLAY E-ME4 E-TCD E-ME99
+002270         GO TO M-95.
+002280     IF (ZERO = TSK-HTN AND TSK-SZN AND TSK-HTC AND TSK-SZC AND
+002290               TSK-HTU AND TSK-SZU AND TSK-KNGP)
+002300       AND (T-TNC = TSK-TNC) AND (T-BC = TSK-BMC) AND
+002310           (T-DCC = TSK-DCC)
+002320         GO TO M-10.
+002330     MOVE ZERO TO TSK-KKD.
+002340     MOVE T-TNC TO TSK-TNC.
+002350     MOVE T-BC TO TSK-BMC.
+002360     MOVE T-DCC TO TSK-DCC.
+002370     REWRITE TSK-R INVALID KEY
+002380         CLOSE T-M
+002390         CLOSE TSKF
+002400         MOVE 255 TO COMPLETION-CODE
+002410         DISPLAY E-STAT E-ME2 E-TCD E-ME99
+002420         GO TO M-95.
+002430     GO TO M-10.
+002440 M-15.
+002450     OPEN INPUT SKDF.
+002460     OPEN OUTPUT SKDPF.
+002470     CLOSE SKDPF.
+002480     OPEN I-O SKDPF.
+002490     MOVE SPACE TO SKD-KEY.                                       I.081106
+002500     IF W-JR = 1                                                  I.081106
+002510         MOVE 5000 TO SKD-TCD.                                    I.081106
+002520     IF JS-SIGN = 1                                               I.081106
+002530         MOVE W-TCD TO SKD-TCD.                                   I.081106
+002540     START SKDF KEY NOT < SKD-KEY INVALID KEY                     I.081106
+002550         GO TO M-90.                                              I.081106
+002560 M-20.
+002570     READ SKDF NEXT RECORD AT END
+002580         GO TO M-90.
+002590     IF JS-SIGN = 1                                               I.081106
+002600         IF SKD-TCD NOT = W-TCD                                   I.081106
+002610             GO TO M-90.                                          I.081106
+002620     IF W-JR = 1                                                  I.080225
+002630         IF SKD-TCD > 9850                                        I.081106
+002640             GO TO M-90                                           I.081106
+002650           ELSE                                                   I.081106
+002660             IF SKD-TCD NOT = 5000 AND 9850                       I.080225
+002670                 GO TO M-20.                                      I.080225
+002680     IF W-JR NOT = 1                                              I.080225
+002690         IF SKD-TCD = 5000 OR 9850                                I.080225
+002700             GO TO M-20.                                          I.080225
+002710     IF SKD-SKD NOT = W-DATE
+002720         GO TO M-20.
+002730*****IF JS-SIGN = 1                                               D.081106
+002740*****    IF SKD-TCD < W-TCD                                       D.081106
+002750*****        GO TO M-20                                           D.081106
+002760*****      ELSE                                                   D.081106
+002770*****        IF SKD-TCD > W-TCD                                   D.081106
+002780*****            GO TO M-90.                                      D.081106
+002790     IF JS-SIGN = 0
+002800         IF SKD-SNO NOT = ZERO
+002810             GO TO M-20.
+002820     IF JS-SIGN = 1
+002830         IF SKD-SNO = ZERO
+002840             GO TO M-20.
+002850 M-25.
+002860     MOVE 0 TO W-ZC.
+002870     PERFORM TSK-RTN THRU TSK-EX.
+002880     IF COMPLETION-CODE = 255
+002890         GO TO M-90.
+002900     IF JS-SIGN = 0
+002910         IF W-DATE = TSK-ZNGP(4) OR TSK-ZNGP(5)
+002920             MOVE 255 TO COMPLETION-CODE
+002930             DISPLAY E-ME8 E-TCD E-ME99
+002940             GO TO M-90.
+002950 M-30.
+002960     IF SKD-DTC = 0
+002970         IF SKD-DC NOT = 1 AND 2 AND 4 AND 5
+002980             IF SKD-CSC = 0
+002990                 IF SKD-DC NOT = 8
+003000                     ADD SKD-KIN TO TSK-HTU
+003010                     IF SKD-GNO = 1
+003020                         ADD SKD-SHZ TO TSK-SZU.
+003030     IF SKD-DTC = 0
+003040         IF SKD-DC NOT = 1 AND 2 AND 4 AND 5
+003050             IF SKD-CSC = 0
+003060                 IF SKD-DC = 8
+003070                     IF SKD-GNO = 1
+003080                         ADD SKD-SHZ TO TSK-SZU.
+003090     IF SKD-DTC = 0
+003100         IF SKD-DC NOT = 1 AND 2 AND 4 AND 5
+003110             IF SKD-CSC NOT = 0
+003120                 IF SKD-DC NOT = 8
+003130                     ADD SKD-KIN TO TSK-HTC
+003140                     IF SKD-GNO = 1
+003150                         ADD SKD-SHZ TO TSK-SZC.
+003160     IF SKD-DTC = 0
+003170         IF SKD-DC NOT = 1 AND 2 AND 4 AND 5
+003180             IF SKD-CSC NOT = 0
+003190                 IF SKD-DC = 8
+003200                     IF SKD-GNO = 1
+003210                         ADD SKD-SHZ TO TSK-SZC.
+003220     IF SKD-DTC = 0
+003230         IF SKD-DC = 4
+003240             IF SKD-GNO = 1
+003250                 ADD SKD-SHZ TO TSK-SZU.
+003260     IF SKD-DTC = 0
+003270         IF SKD-DC = 1 OR 2 OR 5
+003280             IF SKD-CSC = 0
+003290                 IF SKD-BMC = 0                                   I.050607
+003300                     SUBTRACT SKD-KIN FROM TSK-HTU
+003310                     IF SKD-GNO = 1
+003320                         ADD SKD-SHZ TO TSK-SZU.
+003330     IF SKD-DTC = 0
+003340         IF SKD-DC = 1 OR 2 OR 5
+003350             IF SKD-CSC NOT = 0
+003360                 IF SKD-BMC = 0                                   I.050607
+003370                     SUBTRACT SKD-KIN FROM TSK-HTC
+003380                     IF SKD-GNO = 1
+003390                         ADD SKD-SHZ TO TSK-SZC.
+003400     IF SKD-DTC = 0                                               I.050607
+003410         IF SKD-DC = 1 OR 2 OR 5                                  I.050607
+003420             IF SKD-CSC = 0                                       I.050607
+003430                 IF SKD-BMC NOT = 0                               I.050607
+003440                     ADD SKD-KIN TO TSK-HTU                       I.050607
+003450                     IF SKD-GNO = 1                               I.050607
+003460                         ADD SKD-SHZ TO TSK-SZU.                  I.050607
+003470     IF SKD-DTC = 0                                               I.050607
+003480         IF SKD-DC = 1 OR 2 OR 5                                  I.050607
+003490             IF SKD-CSC NOT = 0                                   I.050607
+003500                 IF SKD-BMC NOT = 0                               I.050607
+003510                     ADD SKD-KIN TO TSK-HTC                       I.050607
+003520                     IF SKD-GNO = 1                               I.050607
+003530                         ADD SKD-SHZ TO TSK-SZC.                  I.050607
+003540     IF SKD-DTC = 1
+003550         IF SKD-CSC = 0
+003560             SUBTRACT SKD-KIN FROM TSK-HTU
+003570             IF SKD-GNO = 1
+003580                 SUBTRACT SKD-SHZ FROM TSK-SZU.
+003590     IF SKD-DTC = 1
+003600         IF SKD-CSC NOT = 0
+003610             SUBTRACT SKD-KIN FROM TSK-HTC
+003620             IF SKD-GNO = 1
+003630                 SUBTRACT SKD-SHZ FROM TSK-SZC.
+003640     IF SKD-DTC = 3
+003650         ADD SKD-KIN TO TSK-HTN
+003660         ADD SKD-SHZ TO TSK-SZN.
+003670     IF W-ZC = 0
+003680         IF SKD-DTC NOT = 5
+003690             MOVE 1 TO W-ZC.
+003700     MOVE 1 TO W-DC.
+003710*
+003720     INITIALIZE SKDP-R.
+003730     MOVE SKD-TCD TO SKDP-TCD.                                    得意先C
+003740     MOVE SKD-DATE TO SKDP-DATE.                                  日付
+003750     MOVE SKD-DTC TO SKDP-DTC.                                    区分
+003760     MOVE SKD-DNO TO SKDP-DNO.                                    伝票№
+003770     MOVE SKD-HCD TO SKDP-HCD.                                    品名Ｃ
+003780     MOVE SKD-T TO SKDP-T.                                        単価
+003790     MOVE SKD-DC TO SKDP-DC.                                      伝区
+003800     MOVE SKD-CSC TO SKDP-CSC.
+003810     IF SKD-BMC = 3
+003820         GO TO M-40.
+003830     READ SKDPF INVALID KEY
+003840         GO TO M-40.
+003850     ADD SKD-SU TO SKDP-SU.
+003860     ADD SKD-KIN TO SKDP-KIN.
+003870     REWRITE SKDP-R INVALID KEY
+003880         MOVE 255 TO COMPLETION-CODE
+003890         DISPLAY E-STAT E-ME6 E-SKDP E-ME99
+003900         GO TO M-90.
+003910     GO TO M-50.
+003920 M-40.
+003930     MOVE SKD-SU TO SKDP-SU.
+003940     MOVE SKD-KIN TO SKDP-KIN.
+003950     MOVE SKD-SKD TO SKDP-SKD.
+003960     MOVE SKD-TNC TO SKDP-TNC.
+003970     MOVE SKD-BMC TO SKDP-BMC.
+003980     MOVE SKD-DCC TO SKDP-DCC.
+003990     MOVE SKD-TCD2 TO SKDP-TCD2.
+004000     MOVE SKD-CCD TO SKDP-CCD.
+004010     MOVE SKD-BI TO SKDP-BI.
+004020     MOVE SKD-HNO TO SKDP-HNO.
+004030     MOVE SKD-SHZ TO SKDP-SHZ.
+004040     MOVE SKD-KSU TO SKDP-KSU.
+004050     MOVE SKD-SNO TO SKDP-SNO.
+004060     MOVE SKD-JCD TO SKDP-JCD.
+004070     WRITE SKDP-R INVALID KEY
+004080         MOVE 255 TO COMPLETION-CODE
+004090         DISPLAY E-STAT E-ME5 E-SKDP E-ME99
+004100         GO TO M-90.
+004110 M-50.
+004120     READ SKDF NEXT RECORD AT END
+004130         GO TO M-60.
+004140     IF JS-SIGN = 1                                               I.081106
+004150         IF SKD-TCD NOT = W-TCD                                   I.081106
+004160             GO TO M-60.                                          I.081106
+004170     IF W-JR = 1                                                  I.080225
+004180         IF SKD-TCD > 9850                                        I.081106
+004190             GO TO M-60                                           I.081106
+004200           ELSE                                                   I.081106
+004210             IF SKD-TCD NOT = 5000 AND 9850                       I.080225
+004220                 GO TO M-50.                                      I.080225
+004230     IF W-JR NOT = 1                                              I.080225
+004240         IF SKD-TCD = 5000 OR 9850                                I.080225
+004250             GO TO M-50.                                          I.080225
+004260     IF SKD-SKD NOT = W-DATE
+004270         GO TO M-50.
+004280*****IF JS-SIGN = 1                                               D.081106
+004290*****    IF SKD-TCD > W-TCD                                       D.081106
+004300*****        GO TO M-60.                                          D.081106
+004310     IF JS-SIGN = 0
+004320         IF SKD-SNO NOT = ZERO
+004330             GO TO M-50.
+004340     IF JS-SIGN = 1
+004350         IF SKD-SNO = ZERO
+004360             GO TO M-50.
+004370*M-55.                                                            D.081106
+004380     IF SKD-TCD = W-TCD
+004390         GO TO M-30.
+004400     IF W-ZC = 0
+004410         IF JS-SIGN NOT = 1
+004420             IF ZERO = TSK-HTS(3) AND TSK-SZS(3)
+004430                 GO TO M-25.
+004440     IF W-ZC = 0
+004450         IF JS-SIGN = 1
+004460             IF TSK-ZNGP(2) = W-DATE
+004470                 IF ZERO = TSK-HTS(1) AND TSK-SZS(1)
+004480                     GO TO M-25.
+004490     IF W-ZC = 0
+004500         IF JS-SIGN = 1
+004510             IF TSK-ZNGP(3) = W-DATE
+004520                 IF ZERO = TSK-HTS(2) AND TSK-SZS(2)
+004530                     GO TO M-25.
+004540*
+004550     MOVE 0 TO W-INV.
+004560     MOVE W-TCD TO T-KEY.
+004570     READ T-M WITH UNLOCK INVALID KEY
+004580         MOVE 1 TO W-INV
+004590         DISPLAY E-ME4 E-TCD E-ME99
+004600         DISPLAY E-CL
+004610         MOVE ZERO TO T-R.
+004620     IF T-SS NOT = 99
+004630         MOVE W-DATE TO TSK-KNGP.
+004640     REWRITE TSK-R INVALID KEY
+004650         CLOSE TSKF
+004660         MOVE 255 TO COMPLETION-CODE
+004670         DISPLAY E-STAT E-ME2 E-TCD E-ME99
+004680         GO TO M-90.
+004690     GO TO M-25.
+004700 M-60.
+004710     IF W-ZC = 0
+004720         IF JS-SIGN = 1
+004730             IF ZERO = TSK-HTS(3) AND TSK-SZS(3)
+004740                 GO TO M-90.
+004750     IF W-ZC = 0
+004760         IF JS-SIGN = 1
+004770             IF TSK-ZNGP(2) = W-DATE
+004780                 IF ZERO = TSK-HTS(1) AND TSK-SZS(1)
+004790                     GO TO M-90.
+004800     IF W-ZC = 0
+004810         IF JS-SIGN = 1
+004820             IF TSK-ZNGP(3) = W-DATE
+004830                 IF ZERO = TSK-HTS(2) AND TSK-SZS(2)
+004840                     GO TO M-90.
+004850     MOVE W-TCD TO T-KEY.
+004860     READ T-M WITH UNLOCK INVALID KEY
+004870         MOVE 1 TO W-INV
+004880         DISPLAY E-ME4 E-TCD E-ME99
+004890         DISPLAY E-CL
+004900         MOVE ZERO TO T-R.
+004910     IF T-SS NOT = 99
+004920         MOVE W-DATE TO TSK-KNGP.
+004930     REWRITE TSK-R INVALID KEY
+004940         CLOSE TSKF
+004950         MOVE 255 TO COMPLETION-CODE
+004960         DISPLAY E-STAT E-ME2 E-TCD E-ME99.
+004970 M-90.
+004980     CLOSE SKDF.
+004990     CLOSE SKDPF.
+005000     CLOSE TSKF.
+005010     CLOSE T-M.
+005020     IF W-DC = 0
+005030         MOVE 255 TO COMPLETION-CODE
+005040         DISPLAY E-ME1 E-ME99.
+005050 M-95.
+005060     DISPLAY C-CLEAR.
+005070     STOP RUN.
+005080 TSK-RTN.
+005090     MOVE SKD-TCD TO W-TCD.
+005100     MOVE W-TCD TO TSK-KEY.
+005110     READ TSKF INVALID KEY
+005120         GO TO TSK-010.
+005130     GO TO TSK-EX.
+005140 TSK-010.
+005150     MOVE 0 TO W-INV.
+005160     MOVE W-TCD TO T-KEY.
+005170     READ T-M WITH UNLOCK INVALID KEY
+005180         MOVE 1 TO W-INV
+005190         DISPLAY E-ME4 E-TCD E-ME99
+005200         DISPLAY E-CL
+005210         MOVE ZERO TO T-R.
+005220 TSK-020.
+005230     MOVE ZERO TO TSK-R.
+005240     MOVE W-TCD TO TSK-KEY.
+005250     MOVE T-TNC TO TSK-TNC.
+005260     MOVE T-BC TO TSK-BMC.
+005270     MOVE T-DCC TO TSK-DCC.
+005280     WRITE TSK-R INVALID KEY
+005290         DISPLAY E-STAT E-ME3 E-TCD E-ME99
+005300         GO TO TSK-030.
+005310     GO TO TSK-EX.
+005320 TSK-030.
+005330     IF ERR-STAT NOT = "24"
+005340         MOVE 255 TO COMPLETION-CODE
+005350         DISPLAY E-ME78 E-ME99
+005360         GO TO TSK-EX.
+005370     DISPLAY E-CL.
+005380     CLOSE TSKF.
+005390     MOVE "TSKF         " TO W-FILE.
+005400     DISPLAY E-ME71 E-ME98 STOP " ".
+005410     DISPLAY E-CL.
+005420     OPEN I-O TSKF.
+005430     GO TO TSK-020.
+005440 TSK-EX.
+005450     EXIT.
+005460 ACP-RTN.
+005470     IF JS-SIGN = 1
+005480         GO TO ACP-010.
+005490     CALL "CBLSTNNO" USING STN-NO.
+005500     MOVE STN-NO2 TO W-FID2.
+005510     MOVE W-FID TO WK0064ID.
+005520     OPEN INPUT NGPF.
+005530     READ NGPF AT END
+005540         MOVE 255 TO COMPLETION-CODE
+005550         DISPLAY E-ME7 E-ME99
+005560         GO TO ACP-EX.
+005570     MOVE NGP-DATE TO W-DATE.
+005580     CLOSE NGPF.
+005590     DISPLAY C-MID1.
+005600     GO TO ACP-090.
+005610 ACP-010.
+005620     DISPLAY C-MID3.
+005630     OPEN INPUT T-M.
+005640     OPEN INPUT TSKF.
+005650 ACP-020.
+005660     ACCEPT A-TCD.
+005670     DISPLAY E-CL.
+005680     IF ESTAT = PF9
+005690         CLOSE T-M TSKF
+005700         MOVE 255 TO COMPLETION-CODE
+005710         GO TO ACP-EX.
+005720     IF ESTAT NOT = HTB AND SKP
+005730         GO TO ACP-020.
+005740*
+005750     MOVE W-TCD TO T-KEY.
+005760     READ T-M WITH UNLOCK INVALID KEY
+005770         DISPLAY E-ME4
+005780         GO TO ACP-020.
+005790     DISPLAY D-NAME.
+005800     IF W-JR = 1                                                  I.080225
+005810         IF W-TCD NOT = 5000 AND 9850                             I.080225
+005820             GO TO ACP-020.                                       I.080225
+005830     IF W-JR NOT = 1                                              I.080225
+005840         IF W-TCD = 5000 OR 9850                                  I.080225
+005850             GO TO ACP-020.                                       I.080225
+005860*
+005870     MOVE W-TCD TO TSK-KEY.
+005880     READ TSKF WITH UNLOCK INVALID KEY
+005890         DISPLAY E-ME1
+005900         GO TO ACP-020.
+005910     IF ZERO = TSK-ZNGP(2) AND TSK-ZNGP(3)
+005920         DISPLAY E-ME1
+005930         GO TO ACP-020.
+005940     IF TSK-ZNGP(3) NOT = ZERO
+005950         MOVE TSK-ZNGP(3) TO W-DATE
+005960       ELSE
+005970         MOVE TSK-ZNGP(2) TO W-DATE.
+005980     DISPLAY A-RNEN A-RGET A-RPEY.
+005990 ACP-030.
+006000     ACCEPT A-RNEN.
+006010     IF ESTAT = BTB
+006020         GO TO ACP-020.
+006030     IF ESTAT NOT = HTB AND SKP
+006040         GO TO ACP-030.
+006050 ACP-040.
+006060     ACCEPT A-RGET.
+006070     IF ESTAT = BTB
+006080         GO TO ACP-030.
+006090     IF ESTAT NOT = HTB AND SKP
+006100         GO TO ACP-040.
+006110     IF W-GET < 1 OR > 12
+006120         GO TO ACP-040.
+006130 ACP-050.
+006140     ACCEPT A-RPEY.
+006150     IF ESTAT = BTB
+006160         GO TO ACP-040.
+006170     IF ESTAT NOT = HTB AND SKP
+006180         GO TO ACP-050.
+006190     IF W-PEY < 1 OR > 31
+006200         GO TO ACP-050.
+006210     IF W-DATE NOT = TSK-ZNGP(2) AND TSK-ZNGP(3)
+006220         GO TO ACP-020.
+006230*
+006240 ACP-090.
+006250     ACCEPT A-DMM.
+006260     IF ESTAT = PF9
+006270         IF JS-SIGN = 0
+006280             MOVE 255 TO COMPLETION-CODE
+006290             GO TO ACP-EX.
+006300     IF ESTAT = BTB
+006310         IF JS-SIGN NOT = 0
+006320             GO TO ACP-050.
+006330     IF ESTAT NOT = HTB AND SKP
+006340         GO TO ACP-090.
+006350     IF W-DMM = 9
+006360         IF JS-SIGN = 0
+006370             MOVE 255 TO COMPLETION-CODE
+006380             GO TO ACP-EX
+006390           ELSE
+006400             GO TO ACP-020.
+006410     IF W-DMM NOT = 1
+006420         GO TO ACP-090.
+006430     IF JS-SIGN = 1
+006440         CLOSE T-M TSKF.
+006450 ACP-EX.
+006460     EXIT.
+

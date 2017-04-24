@@ -1,0 +1,1804 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. KBD010.
+000030*********************************************************
+000040*    PROGRAM         :  購買仕入伝票入力　　　　　　    *
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :  SCBD01                          *
+000070*        変更　　　  :  62/06/05                        *
+000080*    COMPILE TYPE    :  COBOL                           *
+000090*********************************************************
+000100 ENVIRONMENT DIVISION.
+000110 CONFIGURATION SECTION.
+000120 SOURCE-COMPUTER. SYSTEM3100.
+000130 OBJECT-COMPUTER. SYSTEM3100.
+000140 INPUT-OUTPUT SECTION.
+000150 FILE-CONTROL.
+000160     COPY LIBCSE.
+000170     SELECT KBNO-M ASSIGN TO KBNO-MSD
+000180         ORGANIZATION INDEXED
+000190         ACCESS MODE RANDOM
+000200         RECORD KEY BNO-KEY
+000210         FILE STATUS IS ERR-STAT.
+000220     SELECT S-M ASSIGN TO S-MSD
+000230         ORGANIZATION INDEXED
+000240         ACCESS MODE RANDOM
+000250         RECORD KEY S-KEY
+000260         FILE STATUS IS ERR-STAT.
+000270     SELECT J-M ASSIGN TO J-MSD
+000280         ORGANIZATION INDEXED
+000290         ACCESS MODE RANDOM
+000300         RECORD KEY J-KEY
+000310         FILE STATUS IS ERR-STAT.
+000320     SELECT KH-M ASSIGN TO KH-MSD                                 I.020325
+000330         ORGANIZATION INDEXED                                     I.020325
+000340         ACCESS MODE RANDOM                                       I.020325
+000350         RECORD KEY KH-KEY                                        I.020325
+000360         FILE STATUS IS ERR-STAT.                                 I.020325
+000370     SELECT HSS-F ASSIGN TO HSS-MSD                               I.010116
+000380         ORGANIZATION INDEXED                                     I.010116
+000390         ACCESS MODE DYNAMIC                                      I.010116
+000400         RECORD KEY HSS-KEY                                       I.010116
+000410         FILE STATUS IS ERR-STAT.                                 I.010116
+000420     SELECT JSS-F ASSIGN TO JSS-MSD
+000430         ORGANIZATION INDEXED
+000440         ACCESS MODE DYNAMIC
+000450         RECORD KEY JS-KEY
+000460         FILE STATUS IS ERR-STAT.
+000470     SELECT SP-F ASSIGN TO P-PRN999.
+000480 I-O-CONTROL.
+000490     APPLY SHARED-MODE ON M-DATE
+000500     APPLY SHARED-MODE ON S-M
+000510     APPLY SHARED-MODE ON J-M
+000520     APPLY SHARED-MODE ON KH-M                                    I.020325
+000530     APPLY SHARED-MODE ON HSS-F                                   I.010116
+000540     APPLY SHARED-MODE ON JSS-F
+000550     APPLY SHIFT-CODE  ON SP-F.
+000560 DATA DIVISION.
+000570 FILE SECTION.
+000580     COPY LIBFDD.
+000590     COPY LIKBNO.
+000600     COPY LISM.
+000610     COPY LIJM.
+000620     COPY LIKHM.                                                  I.020325
+000630     COPY LIHSSF.                                                 I.010116
+000640     COPY LSPF.
+000650 FD  JSS-F
+000660*****BLOCK  3 RECORDS                                             D.950418
+000670     BLOCK  5 RECORDS                                             I.950418
+000680     LABEL RECORD IS STANDARD
+000690     VALUE OF IDENTIFICATION "JSSF".                              C 62/06
+000700 01  JSS-R.
+000710     02  JS-DC          PIC  9(002).
+000720*****02  JS-DATE        PIC  9(006).                              D.970822
+000730     02  JS-DATE        PIC  9(008).                              I.970822
+000740     02  JS-SCD         PIC  9(004).
+000750     02  JS-JCD         PIC  9(006).
+000760     02  JS-SU          PIC S9(007)V9(02).
+000770     02  JS-T           PIC S9(006)V9(02).                          C 62/0
+000780     02  JS-KIN         PIC S9(008).                              I.990518
+000790     02  JS-SHZ         PIC S9(007).                              I.990531
+000800*****02  JS-SHZ         PIC S9(006).                              D.990531
+000810*****02  JS-KIN         PIC S9(009).                              D.990518
+000820     02  JS-CD          PIC  9(006).
+000830     02  JS-SJCD        PIC  9(006).                              I.990518
+000840     02  JS-NNO         PIC  9(006).                              I.990518
+000850     02  JS-FC          PIC  9(001).                              I.990518
+000860     02  JS-YC          PIC  9(001).
+000870     02  JS-TC          PIC  9(001).
+000880     02  JS-SEC         PIC  9(001).                                A 62/0
+000890     02  JS-SC          PIC  9(001).
+000900*****02  JS-SJCD        PIC  9(006).                              D.990518
+000910*****02  JS-NNO         PIC  9(006).                              D.990518
+000920*****02  JS-FC          PIC  9(001).                              D.990518
+000930*****02  JS-SHZ         PIC S9(007).                              D.990518
+000940     02  JS-BSC         PIC  9(001).                              I.980417
+000950*****02  F              PIC  X(007).                              D.990518
+000960*****02  F              PIC  X(001).                              D.950418
+000970*****02  F              PIC  X(012).                              D.950906
+000980*****02  F              PIC  X(010).                              D.970822
+000990*****02  F              PIC  X(008).                              D.980417
+001000     02  JS-BKC         PIC  9(002).                              I.950906
+001010     02  JS-KCO         PIC  X(005).                              I.020325
+001020     02  JS-KHC         PIC  9(001).                              I.020325
+001030     02  F              PIC  X(010).                              I.020325
+001040*****02  F              PIC  X(016).                              D.020325
+001050*****02  F              PIC  X(017).                              D.990531
+001060*****02  F              PIC  X(006).                              D.990518
+001070*****02  JS-DP          PIC  9(006).                              D.980417
+001080     02  JS-KEY.
+001090       03  JS-DNO       PIC  X(006).
+001100       03  JS-GNO       PIC  9(001).
+001110     02  JS-PCNT        PIC  9(001).
+001120*****02  F              PIC  X(002).                              D.990518
+001130 WORKING-STORAGE SECTION.
+001140 01  HEAD1.
+001150     02  W-20K          PIC  X(005) VALUE ""3FE04FE080"".
+001160     02  F              PIC  X(036) VALUE SPACE.
+001170     02  F              PIC  N(025) VALUE
+001180          NC"＊＊＊　　購買　仕入伝票　プルーフリスト　　＊＊＊".
+001190     02  F              PIC  X(028) VALUE SPACE.
+001200     02  F              PIC  X(005) VALUE "DATE ".
+001210     02  H-DATE         PIC 99B99B99.
+001220     02  F              PIC  X(007) VALUE "     P.".
+001230     02  H-PAGE         PIC Z9.
+001240 01  HEAD2.
+001250     02  F              PIC  X(029) VALUE
+001260          " 日　付   ｺｰﾄﾞ 仕　入　先　名".
+001270*****02  F              PIC  X(070) VALUE SPACE.                  D.020325
+001280     02  F              PIC  X(060) VALUE SPACE.                  I.020325
+001290     02  F              PIC  X(023) VALUE
+001300          "( 消費税 * ﾊ 内税計算 )".
+001310     02  F              PIC  X(006) VALUE SPACE.                  I.020325
+001320     02  W-15K          PIC  X(005) VALUE ""3FE04F40A0"".         I.020325
+001330     02  F              PIC  X(001) VALUE "<".                    I.020325
+001340     02  F              PIC  N(002) VALUE NC"工品".               I.020325
+001350     02  F              PIC  X(001) VALUE ">".                    I.020325
+001360     02  F              PIC  X(013) VALUE SPACE.                  I.020325
+001370*****02  F              PIC  X(014) VALUE SPACE.                  D.020325
+001380 01  HEAD3.
+001390*****02  W-15K          PIC  X(005) VALUE ""3FE04F40A0"".         D.020325
+001400     02  F              PIC  X(006) VALUE SPACE.
+001410     02  F              PIC  N(004) VALUE NC"伝票№　".
+001420     02  F              PIC  N(002) VALUE NC"行　".
+001430     02  F              PIC  N(002) VALUE NC"区分".
+001440     02  F              PIC  X(007) VALUE " ｺｰﾄﾞ  ".
+001450     02  F              PIC  N(008) VALUE NC"材　　料　　名　".
+001460     02  F              PIC  X(031) VALUE SPACE.
+001470     02  F              PIC  N(004) VALUE NC"数　　量".
+001480     02  F              PIC  X(005) VALUE SPACE.
+001490     02  F              PIC  N(004) VALUE NC"単　　価".
+001500     02  F              PIC  X(008) VALUE SPACE.
+001510     02  F              PIC  N(004) VALUE NC"金　　額".
+001520     02  F              PIC  X(004) VALUE SPACE.
+001530     02  F              PIC  N(004) VALUE NC"　消費税".
+001540     02  F              PIC  X(003) VALUE SPACE.
+001550     02  F              PIC  N(004) VALUE NC"修正日　".
+001560     02  F              PIC  X(001) VALUE SPACE.
+001570     02  F              PIC  N(002) VALUE NC"商品".
+001580     02  F              PIC  X(005) VALUE "ｺｰﾄﾞ ".
+001590     02  F              PIC  N(004) VALUE NC"納品№　".
+001600     02  F              PIC  N(002) VALUE NC"不良".
+001610 01  W-P1.
+001620     02  P-DATE         PIC 99/99/99.
+001630     02  F              PIC  X(002).
+001640     02  P-SCD          PIC  9(004).
+001650     02  F              PIC  X(001).
+001660     02  P-SNA          PIC  N(024).
+001670     02  F              PIC  X(085).
+001680 01  W-P2.
+001690*****02  F              PIC  X(006).                              D.010116
+001700     02  P-BSC          PIC  Z(001).                              I.010116
+001710     02  F              PIC  X(005).                              I.010116
+001720     02  P-DNO          PIC  9(006).
+001730     02  P-V            PIC  X(001).
+001740     02  P-GNO          PIC  9(001).
+001750     02  F              PIC  X(001).
+001760     02  P-DC           PIC  9(002).
+001770     02  F              PIC  X(001).
+001780     02  P-JCD          PIC  9(006).
+001790     02  F              PIC  X(001).
+001800     02  P-JNA          PIC  N(024).
+001810     02  P-SU           PIC --,---,--9.99.
+001820     02  P-T            PIC ----,--9.99.
+001830     02  P-KIN          PIC --,---,---,--9.
+001840     02  P-SHZ          PIC --,---,--9.
+001850     02  P-X            PIC  X(001).
+001860     02  P-CD           PIC 99/99/99.
+001870     02  F              PIC  X(001).
+001880     02  P-SSD.
+001890       03  P-SJCD       PIC  9(006).                              I.020325
+001900       03  F            PIC  X(002).                              I.020325
+001910     02  P-KHD   REDEFINES P-SSD.                                 I.020325
+001920       03  P-F          PIC  X(001).                              I.020325
+001930       03  P-KCO        PIC  X(005).                              I.020325
+001940       03  P-R          PIC  X(001).                              I.020325
+001950       03  F            PIC  X(001).                              I.020325
+001960*****02  P-SJCD         PIC  9(006).                              D.020325
+001970*****02  F              PIC  X(002).                              D.020325
+001980     02  P-NNO          PIC  9(006).
+001990     02  F              PIC  X(001).
+002000     02  P-FC           PIC  9(001).
+002010     02  F              PIC  X(001).
+002020 01  W-R.
+002030     02  WR-DC          PIC  9(002).
+002040     02  WR-DCD   REDEFINES WR-DC.
+002050       03  WR-DC1       PIC  9(001).
+002060       03  WR-DC2       PIC  9(001).
+002070*****02  WR-DATE        PIC  9(006).                              D.970822
+002080     02  WR-DATE        PIC  9(008).                              I.970822
+002090     02  WR-SCD         PIC  9(004).
+002100     02  WR-JCD         PIC  9(006).
+002110     02  WR-JCDD  REDEFINES WR-JCD.
+002120       03  WR-JCD1      PIC  9(001).
+002130       03  WR-JCD2      PIC  9(002).
+002140       03  WR-JCD3      PIC  9(003).
+002150     02  WR-SU          PIC S9(007)V9(02).
+002160     02  WR-SUD   REDEFINES WR-SU.
+002170       03  WR-SU1       PIC  9(007).
+002180       03  WR-SU2       PIC  9(002).
+002190     02  WR-T           PIC S9(006)V9(02).
+002200     02  WR-KIN         PIC S9(008).                              I.990518
+002210     02  WR-SHZ         PIC S9(007).                              I.990531
+002220*****02  WR-SHZ         PIC S9(006).                              D.990531
+002230*****02  WR-KIN         PIC S9(009).                              D.990518
+002240     02  WR-CD          PIC  9(006).
+002250     02  WR-CDD   REDEFINES WR-CD.
+002260       03  WR-CD1       PIC  9(002).
+002270       03  WR-CD2       PIC  9(002).
+002280       03  WR-CD3       PIC  9(002).
+002290     02  WR-SJCD        PIC  9(006).                              I.990518
+002300     02  WR-NNO         PIC  9(006).                              I.990518
+002310     02  WR-FC          PIC  9(001).                              I.990518
+002320     02  WR-YC          PIC  9(001).
+002330     02  WR-TC          PIC  9(001).
+002340     02  WR-SEC         PIC  9(001).                                 A 62/
+002350     02  WR-SC          PIC  9(001).
+002360*****02  WR-SJCD        PIC  9(006).                              D.990518
+002370*****02  WR-NNO         PIC  9(006).                              D.990518
+002380*****02  WR-FC          PIC  9(001).                              D.990518
+002390*****02  WR-SHZ         PIC S9(007).                              D.990518
+002400     02  WR-BSC         PIC  9(001).                              I.980417
+002410*****02  F              PIC  X(007).                              D.990518
+002420*****02  F              PIC  X(001).                              D.950418
+002430*****02  F              PIC  X(012).                              D.950906
+002440*****02  F              PIC  X(010).                              D.970822
+002450*****02  F              PIC  X(008).                              D.980417
+002460     02  WR-BKC         PIC  9(002).                              I.950906
+002470     02  WR-KCO         PIC  X(005).                              I.020325
+002480     02  WR-KHC         PIC  9(001).                              I.020325
+002490     02  F              PIC  X(010).                              I.020325
+002500*****02  F              PIC  X(016).                              D.020325
+002510*****02  F              PIC  X(017).                              D.990531
+002520*****02  F              PIC  X(006).                              D.990518
+002530*****02  WR-DP          PIC  9(006).                              D.980417
+002540     02  WR-KEY.
+002550       03  WR-DNO       PIC  9(006).
+002560       03  WR-GNO       PIC  9(001).
+002570     02  WR-PCNT        PIC  9(001).
+002580*****02  F              PIC  X(002).                              D.990518
+002590 01  W-DATA.
+002600*****02  W-DATE         PIC  9(006).                              D.970822
+002610     02  W-DATE         PIC  9(008).                              I.970822
+002620     02  W-DATED REDEFINES W-DATE.
+002630       03  W-NG.
+002640*****    04  W-NEN      PIC  9(002).                              D.970822
+002650         04  W-NEN      PIC  9(004).                              I.970822
+002660         04  W-NENL  REDEFINES W-NEN.                             I.970822
+002670           05  W-NEN1   PIC  9(002).                              I.970822
+002680           05  W-NEN2   PIC  9(002).                              I.970822
+002690         04  W-GET      PIC  9(002).
+002700       03  W-NGL   REDEFINES W-NG.                                I.970822
+002710         04  F          PIC  9(002).                              I.970822
+002720         04  W-NGS      PIC  9(004).                              I.970822
+002730       03  W-PEY        PIC  9(002).
+002740     02  W-NGPL  REDEFINES W-DATE.                                I.970822
+002750       03  F            PIC  9(002).                              I.970822
+002760       03  W-NGPS       PIC  9(006).                              I.970822
+002770     02  W-SCD          PIC  9(004).
+002780     02  W-SCDD  REDEFINES W-SCD.
+002790       03  W-SCD1       PIC  9(001).
+002800       03  W-SCD2       PIC  9(003).
+002810     02  W-DC           PIC  9(002).
+002820     02  W-SJCD         PIC  9(006).
+002830     02  W-SJCDD REDEFINES W-SJCD.
+002840       03  W-JCD1       PIC  9(001).
+002850       03  W-JCD2       PIC  9(002).
+002860       03  W-JCD3       PIC  9(003).
+002870*****02  W-TN           PIC S9(007)V9(03).                        D.990518
+002880     02  W-DNO          PIC  9(006).
+002890     02  W-LIN.
+002900       03  W-LIN1       PIC  9(002).
+002910       03  W-LIN2       PIC  9(002).
+002920       03  W-LIN3       PIC  9(002).
+002930     02  W-LIND.
+002940       03  W-LIND1      PIC  9(002).
+002950       03  W-LIND2      PIC  9(002).
+002960       03  W-LIND3      PIC  9(002).
+002970*****02  W-GKIN         PIC S9(010).                              D.990518
+002980     02  W-GKIN         PIC S9(009).                              I.990518
+002990     02  W-GSHZ         PIC S9(007).
+003000     02  HIZUKE         PIC  9(002).
+003010     02  W-DMM          PIC  9(001).
+003020     02  CNT            PIC  9(001).
+003030     02  CNTD           PIC  9(001).
+003040     02  CHKD.
+003050       03  CHK     OCCURS   6  PIC  9(001).
+003060     02  W-ACT          PIC  9(001) VALUE ZERO.
+003070     02  W-EC           PIC  9(001) VALUE ZERO.
+003080     02  W-C            PIC  9(001).
+003090     02  W-LIST         PIC  9(001).
+003100     02  W-PC           PIC  9(001) VALUE ZERO.
+003110     02  W-PAGE         PIC  9(002) VALUE ZERO.
+003120     02  W-BNG          PIC  9(004).
+003130     02  W-KNG          PIC  9(004).                              I.020326
+003140     02  W-NC           PIC  9(001).                              I.010116
+003150 01  W-ARD.
+003160     02  W-RD    OCCURS   6  PIC  X(102).                         I.950418
+003170*****02  W-RD    OCCURS   6  PIC  X(085).                         D.950418
+003180 01  ERR-STAT           PIC  X(002).
+003190     COPY LSTAT.
+003200 SCREEN SECTION.
+003210 SD  C-CRT
+003220     END STATUS IS ESTAT.
+003230 01  C-CLEAR.
+003240     02  C-CL    LINE   1  CLEAR SCREEN.
+003250 01  C-MID.
+003260     02  LINE   3  COLUMN  10   PIC  N(023) VALUE
+003270          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+003280     02  LINE   4  COLUMN  10   PIC  N(023) VALUE
+003290          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+003300     02  LINE   5  COLUMN  10   PIC  N(023) VALUE
+003310          NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+003320     02  LINE   6  COLUMN  10   PIC  N(023) VALUE
+003330          NC"＊＊＊　　購買　仕入伝票　入力リスト　　＊＊＊".
+003340     02  LINE   7  COLUMN  10   PIC  N(023) VALUE
+003350          NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+003360     02  LINE   8  COLUMN  10   PIC  N(023) VALUE
+003370          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+003380     02  LINE   9  COLUMN  10   PIC  N(023) VALUE
+003390          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+003400     02  LINE  14  COLUMN  13   PIC  X(040) VALUE
+003410          "全件=1  未作表分=5  作表しない=9    ﾘﾀｰﾝ".
+003420     02  LINE  23  COLUMN  30   PIC  X(022) VALUE
+003430          "確認  OK=1 NO=9   ﾘﾀｰﾝ".
+003440 01  C-ACP.
+003450     02  A-ACT   LINE   1  COLUMN  69   PIC  9(001)
+003460          USING W-ACT    CHECK OVERFLOW NO IFC.
+003470     02  LINE   2.
+003480       03  A-DATE  COLUMN   7   PIC  9(006)
+003490            USING W-NGPS   CHECK OVERFLOW NO IFC.                 I.970822
+003500*****       USING W-DATE   CHECK OVERFLOW NO IFC.                 D.970822
+003510       03  A-DNO   COLUMN  74   PIC  9(006)
+003520            USING W-DNO    CHECK OVERFLOW NO IFC.
+003530     02  A-SCD   LINE   3  COLUMN   7   PIC  9(004)
+003540          USING W-SCD    CHECK OVERFLOW NO IFC.
+003550     02  LINE W-LIN1.
+003560       03  A-DC    COLUMN   7   PIC  9(002)
+003570            USING W-DC     CHECK OVERFLOW NO IFC.
+003580       03  A-JCD   COLUMN  15   PIC  9(006)
+003590            USING WR-JCD   CHECK OVERFLOW NO IFC.
+003600     02  LINE W-LIN2.
+003610       03  A-SU    COLUMN   7   PIC S9(007)V9(02)
+003620            USING WR-SU    CHECK OVERFLOW NO IFC.
+003630       03  A-T     COLUMN  25   PIC S9(006)V9(02)
+003640            USING WR-T     CHECK OVERFLOW NO IFC.
+003650*****  03  A-KIN   COLUMN  41   PIC S9(009)                       D.990518
+003660       03  A-KIN   COLUMN  42   PIC S9(008)                       I.990518
+003670            USING WR-KIN   CHECK OVERFLOW NO IFC.
+003680       03  A-CD    COLUMN  59   PIC  9(006)
+003690            USING WR-CD    CHECK OVERFLOW NO IFC.
+003700       03  A-NNO   COLUMN  73   PIC  9(006)
+003710            USING WR-NNO   CHECK OVERFLOW NO IFC.
+003720     02  LINE W-LIN3.
+003730       03  A-SJCD  COLUMN   7   PIC  9(006)
+003740            USING W-SJCD   CHECK OVERFLOW NO IFC.
+003750       03  A-KCO   COLUMN   7   PIC  X(005)                       I.020325
+003760            USING WR-KCO   CHECK OVERFLOW NO IFC.                 I.020325
+003770       03  A-FC    COLUMN  79   PIC  9(001)
+003780            USING WR-FC    CHECK OVERFLOW NO IFC.
+003790     02  A-LIST  LINE  14  COLUMN  48   PIC  9(001)
+003800          USING W-LIST   CHECK OVERFLOW NO IFC.
+003810     02  A-DMM   LINE  23  COLUMN  47   PIC  9(001)
+003820          USING W-DMM    CHECK OVERFLOW NO IFC.
+003830 01  C-DSP.
+003840     02  LINE   3.
+003850       03  D-SNA   COLUMN  21   PIC  N(024) FROM  S-NAME.
+003860       03  D-MD1   COLUMN  71   PIC  X(010) VALUE "<商品仕入>".
+003870       03  D-MD2   COLUMN  71   PIC  X(010) VALUE "<材料仕入>".
+003880     02  LINE W-LIN1.
+003890       03  D-JNA   COLUMN  29   PIC  N(024) FROM  J-NAME.
+003900     02  LINE W-LIN2.
+003910       03  D-SU    COLUMN   7   PIC ZZZZZZ9.99-  FROM  WR-SU.
+003920       03  D-T     COLUMN  25   PIC ZZZZZ9.99-   FROM  WR-T.
+003930*****  03  D-KIN   COLUMN  41   PIC ZZZZZZZZ9-   FROM  WR-KIN.    D.990518
+003940       03  D-KIN   COLUMN  42   PIC ZZZZZZZ9-    FROM  WR-KIN.    I.990518
+003950       03  D-NHM   COLUMN  66   PIC  N(003) VALUE NC"納品№".
+003960     02  LINE W-LIN3.
+003970       03  D-CM    COLUMN   2   PIC  X(004) VALUE "ｺｰﾄﾞ".
+003980       03  D-NM    COLUMN  14   PIC  N(003) VALUE NC"商品名".
+003990       03  D-SHN   COLUMN  21   PIC  N(024) FROM  J-NAME.
+004000       03  D-KM    COLUMN  14   PIC  N(003) VALUE NC"工品名".     I.020325
+004010       03  D-KHN   COLUMN  21   PIC  X(020) FROM  KH-NAME.        I.020325
+004020       03  D-FCM   COLUMN  70   PIC  N(004) VALUE NC"不良区分".
+004030*****02  D-GKIN  LINE  22  COLUMN  37   PIC Z,ZZZ,ZZZ,ZZ9- FROM   D.990518
+004040     02  D-GKIN  LINE  22  COLUMN  39   PIC ZZZ,ZZZ,ZZ9- FROM     I.990518
+004050                                                          W-GKIN.
+004060 01  C-SPC.
+004070     02  LINE W-LIN1.
+004080       03  S-DC    COLUMN   7   PIC  X(002) VALUE "  ".
+004090       03  S-JCD   COLUMN  15   PIC  X(006) VALUE "      ".
+004100       03  S-JNA   COLUMN  29   PIC  X(048) VALUE
+004110            "                                                ".
+004120     02  LINE W-LIN2.
+004130       03  S-SU    COLUMN   7   PIC  X(011) VALUE "           ".
+004140       03  S-T     COLUMN  25   PIC  X(010) VALUE "          ".
+004150       03  S-KIN   COLUMN  42   PIC  X(009) VALUE "         ".    I.990518
+004160*****  03  S-KIN   COLUMN  41   PIC  X(010) VALUE "          ".   D.990518
+004170       03  S-CD    COLUMN  59   PIC  X(006) VALUE "      ".
+004180       03  S-NHM   COLUMN  66   PIC  X(006) VALUE "      ".
+004190       03  S-NNO   COLUMN  73   PIC  X(006) VALUE "      ".
+004200     02  LINE W-LIN3.
+004210       03  S-CM    COLUMN   2   PIC  X(004) VALUE "    ".
+004220       03  S-SJCD  COLUMN   7   PIC  X(006) VALUE "      ".
+004230       03  S-NM    COLUMN  14   PIC  X(006) VALUE "      ".
+004240       03  S-SHN   COLUMN  21   PIC  X(048) VALUE
+004250            "                                                ".
+004260       03  S-FCM   COLUMN  70   PIC  X(008) VALUE "        ".
+004270       03  S-FC    COLUMN  79   PIC  X(001) VALUE " ".
+004280 01  C-ERR.
+004290     02  LINE  24.
+004300       03  E-STAT  COLUMN  10   PIC  X(002) FROM  ERR-STAT.
+004310       03  E-ME1   COLUMN  15   PIC  X(015) VALUE
+004320            "***  SM ﾅｼ  ***".
+004330       03  E-ME2   COLUMN  15   PIC  X(015) VALUE
+004340            "***  JM ﾅｼ  ***".
+004350       03  E-ME3   COLUMN  15   PIC  X(021) VALUE
+004360            "***  PROGRAM ｴﾗｰ  ***".
+004370       03  E-ME4   COLUMN  15   PIC  X(018) VALUE
+004380            "***  ｺｰﾄﾞ ｴﾗｰ  ***".
+004390       03  E-ME5   COLUMN  15   PIC  X(018) VALUE
+004400            "***  KBNOM ﾅｼ  ***".
+004410       03  E-ME6   COLUMN  15   PIC  X(027) VALUE
+004420            "***  KBNOM REWRITE ｴﾗｰ  ***".
+004430       03  E-ME7   COLUMN  15   PIC  X(017) VALUE
+004440            "***  DATA ﾅｼ  ***".
+004450       03  E-ME8   COLUMN  15   PIC  X(024) VALUE
+004460            "***  JSSF WRITE ｴﾗｰ  ***".
+004470       03  E-ME9   COLUMN  15   PIC  X(025) VALUE
+004480            "***  JSSF DELETE ｴﾗｰ  ***".
+004490       03  E-ME10  COLUMN  15   PIC  X(026) VALUE
+004500            "***  JSSF REWRITE ｴﾗｰ  ***".
+004510       03  E-ME11  COLUMN  15   PIC  X(022) VALUE
+004520            "***  ｼﾊﾗｲ ﾃﾞﾝﾋﾟｮｳ  ***".
+004530       03  E-ME12  COLUMN  15   PIC  X(024) VALUE                 I.010116
+004540            "***  ｾｲﾋﾝｼｲﾚﾌｧｲﾙ ﾅｼ  ***".                           I.010116
+004550       03  E-ME13  COLUMN  15   PIC  X(025) VALUE                 I.010116
+004560            "***  ｾｲﾋﾝｼｲﾚ ﾍﾝｶﾝ ｽﾞﾐ ***".                          I.010116
+004570       03  E-ME14  COLUMN  15   PIC  X(025) VALUE                 I.010116
+004580            "***  HSSF REWRITE ｴﾗｰ ***".                          I.010116
+004590       03  E-ME15  COLUMN  15   PIC  X(016) VALUE                 I.020325
+004600            "***  KHM ﾅｼ  ***".                                   I.020325
+004610       03  E-ME16  COLUMN  15   PIC  X(022) VALUE                 I.020325
+004620            "***  ｺｳﾋﾝ ﾖｳﾄ ｴﾗｰ  ***".                             I.020325
+004630       03  E-ME17  COLUMN  15   PIC  X(021) VALUE                 I.020325
+004640            "***  ｺｳﾋﾝ ﾀﾝｶ ﾅｼ  ***".                              I.020325
+004650       03  E-ME18  COLUMN  15   PIC  X(023) VALUE                 I.020325
+004660            "***  ｺｳﾋﾝ ﾋﾂﾞｹ ｴﾗｰ  ***".                            I.020325
+004670       03  E-ME72  COLUMN  15   PIC  N(013) VALUE                 I.930826
+004680            NC"日次更新後，入力して下さい".                       I.930826
+004690       03  E-ME78  COLUMN   5   PIC  N(002) VALUE NC"連絡".       I.930826
+004700       03  E-ME98  COLUMN  75   PIC  X(005) VALUE ""27"J"05"".
+004710       03  E-ME99  COLUMN  75   PIC  X(005) VALUE ""27"B"05"".
+004720*****  03  E-CL    COLUMN  10   PIC  X(050) VALUE                 D.930826
+004730*****       "                                                  ". D.930826
+004740       03  E-CL.                                                  I.930826
+004750         04  COLUMN   1   PIC  X(040) VALUE                       I.930826
+004760              "                                        ".         I.930826
+004770         04  COLUMN  41   PIC  X(040) VALUE                       I.930826
+004780              "                                        ".         I.930826
+004790     COPY LIBSCR.
+004800 PROCEDURE DIVISION.
+004810 M-05.
+004820     COPY LIBCPR.
+004830     MOVE D-NBNG TO W-BNG.
+004840     MOVE D-NKNG TO W-KNG.                                        I.020326
+004850     MOVE DATE-05R TO H-DATE.
+004860     DISPLAY C-CLEAR.
+004870     OPEN I-O KBNO-M.
+004880     MOVE SPACE TO BNO-KEY.
+004890     MOVE "01" TO BNO-KEYD.
+004900     READ KBNO-M INVALID KEY
+004910         DISPLAY E-ME5 E-ME99
+004920         CLOSE KBNO-M
+004930         DISPLAY C-CLEAR
+004940         STOP RUN.
+004950     MOVE BNO-DATE TO HIZUKE.
+004960     MOVE SPACE TO BNO-KEY.
+004970     MOVE "02" TO BNO-KEYD.
+004980     READ KBNO-M INVALID KEY
+004990         DISPLAY E-ME5 E-ME99
+005000         CLOSE KBNO-M
+005010         DISPLAY C-CLEAR
+005020         STOP RUN.
+005030*
+005040     OPEN INPUT S-M.
+005050     OPEN INPUT J-M.
+005060     OPEN INPUT KH-M.                                             I.020325
+005070     OPEN I-O HSS-F.                                              I.010116
+005080     OPEN I-O JSS-F.
+005090     CALL "SCBD01".
+005100 M-10.
+005110     ACCEPT A-ACT.
+005120     IF ESTAT NOT = HTB AND SKP
+005130         GO TO M-10.
+005140     IF W-ACT = 9
+005150         GO TO M-80.
+005160     IF W-ACT < 1 OR > 3
+005170         GO TO M-10.
+005180*****IF W-ACT = 1                                                 D.010116
+005190*****    GO TO M-17D.                                             D.010116
+005200 M-15.
+005210     PERFORM ACP-RTN THRU ACP-EX.                                 I.020325
+005220*****CALL "SCBD01".                                               D.020325
+005230*****DISPLAY A-ACT.                                               D.020325
+005240*M-17A.                                                           D.020325
+005250*****ACCEPT A-DNO.                                                D.020325
+005260*****DISPLAY E-CL.                                                D.020325
+005270     IF ESTAT = BTB
+005280         GO TO M-10.
+005290*****IF ESTAT NOT = HTB AND SKP                                   D.020325
+005300*****    GO TO M-17A.                                             D.020325
+005310*****IF W-ACT = 1                                                 D.020325
+005320*****    GO TO M-17B.                                             D.020325
+005330*****MOVE ZERO TO JS-KEY.                                         D.020325
+005340*****MOVE W-DNO TO JS-DNO.                                        D.020325
+005350*****START JSS-F KEY NOT < JS-KEY INVALID KEY                     D.020325
+005360*****    DISPLAY E-ME7 E-ME98                                     D.020325
+005370*****    GO TO M-17A.                                             D.020325
+005380*****READ JSS-F NEXT RECORD AT END                                D.020325
+005390*****    DISPLAY E-ME7 E-ME98                                     D.020325
+005400*****    GO TO M-17A.                                             D.020325
+005410*****IF JS-DNO NOT = W-DNO                                        D.020325
+005420*****    DISPLAY E-ME7 E-ME98                                     D.020325
+005430*****    GO TO M-17A.                                             D.020325
+005440*****IF JS-DC = 30                                                D.020325
+005450*****    DISPLAY E-ME11 E-ME98                                    D.020325
+005460*****    GO TO M-17A.                                             D.020325
+005470*****GO TO M-17C.                                                 D.020325
+005480*M-17B.                                                           D.020325
+005490*****IF W-DNO = ZERO                                              D.020325
+005500*****    MOVE 0 TO W-NC                                           D.020325
+005510*****    GO TO M-17D.                                             D.020325
+005520*****MOVE ZERO TO HSS-KEY.                                        D.020325
+005530*****MOVE W-DNO TO HSS-DNO.                                       D.020325
+005540*****START HSS-F KEY NOT < HSS-KEY INVALID KEY                    D.020325
+005550*****    DISPLAY E-ME12 E-ME98                                    D.020325
+005560*****    GO TO M-17A.                                             D.020325
+005570*****READ HSS-F NEXT RECORD AT END                                D.020325
+005580*****    DISPLAY E-ME12 E-ME98                                    D.020325
+005590*****    GO TO M-17A.                                             D.020325
+005600*****IF HSS-DNO NOT = W-DNO                                       D.020325
+005610*****    DISPLAY E-ME12 E-ME98                                    D.020325
+005620*****    GO TO M-17A.                                             D.020325
+005630*****IF HSS-BHC = 1                                               D.020325
+005640*****    DISPLAY E-ME13 E-ME98                                    D.020325
+005650*****    GO TO M-17A.                                             D.020325
+005660*****MOVE 1 TO W-NC.                                              D.020325
+005670*M-17C.                                                           D.020325
+005680*****PERFORM DSP-RTN THRU DSP-EX.                                 D.020325
+005690*****IF W-ACT = 3                                                 D.020325
+005700*****    GO TO M-17V.                                             D.020325
+005710*M-17D.                                                           D.020325
+005720*****MOVE ZERO TO W-R.                                            D.020325
+005730*****IF W-ACT = 1                                                 D.020325
+005740*****    IF W-NC = 0                                              D.020325
+005750*****        IF W-DATE = ZERO                                     D.020325
+005760*****            GO TO M-17E                                      D.020325
+005770*****          ELSE                                               D.020325
+005780*****            GO TO M-17F.                                     D.020325
+005790*****        CALL "SCBD01"                                        D.010116
+005800*****        DISPLAY A-ACT.                                       D.010116
+005810*M-17E.                                                           D.020325
+005820*****ACCEPT A-DATE.                                               D.020325
+005830*****IF ESTAT = BTB                                               D.020325
+005840*****    IF W-ACT = 1                                             D.010116
+005850*****        GO TO M-10                                           D.010116
+005860*****    IF W-ACT NOT = 1                                         D.020325
+005870*****        GO TO M-17A                                          D.020325
+005880*****      ELSE                                                   D.020325
+005890*****        IF W-NC = 0                                          D.020325
+005900*****            GO TO M-10                                       D.020325
+005910*****          ELSE                                               D.020325
+005920*****            GO TO M-17A.                                     D.020325
+005930*****IF ESTAT NOT = HTB AND SKP                                   D.020325
+005940*****    GO TO M-17D.                                             D.020325
+005950*****IF (W-GET < 1 OR > 12) OR (W-PEY < 1 OR > 31)                D.020325
+005960*****    GO TO M-17D.                                             D.020325
+005970*****IF W-NG NOT = W-BNG                                          D.970822
+005980*****IF W-NGS NOT = W-BNG                                         D.020325
+005990*****    GO TO M-17D.                                             D.020325
+006000*****IF HIZUKE NOT < W-PEY                                        D.020325
+006010*****    GO TO M-17D.                                             D.020325
+006020*****MOVE ZERO TO W-NEN1.                                         D.020325
+006030*****IF W-NEN2 >= DATE-NF1 AND <= DATE-NT1                        D.020325
+006040*****    ADD DATE-NC1 TO W-NEN.                                   D.020325
+006050*****IF W-NEN2 >= DATE-NF2 AND <= DATE-NT2                        D.020325
+006060*****    ADD DATE-NC2 TO W-NEN.                                   D.020325
+006070*M-17F.                                                           D.020325
+006080*****IF W-ACT = 1                                                 D.020325
+006090*****    IF W-NC = 0                                              D.020325
+006100*****        CALL "SCBD01"                                        D.020325
+006110*****        MOVE ZERO TO W-ARD W-SCD                             D.020325
+006120*****        COMPUTE W-DNO = BNO-DNO1 + 1                         D.020325
+006130*****        DISPLAY A-ACT A-DNO A-DATE                           D.020325
+006140*****        IF W-DNO = ZERO                                      D.020325
+006150*****            ADD 1 TO W-DNO                                   D.020325
+006160*****            DISPLAY A-DNO.                                   D.020325
+006170*****        DISPLAY A-ACT A-DNO A-DATE.                          D.010116
+006180*****ACCEPT A-SCD.                                                D.020325
+006190*****IF ESTAT = BTB                                               D.020325
+006200*****    GO TO M-17E.                                             D.020325
+006210*****    GO TO M-17D.                                             D.010117
+006220*****IF ESTAT NOT = HTB AND SKP                                   D.020325
+006230*****    GO TO M-17F.                                             D.020325
+006240*****MOVE W-SCD TO S-KEY.                                         D.020325
+006250*****READ S-M WITH UNLOCK INVALID KEY                             D.020325
+006260*****    DISPLAY E-ME1 E-ME98                                     D.020325
+006270*****    GO TO M-17F.                                             D.020325
+006280*****DISPLAY D-SNA.                                               D.020325
+006290*****IF W-SCD1 > 4                                                D.020325
+006300*****    DISPLAY D-MD1                                            D.020325
+006310*****  ELSE                                                       D.020325
+006320*****    DISPLAY D-MD2.                                           D.020325
+006330*****MOVE 1 TO W-LIN1.                                            D.020325
+006340*****MOVE ZERO TO CNT W-GKIN CHKD.                                D.020325
+006350*M-17G.                                                           D.020325
+006360*****ADD 1 TO CNT.                                                D.020325
+006370*****ADD 3 TO W-LIN1.                                             D.020325
+006380*****COMPUTE W-LIN2 = W-LIN1 + 1.                                 D.020325
+006390*****COMPUTE W-LIN3 = W-LIN2 + 1.                                 D.020325
+006400*****IF CNT = 7                                                   D.020325
+006410*****    GO TO M-17V.                                             D.020325
+006420*****MOVE W-RD(CNT) TO W-R.                                       D.020325
+006430*M-17H.                                                           D.020325
+006440*****IF WR-DC NOT = ZERO                                          D.020325
+006450*****    MOVE WR-DC TO W-DC.                                      D.020325
+006460*****DISPLAY A-DC.                                                D.020325
+006470*****ACCEPT A-DC.                                                 D.020325
+006480*****IF ESTAT = BTB                                               D.020325
+006490*****    GO TO M-17T.                                             D.020325
+006500*****IF ESTAT = C1                                                D.000707
+006510*****IF ESTAT = ADV                                               D.020325
+006520*****    MOVE CNT TO CNTD                                         D.020325
+006530*****    MOVE W-LIN TO W-LIND                                     D.020325
+006540*****    GO TO M-17U.                                             D.020325
+006550*****IF ESTAT NOT = HTB AND SKP                                   D.020325
+006560*****    GO TO M-17H.                                             D.020325
+006570*****MOVE W-DC TO WR-DC.                                          D.020325
+006580*****IF WR-DC1 NOT = 1                                            D.020325
+006590*****    GO TO M-17H.                                             D.020325
+006600*****IF WR-DC2 > 4                                                D.020325
+006610*****    GO TO M-17H.                                             D.020325
+006620*M-17I.                                                           D.020325
+006630*****ACCEPT A-JCD.                                                D.020325
+006640*****IF ESTAT = BTB                                               D.020325
+006650*****    GO TO M-17H.                                             D.020325
+006660*****IF ESTAT NOT = HTB AND SKP                                   D.020325
+006670*****    GO TO M-17I.                                             D.020325
+006680*****DISPLAY E-CL.                                                D.020325
+006690*****MOVE WR-JCD TO J-KEY.                                        D.020325
+006700*****READ J-M WITH UNLOCK INVALID KEY                             D.020325
+006710*****    DISPLAY E-ME2 E-ME98                                     D.020325
+006720*****    GO TO M-17I.                                             D.020325
+006730*****DISPLAY D-JNA.                                               D.020325
+006740*****IF WR-JCD = 999000                                           D.020325
+006750*****    GO TO M-17J.                                             D.020325
+006760*****IF W-SCD1 > 4                                                D.020325
+006770*****    IF (WR-JCD2 NOT = 90) AND (WR-JCD1 NOT = 7)              D.020325
+006780*****        DISPLAY E-ME4 E-ME98                                 D.020325
+006790*****        GO TO M-17I.                                         D.020325
+006800*****IF W-SCD1 < 5                                                D.020325
+006810*****    IF (WR-JCD2 = 90) OR (WR-JCD1 = 7)                       D.020325
+006820*****        DISPLAY E-ME4 E-ME98                                 D.020325
+006830*****        GO TO M-17I.                                         D.020325
+006840*M-17J.                                                           D.020325
+006850*****MOVE J-YC TO WR-YC.                                          D.020325
+006860*****MOVE J-TC1 TO WR-TC.                                         D.020325
+006870*****MOVE J-SC TO WR-SEC.                                         D.020325
+006880*****MOVE J-ST TO WR-T.                                           D.020325
+006890*****MOVE J-BKC TO WR-BKC                                         D.020325
+006900*****IF J-KT NOT = ZERO                                           D.020325
+006910*****    MOVE J-KT TO WR-T.                                       D.020325
+006920*****IF WR-JCD > 798999                                           D.020325
+006930*****    MOVE ZERO TO WR-SU WR-T                                  D.020325
+006940*****    DISPLAY S-SU S-T                                         D.020325
+006950*****    GO TO M-17M.                                             D.020325
+006960*****DISPLAY D-T.                                                 D.020325
+006970*M-17K.                                                           D.020325
+006980*****ACCEPT A-SU.                                                 D.020325
+006990*****IF ESTAT = BTB                                               D.020325
+007000*****    GO TO M-17I.                                             D.020325
+007010*****IF ESTAT NOT = HTB AND SKP                                   D.022325
+007020*****    GO TO M-17K.                                             D.020325
+007030*****DISPLAY D-SU.                                                D.020325
+007040*****IF WR-JCD > 004999 AND < 005500                              D.020325
+007050*****   IF (WR-SU > 99999 OR < -99999) OR (WR-SU2 NOT = 00 AND 50)D.020325
+007060*****        GO TO M-17K.                                         D.020325
+007070*M-17L.                                                           D.020325
+007080*****ACCEPT A-T.                                                  D.020325
+007090*****IF ESTAT = BTB                                               D.020325
+007100*****    GO TO M-17K.                                             D.020325
+007110*****IF ESTAT NOT = HTB AND SKP                                   D.020325
+007120*****    GO TO M-17L.                                             D.020325
+007130*****DISPLAY D-T.                                                 D.020325
+007140*****IF WR-JCD > 004999 AND < 005500                              D.020325
+007150*****    IF WR-T > 9999                                           D.020325
+007160*****        GO TO M-17L.                                         D.020325
+007170*****IF ZERO > WR-T OR WR-SU                                      D.020325
+007180*****    COMPUTE WR-KIN = WR-SU * WR-T - 0.9                      D.020325
+007190*****  ELSE                                                       D.020325
+007200*****    COMPUTE WR-KIN = WR-SU * WR-T.                           D.020325
+007210*****MOVE ZERO TO CHK(CNT).                                       D.020325
+007220*****IF WR-KIN NOT = ZERO                                         D.020325
+007230*****    MOVE 5 TO CHK(CNT)                                       D.020325
+007240*****    GO TO M-17N.                                             D.020325
+007250*M-17M.                                                           D.020325
+007260*****ACCEPT A-KIN.                                                D.020325
+007270*****IF ESTAT = BTB                                               D.020325
+007280*****    IF WR-JCD > 799000                                       D.020325
+007290*****        GO TO M-17I                                          D.020325
+007300*****      ELSE                                                   D.020325
+007310*****        GO TO M-17L.                                         D.020325
+007320*****IF ESTAT NOT = HTB AND SKP                                   D.020325
+007330*****    GO TO M-17M.                                             D.020325
+007340*****IF WR-JCD > 799000                                           D.020325
+007350*****    GO TO M-17N.                                             D.020325
+007360*****MOVE ZERO TO WR-T.                                           D.020325
+007370*****IF WR-KIN NOT = ZERO                                         D.020325
+007380*****    IF WR-SU NOT = ZERO                                      D.020325
+007390*****        COMPUTE WR-T = WR-KIN / WR-SU.                       D.020325
+007400*****DISPLAY D-T.                                                 D.020325
+007410*M-17N.                                                           D.020325
+007420*****IF WR-JCD = 999000                                           D.020325
+007430*****    IF WR-KIN > 9999999 OR < -9999999                        D.020325
+007440*****        GO TO M-17M.                                         D.020325
+007450*****DISPLAY D-KIN.                                               D.020325
+007460*M-17O.                                                           D.020325
+007470*****ACCEPT A-CD.                                                 D.020325
+007480*****IF ESTAT = BTB                                               D.020325
+007490*****    IF CHK(CNT) = 5                                          D.020325
+007500*****        GO TO M-17L                                          D.020325
+007510*****      ELSE                                                   D.020325
+007520*****        GO TO M-17M.                                         D.020325
+007530*****IF ESTAT NOT = HTB AND SKP                                   D.020325
+007540*****    GO TO M-17O.                                             D.020325
+007550*****IF WR-CD = ZERO                                              D.020325
+007560*****    DISPLAY S-CD                                             D.020325
+007570*****    GO TO M-17P.                                             D.020325
+007580*****IF (WR-CD1 < 80) OR (WR-CD2 < 1 OR > 12)                     D.970822
+007590*****                 OR (WR-CD3 < 1 OR > 31)                     D.970822
+007600*****IF (WR-CD2 < 1 OR > 12) OR (WR-CD3 < 1 OR > 31)              D.020325
+007610*****    GO TO M-17O.                                             D.020325
+007620*M-17P.                                                           D.020325
+007630*****IF WR-JCD < 799000 OR = 999000                               D.020325
+007640*****    MOVE ZERO TO WR-SJCD                                     D.020325
+007650*****    DISPLAY S-CM S-SJCD S-NM S-SHN                           D.020325
+007660*****    GO TO M-17G.                                             D.020325
+007670*****DISPLAY D-CM D-NM.                                           D.020325
+007680*****ACCEPT A-SJCD.                                               D.020325
+007690*****DISPLAY E-CL.                                                D.020325
+007700*****IF ESTAT = BTB                                               D.020325
+007710*****    GO TO M-17O.                                             D.020325
+007720*****IF ESTAT NOT = HTB AND SKP                                   D.020325
+007730*****    GO TO M-17P.                                             D.020325
+007740*****IF W-JCD2 NOT = 90                                           D.020325
+007750*****    DISPLAY E-ME4 E-ME98                                     D.020325
+007760*****    GO TO M-17P.                                             D.020325
+007770*****MOVE W-SJCD TO J-KEY.                                        D.020325
+007780*****READ J-M WITH UNLOCK INVALID KEY                             D.020325
+007790*****    DISPLAY E-ME2 E-ME98                                     D.020325
+007800*****    GO TO M-17P.                                             D.020325
+007810*****DISPLAY D-SHN.                                               D.020325
+007820*****MOVE J-KEY TO WR-SJCD.                                       D.020325
+007830*M-17G.                                                           D.020325
+007840*****IF (WR-JCD < 005000 OR > 005499) OR (WR-T < 1)               D.020325
+007850*****    MOVE ZERO TO WR-NNO WR-FC                                D.020325
+007860*****    DISPLAY S-NHM S-FCM S-NNO S-FC                           D.020325
+007870*****    GO TO M-17S.                                             D.020325
+007880*****DISPLAY D-NHM D-FCM.                                         D.020325
+007890*****ACCEPT A-NNO.                                                D.020325
+007900*****DISPLAY E-CL.                                                D.020325
+007910*****IF ESTAT = BTB                                               D.020325
+007920*****    GO TO M-17O.                                             D.020325
+007930*****IF ESTAT NOT = HTB AND SKP                                   D.020325
+007940*****    GO TO M-17G.                                             D.020325
+007950*M-17R.                                                           D.020325
+007960*****ACCEPT A-FC.                                                 D.020325
+007970*****IF ESTAT = BTB                                               D.020325
+007980*****    GO TO M-17G.                                             D.020325
+007990*****IF ESTAT NOT = HTB AND SKP                                   D.020325
+008000*****    GO TO M-17R.                                             D.020325
+008010*****IF WR-FC > 2                                                 D.020325
+008020*****    GO TO M-17R.                                             D.020325
+008030*****IF WR-SU > ZERO                                              D.020325
+008040*****    GO TO M-17S.                                             D.020325
+008050*****IF WR-DC2 NOT = ZERO                                         D.020325
+008060*****    GO TO M-17S.                                             D.020325
+008070*****IF WR-FC = ZERO                                              D.020325
+008080*****    GO TO M-17R.                                             D.020325
+008090*M-17S.                                                           D.020325
+008100*****MOVE W-DATE TO WR-DATE.                                      D.020325
+008110*****MOVE W-SCD TO WR-SCD.                                        D.020325
+008120*****MOVE W-DNO TO WR-DNO.                                        D.020325
+008130*****MOVE CNT TO WR-GNO.                                          D.020325
+008140*****MOVE 999999 TO WR-DP.                                        D.020325
+008150*****MOVE W-R TO W-RD(CNT).                                       D.020325
+008160*****ADD WR-KIN TO W-GKIN.                                        D.020325
+008170*****GO TO M-17G.                                                 D.020325
+008180*M-17T.                                                           D.020325
+008190*****IF CNT = 1                                                   D.020325
+008200*****    GO TO M-17F.                                             D.020325
+008210*****SUBTRACT 1 FROM CNT.                                         D.020325
+008220*****SUBTRACT 3 FROM W-LIN1.                                      D.020325
+008230*****COMPUTE W-LIN2 = W-LIN1 + 1.                                 D.020325
+008240*****COMPUTE W-LIN3 = W-LIN2 + 1.                                 D.020325
+008250*****MOVE W-RD(CNT) TO W-R.                                       D.020325
+008260*****SUBTRACT WR-KIN FROM W-GKIN.                                 D.020325
+008270*****IF WR-JCD > 004999 AND < 005500                              D.020325
+008280*****    IF WR-T > ZERO                                           D.020325
+008290*****        GO TO M-17R                                          D.020325
+008300*****      ELSE                                                   D.020325
+008310*****        GO TO M-17O.                                         D.020325
+008320*****IF WR-JCD = 999000 OR < 799000                               D.020325
+008330*****    GO TO M-17O.                                             D.020325
+008340*****    GO TO M-17P.                                             D.020325
+008350*M-17U.                                                           D.020325
+008360*****DISPLAY C-SPC.                                               D.020325
+008370*****MOVE ZERO TO W-R.                                            D.020325
+008380*****MOVE W-R TO W-RD(CNTD)                                       D.020325
+008390*****ADD 1 TO CNTD.                                               D.020325
+008400*****ADD 3 TO W-LIN1.                                             D.020325
+008410*****COMPUTE W-LIN2 = W-LIN1 + 1.                                 D.020325
+008420*****COMPUTE W-LIN3 = W-LIN2 + 1.                                 D.020325
+008430*****IF CNTD NOT = 7                                              D.020325
+008440*****    GO TO M-17U.                                             D.020325
+008450*****MOVE W-LIND TO W-LIN.                                        D.020325
+008460*M-17V.                                                           D.020325
+008470*****DISPLAY D-GKIN.                                              D.020325
+008480*****ACCEPT A-DMM.                                                D.020325
+008490*****IF ESTAT = BTB                                               D.020325
+008500*****    IF W-ACT = 3                                             D.020325
+008510*****        GO TO M-17A.                                         D.020325
+008520*****IF ESTAT = BTB                                               D.020325
+008530*****    GO TO M-17T.                                             D.020325
+008540*****IF ESTAT NOT = HTB AND SKP                                   D.020325
+008550*****    GO TO M-17V.                                             D.020325
+008560*****IF W-DMM = 9                                                 D.020325
+008570*****    MOVE ZERO TO W-R                                         D.020325
+008580*****    IF W-ACT = 1                                             D.020325
+008590*****        GO TO M-17F                                          D.020325
+008600*****      ELSE                                                   D.020325
+008610*****        GO TO M-15.                                          D.020325
+008620*****IF W-DMM NOT = 1                                             D.020325
+008630*****    GO TO M-17V.                                             D.020325
+008640****************   ファイル　登録   *****************
+008650 M-20.
+008660     IF W-ACT NOT = 1
+008670         GO TO M-45.
+008680     MOVE ZERO TO CNT.
+008690 M-25.
+008700     DISPLAY E-CL.
+008710     ADD 1 TO CNT.
+008720     IF CNT = 7
+008730         GO TO M-75.
+008740     MOVE W-RD(CNT) TO W-R.
+008750     IF WR-DATE = ZERO
+008760         GO TO M-75.
+008770     PERFORM MOV-RTN THRU MOV-EX.
+008780     MOVE ZERO TO JSS-R.
+008790     MOVE W-R TO JSS-R.
+008800     WRITE JSS-R INVALID KEY
+008810         GO TO M-30.                                              I.930830
+008820     CALL "CBLTCLS" USING JSS-F.                                  I.930824
+008830     GO TO M-35.                                                  I.930824
+008840 M-30.                                                            I.930830
+008850     DISPLAY E-STAT E-ME8 E-ME99.                                 C.930830
+008860     IF ERR-STAT = "24"                                           I.930830
+008870         DISPLAY E-CL                                             I.930830
+008880         DISPLAY E-ME72 E-ME99                                    I.930830
+008890       ELSE                                                       I.930830
+008900         DISPLAY E-ME78 E-ME99.                                   I.930830
+008910     MOVE 5 TO W-EC.                                              C.930830
+008920     GO TO M-75.
+008930 M-35.                                                            I.930830
+008940     IF CNT NOT = 1
+008950         GO TO M-25.
+008960     IF W-NC NOT = 0                                              I.010116
+008970         GO TO M-40.                                              I.010116
+008980     MOVE W-DNO TO BNO-DNO1.
+008990     REWRITE KBNO-R INVALID KEY
+009000         DISPLAY E-ME78 E-STAT E-ME6 E-ME99                       C.930830
+009010         MOVE 5 TO W-EC
+009020         GO TO M-75.
+009030     GO TO M-25.
+009040 M-40.                                                            I.010116
+009050     MOVE 1 TO HSS-BHC.                                           I.010116
+009060     REWRITE HSS-R INVALID KEY                                    I.010116
+009070         DISPLAY E-ME78 E-STAT E-ME14 E-ME99                      I.010116
+009080         MOVE 5 TO W-EC                                           I.010116
+009090         GO TO M-75.                                              I.010116
+009100     READ HSS-F NEXT RECORD AT END                                I.010116
+009110         GO TO M-25.                                              I.010116
+009120     IF HSS-DNO = W-DNO                                           I.010116
+009130         GO TO M-40.                                              I.010116
+009140     GO TO M-25.                                                  I.010116
+009150****************   ファイル　修正   *****************
+009160 M-45.
+009170     IF W-ACT NOT = 2
+009180         GO TO M-70.
+009190     MOVE ZERO TO CNT.
+009200 M-50.
+009210     DISPLAY E-CL.
+009220     ADD 1 TO CNT.
+009230     IF CNT = 7
+009240         GO TO M-75.
+009250     MOVE W-RD(CNT) TO W-R.
+009260     IF WR-DATE = ZERO
+009270         GO TO M-65.
+009280     PERFORM MOV-RTN THRU MOV-EX.
+009290     MOVE WR-KEY TO JS-KEY.
+009300     READ JSS-F INVALID KEY
+009310         GO TO M-55.
+009320     MOVE W-R TO JSS-R.
+009330     MOVE 0 TO JS-PCNT.
+009340     REWRITE JSS-R INVALID KEY
+009350         DISPLAY E-ME78 E-STAT E-ME10 E-ME99                      C.930830
+009360         MOVE 5 TO W-EC
+009370         GO TO M-75.
+009380     GO TO M-50.
+009390 M-55.
+009400     MOVE ZERO TO JSS-R.
+009410     MOVE W-R TO JSS-R.
+009420     WRITE JSS-R INVALID KEY
+009430         GO TO M-60.                                              I.930830
+009440     CALL "CBLTCLS" USING JSS-F.                                  I.930824
+009450     GO TO M-50.
+009460 M-60.                                                            I.930830
+009470     DISPLAY E-STAT E-ME8 E-ME99.                                 C.930830
+009480     IF ERR-STAT = "24"                                           I.930830
+009490         DISPLAY E-CL                                             I.930830
+009500         DISPLAY E-ME72 E-ME99                                    I.930830
+009510       ELSE                                                       I.930830
+009520         DISPLAY E-ME78 E-ME99.                                   I.930830
+009530     MOVE 5 TO W-EC.                                              C.930830
+009540     GO TO M-75.
+009550 M-65.
+009560     MOVE W-DNO TO JS-DNO.
+009570     MOVE CNT TO JS-GNO.
+009580     START JSS-F KEY NOT < JS-KEY INVALID KEY
+009590         GO TO M-75.
+009600     PERFORM DEL-RTN THRU DEL-EX.
+009610     GO TO M-75.
+009620****************   ファイル　削除   *****************
+009630 M-70.
+009640     MOVE ZERO TO JS-KEY.
+009650     MOVE W-DNO TO JS-DNO.
+009660     START JSS-F KEY NOT < JS-KEY INVALID KEY
+009670         DISPLAY E-ME7 E-ME99
+009680         GO TO M-75.
+009690     PERFORM DEL-RTN THRU DEL-EX.
+009700*******************************************************
+009710 M-75.
+009720     IF W-EC = 5
+009730         GO TO M-80.
+009740     MOVE ZERO TO W-R
+009750*****IF W-ACT = 1                                                 D.010116
+009760*****    GO TO M-17F.                                             D.010116
+009770     GO TO M-15.
+009780*******************    作　　表    ***********************
+009790 M-80.
+009800     PERFORM LST-RTN THRU LST-EX.                                 I.020325
+009810*****DISPLAY C-CLEAR.                                             D.020325
+009820*****DISPLAY C-MID.                                               D.020325
+009830*M-82A.                                                           D.020325
+009840*****ACCEPT A-LIST.                                               D.020325
+009850*****IF ESTAT NOT = HTB AND SKP                                   D.020325
+009860*****    GO TO M-82A.                                             D.020325
+009870*****IF W-LIST NOT = 1 AND 5 AND 9                                D.020325
+009880*****    GO TO M-82A.                                             D.020325
+009890*M-82B.                                                           D.020325
+009900*****ACCEPT A-DMM.                                                D.020325
+009910*****IF ESTAT = BTB                                               D.020325
+009920*****    GO TO M-82A.                                             D.020325
+009930*****IF ESTAT NOT = HTB AND SKP                                   D.020325
+009940*****    GO TO M-82B.                                             D.020325
+009950*****IF W-DMM = 9                                                 D.020325
+009960*****    GO TO M-80.                                              D.020325
+009970*****IF W-DMM NOT = 1                                             D.020325
+009980*****    GO TO M-82B.                                             D.020325
+009990*****IF W-LIST = 9                                                D.020325
+010000*****    GO TO M-95.                                              D.020325
+010010*****CLOSE JSS-F.                                                 D.020325
+010020*****OPEN I-O JSS-F.                                              D.020325
+010030*M-82C.                                                           D.020325
+010040*****READ JSS-F NEXT RECORD AT END                                D.020325
+010050*****    GO TO M-95.                                              D.020325
+010060*****IF JS-DC = 30                                                D.020325
+010070*****    GO TO M-82C.                                             D.020325
+010080*****IF W-LIST = 5                                                D.020325
+010090*****    IF JS-PCNT NOT = 0                                       D.020325
+010100*****        GO TO M-82C.                                         D.020325
+010110*****OPEN OUTPUT SP-F.                                            D.020325
+010120*****PERFORM MID-010 THRU MID-EX.                                 D.020325
+010130*M-82D.                                                           D.020325
+010140*****MOVE JS-DNO TO W-DNO.                                        D.020325
+010150*****MOVE ZERO TO W-GKIN W-GSHZ CNT.                              D.020325
+010160*****MOVE JS-DATE TO W-DATE.                                      D.020325
+010170*****MOVE JS-SCD TO S-KEY.                                        D.020325
+010180*****READ S-M WITH UNLOCK INVALID KEY                             D.020325
+010190*****    MOVE SPACE TO S-NAME                                     D.020325
+010200*****    MOVE NC"　＊＊　仕入先マスター　なし　＊＊" TO S-NAME.   D.020325
+010210*M-82E.                                                           D.020325
+010220*****ADD 1 TO CNT.                                                D.020325
+010230*****IF CNT = 1                                                   D.020325
+010240*****    PERFORM PR1-RTN THRU PR1-EX.                             D.020325
+010250*****MOVE SPACE TO W-P2.                                          D.020325
+010260*****MOVE JS-BSC TO P-BSC.                                        D.020325
+010270*****MOVE JS-DNO TO P-DNO.                                        D.020325
+010280*****MOVE "-" TO P-V.                                             D.020325
+010290*****MOVE JS-GNO TO P-GNO.                                        D.020325
+010300*****MOVE JS-DC TO P-DC.                                          D.020325
+010310*****MOVE JS-JCD TO P-JCD.                                        D.020325
+010320*****MOVE JS-JCD TO J-KEY.                                        D.020325
+010330*****IF JS-SJCD NOT = ZERO                                        D.020325
+010340*****    MOVE JS-SJCD TO P-JCD J-KEY.                             D.020325
+010350*****READ J-M WITH UNLOCK INVALID KEY                             D.020325
+010360*****    MOVE SPACE TO J-NAME                                     D.020325
+010370*****    MOVE NC"　＊＊　マスター　なし　＊＊　　　　" TO J-NAME. D.020325
+010380*****MOVE J-NAME TO P-JNA.                                        D.020325
+010390*****IF JS-SJCD = ZERO                                            D.020325
+010400*****    IF JS-SU NOT = ZERO                                      D.020325
+010410*****        MOVE JS-SU TO P-SU.                                  D.020325
+010420*****IF JS-SJCD = ZERO                                            D.020325
+010430*****    IF JS-T NOT = ZERO                                       D.020325
+010440*****        MOVE JS-T TO P-T.                                    D.020325
+010450*****IF JS-JCD = 999000                                           D.020325
+010460*****    MOVE JS-SHZ TO P-SHZ.                                    D.020325
+010470*****IF JS-JCD NOT = 999000                                       D.020325
+010480*****    MOVE JS-KIN TO P-KIN                                     D.020325
+010490*****    IF JS-SHZ NOT = ZERO                                     D.020325
+010500*****        MOVE "*" TO P-X                                      D.020325
+010510*****        MOVE JS-SHZ TO P-SHZ.                                D.020325
+010520*****IF JS-CD NOT = ZERO                                          D.020325
+010530*****    MOVE JS-CD TO P-CD.                                      D.020325
+010540*****IF JS-SJCD NOT = ZERO                                        D.020325
+010550*****    MOVE JS-JCD TO P-SJCD.                                   D.020325
+010560*****IF JS-JCD > 004999 AND < 005500                              D.020325
+010570*****    IF JS-T > ZERO                                           D.020325
+010580*****        MOVE JS-NNO TO P-NNO                                 D.020325
+010590*****        MOVE JS-FC TO P-FC.                                  D.020325
+010600*****IF LINAGE-COUNTER < 61                                       D.020325
+010610*****    GO TO M-82F.                                             D.020325
+010620*****PERFORM MID-RTN THRU MID-EX.                                 D.020325
+010630*****PERFORM PR1-RTN THRU PR1-EX.                                 D.020325
+010640*M-82F.                                                           D.020325
+010650*****MOVE SPACE TO SP-R.                                          D.020325
+010660*****MOVE W-P2 TO SP-R.                                           D.020325
+010670*****WRITE SP-R.                                                  D.020325
+010680*****MOVE SPACE TO SP-R.                                          D.020325
+010690*****ADD JS-KIN TO W-GKIN.                                        D.020325
+010700*****ADD JS-SHZ TO W-GSHZ.                                        D.020325
+010710*****    ADD 1 TO JS-PCNT.                                        D.020325
+010720*****REWRITE JSS-R INVALID KEY                                    D.020325
+010730*****    DISPLAY E-ME78 E-STAT E-ME10 E-ME99.                     D.020325
+010740*M-82G.                                                           D.020325
+010750*****READ JSS-F NEXT RECORD AT END                                D.020325
+010760*****    GO TO M-82H.                                             D.020325
+010770*****IF JS-DC = 30                                                D.020325
+010780*****    GO TO M-82G.                                             D.020325
+010790*****IF W-LIST = 5                                                D.020325
+010800*****    IF JS-PCNT NOT = 0                                       D.020325
+010810*****        GO TO M-82G.                                         D.020325
+010820*****IF JS-DNO = W-DNO                                            D.020325
+010830*****    GO TO M-82E.                                             D.020325
+010840*****IF CNT NOT = 1                                               D.020325
+010850*****    PERFORM PRT-RTN THRU PRT-EX.                             D.020325
+010860*****GO TO M-82D.                                                 D.020325
+010870*M-82H.                                                           D.020325
+010880*****IF CNT NOT = 1                                               D.020325
+010890*****    PERFORM PRT-RTN THRU PRT-EX.                             D.020325
+010900*******************   Ｅ　Ｎ　Ｄ   ***********************
+010910 M-95.
+010920     CLOSE KBNO-M.
+010930     CLOSE S-M.
+010940     CLOSE J-M.
+010950     CLOSE KH-M.                                                  I.020325
+010960     CLOSE HSS-F.                                                 I.010116
+010970     CLOSE JSS-F.
+010980     IF W-PC NOT = ZERO
+010990         CLOSE SP-F.
+011000     DISPLAY C-CLEAR.
+011010     STOP RUN.
+011020*******************   入　　　力   ***********************
+011030 ACP-RTN.                                                         I.020325
+011040     CALL "SCBD01".                                               I.020325
+011050     DISPLAY A-ACT.                                               I.020325
+011060 ACP-020.                                                         I.020325
+011070     ACCEPT A-DNO.                                                I.020325
+011080     DISPLAY E-CL.                                                I.020325
+011090     IF ESTAT = BTB                                               I.020325
+011100         GO TO ACP-EX.                                            I.020325
+011110     IF ESTAT NOT = HTB AND SKP                                   I.020325
+011120         GO TO ACP-020.                                           I.020325
+011130     IF W-ACT = 1                                                 I.020325
+011140         GO TO ACP-040.                                           I.020325
+011150     MOVE ZERO TO JS-KEY.                                         I.020325
+011160     MOVE W-DNO TO JS-DNO.                                        I.020325
+011170     START JSS-F KEY NOT < JS-KEY INVALID KEY                     I.020325
+011180         DISPLAY E-ME7 E-ME98                                     I.020325
+011190         GO TO ACP-020.                                           I.020325
+011200     READ JSS-F NEXT RECORD AT END                                I.020325
+011210         DISPLAY E-ME7 E-ME98                                     I.020325
+011220         GO TO ACP-020.                                           I.020325
+011230     IF JS-DNO NOT = W-DNO                                        I.020325
+011240         DISPLAY E-ME7 E-ME98                                     I.020325
+011250         GO TO ACP-020.                                           I.020325
+011260     IF JS-DC = 30                                                I.020325
+011270         DISPLAY E-ME11 E-ME98                                    I.020325
+011280         GO TO ACP-020.                                           I.020325
+011290     GO TO ACP-060.                                               I.020325
+011300 ACP-040.                                                         I.020325
+011310     IF W-DNO = ZERO                                              I.020325
+011320         MOVE 0 TO W-NC                                           I.020325
+011330         GO TO ACP-080.                                           I.020325
+011340     MOVE ZERO TO HSS-KEY.                                        I.020325
+011350     MOVE W-DNO TO HSS-DNO.                                       I.020325
+011360     START HSS-F KEY NOT < HSS-KEY INVALID KEY                    I.020325
+011370         DISPLAY E-ME12 E-ME98                                    I.020325
+011380         GO TO ACP-020.                                           I.020325
+011390     READ HSS-F NEXT RECORD AT END                                I.020325
+011400         DISPLAY E-ME12 E-ME98                                    I.020325
+011410         GO TO ACP-020.                                           I.020325
+011420     IF HSS-DNO NOT = W-DNO                                       I.020325
+011430         DISPLAY E-ME12 E-ME98                                    I.020325
+011440         GO TO ACP-020.                                           I.020325
+011450     IF HSS-BHC = 1                                               I.020325
+011460         DISPLAY E-ME13 E-ME98                                    I.020325
+011470         GO TO ACP-020.                                           I.020325
+011480     MOVE 1 TO W-NC.                                              I.020325
+011490 ACP-060.                                                         I.020325
+011500     PERFORM DSP-RTN THRU DSP-EX.                                 I.020325
+011510     IF W-ACT = 3                                                 I.020325
+011520         GO TO ACP-480.                                           I.020325
+011530 ACP-080.                                                         I.020325
+011540     MOVE ZERO TO W-R.                                            I.020325
+011550     IF W-ACT = 1                                                 I.020325
+011560         IF W-NC = 0                                              I.020325
+011570             IF W-DATE = ZERO                                     I.020325
+011580                 GO TO ACP-100                                    I.020325
+011590               ELSE                                               I.020325
+011600                 GO TO ACP-120.                                   I.020325
+011610 ACP-100.                                                         I.020325
+011620     ACCEPT A-DATE.                                               I.020325
+011630     IF ESTAT = BTB                                               I.020325
+011640         IF W-ACT NOT = 1                                         I.020325
+011650             GO TO ACP-020                                        I.020325
+011660           ELSE                                                   I.020325
+011670             IF W-NC = 0                                          I.020325
+011680                 GO TO ACP-EX                                     I.020325
+011690               ELSE                                               I.020325
+011700                 GO TO ACP-020.                                   I.020325
+011710     IF ESTAT NOT = HTB AND SKP                                   I.020325
+011720         GO TO ACP-100.                                           I.100407
+011730*****    GO TO ACP-080.                                           D.100407
+011740     IF (W-GET < 1 OR > 12) OR (W-PEY < 1 OR > 31)                I.020325
+011750         GO TO ACP-100.                                           I.100407
+011760*****    GO TO ACP-080.                                           D.100407
+011770     IF W-NGS NOT = W-BNG                                         I.020325
+011780         GO TO ACP-100.                                           I.100407
+011790*****    GO TO ACP-080.                                           D.100407
+011800     IF HIZUKE NOT < W-PEY                                        I.020325
+011810         GO TO ACP-100.                                           I.100407
+011820*****    GO TO ACP-080.                                           D.100407
+011830     MOVE ZERO TO W-NEN1.                                         I.020325
+011840     IF W-NEN2 >= DATE-NF1 AND <= DATE-NT1                        I.020325
+011850         ADD DATE-NC1 TO W-NEN.                                   I.020325
+011860     IF W-NEN2 >= DATE-NF2 AND <= DATE-NT2                        I.020325
+011870         ADD DATE-NC2 TO W-NEN.                                   I.020325
+011880 ACP-120.                                                         I.020325
+011890     IF W-ACT = 1                                                 I.020325
+011900         IF W-NC = 0                                              I.020325
+011910             CALL "SCBD01"                                        I.020325
+011920             MOVE ZERO TO W-ARD W-SCD                             I.020325
+011930             COMPUTE W-DNO = BNO-DNO1 + 1                         I.020325
+011940             DISPLAY A-ACT A-DNO A-DATE                           I.020325
+011950             IF W-DNO = ZERO                                      I.020325
+011960                 ADD 1 TO W-DNO                                   I.020325
+011970                 DISPLAY A-DNO.                                   I.020325
+011980     ACCEPT A-SCD.                                                I.020325
+011990     IF ESTAT = BTB                                               I.020325
+012000         GO TO ACP-100.                                           I.020325
+012010     IF ESTAT NOT = HTB AND SKP                                   I.020325
+012020         GO TO ACP-120.                                           I.020325
+012030     MOVE W-SCD TO S-KEY.                                         I.020325
+012040     READ S-M WITH UNLOCK INVALID KEY                             I.020325
+012050         DISPLAY E-ME1 E-ME98                                     I.020325
+012060         GO TO ACP-120.                                           I.020325
+012070     DISPLAY D-SNA.                                               I.020325
+012080     IF W-SCD1 > 4                                                I.020325
+012090         DISPLAY D-MD1                                            I.020325
+012100       ELSE                                                       I.020325
+012110         DISPLAY D-MD2.                                           I.020325
+012120     MOVE 1 TO W-LIN1.                                            I.020325
+012130     MOVE ZERO TO CNT W-GKIN CHKD.                                I.020325
+012140 ACP-140.                                                         I.020325
+012150     ADD 1 TO CNT.                                                I.020325
+012160     ADD 3 TO W-LIN1.                                             I.020325
+012170     COMPUTE W-LIN2 = W-LIN1 + 1.                                 I.020325
+012180     COMPUTE W-LIN3 = W-LIN2 + 1.                                 I.020325
+012190     IF CNT = 7                                                   I.020325
+012200         GO TO ACP-480.                                           I.020325
+012210     MOVE W-RD(CNT) TO W-R.                                       I.020325
+012220 ACP-160.                                                         I.020325
+012230     IF WR-DC NOT = ZERO                                          I.020325
+012240         MOVE WR-DC TO W-DC.                                      I.020325
+012250     DISPLAY A-DC.                                                I.020325
+012260     ACCEPT A-DC.                                                 I.020325
+012270     IF ESTAT = BTB                                               I.020325
+012280         GO TO ACP-440.                                           I.020325
+012290     IF ESTAT = ADV                                               I.020325
+012300         MOVE CNT TO CNTD                                         I.020325
+012310         MOVE W-LIN TO W-LIND                                     I.020325
+012320         GO TO ACP-460.                                           I.020325
+012330     IF ESTAT NOT = HTB AND SKP                                   I.020325
+012340         GO TO ACP-160.                                           I.020325
+012350     MOVE W-DC TO WR-DC.                                          I.020325
+012360     IF WR-DC1 NOT = 1                                            I.020325
+012370         GO TO ACP-160.                                           I.020325
+012380     IF WR-DC2 > 4                                                I.020325
+012390         GO TO ACP-160.                                           I.020325
+012400 ACP-180.                                                         I.020325
+012410     ACCEPT A-JCD.                                                I.020325
+012420     IF ESTAT = BTB                                               I.020325
+012430         GO TO ACP-160.                                           I.020325
+012440     IF ESTAT NOT = HTB AND SKP                                   I.020325
+012450         GO TO ACP-180.                                           I.020325
+012460     DISPLAY E-CL.                                                I.020325
+012470     MOVE WR-JCD TO J-KEY.                                        I.020325
+012480     READ J-M WITH UNLOCK INVALID KEY                             I.020325
+012490         DISPLAY E-ME2 E-ME98                                     I.020325
+012500         GO TO ACP-180.                                           I.020325
+012510     DISPLAY D-JNA.                                               I.020325
+012520     IF WR-JCD = 999000                                           I.020325
+012530         GO TO ACP-200.                                           I.020325
+012540     IF W-SCD1 > 4                                                I.020325
+012550*****    IF (WR-JCD2 NOT = 90) AND (WR-JCD1 NOT = 7)              D.020606
+012560         IF (WR-JCD2 < 90 OR > 94) AND (WR-JCD1 NOT = 7)          I.020606
+012570             DISPLAY E-ME4 E-ME98                                 I.020325
+012580             GO TO ACP-180.                                       I.020325
+012590     IF W-SCD1 < 5                                                I.020325
+012600*****    IF (WR-JCD2 = 90) OR (WR-JCD1 = 7)                       D.020606
+012610         IF (WR-JCD2 > 89 AND < 95) OR (WR-JCD1 = 7)              I.020606
+012620             DISPLAY E-ME4 E-ME98                                 I.020325
+012630             GO TO ACP-180.                                       I.020325
+012640 ACP-200.                                                         I.020325
+012650     MOVE J-YC TO WR-YC.                                          I.020325
+012660     MOVE J-TC1 TO WR-TC.                                         I.020325
+012670     MOVE J-SC TO WR-SEC.                                         I.020325
+012680     MOVE J-ST TO WR-T.                                           I.020325
+012690     MOVE J-BKC TO WR-BKC                                         I.020325
+012700     IF J-KT NOT = ZERO                                           I.020325
+012710         MOVE J-KT TO WR-T.                                       I.020325
+012720     IF WR-JCD > 798999                                           I.020325
+012730         MOVE ZERO TO WR-SU WR-T                                  I.020325
+012740         DISPLAY S-SU S-T                                         I.020325
+012750         GO TO ACP-260.                                           I.020325
+012760     DISPLAY D-T.                                                 I.020325
+012770 ACP-220.                                                         I.020325
+012780     ACCEPT A-SU.                                                 I.020325
+012790     IF ESTAT = BTB                                               I.020325
+012800         GO TO ACP-180.                                           I.020325
+012810     IF ESTAT NOT = HTB AND SKP                                   I.020325
+012820         GO TO ACP-220.                                           I.020325
+012830     DISPLAY D-SU.                                                I.020325
+012840     IF WR-JCD > 004999 AND < 005500                              I.020325
+012850        IF (WR-SU > 99999 OR < -99999) OR (WR-SU2 NOT = 00 AND 50)I.020325
+012860             GO TO ACP-220.                                       I.020325
+012870 ACP-240.                                                         I.020325
+012880     ACCEPT A-T.                                                  I.020325
+012890     IF ESTAT = BTB                                               I.020325
+012900         GO TO ACP-220.                                           I.020325
+012910     IF ESTAT NOT = HTB AND SKP                                   I.020325
+012920         GO TO ACP-240.                                           I.020325
+012930     DISPLAY D-T.                                                 I.020325
+012940     IF WR-JCD > 004999 AND < 005500                              I.020325
+012950         IF WR-T > 9999                                           I.020325
+012960             GO TO ACP-240.                                       I.020325
+012970     IF ZERO > WR-T OR WR-SU                                      I.020325
+012980         COMPUTE WR-KIN = WR-SU * WR-T - 0.9                      I.020325
+012990       ELSE                                                       I.020325
+013000         COMPUTE WR-KIN = WR-SU * WR-T.                           I.020325
+013010     MOVE ZERO TO CHK(CNT).                                       I.020325
+013020     IF WR-KIN NOT = ZERO                                         I.020325
+013030         MOVE 5 TO CHK(CNT)                                       I.020325
+013040         GO TO ACP-280.                                           I.020325
+013050 ACP-260.                                                         I.020325
+013060     ACCEPT A-KIN.                                                I.020325
+013070     IF ESTAT = BTB                                               I.020325
+013080         IF WR-JCD > 799000                                       I.020325
+013090             GO TO ACP-180                                        I.020325
+013100           ELSE                                                   I.020325
+013110             GO TO ACP-240.                                       I.020325
+013120     IF ESTAT NOT = HTB AND SKP                                   I.020325
+013130         GO TO ACP-260.                                           I.020325
+013140     IF WR-JCD > 799000                                           I.020325
+013150         GO TO ACP-280.                                           I.020325
+013160     MOVE ZERO TO WR-T.                                           I.020325
+013170     IF WR-KIN NOT = ZERO                                         I.020325
+013180         IF WR-SU NOT = ZERO                                      I.020325
+013190             COMPUTE WR-T = WR-KIN / WR-SU.                       I.020325
+013200     DISPLAY D-T.                                                 I.020325
+013210 ACP-280.                                                         I.020325
+013220     IF WR-JCD = 999000                                           I.020325
+013230         IF WR-KIN > 9999999 OR < -9999999                        I.020325
+013240             GO TO ACP-260.                                       I.020325
+013250     DISPLAY D-KIN.                                               I.020325
+013260 ACP-300.                                                         I.020325
+013270     ACCEPT A-CD.                                                 I.020325
+013280     IF ESTAT = BTB                                               I.020325
+013290         IF CHK(CNT) = 5                                          I.020325
+013300             GO TO ACP-240                                        I.020325
+013310           ELSE                                                   I.020325
+013320             GO TO ACP-260.                                       I.020325
+013330     IF ESTAT NOT = HTB AND SKP                                   I.020325
+013340         GO TO ACP-300.                                           I.020325
+013350     IF WR-CD = ZERO                                              I.020325
+013360         DISPLAY S-CD                                             I.020325
+013370         GO TO ACP-320.                                           I.020325
+013380     IF (WR-CD2 < 1 OR > 12) OR (WR-CD3 < 1 OR > 31)              I.020325
+013390         GO TO ACP-300.                                           I.020325
+013400 ACP-320.                                                         I.020325
+013410     IF (WR-JCD NOT = 999000) AND (WR-JCD > 798999)               I.020325
+013420         DISPLAY D-CM D-NM                                        I.020325
+013430         GO TO ACP-340.                                           I.020325
+013440     IF WR-JCD > 489999 AND < 499000                              I.020325
+013450         IF WR-DC NOT = 10                                        I.050512
+013460             MOVE SPACE TO WR-KCO                                 I.050512
+013470             GO TO ACP-420                                        I.050512
+013480           ELSE                                                   I.050512
+013490             DISPLAY D-CM D-KM                                    I.020325
+013500             GO TO ACP-360.                                       I.020325
+013510     MOVE ZERO TO WR-SJCD.                                        I.020325
+013520     MOVE SPACE TO WR-KCO.                                        I.020325
+013530     DISPLAY S-CM S-SJCD S-NM S-SHN.                              I.020325
+013540     IF (WR-JCD < 005000 OR > 005499) OR (WR-T < 1)               I.020325
+013550         MOVE ZERO TO WR-NNO WR-FC                                I.020325
+013560         DISPLAY S-NHM S-FCM S-NNO S-FC                           I.020325
+013570         GO TO ACP-420                                            I.020325
+013580       ELSE                                                       I.020325
+013590         DISPLAY D-NHM D-FCM                                      I.020325
+013600         GO TO ACP-380.                                           I.020325
+013610 ACP-340.                                                         I.020325
+013620     ACCEPT A-SJCD.                                               I.020325
+013630     DISPLAY E-CL.                                                I.020325
+013640     IF ESTAT = BTB                                               I.020325
+013650         GO TO ACP-300.                                           I.020325
+013660     IF ESTAT NOT = HTB AND SKP                                   I.020325
+013670         GO TO ACP-340.                                           I.020325
+013680*****IF W-JCD2 NOT = 90                                           D.020606
+013690     IF W-JCD2 < 90 OR > 94                                       I.020606
+013700         DISPLAY E-ME4 E-ME98                                     I.020325
+013710         GO TO ACP-340.                                           I.020325
+013720     MOVE W-SJCD TO J-KEY.                                        I.020325
+013730     READ J-M WITH UNLOCK INVALID KEY                             I.020325
+013740         DISPLAY E-ME2 E-ME98                                     I.020325
+013750         GO TO ACP-340.                                           I.020325
+013760     DISPLAY D-SHN.                                               I.020325
+013770     MOVE J-KEY TO WR-SJCD.                                       I.020325
+013780     GO TO ACP-420.                                               I.020325
+013790 ACP-360.                                                         I.020325
+013800     ACCEPT A-KCO.                                                I.020325
+013810     DISPLAY E-CL.                                                I.020325
+013820     IF ESTAT = BTB                                               I.020325
+013830         GO TO ACP-300.                                           I.020325
+013840     IF ESTAT NOT = HTB AND SKP                                   I.020325
+013850         GO TO ACP-360.                                           I.020325
+013860     MOVE WR-KCO TO KH-KEY.                                       I.020325
+013870     READ KH-M WITH UNLOCK INVALID KEY                            I.020325
+013880         DISPLAY E-ME15 E-ME98                                    I.020325
+013890         GO TO ACP-360.                                           I.020325
+013900*****IF KH-YC = 10 OR 11                                          D.020819
+013910     IF KH-NC = 0                                                 I.020819
+013920         DISPLAY E-ME16 E-ME98.                                   I.060501
+013930*****    DISPLAY E-ME16 E-ME98                                    D.060501
+013940*****    GO TO ACP-360.                                           D.060501
+013950*****IF KH-T1 = ZERO                                              D.101026
+013960     IF KH-GT1 = ZERO                                             I.101026
+013970         DISPLAY E-ME17 E-ME98.                                   I.060501
+013980*****    DISPLAY E-ME17 E-ME98                                    D.060501
+013990*****    GO TO ACP-360.                                           D.060501
+014000     DISPLAY D-KHN.                                               I.020325
+014010     IF W-NGS NOT = W-KNG                                         I.020325
+014020         DISPLAY E-ME18 E-ME98                                    I.020325
+014030         GO TO ACP-360.                                           I.020325
+014040     GO TO ACP-420.                                               I.020325
+014050 ACP-380.                                                         I.020325
+014060     ACCEPT A-NNO.                                                I.020325
+014070     DISPLAY E-CL.                                                I.020325
+014080     IF ESTAT = BTB                                               I.020325
+014090         GO TO ACP-300.                                           I.020325
+014100     IF ESTAT NOT = HTB AND SKP                                   I.020325
+014110         GO TO ACP-380.                                           I.020325
+014120 ACP-400.                                                         I.020325
+014130     ACCEPT A-FC.                                                 I.020325
+014140     IF ESTAT = BTB                                               I.020325
+014150         GO TO ACP-380.                                           I.020325
+014160     IF ESTAT NOT = HTB AND SKP                                   I.020325
+014170         GO TO ACP-400.                                           I.020325
+014180     IF WR-FC > 2                                                 I.020325
+014190         GO TO ACP-400.                                           I.020325
+014200     IF WR-SU > ZERO                                              I.020325
+014210         GO TO ACP-420.                                           I.020325
+014220     IF WR-DC2 NOT = ZERO                                         I.020325
+014230         GO TO ACP-420.                                           I.020325
+014240     IF WR-FC = ZERO                                              I.020325
+014250         GO TO ACP-400.                                           I.020325
+014260 ACP-420.                                                         I.020325
+014270     MOVE W-DATE TO WR-DATE.                                      I.020325
+014280     MOVE W-SCD TO WR-SCD.                                        I.020325
+014290     MOVE W-DNO TO WR-DNO.                                        I.020325
+014300     MOVE CNT TO WR-GNO.                                          I.020325
+014310     MOVE W-R TO W-RD(CNT).                                       I.020325
+014320     ADD WR-KIN TO W-GKIN.                                        I.020325
+014330     GO TO ACP-140.                                               I.020325
+014340 ACP-440.                                                         I.020325
+014350     IF CNT = 1                                                   I.020325
+014360         GO TO ACP-120.                                           I.020325
+014370     SUBTRACT 1 FROM CNT.                                         I.020325
+014380     SUBTRACT 3 FROM W-LIN1.                                      I.020325
+014390     COMPUTE W-LIN2 = W-LIN1 + 1.                                 I.020325
+014400     COMPUTE W-LIN3 = W-LIN2 + 1.                                 I.020325
+014410     MOVE W-RD(CNT) TO W-R.                                       I.020325
+014420     SUBTRACT WR-KIN FROM W-GKIN.                                 I.020325
+014430     IF WR-JCD > 004999 AND < 005500                              I.020325
+014440         IF WR-T > ZERO                                           I.020325
+014450             GO TO ACP-400                                        I.020325
+014460           ELSE                                                   I.020325
+014470             GO TO ACP-300.                                       I.020325
+014480     IF (WR-JCD NOT = 999000) AND (WR-JCD > 798999)               I.020325
+014490         GO TO ACP-340.                                           I.020325
+014500     IF WR-JCD > 489999 AND < 499000                              I.020325
+014510         IF WR-DC NOT = 10                                        I.050512
+014520             GO TO ACP-300                                        I.050512
+014530           ELSE                                                   I.050512
+014540             GO TO ACP-360.                                       I.020325
+014550     GO TO ACP-300.                                               I.020325
+014560 ACP-460.                                                         I.020325
+014570     DISPLAY C-SPC.                                               I.020325
+014580     MOVE ZERO TO W-R.                                            I.020325
+014590     MOVE W-R TO W-RD(CNTD)                                       I.020325
+014600     ADD 1 TO CNTD.                                               I.020325
+014610     ADD 3 TO W-LIN1.                                             I.020325
+014620     COMPUTE W-LIN2 = W-LIN1 + 1.                                 I.020325
+014630     COMPUTE W-LIN3 = W-LIN2 + 1.                                 I.020325
+014640     IF CNTD NOT = 7                                              I.020325
+014650         GO TO ACP-460.                                           I.020325
+014660     MOVE W-LIND TO W-LIN.                                        I.020325
+014670 ACP-480.                                                         I.020325
+014680     DISPLAY D-GKIN.                                              I.020325
+014690     ACCEPT A-DMM.                                                I.020325
+014700     IF ESTAT = BTB                                               I.020325
+014710         IF W-ACT = 3                                             I.020325
+014720             GO TO ACP-020.                                       I.020325
+014730     IF ESTAT = BTB                                               I.020325
+014740         GO TO ACP-440.                                           I.020325
+014750     IF ESTAT NOT = HTB AND SKP                                   I.020325
+014760         GO TO ACP-480.                                           I.020325
+014770     IF W-DMM = 9                                                 I.020325
+014780         MOVE ZERO TO W-R                                         I.020325
+014790         IF W-ACT = 1                                             I.020325
+014800             GO TO ACP-120                                        I.020325
+014810           ELSE                                                   I.020325
+014820             GO TO ACP-RTN.                                       I.020325
+014830     IF W-DMM NOT = 1                                             I.020325
+014840         GO TO ACP-480.                                           I.020325
+014850 ACP-EX.                                                          I.020325
+014860     EXIT.                                                        I.020325
+014870**********   ＷＯＲＫ　落し込み　・　画面表示   ***********
+014880 DSP-RTN.
+014890     CALL "SCBD01".
+014900     DISPLAY A-ACT A-DNO.
+014910     MOVE ZERO TO W-ARD CNT W-GKIN.
+014920     MOVE 1 TO W-LIN1.
+014930 DSP-010.
+014940     ADD 1 TO CNT.
+014950     IF CNT = 7
+014960         DISPLAY E-ME3 E-ME99
+014970         GO TO DSP-EX.
+014980     ADD 3 TO W-LIN1.
+014990     COMPUTE W-LIN2 = W-LIN1 + 1.
+015000     COMPUTE W-LIN3 = W-LIN2 + 1.
+015010     MOVE ZERO TO W-R.
+015020     IF W-ACT = 1                                                 I.010116
+015030         MOVE 10 TO WR-DC                                         I.010116
+015040         MOVE HSS-DATE TO WR-DATE                                 I.010116
+015050         MOVE HSS-SCD TO WR-SCD                                   I.010116
+015060         MOVE HSS-JCD TO WR-JCD                                   I.010116
+015070         MOVE HSS-SUT TO WR-SU                                    I.010116
+015080         MOVE HSS-CD TO WR-CD                                     I.010116
+015090         MOVE 3 TO WR-BSC                                         I.010116
+015100         MOVE HSS-DNO TO WR-DNO                                   I.010116
+015110         MOVE 1 TO WR-GNO                                         I.010116
+015120       ELSE                                                       I.010116
+015130         MOVE JSS-R TO W-R.
+015140     IF WR-SJCD NOT = ZERO
+015150         MOVE WR-SJCD TO W-SJCD
+015160         MOVE WR-JCD TO WR-SJCD
+015170         MOVE W-SJCD TO WR-JCD
+015180         MOVE WR-SJCD TO W-SJCD.
+015190     IF WR-SHZ = ZERO
+015200         GO TO DSP-020.
+015210     IF WR-JCD = 999000
+015220         MOVE WR-SHZ TO WR-KIN
+015230         MOVE ZERO TO WR-SHZ
+015240         GO TO DSP-020.
+015250     COMPUTE WR-KIN = WR-KIN + WR-SHZ.
+015260     MOVE ZERO TO WR-SHZ.
+015270     IF ZERO = WR-SU OR WR-KIN
+015280         GO TO DSP-020.
+015290     IF WR-SU > ZERO
+015300         COMPUTE WR-T = (WR-KIN / WR-SU) + 0.009
+015310       ELSE
+015320         COMPUTE WR-T = (WR-KIN / WR-SU) - 0.009.
+015330 DSP-020.
+015340     ADD WR-KIN TO W-GKIN.
+015350     MOVE W-R TO W-RD(CNT).
+015360     IF CNT NOT = 1
+015370         GO TO DSP-030.
+015380     MOVE WR-DATE TO W-DATE.
+015390     MOVE WR-SCD TO W-SCD.
+015400     MOVE W-SCD TO S-KEY.
+015410     READ S-M WITH UNLOCK INVALID KEY
+015420         MOVE SPACE TO S-NAME
+015430         MOVE NC"　＊＊　仕入先マスター　なし　＊＊" TO S-NAME.
+015440     DISPLAY A-DATE A-SCD D-SNA.
+015450     IF W-SCD1 > 4
+015460         DISPLAY D-MD1
+015470       ELSE
+015480         DISPLAY D-MD2.
+015490 DSP-030.
+015500     MOVE WR-DC TO W-DC.
+015510     MOVE WR-JCD TO J-KEY.
+015520     READ J-M WITH UNLOCK INVALID KEY
+015530         MOVE SPACE TO J-NAME
+015540         MOVE NC"　＊＊　材料マスター　なし　＊＊" TO J-NAME.
+015550     DISPLAY A-DC A-JCD D-JNA D-KIN.
+015560     IF WR-JCD > 798999
+015570         DISPLAY S-SU S-T
+015580       ELSE
+015590         DISPLAY D-SU D-T.
+015600     IF WR-CD = ZERO
+015610         DISPLAY S-CD
+015620       ELSE
+015630         DISPLAY A-CD.
+015640*
+015650     IF WR-JCD < 799000 OR = 999000
+015660         DISPLAY S-CM S-SJCD S-NM S-SHN
+015670         GO TO DSP-040.
+015680     MOVE WR-SJCD TO J-KEY.
+015690     READ J-M WITH UNLOCK INVALID KEY
+015700         MOVE SPACE TO J-NAME
+015710         MOVE NC"　＊＊　材料マスター　なし　＊＊" TO J-NAME.
+015720     DISPLAY D-CM A-SJCD D-NM D-SHN.
+015730 DSP-040.
+015740     IF WR-JCD < 490000 OR > 498999                               I.020325
+015750         GO TO DSP-050.                                           I.020325
+015760     IF WR-DC NOT = 10                                            I.050512
+015770         GO TO DSP-050.                                           I.050512
+015780     MOVE WR-KCO TO KH-KEY.                                       I.020325
+015790     READ KH-M WITH UNLOCK INVALID KEY                            I.020325
+015800         MOVE SPACE TO KH-NAME                                    I.020325
+015810         MOVE " ***  KHM ﾅｼ  ***   " TO KH-NAME.                  I.020325
+015820     DISPLAY D-CM D-KM A-KCO D-KHN.                               I.020325
+015830 DSP-050.                                                         I.020325
+015840     IF (WR-JCD < 005000 OR > 005499) OR (WR-T < 1)
+015850         DISPLAY S-NHM S-FCM S-NNO S-FC
+015860       ELSE
+015870         DISPLAY D-NHM D-FCM A-NNO A-FC.
+015880*
+015890     IF W-ACT = 1                                                 I.010116
+015900         GO TO DSP-060.                                           I.010116
+015910     READ JSS-F NEXT RECORD AT END
+015920         DISPLAY D-GKIN
+015930         GO TO DSP-EX.
+015940     IF JS-DNO = W-DNO
+015950         GO TO DSP-010.
+015960 DSP-060.                                                         I.010116
+015970     DISPLAY D-GKIN.
+015980 DSP-EX.
+015990     EXIT.
+016000************   登録・修正　ＲＥＣＯＲＤ　ＭＯＶＥ   *********
+016010 MOV-RTN.
+016020     IF WR-SJCD NOT = ZERO
+016030         MOVE WR-SJCD TO W-SJCD
+016040         MOVE WR-JCD TO WR-SJCD
+016050         MOVE W-SJCD TO WR-JCD.
+016060     IF WR-JCD = 999000
+016070         MOVE WR-KIN TO WR-SHZ
+016080         MOVE ZERO TO WR-KIN
+016090         GO TO MOV-EX.
+016100     IF (WR-KIN = ZERO) OR (S-SZC = 0)
+016110         GO TO MOV-EX.
+016120*****COMPUTE WR-SHZ ROUNDED = (WR-KIN * 3) / 103.                 D.990518
+016130     COMPUTE WR-SHZ ROUNDED = (WR-KIN * 5) / 105.                 I.990518
+016140     SUBTRACT WR-SHZ FROM WR-KIN.
+016150     IF WR-SU NOT = ZERO
+016160         IF WR-KIN > ZERO
+016170             COMPUTE WR-T = (WR-KIN / WR-SU) + 0.009
+016180           ELSE
+016190             COMPUTE WR-T = (WR-KIN / WR-SU) - 0.009.
+016200 MOV-EX.
+016210     EXIT.
+016220*****************   削　除   ********************
+016230 DEL-RTN.
+016240     READ JSS-F NEXT RECORD AT END
+016250         GO TO DEL-EX.
+016260     IF JS-DNO NOT = W-DNO
+016270         GO TO DEL-EX.
+016280     DELETE JSS-F INVALID KEY
+016290         DISPLAY E-ME78 E-STAT E-ME9 E-ME99                       C.930830
+016300         MOVE 5 TO W-EC
+016310         GO TO DEL-EX.
+016320     CALL "CBLTCLS" USING JSS-F.                                  I.930824
+016330     GO TO DEL-RTN.
+016340 DEL-EX.
+016350     EXIT.
+016360*******************    作　　表    ***********************
+016370 LST-RTN.                                                         I.020325
+016380     DISPLAY C-CLEAR.                                             I.020325
+016390     DISPLAY C-MID.                                               I.020325
+016400 LST-020.                                                         I.020325
+016410     ACCEPT A-LIST.                                               I.020325
+016420     IF ESTAT NOT = HTB AND SKP                                   I.020325
+016430         GO TO LST-020.                                           I.020325
+016440     IF W-LIST NOT = 1 AND 5 AND 9                                I.020325
+016450         GO TO LST-020.                                           I.020325
+016460 LST-040.                                                         I.020325
+016470     ACCEPT A-DMM.                                                I.020325
+016480     IF ESTAT = BTB                                               I.020325
+016490         GO TO LST-020.                                           I.020325
+016500     IF ESTAT NOT = HTB AND SKP                                   I.020325
+016510         GO TO LST-040.                                           I.020325
+016520     IF W-DMM = 9                                                 I.020325
+016530         GO TO LST-RTN.                                           I.020325
+016540     IF W-DMM NOT = 1                                             I.020325
+016550         GO TO LST-040.                                           I.020325
+016560     IF W-LIST = 9                                                I.020325
+016570         GO TO LST-EX.                                            I.020325
+016580     CLOSE JSS-F.                                                 I.020325
+016590     OPEN I-O JSS-F.                                              I.020325
+016600 LST-060.                                                         I.020325
+016610     READ JSS-F NEXT RECORD AT END                                I.020325
+016620         GO TO LST-EX.                                            I.020325
+016630     IF JS-DC = 30                                                I.020325
+016640         GO TO LST-060.                                           I.020325
+016650     IF W-LIST = 5                                                I.020325
+016660         IF JS-PCNT NOT = 0                                       I.020325
+016670             GO TO LST-060.                                       I.020325
+016680     OPEN OUTPUT SP-F.                                            I.020325
+016690     PERFORM MID-010 THRU MID-EX.                                 I.020325
+016700 LST-080.                                                         I.020325
+016710     MOVE JS-DNO TO W-DNO.                                        I.020325
+016720     MOVE ZERO TO W-GKIN W-GSHZ CNT.                              I.020325
+016730     MOVE JS-DATE TO W-DATE.                                      I.020325
+016740     MOVE JS-SCD TO S-KEY.                                        I.020325
+016750     READ S-M WITH UNLOCK INVALID KEY                             I.020325
+016760         MOVE SPACE TO S-NAME                                     I.020325
+016770         MOVE NC"　＊＊　仕入先マスター　なし　＊＊" TO S-NAME.   I.020325
+016780 LST-100.                                                         I.020325
+016790     ADD 1 TO CNT.                                                I.020325
+016800     IF CNT = 1                                                   I.020325
+016810         PERFORM PR1-RTN THRU PR1-EX.                             I.020325
+016820     MOVE SPACE TO W-P2.                                          I.020325
+016830     MOVE JS-BSC TO P-BSC.                                        I.020325
+016840     MOVE JS-DNO TO P-DNO.                                        I.020325
+016850     MOVE "-" TO P-V.                                             I.020325
+016860     MOVE JS-GNO TO P-GNO.                                        I.020325
+016870     MOVE JS-DC TO P-DC.                                          I.020325
+016880     MOVE JS-JCD TO P-JCD.                                        I.020325
+016890     MOVE JS-JCD TO J-KEY.                                        I.020325
+016900     IF JS-SJCD NOT = ZERO                                        I.020325
+016910         MOVE JS-SJCD TO P-JCD J-KEY.                             I.020325
+016920     READ J-M WITH UNLOCK INVALID KEY                             I.020325
+016930         MOVE SPACE TO J-NAME                                     I.020325
+016940         MOVE NC"　＊＊　マスター　なし　＊＊　　　　" TO J-NAME. I.020325
+016950     MOVE J-NAME TO P-JNA.                                        I.020325
+016960     IF JS-SJCD = ZERO                                            I.020325
+016970         IF JS-SU NOT = ZERO                                      I.020325
+016980             MOVE JS-SU TO P-SU.                                  I.020325
+016990     IF JS-SJCD = ZERO                                            I.020325
+017000         IF JS-T NOT = ZERO                                       I.020325
+017010             MOVE JS-T TO P-T.                                    I.020325
+017020     IF JS-JCD = 999000                                           I.020325
+017030         MOVE JS-SHZ TO P-SHZ.                                    I.020325
+017040     IF JS-JCD NOT = 999000                                       I.020325
+017050         MOVE JS-KIN TO P-KIN                                     I.020325
+017060         IF JS-SHZ NOT = ZERO                                     I.020325
+017070             MOVE "*" TO P-X                                      I.020325
+017080             MOVE JS-SHZ TO P-SHZ.                                I.020325
+017090     IF JS-CD NOT = ZERO                                          I.020325
+017100         MOVE JS-CD TO P-CD.                                      I.020325
+017110     IF JS-SJCD NOT = ZERO                                        I.020325
+017120         MOVE JS-JCD TO P-SJCD.                                   I.020325
+017130     IF JS-JCD > 489999 AND < 499000                              I.020325
+017140         IF JS-DC = 10                                            I.050512
+017150             MOVE "<" TO P-F                                      I.020325
+017160             MOVE JS-KCO TO P-KCO                                 I.020325
+017170             MOVE ">" TO P-R.                                     I.020325
+017180     IF JS-JCD > 004999 AND < 005500                              I.020325
+017190         IF JS-T > ZERO                                           I.020325
+017200             MOVE JS-NNO TO P-NNO                                 I.020325
+017210             MOVE JS-FC TO P-FC.                                  I.020325
+017220*****IF LINAGE-COUNTER < 61                                       D.070205
+017230     IF LINAGE-COUNTER < 62                                       I.070205
+017240         GO TO LST-120.                                           I.020325
+017250     PERFORM MID-RTN THRU MID-EX.                                 I.020325
+017260     PERFORM PR1-RTN THRU PR1-EX.                                 I.020325
+017270 LST-120.                                                         I.020325
+017280     MOVE SPACE TO SP-R.                                          I.020325
+017290     MOVE W-P2 TO SP-R.                                           I.020325
+017300     WRITE SP-R.                                                  I.020325
+017310     MOVE SPACE TO SP-R.                                          I.020325
+017320     ADD JS-KIN TO W-GKIN.                                        I.020325
+017330     ADD JS-SHZ TO W-GSHZ.                                        I.020325
+017340     IF JS-PCNT NOT = 9                                           I.020325
+017350         ADD 1 TO JS-PCNT.                                        I.020325
+017360     REWRITE JSS-R INVALID KEY                                    I.020325
+017370         DISPLAY E-ME78 E-STAT E-ME10 E-ME99.                     I.020325
+017380 LST-140.                                                         I.020325
+017390     READ JSS-F NEXT RECORD AT END                                I.020325
+017400         GO TO LST-160.                                           I.020325
+017410     IF JS-DC = 30                                                I.020325
+017420         GO TO LST-140.                                           I.020325
+017430     IF W-LIST = 5                                                I.020325
+017440         IF JS-PCNT NOT = 0                                       I.020325
+017450             GO TO LST-140.                                       I.020325
+017460     IF JS-DNO = W-DNO                                            I.020325
+017470         GO TO LST-100.                                           I.020325
+017480     IF CNT NOT = 1                                               I.020325
+017490         PERFORM PRT-RTN THRU PRT-EX.                             I.020325
+017500     GO TO LST-080.                                               I.020325
+017510 LST-160.                                                         I.020325
+017520     IF CNT NOT = 1                                               I.020325
+017530         PERFORM PRT-RTN THRU PRT-EX.                             I.020325
+017540     CLOSE SP-F.                                                  I.151203
+017550 LST-EX.                                                          I.020325
+017560     EXIT.                                                        I.020325
+017570*******************    見　出　し   ***********************
+017580 MID-RTN.
+017590     MOVE SPACE TO SP-R.
+017600     WRITE SP-R AFTER PAGE.
+017610 MID-010.
+017620     ADD 1 TO W-PAGE.
+017630     MOVE W-PAGE TO H-PAGE.
+017640     MOVE SPACE TO SP-R.
+017650     MOVE HEAD1 TO SP-R.
+017660     WRITE SP-R.
+017670     MOVE SPACE TO SP-R.
+017680     MOVE HEAD2 TO SP-R.
+017690     WRITE SP-R AFTER 2.
+017700     MOVE SPACE TO SP-R.
+017710     MOVE HEAD3 TO SP-R.
+017720     WRITE SP-R.
+017730     MOVE SPACE TO SP-R.
+017740 MID-EX.
+017750     EXIT.
+017760*******************    伝票　見出し   ***********************
+017770 PR1-RTN.
+017780*****IF LINAGE-COUNTER > 60                                       D.070205
+017790     IF LINAGE-COUNTER > 61                                       I.070205
+017800         PERFORM MID-RTN THRU MID-EX.
+017810     MOVE SPACE TO W-P1.
+017820*****MOVE W-DATE TO P-DATE.                                       D.970820
+017830     MOVE W-NGPS TO P-DATE.                                       I.970820
+017840     MOVE S-KEY TO P-SCD.
+017850     MOVE S-NAME TO P-SNA.
+017860     MOVE SPACE TO SP-R.
+017870     MOVE W-P1 TO SP-R.
+017880     WRITE SP-R.
+017890     MOVE SPACE TO SP-R.
+017900 PR1-EX.
+017910     EXIT.
+017920******************   ＴＯＴＡＬ　作表   ***********************
+017930 PRT-RTN.
+017940     MOVE SPACE TO W-P2.
+017950     MOVE NC"　　　　　　＊＊＊　ＴＯＴＡＬ　＊＊＊　" TO P-JNA.
+017960     MOVE W-GKIN TO P-KIN.
+017970     MOVE W-GSHZ TO P-SHZ.
+017980     MOVE SPACE TO SP-R.
+017990     MOVE W-P2 TO SP-R.
+018000     WRITE SP-R.
+018010     MOVE SPACE TO SP-R.
+018020 PRT-EX.
+018030     EXIT.
+

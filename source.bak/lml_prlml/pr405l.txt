@@ -1,0 +1,550 @@
+000010 IDENTIFICATION                     DIVISION.
+000020 PROGRAM-ID.                        PR405L.
+000030*>=========================================================<*
+000040*>                                                         <*
+000050*>       USER     NAME.....                                <*
+000060*>       BASE         ..... ZA0212                         <*
+000070*>       PROGRAM  TITLE.... 総勘定内訳表                   <*
+000080*>       AUTHOR   ......... MAYUMI.I                       <*
+000090*>       DATE     WRITTEN.. 91/01/10                       <*
+000100*>                                                         <*
+000110*>=========================================================<*
+000120*
+000130 ENVIRONMENT                        DIVISION.
+000140 CONFIGURATION                      SECTION.
+000150 SOURCE-COMPUTER.                   SYSTEM3100.
+000160 OBJECT-COMPUTER.                   SYSTEM3100.
+000170 INPUT-OUTPUT                       SECTION.
+000180*
+000190 FILE-CONTROL.
+000200*
+000210***********************漢字科目マスタ　　　　　　　　　
+000220     SELECT            KNG          ASSIGN   TO   KNGF-MSD
+000230                       ORGANIZATION          INDEXED
+000240                       ACCESS    MODE        DYNAMIC
+000250                       RECORD    KEY         KNG-KEY.
+000260***********************補助残高マスタ　　　　　　
+000270     SELECT            HZM-F        ASSIGN   TO   HOF-MSD
+000280                       ORGANIZATION          INDEXED
+000290                       ACCESS    MODE        RANDOM
+000300                       RECORD    KEY         HZM-KEY.
+000310*
+000320***********************科目マスタ　　　　　　　　
+000330     SELECT            AM           ASSIGN   TO   AMF-MSD
+000340                       ORGANIZATION          INDEXED
+000350                       ACCESS    MODE        RANDOM
+000360                       RECORD    KEY         AM-KEY.
+000370*
+000380***********************[ ｺ ﾝ ﾄ ﾛ ｰ ﾙ ﾌ ｧ ｲ ﾙ ]
+000390     SELECT            FCTL-F       ASSIGN   TO   FCTLF-MSD
+000400                       ORGANIZATION          INDEXED
+000410                       ACCESS    MODE        RANDOM
+000420                       RECORD    KEY         FCTL-KEY.
+000430*
+000440***********************[ ﾌﾟﾘﾝﾀ ]
+000450     SELECT            PRN-F        ASSIGN   TO   PRNF-PRN999.
+000460*
+000470 I-O-CONTROL.
+000480     APPLY    SHARED-MODE  ON   KNG
+000490     APPLY    SHARED-MODE  ON   HZM-F
+000500     APPLY    SHARED-MODE  ON   AM
+000510     APPLY    SHARED-MODE  ON   FCTL-F
+000520     APPLY    SHIFT-CODE   ON   PRN-F.
+000530 DATA                  DIVISION.
+000540*
+000550 FILE                  SECTION.
+000560*
+000570     COPY              KANGEL.
+000580*
+000590     COPY              LHOZAN.
+000600*
+000610     COPY              ACCUNT.
+000620*
+000630     COPY              FCTL.
+000640*
+000650 FD  PRN-F
+000660     LABEL             RECORD          OMITTED
+000670     LINAGE            66              LINES.
+000680 01  PRN-R             PIC      X(270).
+000690*
+000700******************************************************
+000710 WORKING-STORAGE                SECTION.
+000720******************************************************
+000730*
+000740 01  W1.
+000750     02  ERR-STAT      PIC X(2).
+000760     02  PCNT          PIC 9(5).
+000770     02  W-ZZZZ9       PIC ZZZZ9.
+000780     02  W-Z9          PIC Z9.
+000790     02  W-KAKU        PIC X(1).
+000800 01  WORK-AREA.
+000810     02  SET-WORK.
+000820       03  W-ZAN         PIC S9(11).                              前月末残
+000830       03  W-KARI        PIC S9(11).                              当期借方
+000840       03  W-KASI        PIC S9(11).                              当期貸方
+000850       03  T-ZAN         PIC S9(11).                              当月末残
+000860     02  SOE             PIC  9(02).
+000870     02  FI              PIC  9(02).
+000880     02  TI              PIC  9(02).
+000890     02  SW              PIC  9(01).
+000900     02  LCNT            PIC  9(02).
+000910*
+000920 01  HIZUKE            PIC  9(06).
+000930 01  HIZUKER  REDEFINES  HIZUKE.
+000940     02  W-YY              PIC  9(02).                            NEN
+000950     02  W-MM              PIC  9(02).                            TSUKI
+000960     02  W-DD              PIC  9(02).                            HI
+000970*
+000980 01  SV-KEY.
+000990     02  SV-KY1        PIC  9(04).
+001000 01  FROM-TO.
+001010     02  FROM-CD       PIC  9(04).
+001020     02  TO-CD         PIC  9(04).
+001030 01  GOKEI-R.
+001040     02  GOKEI-1       PIC  S9(12).
+001050     02  GOKEI-2       PIC  S9(12).
+001060     02  GOKEI-3       PIC  S9(12).
+001070     02  GOKEI-4       PIC  S9(12).
+001080*
+001090 01  MEISAI-R.
+001100     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+001110     02  FILLER        PIC  X(01)  VALUE   SPACE.
+001120     02  HOJYMEI       PIC  N(10).
+001130     02  FILLER        PIC  X(01)  VALUE   "(".
+001140     02  HJ-COD        PIC  9(04).
+001150     02  FILLER        PIC  X(01)  VALUE   ")".
+001160     02  FILLER        PIC  X(01)  VALUE   SPACE.
+001170     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+001180     02  ZENZAN        PIC  ----,---,---,--9.
+001190     02  FILLER        PIC  X(01).
+001200     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+001210     02  T-KARI        PIC  ----,---,---,--9.
+001220     02  FILLER        PIC  X(01).
+001230     02  T-KASHI       PIC  ----,---,---,--9.
+001240     02  FILLER        PIC  X(01).
+001250     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+001260     02  THOZAN        PIC  ----,---,---,--9.
+001270     02  FILLER        PIC  X(01).
+001280     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+001290     02  FILLER        PIC  X(01).
+001300     02  FILLER        PIC  N(01)  VALUE   NC"�@".
+001310 01  TY-SEN.
+001320     02  FILLER        PIC  X(02)  VALUE   ""3F91"".
+001330     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+001340     02  FILLER        PIC  X(28).
+001350     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+001360     02  FILLER        PIC  X(17).
+001370     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+001380     02  FILLER        PIC  X(34).
+001390     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+001400     02  FILLER        PIC  X(17).
+001410     02  FILLER        PIC  X(02)  VALUE   ""3F92"".
+001420     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+001430     02  FILLER        PIC  X(01).
+001440     02  FILLER        PIC  N(01)  VALUE   NC"�@".
+001450 01  TATESEN.
+001460     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+001470     02  FILLER        PIC  X(28).
+001480     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+001490     02  FILLER        PIC  X(17).
+001500     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+001510     02  FILLER        PIC  X(34).
+001520     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+001530     02  FILLER        PIC  X(17).
+001540     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+001550     02  FILLER        PIC  X(01).
+001560     02  FILLER        PIC  N(01)  VALUE   NC"�@".
+001570*
+001580 01  TATESEN-1.                                                   *A840829
+001590     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+001600     02  FILLER        PIC  X(12).
+001610     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+001620     02  FILLER        PIC  X(22).
+001630     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+001640     02  FILLER        PIC  X(06).
+001650     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+001660     02  FILLER        PIC  N(01)  VALUE   NC"�@".
+001670*
+001680 01  YOKOSEN-2.
+001690     02  FILLER        PIC  X(02)  VALUE   ""3F91"".
+001700     02  FILLER        PIC  X(40).
+001710     02  FILLER        PIC  X(02)  VALUE   ""3F92"".
+001720*
+001730 01  MIDASHI-1.
+001740     02  P-K           PIC  X(05)  VALUE   ""3FE04FE080"".
+001750     02  FILLER        PIC  X(02).
+001760     02  Y-1           PIC  N(02).
+001770     02  FILLER        PIC  N(01)  VALUE   NC"年".
+001780     02  M-1           PIC  N(02).
+001790     02  FILLER        PIC  N(01)  VALUE   NC"月".
+001800     02  D-1           PIC  N(02).
+001810     02  FILLER        PIC  N(01)  VALUE   NC"日".
+001820     02  FILLER        PIC  N(02)  VALUE   NC"作成".
+001830     02  FILLER        PIC  X(18)  VALUE   SPACE.
+001840     02  FILLER        PIC  X(02)  VALUE   ""3F91"".
+001850     02  FILLER        PIC  X(24)
+001860                       VALUE  " 総　勘　定　内　訳　表 ".
+001870     02  FILLER        PIC  X(02)  VALUE   ""3F92"".
+001880     02  FILLER        PIC  X(17).
+001890     02  PA-G          PIC  N(05).
+001900     02  FILLER        PIC  N(01)  VALUE   NC"頁".
+001910*
+001920 01  MIDASHI-2.
+001930     02  FILLER        PIC  X(02)  VALUE   ""3F91"".
+001940     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+001950     02  FILLER        PIC  X(12)  VALUE   " 勘定科目名 ".
+001960     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+001970     02  FILLER        PIC  X(01)  VALUE   SPACE.
+001980     02  KAMO-MEI      PIC  N(10).
+001990     02  FILLER        PIC  X(01)  VALUE   SPACE.
+002000     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+002010     02  FILLER        PIC  X(01)  VALUE   " ".
+002020     02  HOSYU-CD      PIC  9(04).
+002030     02  FILLER        PIC  X(01)  VALUE   " ".
+002040     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+002050     02  FILLER        PIC  X(01).
+002060     02  FILLER        PIC  N(01)  VALUE   NC"（".
+002070     02  Y-2           PIC  N(02).
+002080     02  FILLER        PIC  N(01)  VALUE   NC"年".
+002090     02  M-2           PIC  N(02).
+002100     02  FILLER        PIC  N(01)  VALUE   NC"月".
+002110     02  D-2           PIC  N(02).
+002120     02  FILLER        PIC  N(03)  VALUE   NC"日現在".
+002130     02  FILLER        PIC  N(01)  VALUE   NC"）".
+002140     02  FILLER        PIC  X(29).
+002150     02  FILLER        PIC  X(02)  VALUE   ""3F92"".
+002160*
+002170 01  MIDASHI-3.
+002180     02  FILLER        PIC  X(02)  VALUE   ""3F91"".
+002190     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+002200     02  FILLER        PIC  X(05).
+002210     02  FILLER        PIC  N(05)  VALUE   NC"補助科目名".
+002220     02  FILLER        PIC  X(06).
+002230     02  FILLER        PIC  X(07)  VALUE   "(ｺｰﾄﾞ) ".
+002240     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+002250     02  FILLER        PIC  X(02).
+002260     02  FILLER        PIC  N(07)  VALUE   NC"前　月　残　高".
+002270     02  FILLER        PIC  X(01).
+002280     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+002290     02  FILLER        PIC  X(02).
+002300     02  FILLER        PIC  N(07)  VALUE   NC"当　月　借　方".
+002310     02  FILLER        PIC  X(03).
+002320     02  FILLER        PIC  N(07)  VALUE   NC"当　月　貸　方".
+002330     02  FILLER        PIC  X(01).
+002340     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+002350     02  FILLER        PIC  X(02).
+002360     02  FILLER        PIC  N(07)  VALUE   NC"当　月　残　高".
+002370     02  FILLER        PIC  X(01).
+002380     02  FILLER        PIC  X(02)  VALUE   ""3F92"".
+002390     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+002400     02  FILLER        PIC  X(01).
+002410     02  FILLER        PIC  N(01)  VALUE   NC"�@".
+002420*
+002430 01  GOKEI-M.
+002440     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+002450     02  FILLER        PIC  X(05).
+002460     02  FILLER        PIC  N(01)  VALUE   NC"合".
+002470     02  FILLER        PIC  X(14).
+002480     02  FILLER        PIC  N(01)  VALUE   NC"計".
+002490     02  FILLER        PIC  X(05).
+002500     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+002510     02  GOK-1         PIC  ----,---,---,--9.
+002520     02  FILLER        PIC  X(01).
+002530     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+002540     02  GOK-2         PIC  ----,---,---,--9.
+002550     02  FILLER        PIC  X(01).
+002560     02  GOK-3         PIC  ----,---,---,--9.
+002570     02  FILLER        PIC  X(01).
+002580     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+002590     02  GOK-4         PIC  ----,---,---,--9.
+002600     02  FILLER        PIC  X(01).
+002610     02  FILLER        PIC  X(02)  VALUE   ""3F93"".
+002620     02  FILLER        PIC  X(01).
+002630     02  FILLER        PIC  N(01)  VALUE   NC"�@".
+002640*
+002650     COPY  LWMSG.
+002660*
+002670 SCREEN          SECTION.
+002680 SD  SCR-D
+002690     END STATUS  IS    ESTAT.
+002700 01  DSP-CLR-AREA.
+002710     03  DSP-CLR        LINE    1.
+002720         05  CLEAR  SCREEN.
+002730     03  DSP-REVERSE    LINE    1  COLUMN  34  PIC X(14)
+002740                        VALUE  "              "  REVERSE.
+002750 01  DSP-AREA.
+002760     03  DSP-NEN    LINE 1.
+002770         05      COLUMN  04  PIC  N(01)  VALUE  NC"年".
+002780         05      COLUMN  08  PIC  N(02)  VALUE  NC"月度".
+002790*****    05      COLUMN  02  PIC  9(02)  FROM  Z-GEMYY.           D.971113
+002800         05      COLUMN  02  PIC  9(02)  FROM  Z-GEMYY2.          I.971113
+002810         05      COLUMN  06  PIC  9(02)  FROM  Z-GEMMM.
+002820     03  DSP-010    LINE  1.
+002830         05  DSP-011    COLUMN 35  PIC  N(06)
+002840                    VALUE  NC"総勘定内訳表".
+002850     03  DSP-020    LINE  6.
+002860         05  DSP-021    COLUMN 11  PIC  N(05)
+002870                        VALUE  NC"科目コード".
+002880         05  DSP-022    COLUMN 40  PIC  N(01)
+002890                        VALUE  NC"～".
+002900     03  DSP-030    LINE  4.
+002910         05  DSP-031    COLUMN 27  PIC  N(04)
+002920                        VALUE  NC"ＦＲＯＭ".
+002930         05  DSP-032    COLUMN 49  PIC  N(02)
+002940                        VALUE  NC"ＴＯ".
+002950     03  DSP-040    LINE  24.
+002960         05  DSP-041    COLUMN 61  PIC  X(18)
+002970                        VALUE  "確認 OK=1,NO=9 ( )".
+002980 01  ACP-AREA.
+002990     03  ACP-010        LINE    6.
+003000         05  ACP-011               COLUMN  29  PIC 9(4)
+003010                        USING   FROM-CD   CHECK OVERFLOW NO IFC.
+003020         05  ACP-012               COLUMN  49  PIC 9(4)
+003030                        USING   TO-CD     CHECK OVERFLOW NO IFC.
+003040     03  ACP-020        LINE   24    COLUMN    77  PIC X(1)
+003050                        INTO    W-KAKU  CHECK OVERFLOW NO IFC.
+003060*
+003070     COPY  LSMSG.
+003080*
+003090******************************************************
+003100 PROCEDURE                      DIVISION.
+003110******************************************************
+003120*
+003130 PROG-ST.
+003140*
+003150     OPEN  INPUT  FCTL-F.
+003160     MOVE  "DATE  "     TO  FCTL-KEY.
+003170     READ  FCTL-F  UNLOCK  INVALID
+003180         DISPLAY  INV-MCT  DISP-BUZ-B
+003190         CLOSE  FCTL-F
+003200         GO  TO  END-RTN.
+003210     MOVE  FCTL-REC       TO  Z-R.
+003220     CLOSE FCTL-F.
+003230*
+003240     DISPLAY  DSP-CLR  DSP-REVERSE  DSP-AREA.
+003250*
+003260*------------[  ｶﾞ ﾒ ﾝ  ｼ ｮ ﾘ  ]
+003270 ACEP-FR.
+003280     ACCEPT  ACP-011.
+003290     IF  ESTAT     =    "P9"
+003300         STOP                RUN.
+003310     IF  ESTAT NOT =    "01" AND "06"
+003320         GO        TO        ACEP-FR.
+003330*
+003340 ACEP-TO.
+003350     ACCEPT  ACP-012.
+003360     IF  ESTAT     =    "09"
+003370         GO        TO        ACEP-FR.
+003380     IF  ESTAT NOT =    "01" AND "06"
+003390         GO        TO        ACEP-TO.
+003400     IF  FROM-CD        >    TO-CD     GO  TO   ACEP-FR.
+003410*
+003420*------------[  ｶ ｸ ﾆ ﾝ  ﾆ ｭ ｳ ﾘ ｮ ｸ  ]
+003430 ACEP-KA.
+003440     ACCEPT  ACP-020.
+003450     IF  ESTAT     =    "09"
+003460         GO        TO        ACEP-FR.
+003470     IF  ESTAT NOT =    "01" AND "06"
+003480         GO        TO        ACEP-KA.
+003490     IF  W-KAKU = "9"
+003500         GO        TO        ACEP-FR.
+003510     IF  W-KAKU NOT = "1"
+003520         GO        TO        ACEP-KA.
+003530*
+003540*------------[  ﾌ ｧ ｲ ﾙ  ｵ ｰ ﾌﾟ ﾝ  ]
+003550*
+003560     OPEN     INPUT     KNG  HZM-F  AM
+003570              OUTPUT              PRN-F.
+003580     MOVE     ZERO      TO   SW   PCNT   LCNT.
+003590*
+003600     ACCEPT  HIZUKE  FROM  DATE.
+003610*****MOVE  W-YY     TO  W-Z9.                                     D.971113
+003620*****MOVE  W-Z9     TO  Y-1.                                      D.971113
+003630     MOVE  W-YY     TO  Y-1.                                      I.971113
+003640     MOVE  W-MM     TO  W-Z9.
+003650     MOVE  W-Z9     TO  M-1.
+003660     MOVE  W-DD     TO  W-Z9.
+003670     MOVE  W-Z9     TO  D-1.
+003680*****MOVE  Z-KONYY     TO  W-Z9.                                  D.971113
+003690*****MOVE  W-Z9        TO  Y-2.                                   D.971113
+003700     MOVE  Z-KONYY2    TO  Y-2.                                   I.971113
+003710     MOVE  Z-KONMM     TO  W-Z9.
+003720     MOVE  W-Z9        TO  M-2.                                   TSUKI
+003730     MOVE  Z-KONDD     TO  W-Z9.
+003740     MOVE  W-Z9        TO  D-2.                                   HI
+003750*
+003760     MOVE  Z-KONYMD     TO  ZYMD.                                 今回日付
+003770     PERFORM  Z-RTN     THRU  Z-EXT.
+003780     IF ZI > 15
+003790        GO TO END-RTN.
+003800     MOVE ZI     TO TI.
+003810     IF TI > 12
+003820        MOVE 13     TO FI
+003830     ELSE
+003840        IF Z-KSMM = 12
+003850           MOVE 1     TO FI
+003860        ELSE
+003870           COMPUTE FI = Z-KSMM + 1.
+003880*****
+003890     MOVE FROM-CD     TO K-ACCD.
+003900     MOVE ZERO        TO K-HOCD.
+003910     START KNG KEY NOT LESS KNG-KEY INVALID
+003920           GO TO END-RTN.
+003930 PRO-010.
+003940     READ KNG NEXT UNLOCK AT END
+003950          GO TO END-RTN.
+003960     IF K-ACCD < FROM-CD
+003970        GO TO PRO-010.
+003980     IF K-ACCD > TO-CD
+003990        GO TO END-RTN.
+004000     GO TO HO-RD1.
+004010 HO-RD.
+004020     READ KNG NEXT UNLOCK AT END
+004030          GO TO END-RTN.
+004040     IF K-ACCD > TO-CD
+004050        GO TO END-RTN.
+004060 HO-RD1.
+004070     IF K-HOCD = ZERO
+004080        MOVE KNGNMN     TO KAMO-MEI
+004090        MOVE K-ACCD     TO HOSYU-CD
+004100        PERFORM AMG-RTN THRU AMG-EX
+004110        GO TO HO-RD.
+004120*
+004130     PERFORM HZMG-RTN THRU HZMG-EX.
+004140     MOVE ZERO     TO SET-WORK.
+004150     PERFORM ZAN-SET-RTN THRU ZAN-SET-EX.
+004160*
+004170     IF PCNT = 0
+004180        MOVE K-ACCD     TO SV-KY1.
+004190     IF SV-KY1 NOT = K-ACCD
+004200        PERFORM HEN-RTN THRU HEN-EX.
+004210*
+004220     PERFORM MID-SUB THRU MID-EX.
+004230*
+004240     MOVE KNGNMN           TO HOJYMEI.
+004250     MOVE K-HOCD           TO HJ-COD.
+004260     MOVE W-ZAN            TO ZENZAN.
+004270     MOVE HZM-TJKR(TI)     TO T-KARI.
+004280     MOVE HZM-TJKS(TI)     TO T-KASHI.
+004290     IF DR-CR OF AM = 1
+004300        COMPUTE T-ZAN = W-ZAN + HZM-TJKR(TI) - HZM-TJKS(TI)
+004310     ELSE
+004320        COMPUTE T-ZAN = W-ZAN + HZM-TJKS(TI) - HZM-TJKR(TI).
+004330     MOVE T-ZAN            TO THOZAN.
+004340     WRITE PRN-R FROM MEISAI-R AFTER 1.
+004350     ADD 1     TO LCNT.
+004360     MOVE K-ACCD     TO SV-KY1.
+004370**
+004380     ADD W-ZAN            TO GOKEI-1.
+004390     ADD HZM-TJKR(TI)     TO GOKEI-2.
+004400     ADD HZM-TJKS(TI)     TO GOKEI-3.
+004410     ADD T-ZAN            TO GOKEI-4.
+004420     MOVE 1     TO SW.
+004430     GO TO HO-RD.
+004440 END-RTN.
+004450     IF PCNT NOT = 0
+004460        PERFORM HEN-SUB THRU HEN-SUB-EX
+004470        WRITE PRN-R FROM TY-SEN AFTER 1.
+004480     CLOSE    KNG  HZM-F  AM  PRN-F.
+004490     STOP               RUN.
+004500******************************************************************
+004510 HEN-RTN.
+004520     IF SW NOT = 0
+004530        PERFORM HEN-SUB THRU HEN-SUB-EX
+004540        MOVE 0        TO SW
+004550        MOVE 90       TO LCNT.
+004560     MOVE ZERO     TO GOKEI-R.
+004570 HEN-EX.
+004580     EXIT.
+004590*****
+004600 MID-SUB.
+004610     IF PCNT = 0
+004620        GO TO CROL-RD.
+004630     IF LCNT NOT > 60
+004640        GO TO MID-EX.
+004650     WRITE    PRN-R   FROM   TY-SEN    AFTER   1.
+004660     MOVE     SPACE     TO   PRN-R.
+004670     WRITE    PRN-R          AFTER     PAGE.
+004680 CROL-RD.
+004690     ADD  1     TO  PCNT.
+004700     MOVE     PCNT      TO   W-ZZZZ9.
+004710     MOVE     W-ZZZZ9   TO   PA-G.
+004720     WRITE    PRN-R   FROM   MIDASHI-1    AFTER   2.
+004730     WRITE    PRN-R   FROM   YOKOSEN-2    AFTER   1.
+004740     WRITE    PRN-R   FROM   TATESEN-1    AFTER   1.              *A840829
+004750     WRITE    PRN-R   FROM   MIDASHI-2    AFTER   1.              *C840829
+004760     WRITE    PRN-R   FROM   TATESEN      AFTER   1.              *A840829
+004770     WRITE    PRN-R   FROM   MIDASHI-3    AFTER   1.              *C840829
+004780     WRITE    PRN-R   FROM   TATESEN      AFTER   1.
+004790     MOVE     8         TO   LCNT.
+004800 MID-EX.
+004810     EXIT.
+004820*
+004830*-----------[  ﾍ ﾝ ｼ ｭ ｳ  S U B  ]
+004840 HEN-SUB.
+004850     MOVE     GOKEI-1   TO   GOK-1.
+004860     MOVE     GOKEI-2   TO   GOK-2.
+004870     MOVE     GOKEI-3   TO   GOK-3.
+004880     MOVE     GOKEI-4   TO   GOK-4.
+004890     WRITE    PRN-R   FROM   TY-SEN      AFTER     1.
+004900     WRITE    PRN-R   FROM   TATESEN     AFTER     1.             *A840829
+004910     WRITE    PRN-R   FROM   GOKEI-M     AFTER     1.             *C840829
+004920 HEN-SUB-EX.
+004930     EXIT.
+004940*****
+004950 AMG-RTN.
+004960     MOVE K-ACCD     TO AM-KEY.
+004970     READ AM UNLOCK INVALID
+004980          INITIALIZE AM-REC.
+004990 AMG-EX.
+005000     EXIT.
+005010*****
+005020 HZMG-RTN.
+005030     MOVE KNG-KEY     TO HZM-KEY.
+005040     READ HZM-F UNLOCK INVALID
+005050          INITIALIZE HZM-R.
+005060 HZMG-EX.
+005070     EXIT.
+005080*****
+005090 ZAN-SET-RTN.
+005100     IF TI > 12     GO TO ZAN-SET-500.
+005110     MOVE FI          TO SOE.
+005120 ZAN-SET-000.
+005130     ADD HZM-TJKR(SOE)     TO W-KARI.
+005140     ADD HZM-TJKS(SOE)     TO W-KASI.
+005150     IF SOE = TI
+005160        GO TO ZAN-SET-900.
+005170     IF SOE = 12
+005180        MOVE 1     TO SOE
+005190        GO TO ZAN-SET-000.
+005200     ADD 1     TO SOE.
+005210     GO TO ZAN-SET-000.
+005220 ZAN-SET-500.
+005230     IF BS-PL = 0
+005240        MOVE 1      TO SOE
+005250     ELSE
+005260        MOVE 13     TO SOE.
+005270 ZAN-SET-600.
+005280     ADD HZM-TJKR(SOE)     TO W-KARI.
+005290     ADD HZM-TJKS(SOE)     TO W-KASI.
+005300     IF SOE = TI
+005310        GO TO ZAN-SET-900.
+005320     IF SOE = 15
+005330        GO TO ZAN-SET-900.
+005340     ADD 1     TO SOE.
+005350     GO TO ZAN-SET-600.
+005360 ZAN-SET-900.
+005370     IF DR-CR = 1
+005380        COMPUTE W-ZAN = HZM-ZAN + (W-KARI - HZM-TJKR(TI)) -
+005390                        ( W-KASI - HZM-TJKS(TI))
+005400     ELSE
+005410        COMPUTE W-ZAN = HZM-ZAN + (W-KASI - HZM-TJKS(TI)) -
+005420                        ( W-KARI - HZM-TJKR(TI)).
+005430 ZAN-SET-EX.
+005440     EXIT.
+005450*****
+005460 CLSE-ENT.
+005470 CLSE-EXT.
+005480*
+005490     COPY  LPMSG.
+005500*

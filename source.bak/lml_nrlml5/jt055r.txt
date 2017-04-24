@@ -1,0 +1,210 @@
+000010 IDENTIFICATION      DIVISION.
+000020 PROGRAM-ID.         JT055R.
+000030 AUTHOR.             1996-10-02.
+000040****************************************
+000050******    荷札・入日記　問合せ    ******
+000060******    JS-SIGN  :  本社=1 , 倉庫=9   ******
+000070****************************************
+000080 ENVIRONMENT         DIVISION.
+000090 CONFIGURATION       SECTION.
+000100 SOURCE-COMPUTER.    SYSTEM3100.
+000110 OBJECT-COMPUTER.    SYSTEM3100.
+000120 INPUT-OUTPUT        SECTION.
+000130 FILE-CONTROL.
+000140     SELECT  JNIF  ASSIGN  F1-MSD
+000150         ORGANIZATION  INDEXED
+000160         ACCESS  MODE  DYNAMIC
+000170         RECORD  KEY   JNIF1-KEY.
+000180     SELECT  TC-M  ASSIGN  F2-MSD
+000190         ORGANIZATION  INDEXED
+000200         ACCESS  MODE  RANDOM
+000210         RECORD  KEY   TC-KEY.
+000220     SELECT  JCON  ASSIGN  F3-MSD
+000230         ORGANIZATION  INDEXED
+000240         ACCESS  MODE  RANDOM
+000250         RECORD  KEY   JCON2-KEY.
+000260 I-O-CONTROL.
+000270     APPLY  SHARED-MODE  ON  JNIF
+000280     APPLY  SHARED-MODE  ON  TC-M
+000290     APPLY  SHARED-MODE  ON  JCON.
+000300 DATA                DIVISION.
+000310 FILE                SECTION.
+000320     COPY  L-JNIF.
+000330     COPY  LITCM.
+000340     COPY  L-JCON.
+000350 WORKING-STORAGE     SECTION.
+000360 77  ERR-STAT                PIC X(02)    VALUE  SPACE.
+000370 77  JS-SIGN                 PIC 9(01).
+000380 01  WORK-AREA.
+000390     02  W-NO                PIC 9(06).                           荷札№
+000400     02  W-SK                PIC 9(01).                           ｿｳｺ
+000410     02  W-HK                PIC N(01).                           印字ｻｲﾝ
+000420     02  W-L                 PIC 9(02).                           行
+000430     02  W-DMM               PIC 9(01).                           確認
+000440     02  W-END               PIC 9(01).                           I.980122
+000450 01  W-STAT.
+000460     02  HTB                 PIC X(02)    VALUE  "01".
+000470     02  SKP                 PIC X(02)    VALUE  "06".
+000480     02  BTB                 PIC X(02)    VALUE  "09".
+000490     02  PF9                 PIC X(02)    VALUE  "P9".
+000500 COPY  LWMSG.
+000510 SCREEN              SECTION.
+000520 SD  C-CRT
+000530     END  STATUS  IS  ESTAT.
+000540 01  C-CLEAR.
+000550     02  LINE   1    CLEAR  SCREEN.
+000560 01  ACP-AREA.
+000570     02  A-SK   LINE   3    COLUMN   6    PIC 9(01)
+000580           USING  W-SK   CHECK  OVERFLOW  NO  IFC.
+000590     02  A-DMM  LINE  24    COLUMN  65    PIC 9(01)
+000600           USING  W-DMM  CHECK  OVERFLOW  NO  IFC.
+000610 01  DSP-AREA.
+000620     02  D-SK  LINE   3.
+000630         03  COLUMN   6    PIC 9(01)    FROM  W-SK.
+000640         03  COLUMN   8    PIC N(06)    FROM  JCON3-03.
+000650     02  D-DATA  LINE  W-L.
+000660         03  COLUMN   1    PIC 9(06)    FROM   JNIF1-01.
+000670         03  COLUMN   8    PIC 9(02)    FROM   JNIF1-042.
+000680         03  COLUMN  10    PIC X(01)    VALUE  "/".
+000690         03  COLUMN  11    PIC 9(02)    FROM   JNIF1-043.
+000700         03  COLUMN  14    PIC N(21)    FROM   TC-NAME.
+000710         03  COLUMN  57    PIC N(06)    FROM   JCON2-03.
+000720         03  COLUMN  70    PIC 9(06)    FROM   JNIF1-14.
+000730         03  COLUMN  78    PIC N(01)    FROM   W-HK.
+000740 01  ERR-MSG-AREA.
+000750     02  LINE 24.
+000760         03  E-STAT   COLUMN 10   PIC X(10)   FROM  ERR-STAT.
+000770         03  E-ME1    COLUMN  3   PIC X(18)   VALUE
+000780               "***  ｶﾞｲﾄｳ ﾅｼ  ***".
+000790         03  E-ME2    COLUMN  3   PIC X(21)   VALUE
+000800               "***  ﾃﾞｰﾀ ｼｭｳﾘｮｳ  ***".
+000810         03  E-ME98   COLUMN 75   PIC X(05)   VALUE ""27"J"05"".
+000820         03  E-ME99   COLUMN 75   PIC X(05)   VALUE ""27"B"05"".
+000830         03  E-CL     COLUMN  1   PIC X(40)   VALUE
+000840               "                                        ".
+000850 01  DATA-CLEAR-AREA.
+000860     02  D-CL1  LINE  3    COLUMN  6    PIC X(14)    VALUE
+000870           "              ".
+000880     02  D-CL2  LINE  W-L.
+000890         03  COLUMN   1    PIC X(40)    VALUE
+000900               "                                        ".
+000910         03  COLUMN  41    PIC X(40)    VALUE
+000920               "                                        ".
+000930 PROCEDURE           DIVISION.
+000940 M-05.
+000950     ACCEPT  JS-SIGN.
+000960*****IF  JS-SIGN NOT = 1 AND 6                                    D.980122
+000970*****    STOP  RUN.                                               D.980122
+000980     DISPLAY  C-CLEAR.
+000990     CALL  "SJ055R".
+001000     OPEN  INPUT  JNIF  TC-M  JCON.
+001010*****IF  JS-SIGN = 6                                              D.980122
+001020     IF  JS-SIGN = 3                                              I.980122
+001030         MOVE  6  TO  W-SK
+001040         GO  TO  M-15.
+001050     IF  JS-SIGN = 4                                              I.980122
+001060         MOVE  7  TO  W-SK                                        I.980122
+001070         GO  TO  M-15.                                            I.980122
+001080 M-10.
+001090*****IF  JS-SIGN  NOT = 1                                         D.091020
+001100     IF  JS-SIGN  NOT = 1 AND 9                                   I.091020
+001110         GO  TO  M-99.                                            I.980122
+001120     ACCEPT   A-SK.
+001130     DISPLAY  E-CL.
+001140     IF  ESTAT = BTB
+001150         GO  TO  M-30.
+001160     IF  ESTAT = PF9
+001170         GO  TO  M-99.
+001180     IF  ESTAT NOT = HTB AND SKP
+001190         GO  TO  M-10.
+001200*
+001210     DISPLAY  C-CLEAR.                                            I.091020
+001220     CALL  "SJ055R".                                              I.091020
+001230     DISPLAY  A-SK.                                               I.091020
+001240 M-15.
+001250     MOVE  3      TO  JCON3-01.
+001260     MOVE  W-SK   TO  JCON3-02.
+001270     READ  JCON  WITH  UNLOCK  INVALID  KEY
+001280         DISPLAY  E-STAT  E-ME1  E-ME98
+001290         GO  TO  M-10.
+001300     DISPLAY  D-SK.
+001310     MOVE  ZERO  TO  W-NO  W-END.                                 I.980122
+001320*****MOVE  ZERO  TO  W-NO.                                        D.980122
+001330 M-20.
+001340     MOVE  5     TO  W-L.
+001350 M-25.
+001360     PERFORM  S-05  THRU  S-10.
+001370 M-30.
+001380     ACCEPT  A-DMM.
+001390     DISPLAY  E-CL.
+001400     IF  ESTAT NOT = HTB AND SKP
+001410         GO  TO  M-30.
+001420     IF  W-DMM = 9
+001430*****    IF  W-SK = 6                                             D.980122
+001440         IF  JS-SIGN  NOT = 1                                     I.980122
+001450             GO  TO  M-99
+001460         ELSE
+001470             CLOSE  JNIF
+001480             OPEN  INPUT  JNIF
+001490             DISPLAY  D-CL1
+001500             PERFORM  S-15  THRU  S-25
+001510             GO  TO  M-10.
+001520     IF  W-DMM NOT = 1
+001530         GO  TO  M-30.
+001540*
+001550     IF  W-END        = 1                                         I.980122
+001560         IF  JS-SIGN  NOT = 1                                     I.980122
+001570             GO  TO  M-99                                         I.980122
+001580           ELSE                                                   I.980122
+001590             CLOSE  JNIF
+001600             OPEN  INPUT  JNIF
+001610             DISPLAY  D-CL1
+001620             PERFORM  S-15  THRU  S-25
+001630             GO TO M-10.                                          I.980122
+001640     PERFORM  S-15  THRU  S-25.
+001650     GO  TO  M-20.
+001660 M-99.
+001670     CLOSE  JNIF  TC-M  JCON.
+001680     DISPLAY  C-CLEAR.
+001690     STOP  RUN.
+001700 S-05.
+001710     READ  JNIF  NEXT  RECORD  WITH  UNLOCK  AT  END
+001720         MOVE 1 TO W-END                                          I.980122
+001730         DISPLAY  E-STAT  E-ME2  E-ME98
+001740         CLOSE  JNIF
+001750         OPEN  INPUT  JNIF
+001760         GO  TO  S-10.
+001770     IF  JNIF1-02 = 7
+001780         GO  TO  S-05.
+001790     IF  JNIF1-07 NOT = W-SK
+001800         GO  TO  S-05.
+001810     IF  JNIF1-01 = W-NO
+001820         GO  TO  S-05.
+001830     MOVE  JNIF1-01  TO  W-NO.
+001840     IF  JNIF1-10 = ZERO
+001850         MOVE  NC"未"  TO  W-HK.
+001860     IF  JNIF1-10 = 1
+001870         MOVE  NC"済"  TO  W-HK.
+001880     MOVE  JNIF1-05  TO  TC-KEY.
+001890     READ  TC-M  WITH  UNLOCK  INVALID  KEY
+001900         MOVE  JNIF1-05  TO  TC-NAME.
+001910     MOVE  2  TO  JCON2-01.
+001920     MOVE  JNIF1-06  TO  JCON2-02.
+001930     READ  JCON  WITH  UNLOCK  INVALID  KEY
+001940         MOVE  JNIF1-06  TO  JCON2-03.
+001950     DISPLAY  D-DATA.
+001960     ADD  1  TO  W-L.
+001970     IF  W-L < 24
+001980         GO  TO  S-05.
+001990 S-10.
+002000     EXIT.
+002010 S-15.
+002020     MOVE  5  TO  W-L.
+002030 S-20.
+002040     DISPLAY  D-CL2.
+002050     ADD  1  TO  W-L.
+002060     IF  W-L < 24
+002070         GO  TO  S-20.
+002080 S-25.
+002090     EXIT.
+

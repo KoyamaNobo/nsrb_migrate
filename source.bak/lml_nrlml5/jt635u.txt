@@ -1,0 +1,387 @@
+000010 IDENTIFICATION                 DIVISION.
+000020 PROGRAM-ID.                    JT635U.
+000030 AUTHOR.                        --------.
+000040***************************************************
+000050*    PROGRAM        : 出荷・入出庫累積ワーク作成  * 　　　
+000060*    DATA WRITTEN   : 94/09/06                    *
+000070*    SCREEN USED    :                             *
+000080*    FORM   USED    : UNUSED                      *
+000090*    PRINTER TYPE   : UNUSED                      *
+000100*    COMPILE TYPE   : COBOL85 (74MODE)            *
+000110***************************************************
+000120 ENVIRONMENT                    DIVISION.
+000130 CONFIGURATION                  SECTION.
+000140 SOURCE-COMPUTER.               SYSTEM3100.
+000150 OBJECT-COMPUTER.               SYSTEM3100.
+000160 INPUT-OUTPUT                   SECTION.
+000170 FILE-CONTROL.
+000180***  出荷指図トラン             ( 256/1 )
+000190     SELECT   JSTR      ASSIGN  F1-MSD
+000200                        ORGANIZATION  INDEXED
+000210                        ACCESS MODE   DYNAMIC
+000220                        RECORD KEY    JSTR-KEY.
+000230***  入出庫累積ワーク           ( 170/3 )
+000240     SELECT   JT-W170   ASSIGN  F2-MSD  F3-MSD                    I.971205
+000250                        ORGANIZATION  INDEXED                     I.971205
+000260                        ACCESS MODE   DYNAMIC                     I.971205
+000270                        RECORD KEY    JTW-KEY1                    I.971205
+000280            ALTERNATE   RECORD KEY    JTW-KEY3.                   I.971205
+000290***  出荷累積ワーク             ( 102/5 )
+000300*****SELECT   JT-WKN1   ASSIGN  F2-MSD                            D.971205
+000310*****                   ORGANIZATION  INDEXED                     D.971205
+000320*****                   ACCESS MODE   DYNAMIC                     D.871205
+000330*****                   RECORD KEY    WN01-KEY.                   D.971205
+000340***  入出庫累積ワーク           (  94/5 )
+000350*****SELECT   JT-WKN2   ASSIGN  F3-MSD                            D.971205
+000360*****                   ORGANIZATION  INDEXED                     D.971205
+000370*****                   ACCESS MODE   DYNAMIC                     D.971205
+000380*****                   RECORD KEY    WN02-KEY.                   D.971205
+000390 I-O-CONTROL.
+000400     APPLY   SHARED-MODE ON  JSTR  JT-W170.                       I.971205
+000410*****APPLY   SHARED-MODE ON  JSTR  JT-WKN1  JT-WKN2.              D.971205
+000420*****APPLY   SHARED-MODE ON  JSTR  JT-WKN1.                       D.940908
+000430*
+000440 DATA                       DIVISION.
+000450 FILE                       SECTION.
+000460 COPY  L-JSTR.
+000470 COPY  LJT170.                                                    I.971205
+000480*COPY  LTWKN1.                                                    D.971205
+000490*COPY  LTWKN2.                                                    D.971205
+000500*
+000510 WORKING-STORAGE            SECTION.
+000520*77  JS-SIGN                   PIC 9(01).                         D.971205
+000530 77  ERR-STAT                  PIC X(02)    VALUE SPACE.
+000540*77  JT-IWS102ID               PIC X(12).                         D.971205
+000550*77  JT-IWS094ID               PIC X(12).                         D.971205
+000560 77  JT-W170K1ID               PIC X(12).                         I.971205
+000570 77  JT-W170K3ID               PIC X(12).                         I.971205
+000580 01  STN-NO.
+000590     02  STN-NO-01             PIC X(03).
+000600     02  STN-NO-02             PIC X(03).
+000610 01  WF1-ID.
+000620*****02  WORK1-ID-01           PIC X(09) VALUE "JT-IWS102".       D.971205
+000630     02  WORK1-ID-01           PIC X(09) VALUE "JT-W170K1".       I.971205
+000640     02  WORK1-ID-02           PIC X(03).
+000650 01  WF2-ID.
+000660*****02  WORK2-ID-01           PIC X(09) VALUE "JT-IWS094".       D.971205
+000670     02  WORK2-ID-01           PIC X(09) VALUE "JT-W170K3".       I.971205
+000680     02  WORK2-ID-02           PIC X(03).
+000690 01  W-AREA.
+000700     02  OKC                   PIC 9(01).
+000710     02  W-CHK                 PIC 9(01).                         I.971209
+000720     02  HIZUKE                PIC 9(08).                         I.980526
+000730*****02  HIZUKE                PIC 9(06).                         D.980526
+000740*
+000750 COPY    LWMSG.
+000760*
+000770 SCREEN                  SECTION.
+000780 SD  CRT-X
+000790     END STATUS  IS  ESTAT.
+000800 01  CLR-1           LINE  1.
+000810     02  CLEAR   SCREEN.
+000820 01  DSP-AREA1.
+000830*****02  DSP1-01     LINE    1   COLUMN   25    PIC  X(20)  VALUE D.971205
+000840*****                " 得意先別出荷問合せ "  REVERSE.             D.971205
+000850     02  DSP1-01     LINE    1   COLUMN   18    PIC  X(16)  VALUE I.971205
+000860                     " 得意先別出荷 ・"  REVERSE.                 I.971205
+000870     02  DSP1-02     LINE    1   COLUMN   34    PIC  X(20)  VALUE I.971205
+000880                     " 品名別入出庫問合せ "  REVERSE.             I.971205
+000890     02  DSP1-03     LINE   14   COLUMN   17    PIC  X(26)  VALUE I.971209
+000900                     "最新のデータにする    =  1".                I.971209
+000910     02  DSP1-04     LINE   16   COLUMN   17    PIC  X(35)  VALUE I.971209
+000920                     "              しない  =  9  .....  ".       I.971209
+000930     02  DSP1-05     LINE   24   COLUMN   41    PIC  X(26)  VALUE
+000940                     "確認(OK=1,NO=9)-->    ﾘﾀｰﾝ".
+000950*01  DSP-AREA2.                                                   D.971205
+000960*****02  DSP2-01     LINE    1   COLUMN   25    PIC  X(20)  VALUE D.971205
+000970*****                " 品名別入出庫問合せ "  REVERSE.             D.971205
+000980*****02  DSP2-05     LINE   24   COLUMN   41    PIC  X(26)  VALUE D.971205
+000990*****                "確認(OK=1,NO=9)-->    ﾘﾀｰﾝ".                D.971205
+001000 01  ACP-AREA.
+001010     02  ACP-CHK  LINE 16  COLUMN 51     PIC 9(01)                I.971209
+001020                  USING  W-CHK    CHECK  OVERFLOW  NO  IFC.       I.971209
+001030     02  ACP-OKC  LINE 24  COLUMN 61     PIC 9(01)                確認
+001040                  USING  OKC      CHECK  OVERFLOW  NO  IFC.
+001050*
+001060 COPY    LSMSG.
+001070*
+001080 PROCEDURE               DIVISION.
+001090 HAJIME.
+001100     PERFORM   INI-RTN    THRU  INI-EX.
+001110*****IF  (ESTAT   =   "P9")  OR  (OKC  =  9)                      D.950412
+001120*****IF   ESTAT   =   "P9"                                        D.971209
+001130     IF  (ESTAT   =   "P9")  OR  (W-CHK  =  9)                    I.971209
+001140          DISPLAY  CLR-1
+001150          STOP  RUN.
+001160     IF   OKC     =   1                                           I.950412
+001170          PERFORM   MAIN-RTN   THRU  MAIN-EX.
+001180     PERFORM   END-RTN    THRU  END-EX.
+001190     STOP  RUN.
+001200************************************
+001210*    メイン　ルーチン              *
+001220************************************
+001230 MAIN-RTN.
+001240     READ   JSTR     NEXT RECORD  WITH UNLOCK  AT END
+001250            GO  TO  MAIN-EX.
+001260*****IF  JSTR-17   =  1             GO  TO  MAIN-RTN.             D.080325
+001270     IF  JSTR-17   <  2             GO  TO  MAIN-RTN.             I.080325
+001280*****IF  JSTR-17   NOT  = 0                                       D.080325
+001290     IF  ZERO  =  JSTR-121(01) AND JSTR-121(02) AND
+001300                  JSTR-121(03) AND JSTR-121(04) AND
+001310                  JSTR-121(05) AND JSTR-121(06) AND
+001320                  JSTR-121(07) AND JSTR-121(08) AND
+001330                  JSTR-121(09) AND JSTR-121(10)
+001340        GO  TO  MAIN-RTN.
+001350*****IF  JSTR-17        = 0                                       D.080325
+001360*****    IF  ZERO  =  JSTR-111(01) AND JSTR-111(02) AND           D.080325
+001370*****                 JSTR-111(03) AND JSTR-111(04) AND           D.080325
+001380*****                 JSTR-111(05) AND JSTR-111(06) AND           D.080325
+001390*****                 JSTR-111(07) AND JSTR-111(08) AND           D.080325
+001400*****                 JSTR-111(09) AND JSTR-111(10)               D.080325
+001410*****   GO  TO  MAIN-RTN.                                         D.080325
+001420*
+001430*****IF  JS-SIGN        =   0                                     D.971205
+001440*****                   PERFORM  WN01-RTN    THRU  WN01-EX        D.971205
+001450*****            ELSE   PERFORM  WN02-RTN    THRU  WN02-EX.       D.971205
+001460     PERFORM  JTW-RTN     THRU  JTW-EX.                           I.971205
+001470*
+001480     IF  COMPLETION-CODE   =  255                                 I.940908
+001490             GO  TO  MAIN-EX.
+001500     GO TO     MAIN-RTN.
+001510 MAIN-EX.
+001520     EXIT.
+001530*
+001540*********************************************
+001550*    ＩＮＩ－ＲＴＮ                         *
+001560*********************************************
+001570 INI-RTN.
+001580*****ACCEPT         JS-SIGN.                                      D.971205
+001590*****IF  JS-SIGN        >   1           GO  TO  INI-RTN.          D.971205
+001600     DISPLAY        CLR-1.
+001610     DISPLAY        DSP-AREA1.                                    I.971205
+001620*****DISPLAY        DSP-AREA1.                                    D.940908
+001630*****IF  JS-SIGN        =   0                                     D.971205
+001640*****                       DISPLAY        DSP-AREA1              D.971205
+001650*****                ELSE   DISPLAY        DSP-AREA2.             D.971205
+001660     MOVE   000    TO   COMPLETION-CODE.
+001670 INI-005.                                                         I.971209
+001680     ACCEPT   ACP-CHK.                                            I.971209
+001690     IF  ESTAT          =   "P9"                                  I.971209
+001700                        MOVE   255    TO   COMPLETION-CODE        I.971209
+001710                        GO  TO   INI-EX.                          I.971209
+001720     IF  ESTAT    NOT   =   "01"  AND  "06"                       I.971209
+001730                        GO  TO   INI-005.                         I.971209
+001740     IF  W-CHK    NOT   =    1    AND   9                         I.971209
+001750                        GO  TO   INI-005.                         I.971209
+001760 INI-010.
+001770     ACCEPT   ACP-OKC.
+001780     IF  ESTAT          =   "P9"                                  I.941125
+001790                        MOVE   255    TO   COMPLETION-CODE        I.941125
+001800                        GO  TO   INI-EX.                          I.941125
+001810     IF  ESTAT          =   "09"                                  I.971209
+001820                        GO  TO   INI-005.                         I.971209
+001830     IF  ESTAT    NOT   =   "01"  AND  "06"
+001840                        GO  TO   INI-010.
+001850*****IF  OKC            =   9                                     D.950412
+001860*****                   MOVE   255    TO   COMPLETION-CODE        D.950412
+001870*****                   GO  TO   INI-EX.                          D.950412
+001880*****IF  OKC      NOT   =   1           GO  TO  INI-010.          D.950412
+001890*****IF  OKC      NOT   =   1  AND  9   GO  TO  INI-010.          D.971209
+001900     IF  OKC            =   9           GO  TO  INI-005.          I.971209
+001910     IF  OKC      NOT   =   1           GO  TO  INI-010.          I.971209
+001920     IF  W-CHK          =   9           GO  TO  INI-EX.           I.971209
+001930     CALL  "CBLSTNNO"  USING  STN-NO.                             I.940905
+001940     MOVE  STN-NO-02   TO     WORK1-ID-02  WORK2-ID-02.           I.971205
+001950     MOVE  WF1-ID      TO     JT-W170K1ID.                        I.971205
+001960     MOVE  WF2-ID      TO     JT-W170K3ID.                        I.971205
+001970*****MOVE  STN-NO-02   TO     WORK1-ID-02.                        D.940908
+001980*****MOVE  WF2-ID      TO     JT-IWS102ID.                        D.940908
+001990*****IF  JS-SIGN        =   0                                     D.971205
+002000*****                   MOVE  STN-NO-02   TO     WORK1-ID-02      D.971205
+002010*****                   MOVE  WF1-ID      TO     JT-IWS102ID      D.971205
+002020*****                   OPEN  OUTPUT JT-WKN1                      D.971205
+002030*****            ELSE   MOVE  STN-NO-02   TO     WORK2-ID-02      D.971205
+002040*****                   MOVE  WF2-ID      TO     JT-IWS094ID      D.971205
+002050*****                   OPEN  OUTPUT JT-WKN2.                     D.971205
+002060     OPEN  INPUT  JSTR.
+002070     OPEN  OUTPUT JT-W170.                                        I.940908
+002080*****OPEN  OUTPUT JT-WKN1.                                        D.940908
+002090 INI-EX.
+002100     EXIT.
+002110*********************************************
+002120*    ＥＮＤ－ＲＴＮ                         *
+002130*********************************************
+002140 END-RTN.
+002150     CLOSE  JSTR.
+002160     CLOSE  JT-W170.                                              I.971205
+002170*****CLOSE  JT-WKN1.                                              D.940908
+002180*****IF  JS-SIGN        =   0                                     D.971205
+002190*****                   CLOSE  JT-WKN1                            D.971205
+002200*****            ELSE   CLOSE  JT-WKN2.                           D.971205
+002210     DISPLAY CLR-1.
+002220 END-EX.
+002230     EXIT.
+002240*
+002250*********************************************
+002260*    入出庫累積ワーク                       *
+002270*********************************************
+002280 JTW-RTN.                                                         I.971205
+002290     MOVE    SPACE      TO  JTW-R.                                I.971205
+002300     INITIALIZE         JTW-R.                                    I.971205
+002310     MOVE    JSTR-09    TO  JTW-01.                               I.971205
+002320     MOVE    JSTR-05    TO  HIZUKE.                               I.971205
+002330     MOVE    HIZUKE     TO  JTW-02  JTW-16  JTW-20.               I.971205
+002340     IF      JSTR-03    =   0                                     I.971205
+002350                        MOVE    22         TO  JTW-03             I.971205
+002360     ELSE    IF      JSTR-03    =   5    OR    6                  I.080410
+002370                        MOVE    23         TO  JTW-03             I.080410
+002380             ELSE       MOVE    25         TO  JTW-03.            I.971205
+002390     MOVE    JSTR-01    TO  JTW-04  JTW-181 JTW-221.              I.971205
+002400     MOVE    JSTR-02    TO  JTW-05  JTW-182 JTW-222.              I.971205
+002410     MOVE    JSTR-07    TO  JTW-06.                               I.971205
+002420     MOVE    JSTR-10    TO  JTW-07.                               I.971205
+002430     MOVE    JSTR-1211 (1)  TO  JTW-081 (1).                      I.971205
+002440     MOVE    JSTR-1211 (2)  TO  JTW-081 (2).                      I.971205
+002450     MOVE    JSTR-1211 (3)  TO  JTW-081 (3).                      I.971205
+002460     MOVE    JSTR-1211 (4)  TO  JTW-081 (4).                      I.971205
+002470     MOVE    JSTR-1211 (5)  TO  JTW-081 (5).                      I.971205
+002480     MOVE    JSTR-1211 (6)  TO  JTW-081 (6).                      I.971205
+002490     MOVE    JSTR-1211 (7)  TO  JTW-081 (7).                      I.971205
+002500     MOVE    JSTR-1211 (8)  TO  JTW-081 (8).                      I.971205
+002510     MOVE    JSTR-1211 (9)  TO  JTW-081 (9).                      I.971205
+002520     MOVE    JSTR-1211 (10) TO  JTW-081 (10).                     I.971205
+002530     MOVE    0            TO  JTW-09  JTW-17  JTW-21.             I.971205
+002540     MOVE    JSTR-03      TO  JTW-10.                             I.971211
+002550     MOVE    JSTR-06      TO  JTW-11.                             I.971205
+002560     MOVE    JSTR-14B     TO  JTW-12.                             I.971205
+002570     MOVE    JSTR-13      TO  JTW-13.                             I.971205
+002580     MOVE    JSTR-14      TO  JTW-14.                             I.971205
+002590     MOVE    JSTR-081     TO  JTW-151.                            I.971205
+002600     MOVE    JSTR-082     TO  JTW-152.                            I.971205
+002610     MOVE    JSTR-061     TO  JTW-19.                             I.971205
+002620     MOVE    JSTR-14D     TO  JTW-23.                             I.971205
+002630     MOVE    JSTR-15      TO  JTW-24.                             I.971205
+002640     MOVE    ZERO         TO  JTW-90  JTW-91  JTW-92.             I.971205
+002650*
+002660     MOVE    JTW-KEY1     TO  ERR-K.                              I.971205
+002670     WRITE   JTW-R     INVALID                                    I.971205
+002680             MOVE  "JT-W170"    TO  ERR-F                         I.971205
+002690             MOVE  "W"          TO  ERR-M                         I.971205
+002700             PERFORM  ERR-RTN  THRU  ERR-EX                       I.971205
+002710             MOVE   255         TO  COMPLETION-CODE.              I.971205
+002720 JTW-EX.                                                          I.971205
+002730     EXIT.                                                        I.971205
+002740*
+002750*********************************************
+002760*    出荷累積ワーク                         *
+002770*********************************************
+002780*WN01-RTN.                                                        D.971205
+002790*****MOVE    SPACE      TO  WN01-R.                               D.971205
+002800*****INITIALIZE         WN01-R.                                   D.971205
+002810*****MOVE    JSTR-13    TO  WN01-01.                              D.971205
+002820*****MOVE    JSTR-01    TO  WN01-021 WN01-151.                    D.971205
+002830*****MOVE    JSTR-02    TO  WN01-022 WN01-152.                    D.971205
+002840*****MOVE    0          TO  WN01-03A WN01-14.                     D.971205
+002850*****MOVE    JSTR-06    TO  WN01-04.                              D.971205
+002860*****MOVE    JSTR-07    TO  WN01-05.                              D.971205
+002870*****MOVE    JSTR-08    TO  WN01-06.                              D.971205
+002880*****MOVE    JSTR-09    TO  WN01-07.                              D.971205
+002890*****MOVE    JSTR-10    TO  WN01-08.                              D.971205
+002900*****IF  JSTR-17   NOT  = 0                                       D.971205
+002910*****    MOVE    JSTR-05    TO  WN01-03  WN01-13                  D.971205
+002920*****    MOVE    JSTR-1211 (1)  TO  WN01-0911 (1)                 D.971205
+002930*****    MOVE    JSTR-1211 (2)  TO  WN01-0911 (2)                 D.971205
+002940*****    MOVE    JSTR-1211 (3)  TO  WN01-0911 (3)                 D.971205
+002950*****    MOVE    JSTR-1211 (4)  TO  WN01-0911 (4)                 D.971205
+002960*****    MOVE    JSTR-1211 (5)  TO  WN01-0911 (5)                 D.971205
+002970*****    MOVE    JSTR-1211 (6)  TO  WN01-0911 (6)                 D.971205
+002980*****    MOVE    JSTR-1211 (7)  TO  WN01-0911 (7)                 D.971205
+002990*****    MOVE    JSTR-1211 (8)  TO  WN01-0911 (8)                 D.971205
+003000*****    MOVE    JSTR-1211 (9)  TO  WN01-0911 (9)                 D.971205
+003010*****    MOVE    JSTR-1211 (10)  TO  WN01-0911 (10)               D.971205
+003020*****    MOVE    JSTR-122     TO  WN01-092                        D.971205
+003030*****ELSE                                                         D.971205
+003040*****    MOVE    JSTR-04    TO  WN01-03  WN01-13                  D.971205
+003050*****    MOVE    JSTR-1111 (1)  TO  WN01-0911 (1)                 D.971205
+003060*****    MOVE    JSTR-1111 (2)  TO  WN01-0911 (2)                 D.971205
+003070*****    MOVE    JSTR-1111 (3)  TO  WN01-0911 (3)                 D.971205
+003080*****    MOVE    JSTR-1111 (4)  TO  WN01-0911 (4)                 D.971205
+003090*****    MOVE    JSTR-1111 (5)  TO  WN01-0911 (5)                 D.971205
+003100*****    MOVE    JSTR-1111 (6)  TO  WN01-0911 (6)                 D.971205
+003110*****    MOVE    JSTR-1111 (7)  TO  WN01-0911 (7)                 D.971205
+003120*****    MOVE    JSTR-1111 (8)  TO  WN01-0911 (8)                 D.971205
+003130*****    MOVE    JSTR-1111 (9)  TO  WN01-0911 (9)                 D.971205
+003140*****    MOVE    JSTR-1111 (10)  TO  WN01-0911 (10)               D.971205
+003150*****    MOVE    JSTR-112     TO  WN01-092.                       D.971205
+003160*****MOVE    JSTR-03      TO  WN01-10.                            D.971205
+003170*****MOVE    JSTR-18      TO  WN01-11.                            D.971205
+003180*****MOVE    JSTR-061     TO  WN01-12.                            D.971205
+003190*****MOVE    JSTR-14      TO  WN01-17.                            D.971205
+003200*
+003210*****MOVE   WN01-KEY      TO  ERR-K.                              D.971205
+003220*****WRITE   WN01-R    INVALID                                    D.971205
+003230*****        MOVE  "JT-IWS102"       TO  ERR-F                    D.971205
+003240*****        MOVE  "W"          TO  ERR-M                         D.971205
+003250*****        PERFORM  ERR-RTN  THRU  ERR-EX                       D.971205
+003260*****        MOVE   255         TO  COMPLETION-CODE.              D.971205
+003270*WN01-EX.                                                         D.971205
+003280*****EXIT.                                                        D.971205
+003290*********************************************
+003300*    入出庫累積ワーク                       *
+003310*********************************************
+003320*WN02-RTN.                                                        D.971205
+003330*****MOVE    SPACE      TO  WN02-R.                               D.971205
+003340*****INITIALIZE         WN02-R.                                   D.971205
+003350*****MOVE    JSTR-09    TO  WN02-01.                              D.971205
+003360*****IF  JSTR-03        =  0                                      D.971205
+003370*****                   MOVE    22         TO  WN02-03            D.971205
+003380*****            ELSE   MOVE    25         TO  WN02-03.           D.971205
+003390*****MOVE    JSTR-01    TO  WN02-04.                              D.971205
+003400*****MOVE    JSTR-02    TO  WN02-06.                              D.971205
+003410*****MOVE    JSTR-07    TO  WN02-07.                              D.971205
+003420*****MOVE    JSTR-10    TO  WN02-05.                              D.971205
+003430*****MOVE    0          TO  WN02-09.                              D.971205
+003440*****MOVE    JSTR-061   TO  WN02-10.                              D.971205
+003450*****MOVE    JSTR-062   TO  WN02-11.                              D.971205
+003460*****MOVE    JSTR-14D   TO  WN02-12.                              D.971205
+003470*****MOVE    JSTR-15    TO  WN02-13.                              D.971205
+003480*****MOVE    JSTR-14B   TO  WN02-14.                              D.971205
+003490*****IF  JSTR-17   NOT  = 0                                       D.971205
+003500*****    MOVE    JSTR-05    TO  HIZUKE                            D.971205
+003510*****    MOVE    HIZUKE     TO  WN02-02                           D.971205
+003520*****    MOVE    JSTR-1211 (1)  TO  WN02-081 (1)                  D.971205
+003530*****    MOVE    JSTR-1211 (2)  TO  WN02-081 (2)                  D.971205
+003540*****    MOVE    JSTR-1211 (3)  TO  WN02-081 (3)                  D.971205
+003550*****    MOVE    JSTR-1211 (4)  TO  WN02-081 (4)                  D.971205
+003560*****    MOVE    JSTR-1211 (5)  TO  WN02-081 (5)                  D.971205
+003570*****    MOVE    JSTR-1211 (6)  TO  WN02-081 (6)                  D.971205
+003580*****    MOVE    JSTR-1211 (7)  TO  WN02-081 (7)                  D.971205
+003590*****    MOVE    JSTR-1211 (8)  TO  WN02-081 (8)                  D.971205
+003600*****    MOVE    JSTR-1211 (9)  TO  WN02-081 (9)                  D.971205
+003610*****    MOVE    JSTR-1211 (10)  TO  WN02-081 (10)                D.971205
+003620*****ELSE                                                         D.971205
+003630*****    MOVE    JSTR-04    TO  HIZUKE                            D.971205
+003640*****    MOVE    HIZUKE     TO  WN02-02                           D.971205
+003650*****    MOVE    JSTR-1111 (1)  TO  WN02-081 (1)                  D.971205
+003660*****    MOVE    JSTR-1111 (2)  TO  WN02-081 (2)                  D.971205
+003670*****    MOVE    JSTR-1111 (3)  TO  WN02-081 (3)                  D.971205
+003680*****    MOVE    JSTR-1111 (4)  TO  WN02-081 (4)                  D.971205
+003690*****    MOVE    JSTR-1111 (5)  TO  WN02-081 (5)                  D.971205
+003700*****    MOVE    JSTR-1111 (6)  TO  WN02-081 (6)                  D.971205
+003710*****    MOVE    JSTR-1111 (7)  TO  WN02-081 (7)                  D.971205
+003720*****    MOVE    JSTR-1111 (8)  TO  WN02-081 (8)                  D.971205
+003730*****    MOVE    JSTR-1111 (9)  TO  WN02-081 (9)                  D.971205
+003740*****    MOVE    JSTR-1111 (10)  TO  WN02-081 (10).               D.971205
+003750*
+003760*****MOVE   WN02-KEY      TO  ERR-K.                              D.971205
+003770*****WRITE   WN02-R    INVALID                                    D.971205
+003780*****        MOVE  "JT-IWS094"       TO  ERR-F                    D.971205
+003790*****        MOVE  "W"          TO  ERR-M                         D.971205
+003800*****        PERFORM  ERR-RTN  THRU  ERR-EX                       D.971205
+003810*****        MOVE   255         TO  COMPLETION-CODE.              D.971205
+003820*WN02-EX.                                                         D.971205
+003830*****EXIT.                                                        D.971205
+003840*
+003850 COPY LPMSG.
+003860*
+

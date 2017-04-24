@@ -1,0 +1,290 @@
+000010 IDENTIFICATION    DIVISION.
+000020 PROGRAM-ID.       PR070M.
+000030*****************************************************
+000040*    PROGRAM       :  取引先マスタメンテナンス      *
+000050*****************************************************
+000060 ENVIRONMENT       DIVISION.
+000070 CONFIGURATION     SECTION.
+000080 SOURCE-COMPUTER.     SYSTEM3100.
+000090 OBJECT-COMPUTER.     SYSTEM3100.
+000100 INPUT-OUTPUT      SECTION.
+000110 FILE-CONTROL.
+000120     SELECT   TK     ASSIGN  TO   F1-MSD
+000130              ORGANIZATION    INDEXED
+000140              ACCESS          DYNAMIC                             I.980226
+000150              RECORD  KEY     TK-KEY
+000160              FILE  STATUS  ERR-STAT.
+000170     SELECT   T-M    ASSIGN  TO   F21-MSD  F22-MSD                I.000403
+000180              ORGANIZATION    INDEXED                             I.991019
+000190              ACCESS          RANDOM                              I.991019
+000200              RECORD  KEY     T-KEY                               I.991019
+000210              ALTERNATE  RECORD  KEY     T-KEY2                   I.000403
+000220              FILE  STATUS  ERR-STAT.                             I.991019
+000230 I-O-CONTROL.
+000240     APPLY     SHARED-MODE   ON   T-M                             I.991019
+000250     APPLY     SHARED-MODE   ON   TK.
+000260 DATA              DIVISION.
+000270 FILE              SECTION.
+000280     COPY  TKLIB.
+000290     COPY  LITM.                                                  I.991019
+000300 WORKING-STORAGE     SECTION.
+000310 77  ERR-STAT                PIC  X(02).
+000320 01  W-SPACE                 PIC  N(10)  VALUE
+000330                             NC"　　　　　　　　　　".            取引先名
+000340 01  W-SPACE1                PIC  N(26)  VALUE                    I.020423
+000350       NC"　　　　　　　　　　　　　　　　　　　　　　　　　　".  I.020423
+000360 01  W-AREA.
+000370     02  W-AREA1.
+000380         03  W-ACT           PIC  9(01).                          ACT
+000390         03  W-AREA2.
+000400             04  W-TORIHIKISAKICD          PIC  9(05).            取引ＣＤ
+000410             04  W-AREA3.
+000420                 05  W-TORIHIKISAKIMEI     PIC  N(10).            取引先名
+000430                 05  W-PRC       PIC  9(02).                      I.971105
+000440                 05  W-BKC       PIC  9(02).                      I.990603
+000450                 05  W-TCD       PIC  9(04).                      I.991019
+000460                 05  W-KAKU      PIC  X(01).                      確認
+000470 COPY  LWMSG.
+000480 SCREEN             SECTION.
+000490 SD  CRT-X  END  STATUS  ESTAT.
+000500 01  DSP-CLR.
+000510     03  LINE 1   CLEAR  SCREEN.
+000520 01  CLR-AREA1.
+000530     02  LINE 03  COLUMN 67  VALUE " ".                           ACT
+000540     02  CLR-AREA2.
+000550         03  LINE 05  COLUMN 33  VALUE "     ".                   取引ＣＤ
+000560         03  CLR-AREA3.
+000570             04  CLR-TORIMEI  LINE 06  COLUMN 18
+000580                 PIC N(10)  FROM  W-SPACE.                        取引先名
+000590             04  CLR-PRC      LINE 07  COLUMN 18  VALUE "  ".     I.971105
+000600             04  CLR-BKC      LINE 08  COLUMN 18  VALUE "  ".     I.990603
+000610             04  CLR-TCD      LINE 09  COLUMN 18  VALUE "    ".   I.991019
+000620             04  CLR-NAME     LINE 09  COLUMN 24                  I.991019
+000630                 PIC N(26)  FROM  W-SPACE1.                       I.020423
+000640             04  LINE 24  COLUMN 77  VALUE " ".                   確認
+000650 01  ACP-AREA.
+000660     03  ACP-ACT       LINE 03  COLUMN 67  PIC 9(01)              ACT
+000670                  USING  W-ACT  CHECK  OVERFLOW  NO  IFC.
+000680     03  ACP-TORIHIKISAKICD     LINE 05  COLUMN 33  PIC 9(05)     取引ＣＤ
+000690                  USING  W-TORIHIKISAKICD CHECK OVERFLOW NO IFC.
+000700     03  ACP-TORIHIKISAKIMEI    LINE 06  COLUMN 18  PIC N(10)     銀行名
+000710                  USING  W-TORIHIKISAKIMEI CHECK OVERFLOW NO IFC.
+000720     03  ACP-PRC                LINE 07  COLUMN 18  PIC 9(02)     I.971105
+000730                  USING  W-PRC             CHECK OVERFLOW NO IFC. I.971105
+000740     03  ACP-BKC                LINE 08  COLUMN 18  PIC 9(02)     I.990603
+000750                  USING  W-BKC             CHECK OVERFLOW NO IFC. I.990603
+000760     03  ACP-TCD                LINE 09  COLUMN 18  PIC 9(04)     I.991019
+000770                  USING  W-TCD             CHECK OVERFLOW NO IFC. I.991019
+000780     03  ACP-NAME               LINE 09  COLUMN 24  PIC N(26)     I.020423
+000790                  FROM   T-NAME.                                  I.991019
+000800     03  ACP-KAKU      LINE 24  COLUMN 77  PIC X(01)              確認
+000810                  INTO  W-KAKU  CHECK  OVERFLOW  NO  IFC.
+000820 COPY  LSMSG.
+000830 PROCEDURE          DIVISION.
+000840 HAJIME.
+000850     PERFORM  INI-RTN     THRU  INI-EX.
+000860     PERFORM  MAIN-RTN    THRU  MAIN-EX.
+000870     PERFORM  CLSE-ENT     THRU  CLSE-EXT.
+000880     STOP  RUN.
+000890 INI-RTN.
+000900     DISPLAY  DSP-CLR  CLR-TORIMEI.
+000910     CALL  "GR0700".
+000920     OPEN  I-O  TK.
+000930     OPEN  INPUT  T-M.                                            I.991019
+000940 INI-EX.
+000950     EXIT.
+000960 MAIN-RTN.
+000970     ACCEPT  ACP-ACT.                                             ACT
+000980     DISPLAY  DISP-MSG-SPACE.
+000990     IF  ESTAT = "P9"
+001000         GO  TO  MAIN-EX.
+001010     IF  ESTAT NOT = "01" AND "06"
+001020         GO  TO  MAIN-RTN.
+001030     DISPLAY  ACP-ACT.
+001040     IF  W-ACT NOT = 1 AND 2 AND 3
+001050         GO  TO  MAIN-RTN.
+001060 MAIN-005.                                                        I.980226
+001070     DISPLAY  CLR-AREA2.
+001080     INITIALIZE  W-AREA2.
+001090     IF  W-ACT NOT = 1                                            I.980226
+001100         GO  TO  MAIN-010.                                        I.980226
+001110     PERFORM  SET-RTN      THRU  SET-EX.                          I.980226
+001120     DISPLAY  ACP-TORIHIKISAKICD.                                 I.980226
+001130     DISPLAY  CLR-AREA3.                                          I.980226
+001140     INITIALIZE  W-AREA3.                                         I.980226
+001150     GO  TO  MAIN-040.                                            I.980226
+001160 MAIN-010.
+001170     ACCEPT  ACP-TORIHIKISAKICD.                                  取引ＣＤ
+001180     DISPLAY  DISP-MSG-SPACE.
+001190     IF  ESTAT = "09"
+001200         GO  TO  MAIN-RTN.
+001210     IF  ESTAT NOT = "01" AND "06"
+001220         GO  TO  MAIN-010.
+001230     IF  W-TORIHIKISAKICD     <  30000                            I.980226
+001240         GO  TO  MAIN-010.                                        I.930723
+001250*
+001260     DISPLAY  CLR-AREA3.
+001270     INITIALIZE  W-AREA3.
+001280*
+001290     MOVE  W-TORIHIKISAKICD     TO  TK-KEY.
+001300     READ  TK  INVALID
+001310         DISPLAY  INV-M01                                         I.980226
+001320         DISPLAY  DISP-BUZ-J                                      I.980226
+001330         GO  TO  MAIN-010.                                        I.980226
+001340     MOVE  TK-NAMEN    TO  W-TORIHIKISAKIMEI.                     I.980226
+001350     MOVE  TK-PRC      TO  W-PRC.                                 I.971105
+001360     MOVE  TK-BKC      TO  W-BKC.                                 I.990603
+001370     MOVE  TK-TCD      TO  W-TCD.                                 I.991019
+001380     DISPLAY  ACP-TORIHIKISAKIMEI   ACP-PRC  ACP-BKC  ACP-TCD.    I.991019
+001390     IF  W-ACT NOT = 2
+001400         GO  TO  MAIN-050.
+001410 MAIN-040.
+001420     ACCEPT  ACP-TORIHIKISAKIMEI.                                 取引先名
+001430     IF  ESTAT = "09"
+001440         IF  W-ACT   =  1                                         I.980226
+001450             GO  TO  MAIN-RTN                                     I.980226
+001460           ELSE                                                   I.980226
+001470             GO  TO  MAIN-010.
+001480     IF  ESTAT NOT = "01" AND "06"
+001490         GO  TO  MAIN-040.
+001500     DISPLAY  ACP-TORIHIKISAKIMEI.
+001510 MAIN-045.                                                        I.971105
+001520     ACCEPT  ACP-PRC.                                             I.971105
+001530     IF  ESTAT = "09"                                             I.971105
+001540         GO  TO  MAIN-040.                                        I.971105
+001550     IF  ESTAT NOT = "01" AND "06"                                I.971105
+001560         GO  TO  MAIN-045.                                        I.971105
+001570     DISPLAY  ACP-PRC.                                            I.971105
+001580 MAIN-047.                                                        I.990603
+001590     ACCEPT  ACP-BKC.                                             I.990603
+001600     IF  ESTAT = "09"                                             I.990603
+001610         GO  TO  MAIN-045.                                        I.990603
+001620     IF  ESTAT NOT = "01" AND "06"                                I.990603
+001630         GO  TO  MAIN-047.                                        I.990603
+001640     DISPLAY  ACP-BKC.                                            I.990603
+001650 MAIN-048.                                                        I.991019
+001660     ACCEPT  ACP-TCD.                                             I.991019
+001670     DISPLAY  DISP-MSG-SPACE.                                     I.991019
+001680     IF  ESTAT = "09"                                             I.991019
+001690         GO  TO  MAIN-047.                                        I.991019
+001700     IF  ESTAT NOT = "01" AND "06"                                I.991019
+001710         GO  TO  MAIN-048.                                        I.991019
+001720     DISPLAY  ACP-TCD.                                            I.991019
+001730     IF  W-TCD     =  ZERO                                        I.991019
+001740         DISPLAY  CLR-NAME                                        I.991019
+001750         GO  TO  MAIN-050.                                        I.991019
+001760     MOVE  W-TCD                 TO  T-TCD.                       I.991019
+001770     READ  T-M   WITH UNLOCK  INVALID KEY                         I.991019
+001780         MOVE  SPACE    TO  ERR-MSGN                              I.991019
+001790         MOVE  NC"得意先マスタ　なし"  TO  ERR-MSGN               I.991019
+001800         DISPLAY  DISP-MSG-01  DISP-BUZ-J                         I.991019
+001810         GO  TO  MAIN-048.                                        I.991019
+001820     DISPLAY  ACP-NAME.                                           I.991019
+001830 MAIN-050.
+001840     ACCEPT  ACP-KAKU.                                            確認
+001850     IF  ESTAT = "09"
+001860         IF  W-ACT = 3
+001870             GO  TO  MAIN-010
+001880         ELSE
+001890             GO  TO  MAIN-048.                                    I.991019
+001900     IF  W-KAKU = 9                                               = "02"
+001910         DISPLAY  CAN-01
+001920         DISPLAY  CLR-AREA1
+001930         INITIALIZE  W-AREA1
+001940         GO  TO  MAIN-RTN.
+001950     IF  W-KAKU NOT = 1                                           = "04"
+001960         GO  TO  MAIN-050.
+001970     PERFORM  KOU-RTN     THRU  KOU-EX.
+001980     DISPLAY  OK-01.
+001990     GO  TO  MAIN-005.                                            I.980226
+002000 MAIN-EX.
+002010     EXIT.
+002020 CLSE-ENT.
+002030     CLOSE  T-M.
+002040     CLOSE  TK.
+002050 CLSE-EXT.
+002060     EXIT.
+002070 KOU-RTN.
+002080     IF  W-ACT = 1
+002090         PERFORM  WRITE-RTN     THRU  WRITE-EX.
+002100     IF  W-ACT = 2
+002110         PERFORM  REWRITE-RTN   THRU  REWRITE-EX.
+002120     IF  W-ACT = 3
+002130         PERFORM  DELETE-RTN    THRU  DELETE-EX.
+002140 KOU-EX.
+002150     EXIT.
+002160 WRITE-RTN.
+002170     MOVE  SPACE     TO  TK-REC.
+002180     INITIALIZE  TK-REC.
+002190     MOVE  W-TORIHIKISAKICD      TO  TK-KEY.                      取引ＣＤ
+002200     MOVE  W-TORIHIKISAKIMEI     TO  TK-NAMEN.                    取引先名
+002210     MOVE  W-PRC                 TO  TK-PRC.                      I.971105
+002220     MOVE  W-BKC                 TO  TK-BKC.                      I.990603
+002230     MOVE  W-TCD                 TO  TK-TCD.                      I.991019
+002240     MOVE  TK-KEY                TO  ERR-K.
+002250     WRITE  TK-REC  INVALID
+002260         MOVE  "TK"     TO  ERR-F
+002270         MOVE  "W"      TO  ERR-M
+002280         PERFORM  ERR-ENT     THRU  ERR-EXT.
+002290     CALL  "CBLTCLS"  USING  TK.
+002300 WRITE-EX.
+002310     EXIT.
+002320 REWRITE-RTN.
+002330     MOVE  W-TORIHIKISAKICD      TO  TK-KEY.                      取引ＣＤ
+002340     MOVE  W-TORIHIKISAKIMEI     TO  TK-NAMEN.                    取引先名
+002350     MOVE  W-PRC                 TO  TK-PRC.                      I.971105
+002360     MOVE  W-BKC                 TO  TK-BKC.                      I.990603
+002370     MOVE  W-TCD                 TO  TK-TCD.                      I.991019
+002380     MOVE  TK-KEY                TO  ERR-K.
+002390     REWRITE  TK-REC  INVALID
+002400         MOVE  "TK"     TO  ERR-F
+002410         MOVE  "R"      TO  ERR-M
+002420         PERFORM  ERR-ENT     THRU  ERR-EXT.
+002430 REWRITE-EX.
+002440     EXIT.
+002450 DELETE-RTN.
+002460     MOVE  W-TORIHIKISAKICD      TO  TK-KEY.                      取引ＣＤ
+002470     MOVE  W-TORIHIKISAKIMEI     TO  TK-NAMEN.                    取引先名
+002480     MOVE  W-PRC                 TO  TK-PRC.                      I.971105
+002490     MOVE  W-BKC                 TO  TK-BKC.                      I.990603
+002500     MOVE  W-TCD                 TO  TK-TCD.                      I.991019
+002510     MOVE  TK-KEY                TO  ERR-K.
+002520     DELETE  TK  INVALID
+002530         MOVE  "TK"     TO  ERR-F
+002540         MOVE  "D"      TO  ERR-M
+002550         PERFORM  ERR-ENT     THRU  ERR-EXT.
+002560     CALL  "CBLTCLS"  USING  TK.
+002570 DELETE-EX.
+002580     EXIT.
+002590 SET-RTN.
+002600     MOVE  30000             TO  W-TORIHIKISAKICD.
+002610 SET-010.
+002620     ADD   1                 TO  W-TORIHIKISAKICD.                I.040130
+002630     MOVE  W-TORIHIKISAKICD  TO  TK-KEY.
+002640     READ   TK       WITH  UNLOCK  INVALID  KEY                   I.040130
+002650         GO  TO  SET-EX.                                          I.040130
+002660*****START  TK          KEY  NOT <  TK-KEY   INVALID KEY          D.040130
+002670*****    GO  TO  SET-020.                                         D.040130
+002680*****READ   TK       NEXT  RECORD  AT  END                        D.040130
+002690*****    GO  TO  SET-020.                                         D.040130
+002700*****ADD   10000             TO  W-TORIHIKISAKICD.                D.040130
+002710*****IF    W-TORIHIKISAKICD  NOT =  90000                         D.040130
+002720     GO  TO  SET-010.
+002730*SET-020.                                                         D.040130
+002740*****IF    W-TORIHIKISAKICD  NOT =  30000                         D.040130
+002750*****    SUBTRACT  10000       FROM  W-TORIHIKISAKICD.            D.040130
+002760*****MOVE  W-TORIHIKISAKICD  TO  TK-KEY.                          D.040130
+002770*****START  TK          KEY  NOT <  TK-KEY   INVALID KEY          D.040130
+002780*****    GO  TO  SET-040.                                         D.040130
+002790*****READ   TK       NEXT  RECORD  AT  END                        D.040130
+002800*****    GO  TO  SET-040.                                         D.040130
+002810*SET-030.                                                         D.040130
+002820*****MOVE  TK-KEY            TO  W-TORIHIKISAKICD.                D.040130
+002830*****READ   TK       NEXT  RECORD  AT  END                        D.040130
+002840*****    GO  TO  SET-040.                                         D.040130
+002850*****GO  TO  SET-030.                                             D.040130
+002860*SET-040.                                                         D.040130
+002870*****ADD   1                 TO  W-TORIHIKISAKICD.                D.040130
+002880 SET-EX.
+002890     EXIT.
+002900 COPY  LPMSG.

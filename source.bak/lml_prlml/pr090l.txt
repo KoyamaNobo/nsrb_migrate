@@ -1,0 +1,409 @@
+000010 IDENTIFICATION    DIVISION.
+000020 PROGRAM-ID.       PR090L.
+000030 AUTHOR.           MAYUMI.I.
+000040*****************************************************
+000050*    PROGRAM       :  科目残高マスタリスト　　　　  *
+000060*    PRINTER TYPE  :  JIPS                          *
+000070*    DATA WRITTEN  :  90/12/05                      *
+000080*    COMPILE TYPE  :  COBOL                         *
+000090*****************************************************
+000100 ENVIRONMENT       DIVISION.
+000110 CONFIGURATION     SECTION.
+000120 SOURCE-COMPUTER.     SYSTEM3100.
+000130 OBJECT-COMPUTER.     SYSTEM3100.
+000140 INPUT-OUTPUT      SECTION.
+000150 FILE-CONTROL.
+000160***  科目残高マスタ           (341/3)
+000170     SELECT   KZM-F    ASSIGN  TO   F1-MSD
+000180              ORGANIZATION    INDEXED
+000190              ACCESS          DYNAMIC
+000200              RECORD  KEY     KZM-KEY.
+000210***  コントロールファイル     (512/1)
+000220     SELECT   FCTL-F  ASSIGN  TO   F2-MSD
+000230              ORGANIZATION    INDEXED
+000240              ACCESS          RANDOM
+000250              RECORD  KEY     FCTL-KEY.
+000260***  漢字科目マスタ　　　　   (32/8)
+000270     SELECT   KNG     ASSIGN  TO   F3-MSD
+000280              ORGANIZATION    INDEXED
+000290              ACCESS          RANDOM
+000300              RECORD  KEY     KNG-KEY.
+000310***  プリンター
+000320     SELECT   PRINTF  ASSIGN  TO   P-PRN999.
+000330*
+000340 I-O-CONTROL.
+000350     APPLY     SHARED-MODE   ON   KZM-F
+000360     APPLY     SHARED-MODE   ON   FCTL-F
+000370     APPLY     SHARED-MODE   ON   KNG
+000380     APPLY     SHIFT-CODE    ON   PRINTF.
+000390**
+000400 DATA              DIVISION.
+000410 FILE              SECTION.
+000420***  科目残高マスタ
+000430     COPY  LKAZAN.
+000440***  コントロールファイル
+000450     COPY  FCTL.
+000460***  漢字科目マスタ　　　
+000470     COPY  KANGEL.
+000480***  プリンター
+000490 FD  PRINTF
+000500     LABEL       RECORD  OMITTED
+000510     LINAGE          IS       66.
+000520 01  PRINTR                  PIC  X(250).
+000530*
+000540 01  PRINTR1.
+000550     02  C-2B            PIC  X(05).                              2BYTE
+000560     02  F               PIC  X(01).
+000570     02  P-01            PIC  9(04).                              科目ＣＤ
+000580     02  F               PIC  X(03).
+000590     02  P-02            PIC  N(10).                              科目名　
+000600     02  F               PIC  X(03).
+000610     02  P-03            PIC  ---,---,---,--9.                    前期末残
+000620*
+000630 01  PRINTR2.
+000640     02  F               PIC  X(08).
+000650     02  FF     OCCURS 3.
+000660         03  P2-01           PIC  N(02).                          月　　　
+000670         03  PP2-01          PIC  N(01).
+000680         03  P2-02           PIC  ---,---,---,--9.                借方
+000690         03  PP2-02          PIC  N(01).
+000700         03  P2-03           PIC  ---,---,---,--9.                貸方
+000710         03  F               PIC  X(02).
+000720**
+000730 WORKING-STORAGE     SECTION.
+000740 77  ERR-STAT                PIC  X(02).
+000750 77  I                       PIC  9(02).
+000760***  リスト上の添字
+000770 77  J                       PIC  9(02).
+000780***  ファイル上の添字
+000790 77  Y                       PIC  9(02).
+000800***  ファイル項目の翌期実績の添字 ( 13 OR 14 OR 15 の 時がある。)
+000810 77  W-Z9                    PIC  Z9.
+000820***  編集項目
+000830 77  C2                      PIC  X(05)  VALUE  ""3FE04FE080"".
+000840 77  LCNT                    PIC  9(02).
+000850 77  PCNT                    PIC  9(05).
+000860 77  RTN-SW                  PIC  9(01).
+000870***  RTN-SW = 1 の時，MAIN-RTN へ戻る。
+000880 01  W-OWARI                 PIC  X(05).
+000890***  SPACEじゃなかったら，コントロールファイルのINVALIDで STOP RUN
+000900 01  W-CONTROL-TSUKI         PIC  9(02).
+000910***  決算月をたしていくのに使用。
+000920 01  KETSAN                  PIC  9(02).
+000930***  決算月を保存しておく。
+000940 01  WRITE-CNT               PIC  9(01).
+000950***  WRITE-CNT=4 になったら，改頁する。
+000960 01  HIZUKE                  PIC  9(06).                          ｼｽﾃﾑﾋｽﾞｹ
+000970 01  HIZUKER  REDEFINES  HIZUKE.
+000980     02  YY                  PIC  9(02).
+000990     02  MM                  PIC  9(02).
+001000     02  DD                  PIC  9(02).
+001010 01  W-AREA.
+001020     02  W-KACD-FROM         PIC  9(04).                          科目ＦＲ
+001030     02  W-KACD-TO           PIC  9(04).                          科目ＴＯ
+001040     02  W-KAKU              PIC  X(01).                          確認
+001050*
+001060*
+001070 01  W-AREA10.
+001080     02  W-AREA11     OCCURS 12.
+001090         03  W-01            PIC  X(02).
+001100*
+001110 01  MID-01.
+001120     02  F                   PIC  X(05) VALUE  ""3FE04FE080"".
+001130     02  F                   PIC  X(39) VALUE  SPACE.
+001140     02  F                   PIC  N(19) VALUE
+001150         NC"科　目　残　高　マ　ス　タ　リ　ス　ト".
+001160     02  F                   PIC  X(32) VALUE  SPACE.
+001170     02  M-YY                PIC  Z9.                             NEN
+001180     02  F                   PIC  N(01) VALUE  NC"年".
+001190     02  M-MM                PIC  Z9.                             TSUKI
+001200     02  F                   PIC  N(01) VALUE  NC"月".
+001210     02  M-DD                PIC  Z9.                             HI
+001220     02  F                   PIC  N(03) VALUE  NC"日作成".
+001230     02  F                   PIC  X(04) VALUE  SPACE.
+001240     02  M-PCNT              PIC  ZZZZ9.                          PCNT
+001250     02  F                   PIC  N(01) VALUE  NC"頁".
+001260*
+001270 01  MID-02.
+001280     02  F                   PIC  N(03) VALUE  NC"科　目".
+001290     02  F                   PIC  X(06) VALUE  SPACE.
+001300     02  F                   PIC  X(12) VALUE  "科   目   名".
+001310     02  F                   PIC  X(12) VALUE  SPACE.
+001320     02  F                   PIC  N(05) VALUE  NC"前期末残高".
+001330*
+001340 01  MID-03.
+001350     02  F                   PIC  N(03) VALUE  NC"コード".
+001360     02  F                   PIC  X(02) VALUE  SPACE.
+001370     02  F                   PIC  X(16) VALUE
+001380                             "<-------------- ".
+001390     02  F                   PIC  N(03) VALUE  NC"前　期".
+001400     02  F                   PIC  X(16) VALUE
+001410                             " -------------->".
+001420     02  F                   PIC  X(02) VALUE  SPACE.
+001430     02  F                   PIC  X(16) VALUE
+001440                             "<-------------- ".
+001450     02  F                   PIC  N(03) VALUE  NC"当　期".
+001460     02  F                   PIC  X(16) VALUE
+001470                             " -------------->".
+001480     02  F                   PIC  X(02) VALUE  SPACE.
+001490     02  F                   PIC  X(16) VALUE
+001500                             "<-------------- ".
+001510     02  F                   PIC  N(03) VALUE  NC"翌　期".
+001520     02  F                   PIC  X(16) VALUE
+001530                             " -------------->".
+001540*
+001550 01  MID-04.
+001560     02  F                   PIC  X(18) VALUE  SPACE.
+001570     02  FFF     OCCURS 3.
+001580         03  F                   PIC  X(07) VALUE  "借   方".
+001590         03  F                   PIC  X(04) VALUE  SPACE.
+001600         03  F                   PIC  N(01) VALUE  NC"／".
+001610         03  F                   PIC  X(04) VALUE  SPACE.
+001620         03  F                   PIC  X(07) VALUE  "貸   方".
+001630         03  F                   PIC  X(16) VALUE  SPACE.
+001640***
+001650 COPY  LWMSG.
+001660***
+001670 SCREEN             SECTION.
+001680 SD  CRT-X  END  STATUS  ESTAT.
+001690******************************
+001700*　　画面クリアー項目　　    *
+001710******************************
+001720 01  DSP-CLR.
+001730     03  LINE 1   CLEAR  SCREEN.
+001740 01  CLR-AREA.
+001750     03  LINE 06  COLUMN 33  VALUE "    ".                        科目ＦＲ
+001760     03  LINE 06  COLUMN 51  VALUE "    ".                        科目ＴＯ
+001770     03  LINE 24  COLUMN 77  VALUE " ".                           確認　　
+001780*******************
+001790*    画面表示     *
+001800*******************
+001810 01  DSP-AREA.
+001820     03  LINE 01  COLUMN 32  VALUE
+001830         " 科目残高マスタリスト "  REVERSE.
+001840     03  LINE 04  COLUMN 31  VALUE  "ＦＲＯＭ".
+001850     03  LINE 04  COLUMN 51  VALUE  "ＴＯ".
+001860     03  LINE 06  COLUMN 11  VALUE  "科目コード".
+001870     03  LINE 06  COLUMN 43  VALUE  "～".
+001880     03  LINE 24  COLUMN 61  VALUE  "確認 OK=1,NO=9 ( )".
+001890***********************
+001900*    画面入力         *
+001910***********************
+001920 01  ACP-AREA.
+001930     03  ACP-KACD-FROM      LINE 06  COLUMN 33  PIC 9(04)         科目ＦＲ
+001940         USING  W-KACD-FROM      NO  IFC  CHECK  OVERFLOW.
+001950     03  ACP-KACD-TO        LINE 06  COLUMN 51  PIC 9(04)         科目ＴＯ
+001960         USING  W-KACD-TO        NO  IFC  CHECK  OVERFLOW.
+001970     03  ACP-KAKU           LINE 24  COLUMN 77  PIC X(01)         確認　　
+001980         INTO   W-KAKU           NO  IFC  CHECK  OVERFLOW.
+001990 COPY  LSMSG.
+002000***
+002010 PROCEDURE          DIVISION.
+002020 HAJIME.
+002030     PERFORM  INI-RTN     THRU  INI-EX.
+002040     IF  W-OWARI NOT = SPACE
+002050         GO  TO  PROCE-010.
+002060     PERFORM  MAIN-RTN    THRU  MAIN-EX.
+002070 PROCE-010.
+002080     PERFORM  CLSE-ENT     THRU  CLSE-EXT.
+002090     STOP  RUN.
+002100**************************
+002110*    初期処理            *
+002120**************************
+002130 INI-RTN.
+002140     DISPLAY  DSP-CLR.
+002150     DISPLAY  DSP-AREA.
+002160     ACCEPT  HIZUKE  FROM  DATE.
+002170     OPEN  INPUT  KZM-F
+002180           INPUT  FCTL-F
+002190           INPUT  KNG.
+002200     MOVE  90     TO  LCNT.
+002210*
+002220     MOVE  "DATE  "     TO  FCTL-KEY.
+002230***  コントロールファイル　ＲＥＡＤ
+002240     READ  FCTL-F  WITH  UNLOCK  INVALID
+002250         DISPLAY  INV-MCT  DISP-BUZ-B
+002260         MOVE  "OWARI"     TO  W-OWARI
+002270         GO  TO  INI-EX.
+002280     MOVE  FCTL-KSMM     TO  KETSAN.
+002290     ADD  1     TO  KETSAN.
+002300     IF  KETSAN = 13
+002310         MOVE  1     TO  KETSAN.
+002320***  保存しておく。
+002330     MOVE  KETSAN     TO  W-CONTROL-TSUKI.
+002340***  足しておく。
+002350     MOVE  1        TO  I.
+002360 INI-010.
+002370     IF  I NOT < 13
+002380         GO  TO  INI-EX.
+002390     MOVE  W-CONTROL-TSUKI     TO  W-Z9.
+002400     MOVE  W-Z9                TO  W-01(I).
+002410     ADD  1     TO I.
+002420     ADD  1     TO  W-CONTROL-TSUKI.
+002430     IF  W-CONTROL-TSUKI = 13
+002440         MOVE  1     TO  W-CONTROL-TSUKI.
+002450     GO  TO  INI-010.
+002460 INI-EX.
+002470     EXIT.
+002480*****************************
+002490*    ＭＡＩＮ　処理　　　　 *
+002500*****************************
+002510 MAIN-RTN.
+002520     ACCEPT  ACP-KACD-FROM.                                       科目ＦＲ
+002530     DISPLAY  DISP-MSG-SPACE.
+002540     IF  ESTAT = "P9"
+002550         GO  TO  MAIN-EX.
+002560     IF  ESTAT NOT = "01" AND "06"
+002570         GO  TO  MAIN-RTN.
+002580*****DISPLAY  ACP-KACD-FROM.                                      D901219
+002590 MAIN-010.
+002600     ACCEPT  ACP-KACD-TO.                                         科目ＴＯ
+002610     IF  ESTAT = "09"
+002620         GO  TO  MAIN-RTN.
+002630     IF  ESTAT NOT = "01" AND "06"
+002640         GO  TO  MAIN-010.
+002650     IF  W-KACD-TO = ZERO
+002660         MOVE  ALL "9"     TO  W-KACD-TO.
+002670*****DISPLAY  ACP-KACD-TO.                                        D901219
+002680     IF  W-KACD-FROM > W-KACD-TO
+002690         GO  TO  MAIN-010.
+002700 MAIN-020.
+002710     ACCEPT  ACP-KAKU.                                            確認
+002720     IF  ESTAT = "09"
+002730         GO  TO  MAIN-RTN.
+002740     IF  W-KAKU = 9                                               = "02"
+002750         DISPLAY  CAN-01
+002760         DISPLAY  CLR-AREA
+002770         INITIALIZE  W-AREA
+002780         GO  TO  MAIN-RTN.
+002790     IF  W-KAKU NOT = 1                                           = "04"
+002800         GO  TO  MAIN-020.
+002810     PERFORM  LST-RTN     THRU  LST-EX.
+002820     IF  RTN-SW = 1
+002830         MOVE  ZERO     TO  RTN-SW
+002840         GO  TO  MAIN-RTN.
+002850 MAIN-EX.
+002860     EXIT.
+002870************************
+002880*    終了処理          *
+002890************************
+002900 CLSE-ENT.
+002910     CLOSE  KZM-F  FCTL-F  KNG.
+002920 CLSE-EXT.
+002930     EXIT.
+002940*************************
+002950*    ＬＳＴ－ＲＴＮ     *
+002960*************************
+002970 LST-RTN.
+002980     OPEN  OUTPUT  PRINTF.
+002990     MOVE  W-KACD-FROM     TO  KZM-KEY.                           科目ＣＤ
+003000     START  KZM-F  KEY  NOT < KZM-KEY  INVALID
+003010         DISPLAY  CLR-AREA
+003020         DISPLAY  INV-D01
+003030***  データ未登録　表示
+003040         MOVE  1     TO  RTN-SW
+003050         GO  TO  LST-999.
+003060**
+003070 LST-010.
+003080***  科目残高マスタ　ＲＥＡＤ
+003090     READ  KZM-F  NEXT  WITH  UNLOCK  AT  END
+003100         GO  TO  LST-999.                                         I.151211
+003110*****    GO  TO  LST-EX.                                          D.151211
+003120***  科目コードでよみ飛ばし
+003130     IF  KZM-KMCD > W-KACD-TO
+003140         IF  LCNT = 90
+003150             DISPLAY  CLR-AREA
+003160             DISPLAY  INV-D01
+003170***  データ未登録　表示
+003180             MOVE  1     TO  RTN-SW
+003190             GO  TO  LST-999
+003200         ELSE
+003210             GO  TO  LST-999.
+003220     IF  ( LCNT NOT < 62 )  OR  ( WRITE-CNT = 4 )
+003230         PERFORM  MID-RTN     THRU  MID-EX.
+003240     PERFORM  MEI-RTN     THRU  MEI-EX.
+003250     GO  TO  LST-010.
+003260 LST-999.
+003270     CLOSE  PRINTF.
+003280 LST-EX.
+003290     EXIT.
+003300****************************
+003310*    ＭＩＤ－ＲＴＮ　      *
+003320****************************
+003330 MID-RTN.
+003340*
+003350     MOVE  ZERO     TO  WRITE-CNT.
+003360*
+003370     IF  LCNT NOT = 90
+003380         MOVE  SPACE     TO  PRINTR
+003390         WRITE  PRINTR  AFTER  PAGE.
+003400     ADD  1     TO  PCNT.
+003410     MOVE  PCNT   TO  M-PCNT.
+003420     MOVE  YY     TO  M-YY.
+003430     MOVE  MM     TO  M-MM.
+003440     MOVE  DD     TO  M-DD.
+003450*
+003460     WRITE  PRINTR  FROM  MID-01  AFTER 1.
+003470     MOVE  SPACE     TO  PRINTR.
+003480     WRITE  PRINTR  FROM  MID-02  AFTER 2.
+003490     MOVE  SPACE     TO  PRINTR.
+003500     WRITE  PRINTR  FROM  MID-03  AFTER 1.
+003510     MOVE  SPACE     TO  PRINTR.
+003520     WRITE  PRINTR  FROM  MID-04  AFTER 1.
+003530     MOVE  SPACE     TO  PRINTR.
+003540     MOVE  6         TO  LCNT.
+003550 MID-EX.
+003560     EXIT.
+003570***************************
+003580*    ＭＥＩ－ＲＴＮ 　　  *
+003590***************************
+003600 MEI-RTN.
+003610*
+003620     ADD  1     TO  WRITE-CNT.
+003630*
+003640     MOVE  KZM-KMCD     TO  K-ACCD.                               科目ＣＤ
+003650     MOVE  ZERO         TO  K-HOCD.                               補助ＣＤ
+003660***  漢字科目マスタ　ＲＥＡＤ
+003670     READ  KNG  WITH  UNLOCK  INVALID
+003680         MOVE  SPACE     TO  KNGNMN.
+003690     MOVE  C2     TO  C-2B.
+003700     MOVE  KZM-KMCD     TO  P-01.                                 科目ＣＤ
+003710     MOVE  KNGNMN       TO  P-02.                                 科目名
+003720     MOVE  KZM-ZAN      TO  P-03.                                 前期末残
+003730     WRITE  PRINTR  AFTER 2.
+003740     MOVE  SPACE     TO  PRINTR.
+003750*
+003760     MOVE  1          TO  I.
+003770     MOVE  KETSAN     TO  J.
+003780     MOVE  13         TO  Y.
+003790*
+003800 MEI-010.
+003810     IF  I NOT < 13
+003820         GO  TO  MEI-EX.
+003830     MOVE  NC"月"     TO  PP2-01(1)  PP2-01(2).
+003840     MOVE  NC"／"     TO  PP2-02(1)  PP2-02(2).
+003850     MOVE  W-01(I)    TO  P2-01(1)  P2-01(2).                     月
+003860     MOVE  KZM-ZJKR(J)     TO  P2-02(1).                          前期借方
+003870     MOVE  KZM-ZJKS(J)     TO  P2-03(1).                          前期貸方
+003880     MOVE  KZM-TJKR(J)     TO  P2-02(2).                          当期借方
+003890     MOVE  KZM-TJKS(J)     TO  P2-03(2).                          当期貸方
+003900     IF  I  NOT > 3
+003910         MOVE  NC"月"     TO  PP2-01(3)
+003920         MOVE  NC"／"     TO  PP2-02(3)
+003930         MOVE  W-01(I)    TO  P2-01(3)                            月
+003940         MOVE  KZM-TJKR(Y)     TO  P2-02(3)                       翌期借方
+003950         MOVE  KZM-TJKS(Y)     TO  P2-03(3)                       翌期貸方
+003960         ADD  1     TO  Y.
+003970     WRITE  PRINTR  AFTER 1.
+003980     MOVE  SPACE     TO  PRINTR.
+003990*
+004000     ADD  1     TO  I  J.
+004010     IF  J = 13
+004020         MOVE  1     TO  J.
+004030     GO  TO  MEI-010.
+004040 MEI-EX.
+004050     EXIT.
+004060**
+004070 COPY  LPMSG.
+004080**
+

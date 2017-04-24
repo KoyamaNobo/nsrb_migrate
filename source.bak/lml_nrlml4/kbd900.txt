@@ -1,0 +1,820 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. KBD900.
+000030*********************************************************
+000040*    PROGRAM         :  購買支払修正入力　　　　　　    *
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :  SCBD90                          *
+000070*        変更　　　  :  62/06/05                        *
+000080*    COMPILE TYPE    :  COBOL                           *
+000090*********************************************************
+000100 ENVIRONMENT DIVISION.
+000110 CONFIGURATION SECTION.
+000120 SOURCE-COMPUTER. SYSTEM3100.
+000130 OBJECT-COMPUTER. SYSTEM3100.
+000140 INPUT-OUTPUT SECTION.
+000150 FILE-CONTROL.
+000160     COPY LIBCSE.
+000170     SELECT KBNO-M ASSIGN TO KBNO-MSD
+000180         ORGANIZATION INDEXED
+000190         RECORD KEY BNO-KEY
+000200         ACCESS MODE RANDOM
+000210         FILE STATUS IS ERR-STAT.
+000220     SELECT S-M ASSIGN TO S-MSD
+000230         ORGANIZATION INDEXED
+000240         RECORD KEY S-KEY
+000250         ACCESS MODE RANDOM
+000260         FILE STATUS IS ERR-STAT.
+000270     SELECT JSS-F ASSIGN TO JSS-MSD
+000280         ORGANIZATION INDEXED
+000290         RECORD KEY JS-KEY
+000300         ACCESS MODE DYNAMIC
+000310         FILE STATUS IS ERR-STAT.
+000320     SELECT SP-F ASSIGN TO P-PRN999.
+000330 I-O-CONTROL.
+000340     APPLY SHARED-MODE ON M-DATE
+000350     APPLY SHARED-MODE ON S-M
+000360     APPLY SHARED-MODE ON JSS-F
+000370     APPLY SHIFT-CODE  ON SP-F.
+000380 DATA DIVISION.
+000390 FILE SECTION.
+000400     COPY LIBFDD.
+000410     COPY LIKBNO.
+000420     COPY LISM.
+000430     COPY LSPF.
+000440 FD  JSS-F
+000450*****BLOCK  3 RECORDS                                             D.950418
+000460     BLOCK  5 RECORDS                                             I.950418
+000470     LABEL RECORD IS STANDARD
+000480     VALUE OF IDENTIFICATION "JSSF".                              C 62/06
+000490 01  JSS-R.
+000500     02  JS-DC          PIC  9(002).
+000510     02  JS-DATE        PIC  9(008).                              I.970822
+000520*****02  JS-DATE        PIC  9(006).                              D.970822
+000530     02  JS-SCD         PIC  9(004).
+000540     02  JS-JCD         PIC  9(006).
+000550     02  JS-SU          PIC S9(007)V9(02).
+000560     02  JS-T           PIC S9(006)V9(02).                          C 62/0
+000570     02  JS-KIN         PIC S9(008).                              I.990518
+000580     02  JS-SHZ         PIC S9(007).                              I.990531
+000590*****02  JS-SHZ         PIC S9(006).                              D.990531
+000600*****02  JS-KIN         PIC S9(009).                              D.990518
+000610     02  JS-CD          PIC  9(006).
+000620     02  JS-SJCD        PIC  9(006).                              I.990518
+000630     02  JS-NNO         PIC  9(006).                              I.990518
+000640     02  JS-FC          PIC  9(001).                              I.990518
+000650     02  JS-YC          PIC  9(001).
+000660     02  JS-TC          PIC  9(001).
+000670     02  JS-SEC         PIC  9(001).                                A 62/0
+000680     02  JS-SC          PIC  9(001).
+000690*****02  JS-SJCD        PIC  9(006).                              D.990518
+000700*****02  JS-NNO         PIC  9(006).                              D.990518
+000710*****02  JS-FC          PIC  9(001).                              D.990518
+000720*****02  JS-SHZ         PIC S9(007).                              D.990518
+000730     02  JS-BSC         PIC  9(001).                              I.980417
+000740*****02  F              PIC  X(009).                              D.990518
+000750*****02  F              PIC  X(001).                              D.950418
+000760*****02  F              PIC  X(012).                              D.970822
+000770*****02  F              PIC  X(010).                              D.980417
+000780*****02  JS-DP          PIC  9(006).                              D.980417
+000790*****02  F              PIC  X(006).                              D.990518
+000800*****02  F              PIC  X(019).                              D.990531
+000810     02  F              PIC  X(018).                              D.990531
+000820     02  JS-KEY.
+000830       03  JS-DNO       PIC  X(006).
+000840       03  JS-GNO       PIC  9(001).
+000850     02  JS-PCNT        PIC  9(001).
+000860*****02  F              PIC  X(002).                              D.990518
+000870 WORKING-STORAGE SECTION.
+000880 01  HEAD1.
+000890     02  W-20K          PIC  X(005) VALUE ""3FE04FE080"".
+000900     02  F              PIC  X(025) VALUE SPACE.
+000910     02  F              PIC  N(021) VALUE
+000920          NC"＊＊＊　　購買　支払修正　リスト　　＊＊＊".
+000930     02  F              PIC  X(016) VALUE SPACE.
+000940     02  F              PIC  X(005) VALUE "DATE ".
+000950     02  H-DATE         PIC 99B99B99.
+000960     02  F              PIC  X(007) VALUE "     P.".
+000970     02  H-PAGE         PIC Z9.
+000980 01  HEAD2.
+000990     02  W-15K          PIC  X(005) VALUE ""3FE04F40A0"".
+001000     02  F              PIC  X(001) VALUE SPACE.
+001010     02  F              PIC  N(004) VALUE NC"日　　付".
+001020     02  F              PIC  X(008) VALUE "   ｺｰﾄﾞ ".
+001030     02  F              PIC  N(010) VALUE
+001040          NC"仕　　入　　先　　名".
+001050     02  F              PIC  X(022) VALUE SPACE.
+001060     02  F              PIC  N(006) VALUE NC"伝票№　行　".
+001070     02  F              PIC  X(001) VALUE SPACE.
+001080     02  F              PIC  N(004) VALUE NC"支払区分".
+001090     02  F              PIC  X(006) VALUE SPACE.
+001100     02  F              PIC  N(004) VALUE NC"金　　額".
+001110     02  F              PIC  X(005) VALUE SPACE.
+001120     02  F              PIC  N(004) VALUE NC"　消費税".
+001130     02  F              PIC  X(008) VALUE SPACE.
+001140     02  F              PIC  N(004) VALUE NC"合　　計".
+001150 01  W-P.
+001160     02  P-DATE         PIC 99/99/99.
+001170     02  F              PIC  X(002).
+001180     02  P-SCD          PIC  9(004).
+001190     02  F              PIC  X(001).
+001200     02  P-SNA          PIC  N(024).
+001210     02  F              PIC  X(001).
+001220     02  P-DNO          PIC  9(006).
+001230     02  P-V            PIC  X(001).
+001240     02  P-GNO          PIC  9(001).
+001250     02  F              PIC  X(005).
+001260     02  P-SC           PIC  9(001).
+001270     02  P-KIN          PIC --,---,---,--9.
+001280     02  P-SHZ          PIC ---,---,--9.
+001290     02  P-KINT         PIC --,---,---,--9.
+001300 01  W-R.
+001310     02  WR-DC          PIC  9(002).
+001320     02  WR-DCD  REDEFINES WR-DC.
+001330       03  WR-DC1       PIC  9(001).
+001340       03  WR-DC2       PIC  9(001).
+001350*****02  WR-DATE        PIC  9(006).                              D.970822
+001360     02  WR-DATE        PIC  9(008).                              I.970822
+001370     02  WR-SCD         PIC  9(004).
+001380     02  WR-JCD         PIC  9(006).
+001390     02  WR-SU          PIC S9(007)V9(02).
+001400     02  WR-T           PIC S9(006)V9(02).
+001410     02  WR-KIN         PIC S9(008).                              I.990518
+001420     02  WR-SHZ         PIC S9(007).                              I.990531
+001430*****02  WR-SHZ         PIC S9(006).                              D.990531
+001440*****02  WR-KIN         PIC S9(009).                              D.990518
+001450     02  WR-CD          PIC  9(006).
+001460     02  WR-CDD  REDEFINES WR-CD.
+001470       03  WR-CD1       PIC  9(002).
+001480       03  WR-CD2       PIC  9(002).
+001490       03  WR-CD3       PIC  9(002).
+001500     02  WR-SJCD        PIC  9(006).                              I.990518
+001510     02  WR-NNO         PIC  9(006).                              I.990518
+001520     02  WR-FC          PIC  9(001).                              I.990518
+001530     02  WR-YC          PIC  9(001).
+001540     02  WR-TC          PIC  9(001).
+001550     02  WR-SEC         PIC  9(001).                                 A 62/
+001560     02  WR-SC          PIC  9(001).
+001570*****02  WR-SJCD        PIC  9(006).                              D.990518
+001580*****02  WR-NNO         PIC  9(006).                              D.990518
+001590*****02  WR-FC          PIC  9(001).                              D.990518
+001600*****02  WR-SHZ         PIC S9(007).                              D.990518
+001610     02  WR-BSC         PIC  9(001).                              I.980417
+001620     02  F              PIC  X(018).                              I.990531
+001630*****02  F              PIC  X(019).                              D.990531
+001640*****02  F              PIC  X(015).                              D.990518
+001650*****02  F              PIC  X(001).                              D.950418
+001660*****02  F              PIC  X(012).                              D.970822
+001670*****02  F              PIC  X(010).                              D.980417
+001680*****02  WR-DP          PIC  9(006).                              D.980417
+001690     02  WR-KEY.
+001700       03  WR-DNO       PIC  9(006).
+001710       03  WR-GNO       PIC  9(001).
+001720     02  WR-PCNT        PIC  9(001).
+001730*****02  F              PIC  X(002).                              D.990518
+001740 01  W-ARD.
+001750*****02  W-RD    OCCURS   6  PIC  X(085).                         D.950418
+001760     02  W-RD    OCCURS   6  PIC  X(102).                         I.950418
+001770 01  W-DATA.
+001780*****02  W-DATE         PIC  9(006).                              D.970822
+001790     02  W-DATE         PIC  9(008).                              I.970822
+001800     02  W-DATED REDEFINES W-DATE.
+001810       03  W-NG.
+001820*****    04  W-NEN      PIC  9(002).                              D.970822
+001830         04  W-NEN      PIC  9(004).                              I.970822
+001840         04  W-NENL  REDEFINES W-NEN.                             I.970822
+001850           05  W-NEN1   PIC  9(002).                              I.970822
+001860           05  W-NEN2   PIC  9(002).                              I.970822
+001870         04  W-GET      PIC  9(002).
+001880       03  W-NGL   REDEFINES W-NG.                                I.970822
+001890         04  F          PIC  9(002).                              I.970822
+001900         04  W-NGS      PIC  9(004).                              I.970822
+001910       03  W-PEY        PIC  9(002).
+001920     02  W-NGPL  REDEFINES W-DATE.                                I.970822
+001930       03  F            PIC  9(002).                              I.970822
+001940       03  W-NGPS       PIC  9(006).                              I.970822
+001950     02  W-SCD          PIC  9(004).
+001960     02  W-SC           PIC  9(001).
+001970     02  W-DNO          PIC  9(006).
+001980     02  W-L            PIC  9(002).
+001990     02  W-LD           PIC  9(002).
+002000     02  W-KINT         PIC S9(008).                              I.990518
+002010*****02  W-KINT         PIC S9(009).                              D.990518
+002020     02  W-GD.
+002030*****  03  W-GKIN       PIC S9(010).                              D.990518
+002040       03  W-GKIN       PIC S9(009).                              I.990518
+002050       03  W-GSHZ       PIC S9(007).
+002060       03  W-GKINT      PIC S9(009).                              I.990518
+002070*****  03  W-GKINT      PIC S9(010).                              D.990518
+002080*****02  HIZUKE         PIC  9(002).
+002090     02  W-DMM          PIC  9(001).
+002100     02  CNT            PIC  9(001).
+002110     02  CNTD           PIC  9(001).
+002120     02  W-ACT          PIC  9(001) VALUE ZERO.
+002130     02  W-EC           PIC  9(001) VALUE ZERO.
+002140     02  W-LIST         PIC  9(001).
+002150     02  W-PC           PIC  9(001) VALUE ZERO.
+002160     02  W-PAGE         PIC  9(002) VALUE ZERO.
+002170     02  W-BNG          PIC  9(004).
+002180     02  W-SCNAD.
+002190       03  F            PIC  N(015) VALUE
+002200            NC"現　金　　振　込　　小切手　　".
+002210       03  F            PIC  N(015) VALUE
+002220            NC"手　形　　売掛相殺　その他相殺".
+002230     02  W-SCND  REDEFINES W-SCNAD.
+002240       03  W-SCN   OCCURS   6  PIC  N(005).
+002250 01  ERR-STAT           PIC  X(002).
+002260     COPY LSTAT.
+002270 SCREEN SECTION.
+002280 SD  C-CRT
+002290     END STATUS IS ESTAT.
+002300 01  C-CLEAR.
+002310     02  C-CL    LINE   1  CLEAR SCREEN.
+002320 01  C-MID.
+002330     02  LINE   3  COLUMN  10   PIC  N(023) VALUE
+002340          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002350     02  LINE   4  COLUMN  10   PIC  N(023) VALUE
+002360          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002370     02  LINE   5  COLUMN  10   PIC  N(023) VALUE
+002380          NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+002390     02  LINE   6  COLUMN  10   PIC  N(023) VALUE
+002400          NC"＊＊＊　　購買　支払修正　入力リスト　　＊＊＊".
+002410     02  LINE   7  COLUMN  10   PIC  N(023) VALUE
+002420          NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+002430     02  LINE   8  COLUMN  10   PIC  N(023) VALUE
+002440          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002450     02  LINE   9  COLUMN  10   PIC  N(023) VALUE
+002460          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002470     02  LINE  14  COLUMN  13   PIC  X(040) VALUE
+002480          "全件=1  未作表分=5  作表しない=9    ﾘﾀｰﾝ".
+002490     02  LINE  22  COLUMN  25   PIC  X(022) VALUE
+002500          "確認  OK=1 NO=9   ﾘﾀｰﾝ".
+002510 01  C-ACP.
+002520     02  A-ACT   LINE   3  COLUMN  42  PIC  9(001)
+002530          USING W-ACT   CHECK OVERFLOW NO IFC.
+002540     02  A-DNO   LINE   5  COLUMN  45  PIC  9(006)
+002550          USING W-DNO   CHECK OVERFLOW NO IFC.
+002560     02  A-DATE  LINE   6  COLUMN  10  PIC  9(006)
+002570          USING W-NGPS  CHECK OVERFLOW NO IFC.                    I.970822
+002580*****     USING W-DATE  CHECK OVERFLOW NO IFC.                    D.970822
+002590     02  A-SCD   LINE   7  COLUMN  10  PIC  9(004)
+002600          USING W-SCD   CHECK OVERFLOW NO IFC.
+002610     02  LINE W-L.
+002620       03  A-SC    COLUMN   5  PIC  9(001)
+002630            USING W-SC    CHECK OVERFLOW NO IFC.
+002640*****  03  A-KIN   COLUMN  19  PIC S9(009)                        D.990518
+002650       03  A-KIN   COLUMN  20  PIC S9(008)                        I.990518
+002660            USING WR-KIN  CHECK OVERFLOW NO IFC.
+002670*****  03  A-SHZ   COLUMN  32  PIC S9(006)                        D.990531
+002680       03  A-SHZ   COLUMN  31  PIC S9(007)
+002690            USING WR-SHZ  CHECK OVERFLOW NO IFC.
+002700     02  A-LIST  LINE  14  COLUMN  48  PIC  9(001)
+002710          USING W-LIST  CHECK OVERFLOW NO IFC.
+002720     02  A-DMM   LINE  22  COLUMN  42  PIC  9(001)
+002730          USING W-DMM   CHECK OVERFLOW NO IFC.
+002740 01  C-DSP.
+002750     02  D-SNA   LINE   7  COLUMN  24  PIC  N(024) FROM  S-NAME.
+002760     02  D-DATA  LINE W-L.
+002770       03  D-SCN   COLUMN   7  PIC  N(005)     FROM  W-SCN(W-SC).
+002780       03  D-KIN   COLUMN  20  PIC ZZZZZZZ9-   FROM  WR-KIN.      D.990518
+002790       03  D-SHZ   COLUMN  31  PIC ZZZZZZ9-    FROM  WR-SHZ.      I.990518
+002800*****  03  D-SHZ   COLUMN  32  PIC ZZZZZ9-     FROM  WR-SHZ.      D.990531
+002810       03  D-KINT  COLUMN  42  PIC ZZZZZZZ9-   FROM  W-KINT.      I.990518
+002820*****  03  D-KIN   COLUMN  19  PIC ZZZZZZZZ9-  FROM  WR-KIN.      D.990518
+002830*****  03  D-SHZ   COLUMN  31  PIC ZZZZZZ9-    FROM  WR-SHZ.      D.990518
+002840*****  03  D-KINT  COLUMN  41  PIC ZZZZZZZZ9-  FROM  W-KINT.      D.990518
+002850     02  D-TD    LINE  16.
+002860*****  03  COLUMN  18  PIC ZZZZZZZZZ9-  FROM  W-GKIN.             D.990518
+002870       03  COLUMN  19  PIC ZZZZZZZZ9-   FROM  W-GKIN.             I.990518
+002880       03  COLUMN  30  PIC ZZZZZZZ9-    FROM  W-GSHZ.
+002890       03  COLUMN  41  PIC ZZZZZZZZ9-   FROM  W-GKINT.            I.990518
+002900*****  03  COLUMN  40  PIC ZZZZZZZZZ9-  FROM  W-GKINT.            D.990518
+002910 01  C-SPC.
+002920     02  LINE W-L.
+002930       03  COLUMN   5  PIC  X(012) VALUE "            ".
+002940       03  COLUMN  20  PIC  X(009) VALUE "         ".             I.990518
+002950       03  COLUMN  31  PIC  X(008) VALUE "        ".              I.990531
+002960*****  03  COLUMN  32  PIC  X(007) VALUE "       ".               D.990531
+002970       03  COLUMN  42  PIC  X(009) VALUE "         ".             I.990518
+002980*****  03  COLUMN  19  PIC  X(010) VALUE "          ".            D.990518
+002990*****  03  COLUMN  31  PIC  X(008) VALUE "        ".              D.990518
+003000*****  03  COLUMN  41  PIC  X(010) VALUE "          ".            D.990518
+003010 01  C-ERR.
+003020     02  LINE  24.
+003030       03  E-STAT  COLUMN  10   PIC  X(002) FROM  ERR-STAT.
+003040       03  E-ME1   COLUMN  15   PIC  X(015) VALUE
+003050            "***  SM ﾅｼ  ***".
+003060       03  E-ME3   COLUMN  15   PIC  X(021) VALUE
+003070            "***  PROGRAM ｴﾗｰ  ***".
+003080       03  E-ME4   COLUMN  15   PIC  X(018) VALUE
+003090            "***  ｺｰﾄﾞ ｴﾗｰ  ***".
+003100       03  E-ME5   COLUMN  15   PIC  X(018) VALUE
+003110            "***  KBNOM ﾅｼ  ***".
+003120       03  E-ME6   COLUMN  15   PIC  X(027) VALUE
+003130            "***  KBNOM REWRITE ｴﾗｰ  ***".
+003140       03  E-ME7   COLUMN  15   PIC  X(017) VALUE
+003150            "***  DATA ﾅｼ  ***".
+003160       03  E-ME8   COLUMN  15   PIC  X(024) VALUE
+003170            "***  JSSF WRITE ｴﾗｰ  ***".
+003180       03  E-ME9   COLUMN  15   PIC  X(025) VALUE
+003190            "***  JSSF DELETE ｴﾗｰ  ***".
+003200       03  E-ME10  COLUMN  15   PIC  X(026) VALUE
+003210            "***  JSSF REWRITE ｴﾗｰ  ***".
+003220       03  E-ME11  COLUMN  15   PIC  X(021) VALUE
+003230            "***  ｼｲﾚ ﾃﾞﾝﾋﾟｮｳ  ***".
+003240       03  E-ME72  COLUMN  15   PIC  N(013) VALUE                 I.930830
+003250            NC"日次更新後、入力して下さい".                       I.930830
+003260       03  E-ME78  COLUMN   5   PIC  N(002) VALUE NC"連絡".       I.930830
+003270       03  E-ME98  COLUMN  75   PIC  X(005) VALUE ""27"J"05"".
+003280       03  E-ME99  COLUMN  75   PIC  X(005) VALUE ""27"B"05"".
+003290*****  03  E-CL    COLUMN  10   PIC  X(050) VALUE                 D.930830
+003300*****       "                                                  ". D.930830
+003310       03  E-CL.                                                  I.930830
+003320         04  COLUMN   1   PIC  X(040) VALUE                       I.930830
+003330              "                                        ".         I.930830
+003340         04  COLUMN  41   PIC  X(040) VALUE                       I.930830
+003350              "                                        ".         I.930830
+003360     COPY LIBSCR.
+003370 PROCEDURE DIVISION.
+003380 M-020.
+003390     COPY LIBCPR.
+003400     MOVE D-NBNG TO W-BNG.
+003410     MOVE DATE-05R TO H-DATE.
+003420     DISPLAY C-CLEAR.
+003430     OPEN I-O KBNO-M.
+003440*****MOVE SPACE TO BNO-KEY.
+003450*****MOVE "01" TO BNO-KEYD.
+003460*****READ KBNO-M INVALID KEY
+003470*****    DISPLAY E-ME5 E-ME99
+003480*****    CLOSE KBNO-M
+003490*****    DISPLAY C-CLEAR
+003500*****    STOP RUN.
+003510*****MOVE BNO-DATE TO HIZUKE.
+003520     MOVE SPACE TO BNO-KEY.
+003530     MOVE "02" TO BNO-KEYD.
+003540     READ KBNO-M INVALID KEY
+003550         DISPLAY E-ME78 E-ME5 E-ME99                              C.930830
+003560         CLOSE KBNO-M
+003570         DISPLAY C-CLEAR
+003580         STOP RUN.
+003590*
+003600     OPEN INPUT S-M.
+003610     OPEN I-O JSS-F.
+003620     CALL "SCBD90".
+003630 M-040.
+003640     ACCEPT A-ACT.
+003650     IF ESTAT NOT = HTB AND SKP
+003660         GO TO M-040.
+003670     IF W-ACT = 9
+003680         GO TO M-700.
+003690     IF W-ACT < 1 OR > 3
+003700         GO TO M-040.
+003710     IF W-ACT = 1
+003720         GO TO M-160.
+003730 M-100.
+003740     CALL "SCBD90".
+003750     DISPLAY A-ACT.
+003760 M-120.
+003770     ACCEPT A-DNO.
+003780     DISPLAY E-CL.
+003790     IF ESTAT = BTB
+003800         GO TO M-040.
+003810     IF ESTAT NOT = HTB AND SKP
+003820         GO TO M-120.
+003830     MOVE ZERO TO JS-KEY.
+003840     MOVE W-DNO TO JS-DNO.
+003850     START JSS-F KEY NOT < JS-KEY INVALID KEY
+003860         DISPLAY E-ME7 E-ME98
+003870         GO TO M-120.
+003880     READ JSS-F NEXT RECORD AT END
+003890         DISPLAY E-ME7 E-ME98
+003900         GO TO M-120.
+003910     IF JS-DNO NOT = W-DNO
+003920         DISPLAY E-ME7 E-ME98
+003930         GO TO M-120.
+003940     IF JS-DC NOT = 30
+003950         DISPLAY E-ME11 E-ME98
+003960         GO TO M-120.
+003970     PERFORM S-40 THRU S-65.
+003980     IF W-ACT = 3
+003990         GO TO M-480.
+004000 M-160.
+004010     MOVE ZERO TO W-R.
+004020     IF W-ACT = 1
+004030         CALL "SCBD90"
+004040         DISPLAY A-ACT.
+004050     ACCEPT A-DATE.
+004060     IF ESTAT = BTB
+004070         IF W-ACT = 1
+004080             GO TO M-040
+004090           ELSE
+004100             GO TO M-120.
+004110     IF ESTAT NOT = HTB AND SKP                                   CC
+004120         GO TO M-160.
+004130     IF (W-GET < 1 OR > 12) OR (W-PEY < 1 OR > 31)
+004140         GO TO M-160.
+004150*****IF W-NG NOT = W-BNG                                          D.970822
+004160     IF W-NGS NOT = W-BNG                                         I.970822
+004170         GO TO M-160.
+004180     MOVE ZERO TO W-NEN1.                                         I.970822
+004190     IF W-NEN2 >= DATE-NF1 AND <= DATE-NT1                        I.970822
+004200         ADD DATE-NC1 TO W-NEN.                                   I.970822
+004210     IF W-NEN2 >= DATE-NF2 AND <= DATE-NT2                        I.970822
+004220         ADD DATE-NC2 TO W-NEN.                                   I.970822
+004230*****IF HIZUKE NOT < W-PEY
+004240*****    GO TO M-160.
+004250 M-180.
+004260     IF W-ACT = 1
+004270         CALL "SCBD90"
+004280         MOVE ZERO TO W-ARD W-SCD
+004290         COMPUTE W-DNO = BNO-DNO1 + 1
+004300         DISPLAY A-ACT A-DNO A-DATE.
+004310     ACCEPT A-SCD.
+004320     IF ESTAT = BTB
+004330         GO TO M-160.
+004340     IF ESTAT NOT = HTB AND SKP                                   CC
+004350         GO TO M-180.
+004360     MOVE W-SCD TO S-KEY.
+004370     READ S-M WITH UNLOCK INVALID KEY
+004380         DISPLAY E-ME1 E-ME98
+004390         GO TO M-180.
+004400     DISPLAY D-SNA.
+004410     MOVE 9 TO W-L.
+004420     MOVE ZERO TO CNT.
+004430 M-200.
+004440     ADD 1 TO CNT.
+004450     ADD 1 TO W-L.
+004460     IF CNT = 7
+004470         MOVE W-L TO W-LD
+004480         GO TO M-420.
+004490     MOVE W-RD(CNT) TO W-R.
+004500 M-220.
+004510     ACCEPT A-SC.
+004520     IF ESTAT = BTB
+004530         GO TO M-360.
+004540*****IF ESTAT = C1                                                D.000707
+004550     IF ESTAT = ADV                                               I.000707
+004560         MOVE CNT TO CNTD
+004570         MOVE W-L TO W-LD
+004580         GO TO M-400.
+004590     IF ESTAT NOT = HTB AND SKP                                   CC
+004600         GO TO M-220.
+004610     IF W-SC < 1 OR > 6
+004620         GO TO M-220.
+004630     MOVE W-SC TO WR-SC.
+004640     DISPLAY D-SCN.
+004650 M-240.
+004660     ACCEPT A-KIN.
+004670     IF ESTAT = BTB
+004680         GO TO M-220.
+004690     IF ESTAT NOT = HTB AND SKP                                   CC
+004700         GO TO M-240.
+004710     DISPLAY D-KIN.
+004720 M-260.
+004730     ACCEPT A-SHZ.
+004740     IF ESTAT = BTB
+004750         GO TO M-240.
+004760     IF ESTAT NOT = HTB AND SKP                                   CC
+004770         GO TO M-260.
+004780     COMPUTE W-KINT = WR-KIN + WR-SHZ.
+004790     DISPLAY D-SHZ D-KINT.
+004800     IF ZERO = WR-KIN AND WR-SHZ
+004810         GO TO M-260.
+004820 M-300.
+004830     MOVE 30 TO WR-DC.
+004840     MOVE W-DATE TO WR-DATE.
+004850     MOVE W-SCD TO WR-SCD.
+004860     MOVE W-DNO TO WR-DNO.
+004870     MOVE CNT TO WR-GNO.
+004880*****MOVE 999999 TO WR-DP.                                        D.980417
+004890     MOVE W-R TO W-RD(CNT).
+004900     GO TO M-200.
+004910 M-360.
+004920     IF CNT = 1
+004930         GO TO M-180.
+004940     SUBTRACT 1 FROM CNT.
+004950     SUBTRACT 1 FROM W-L.
+004960     MOVE W-RD(CNT) TO W-R.
+004970     GO TO M-260.
+004980 M-400.
+004990     DISPLAY C-SPC.
+005000     MOVE ZERO TO W-R.
+005010     MOVE W-R TO W-RD(CNTD)
+005020     ADD 1 TO CNTD.
+005030     ADD 1 TO W-L.
+005040     IF CNTD NOT = 7
+005050         GO TO M-400.
+005060 M-420.
+005070     MOVE ZERO TO CNTD W-GD.
+005080 M-440.
+005090     ADD 1 TO CNTD.
+005100     IF CNTD NOT = 7
+005110         MOVE W-RD(CNTD) TO W-R
+005120         ADD WR-KIN TO W-GKIN
+005130         ADD WR-SHZ TO W-GSHZ
+005140         COMPUTE W-KINT = WR-KIN + WR-SHZ
+005150         ADD W-KINT TO W-GKINT
+005160         GO TO M-440.
+005170     DISPLAY D-TD.
+005180     MOVE W-LD TO W-L.
+005190 M-480.
+005200     ACCEPT A-DMM.
+005210     IF ESTAT = BTB
+005220         IF W-ACT = 3
+005230             GO TO M-120
+005240           ELSE
+005250             GO TO M-360.
+005260     IF ESTAT NOT = HTB AND SKP                                   CC
+005270         GO TO M-480.
+005280     IF W-DMM = 9
+005290         MOVE ZERO TO W-R
+005300         IF W-ACT = 1
+005310             GO TO M-180
+005320           ELSE
+005330             GO TO M-100.
+005340     IF W-DMM NOT = 1
+005350         GO TO M-480.
+005360****************   ファイル　登録   *****************
+005370 M-500.
+005380     IF W-ACT NOT = 1
+005390         GO TO M-560.
+005400     MOVE ZERO TO CNT.
+005410 M-520.
+005420     DISPLAY E-CL.
+005430     ADD 1 TO CNT.
+005440     IF CNT = 7
+005450         GO TO M-680.
+005460     MOVE W-RD(CNT) TO W-R.
+005470     IF WR-DATE = ZERO
+005480         GO TO M-680.
+005490     MOVE ZERO TO JSS-R.
+005500     MOVE W-R TO JSS-R.
+005510     WRITE JSS-R INVALID KEY
+005520          GO TO M-530.                                            I.930830
+005530     CALL "CBLTCLS" USING JSS-F.                                  I.930824
+005540     GO TO M-540.                                                 I.930830
+005550 M-530.                                                           I.930830
+005560     DISPLAY E-STAT E-ME8 E-ME99.                                 C.930830
+005570     IF ERR-STAT = "24"                                           I.930830
+005580         DISPLAY E-CL                                             I.930830
+005590         DISPLAY E-ME72 E-ME99                                    I.930830
+005600       ELSE                                                       I.930830
+005610         DISPLAY E-ME78 E-ME99.                                   I.930830
+005620     MOVE 5 TO W-EC.                                              I.930830
+005630     GO TO M-680.
+005640 M-540.                                                           I.930830
+005650     IF CNT NOT = 1
+005660         GO TO M-520.
+005670     MOVE W-DNO TO BNO-DNO1.
+005680     REWRITE KBNO-R INVALID KEY
+005690         DISPLAY E-ME78 E-STAT E-ME6 E-ME99                       C.930830
+005700         MOVE 5 TO W-EC
+005710         GO TO M-680.
+005720     GO TO M-520.
+005730****************   ファイル　修正   *****************
+005740 M-560.
+005750     IF W-ACT NOT = 2
+005760         GO TO M-660.
+005770     MOVE ZERO TO CNT.
+005780 M-580.
+005790     DISPLAY E-CL.
+005800     ADD 1 TO CNT.
+005810     IF CNT = 7
+005820         GO TO M-680.
+005830     MOVE W-RD(CNT) TO W-R.
+005840     IF WR-DATE = ZERO
+005850         GO TO M-620.
+005860     MOVE WR-KEY TO JS-KEY.
+005870     READ JSS-F INVALID KEY
+005880         GO TO M-600.
+005890     MOVE W-R TO JSS-R.
+005900     MOVE 0 TO JS-PCNT.
+005910     REWRITE JSS-R INVALID KEY
+005920         DISPLAY E-ME78 E-STAT E-ME10 E-ME99                      C.930830
+005930         MOVE 5 TO W-EC
+005940         GO TO M-680.
+005950     GO TO M-580.
+005960 M-600.
+005970     MOVE ZERO TO JSS-R.
+005980     MOVE W-R TO JSS-R.
+005990     WRITE JSS-R INVALID KEY
+006000         GO TO M-610.                                             I.930830
+006010     CALL "CBLTCLS" USING JSS-F.                                  I.930824
+006020     GO TO M-580.
+006030 M-610.                                                           I.930830
+006040     DISPLAY E-STAT E-ME8 E-ME99.                                 C.930830
+006050     IF ERR-STAT = "24"                                           I.930830
+006060         DISPLAY E-CL                                             I.930830
+006070         DISPLAY E-ME72 E-ME99                                    I.930830
+006080       ELSE                                                       I.930830
+006090         DISPLAY E-ME78 E-ME99.                                   I.930830
+006100     MOVE 5 TO W-EC.                                              C.930830
+006110     GO TO M-680.
+006120 M-620.
+006130     MOVE W-DNO TO JS-DNO.
+006140     MOVE CNT TO JS-GNO.
+006150     START JSS-F KEY NOT < JS-KEY INVALID KEY
+006160         GO TO M-680.
+006170     PERFORM S-80 THRU S-85.
+006180     GO TO M-680.
+006190****************   ファイル　削除   *****************
+006200 M-660.
+006210     MOVE ZERO TO JS-KEY.
+006220     MOVE W-DNO TO JS-DNO.
+006230     START JSS-F KEY NOT < JS-KEY INVALID KEY
+006240         DISPLAY E-ME7 E-ME99
+006250         GO TO M-680.
+006260     PERFORM S-80 THRU S-85.
+006270*******************************************************
+006280 M-680.
+006290     IF W-EC = 5
+006300         GO TO M-700.
+006310     MOVE ZERO TO W-R
+006320     IF W-ACT = 1
+006330         GO TO M-180.
+006340     GO TO M-100.
+006350*******************    作　　表    ***********************
+006360 M-700.
+006370     DISPLAY C-CLEAR.
+006380     DISPLAY C-MID.
+006390 M-720.
+006400     ACCEPT A-LIST.
+006410     IF ESTAT NOT = HTB AND SKP
+006420         GO TO M-720.
+006430     IF W-LIST NOT = 1 AND 5 AND 9
+006440         GO TO M-720.
+006450 M-740.
+006460     ACCEPT A-DMM.
+006470     IF ESTAT = BTB
+006480         GO TO M-720.
+006490     IF ESTAT NOT = HTB AND SKP
+006500         GO TO M-740.
+006510     IF W-DMM = 9
+006520         GO TO M-700.
+006530     IF W-DMM NOT = 1
+006540         GO TO M-740.
+006550     IF W-LIST = 9
+006560         GO TO M-980.
+006570*
+006580     CLOSE JSS-F.
+006590     OPEN I-O JSS-F.
+006600 M-760.
+006610     READ JSS-F NEXT RECORD AT END
+006620         GO TO M-980.
+006630     IF JS-DC NOT = 30
+006640         GO TO M-760.
+006650     IF W-LIST = 5
+006660         IF JS-PCNT NOT = 0
+006670             GO TO M-760.
+006680     MOVE 1 TO W-PC.                                              I.151203
+006690     OPEN OUTPUT SP-F.
+006700     PERFORM S-10 THRU S-15.
+006710 M-780.
+006720     MOVE JS-DNO TO W-DNO.
+006730     MOVE ZERO TO W-GD CNT.
+006740     MOVE JS-DATE TO W-DATE.
+006750     MOVE JS-SCD TO S-KEY.
+006760     READ S-M WITH UNLOCK INVALID KEY
+006770         MOVE SPACE TO S-NAME
+006780         MOVE NC"　＊＊　仕入先マスター　なし　＊＊" TO S-NAME.
+006790 M-800.
+006800     COMPUTE W-KINT = JS-KIN + JS-SHZ.
+006810     MOVE SPACE TO W-P.
+006820     MOVE SPACE TO P-SNA.
+006830     ADD 1 TO CNT.
+006840     IF CNT = 1
+006850*****    MOVE W-DATE TO P-DATE                                    D.970822
+006860         MOVE W-NGPS TO P-DATE                                    I.970822
+006870         MOVE S-KEY TO P-SCD
+006880         MOVE S-NAME TO P-SNA.
+006890     MOVE JS-DNO TO P-DNO.
+006900     MOVE "-" TO P-V.
+006910     MOVE JS-GNO TO P-GNO.
+006920     MOVE JS-SC TO P-SC.
+006930     MOVE JS-KIN TO P-KIN.
+006940     MOVE JS-SHZ TO P-SHZ.
+006950     MOVE W-KINT TO P-KINT.
+006960     IF LINAGE-COUNTER > 61
+006970*****    MOVE W-DATE TO P-DATE                                    D.970822
+006980         MOVE W-NGPS TO P-DATE                                    I.970822
+006990         MOVE S-KEY TO P-SCD
+007000         MOVE S-NAME TO P-SNA
+007010         PERFORM S-05 THRU S-15.
+007020     MOVE SPACE TO SP-R.
+007030     MOVE W-P TO SP-R.
+007040     WRITE SP-R.
+007050     MOVE SPACE TO SP-R.
+007060     ADD JS-KIN TO W-GKIN.
+007070     ADD JS-SHZ TO W-GSHZ.
+007080     ADD W-KINT TO W-GKINT.
+007090     ADD 1 TO JS-PCNT.
+007100     REWRITE JSS-R INVALID KEY
+007110         DISPLAY E-ME78 E-STAT E-ME10 E-ME99.                     C.930830
+007120 M-840.
+007130     READ JSS-F NEXT RECORD AT END
+007140         GO TO M-860.
+007150     IF JS-DC NOT = 30
+007160         GO TO M-840.
+007170     IF W-LIST = 5
+007180         IF JS-PCNT NOT = 0
+007190             GO TO M-840.
+007200     IF JS-DNO = W-DNO
+007210         GO TO M-800.
+007220     IF CNT NOT = 1
+007230         PERFORM S-30 THRU S-35.
+007240     GO TO M-780.
+007250 M-860.
+007260     IF CNT NOT = 1
+007270         PERFORM S-30 THRU S-35.
+007280*******************   Ｅ　Ｎ　Ｄ   ***********************
+007290 M-980.
+007300     CLOSE KBNO-M.
+007310     CLOSE S-M.
+007320     CLOSE JSS-F.
+007330     IF W-PC NOT = ZERO
+007340         CLOSE SP-F.
+007350     DISPLAY C-CLEAR.
+007360     STOP RUN.
+007370*******************    見　出　し   ***********************
+007380 S-05.
+007390     MOVE SPACE TO SP-R.
+007400     WRITE SP-R AFTER PAGE.
+007410 S-10.
+007420     ADD 1 TO W-PAGE.
+007430     MOVE W-PAGE TO H-PAGE.
+007440     MOVE SPACE TO SP-R.
+007450     MOVE HEAD1 TO SP-R.
+007460     WRITE SP-R.
+007470     MOVE SPACE TO SP-R.
+007480     MOVE HEAD2 TO SP-R.
+007490     WRITE SP-R AFTER 2.
+007500     MOVE SPACE TO SP-R.
+007510 S-15.
+007520     EXIT.
+007530******************   ＴＯＴＡＬ　作表   ***********************
+007540 S-30.
+007550     MOVE SPACE TO W-P.
+007560     MOVE NC"　　　　　　＊＊＊　ＴＯＴＡＬ　＊＊＊　" TO P-SNA.
+007570     MOVE W-GKIN TO P-KIN.
+007580     MOVE W-GSHZ TO P-SHZ.
+007590     MOVE W-GKINT TO P-KINT.
+007600     MOVE SPACE TO SP-R.
+007610     MOVE W-P TO SP-R.
+007620     WRITE SP-R.
+007630     MOVE SPACE TO SP-R.
+007640 S-35.
+007650     EXIT.
+007660**********   ＷＯＲＫ　落し込み　・　画面表示   ***********
+007670 S-40.
+007680     CALL "SCBD90".
+007690     DISPLAY A-ACT A-DNO.
+007700     MOVE ZERO TO W-ARD CNT W-GD.
+007710     MOVE 9 TO W-L.
+007720 S-45.
+007730     ADD 1 TO CNT.
+007740     IF CNT = 7
+007750         DISPLAY E-ME3 E-ME99
+007760         GO TO S-65.
+007770     ADD 1 TO W-L.
+007780     MOVE ZERO TO W-R.
+007790     MOVE JSS-R TO W-R.
+007800     ADD WR-KIN TO W-GKIN.
+007810     ADD WR-SHZ TO W-GSHZ.
+007820     COMPUTE W-KINT = WR-KIN + WR-SHZ.
+007830     ADD W-KINT TO W-GKINT.
+007840     MOVE W-R TO W-RD(CNT).
+007850     IF CNT NOT = 1
+007860         GO TO S-55.
+007870     MOVE WR-DATE TO W-DATE.
+007880     MOVE WR-SCD TO W-SCD.
+007890     MOVE W-SCD TO S-KEY.
+007900     READ S-M WITH UNLOCK INVALID KEY
+007910         MOVE SPACE TO S-NAME
+007920         MOVE NC"　＊＊　仕入先マスター　なし　＊＊" TO S-NAME.
+007930     DISPLAY A-DATE A-SCD D-SNA.
+007940 S-55.
+007950     MOVE WR-SC TO W-SC.
+007960     DISPLAY A-SC D-DATA.
+007970 S-60.
+007980     READ JSS-F NEXT RECORD AT END
+007990         DISPLAY D-TD
+008000         GO TO S-65.
+008010     IF JS-DNO = W-DNO
+008020         GO TO S-45.
+008030     DISPLAY D-TD.
+008040 S-65.
+008050     EXIT.
+008060*****************   削　除   ********************
+008070 S-80.
+008080     READ JSS-F NEXT RECORD AT END
+008090         GO TO S-85.
+008100     IF JS-DNO NOT = W-DNO
+008110         GO TO S-85.
+008120     DELETE JSS-F INVALID KEY
+008130         DISPLAY E-ME78 E-STAT E-ME9 E-ME99                       C.930830
+008140         MOVE 5 TO W-EC
+008150         GO TO S-85.
+008160     CALL "CBLTCLS" USING JSS-F.                                  I.930824
+008170     GO TO S-80.
+008180 S-85.
+008190     EXIT.
+

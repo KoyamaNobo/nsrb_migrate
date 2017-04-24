@@ -1,0 +1,202 @@
+000010 IDENTIFICATION      DIVISION.
+000020 PROGRAM-ID.         KBM050.
+000030****************************************
+000040******    仕入先コード　問合せ    ******
+000050****************************************
+000060 ENVIRONMENT         DIVISION.
+000070 CONFIGURATION       SECTION.
+000080 SOURCE-COMPUTER.    SYSTEM3100.
+000090 OBJECT-COMPUTER.    SYSTEM3100.
+000100 INPUT-OUTPUT        SECTION.
+000110 FILE-CONTROL.
+000120     SELECT  S-M  ASSIGN  TO  S-MSD
+000130             ORGANIZATION   INDEXED
+000140             ACCESS  MODE   DYNAMIC
+000150             RECORD  KEY    S-KEY
+000160             FILE   STATUS  IS  ERR-STAT.
+000170     SELECT  ST-M ASSIGN  TO  ST-MSD                              I.100210
+000180             ORGANIZATION   INDEXED                               I.100210
+000190             ACCESS  MODE   DYNAMIC                               I.100210
+000200             RECORD  KEY    ST-KEY                                I.100210
+000210             FILE   STATUS  IS  ERR-STAT.                         I.100210
+000220 I-O-CONTROL.
+000230     APPLY  SHARED-MODE  ON  ST-M                                 I.100210
+000240     APPLY  SHARED-MODE  ON  S-M.
+000250 DATA                DIVISION.
+000260 FILE                SECTION.
+000270     COPY LISM.
+000280     COPY LISTM.                                                  I.100210
+000290 WORKING-STORAGE      SECTION.
+000300 01  ERR-STAT                PIC  X(002).
+000310 01  W-DATA.
+000320     02  W-SEN               PIC  9(001).                         I.061220
+000330     02  W-SENK              PIC  9(001).                         I.100210
+000340     02  W-DMM               PIC  9(001).
+000350     02  W-KEY               PIC  9(004).
+000360     02  W-L                 PIC  9(002).
+000370     02  W-C1                PIC  9(002).
+000380     02  W-C2                PIC  9(002).
+000390     02  W-END               PIC  9(001).                         I.061220
+000400     02  W-KM                PIC  N(001).                         I.100210
+000410     COPY LSTAT.
+000420 SCREEN              SECTION.
+000430 SD  C-CRT
+000440     END  STATUS  IS  ESTAT.
+000450 01  C-CLEAR.
+000460     02  C-CL    LINE   1    CLEAR  SCREEN.
+000470 01  C-MID.
+000480     02  LINE   1    COLUMN  20    PIC  N(020)    VALUE           I.061220
+000490          NC"＊＊＊　　仕入先コード　問合せ　　＊＊＊" REVERSE.   I.061220
+000500     02  LINE  10    COLUMN  22    PIC  X(036)    VALUE           I.061220
+000510          "停止分   非表示 = 0 , 表示 = 1 ...  ".                 I.061220
+000520     02  LINE  13    COLUMN  22    PIC  X(027)    VALUE           I.100210
+000530          "全件 = 0 , 買掛先 = 1 ...  ".                          I.100210
+000540     02  LINE  23    COLUMN  50    PIC  X(022)    VALUE           I.061220
+000550          "確認  OK=1 NO=9   ﾘﾀｰﾝ".                               I.061220
+000560 01  C-MID1.
+000570     02  LINE   1    COLUMN  20    PIC  N(020)    VALUE
+000580          NC"＊＊＊　　仕入先コード　問合せ　　＊＊＊" REVERSE.
+000590     02  LINE   3.
+000600       03  COLUMN  14  PIC  X(004) VALUE "ｺｰﾄﾞ" REVERSE.
+000610       03  COLUMN  19  PIC  N(020) VALUE
+000620            NC"仕　　入　　先　　名　　　　　　　　　　" REVERSE.
+000630     02  LINE  23    COLUMN  30    PIC  X(034)    VALUE
+000640          "NEXT=ﾘﾀｰﾝ , 入力=ｆ･10 , 終了=ｆ･9".
+000650 01  C-ACP.
+000660     02  A-SEN   LINE  10  COLUMN  57  PIC  9(001)                I.061220
+000670          USING W-SEN   CHECK OVERFLOW NO IFC.                    I.061220
+000680     02  A-SENK  LINE  13  COLUMN  48  PIC  9(001)                I.100210
+000690          USING W-SENK  CHECK OVERFLOW NO IFC.                    I.100210
+000700     02  A-KEY   LINE   4  COLUMN  14  PIC  9(004)
+000710          USING W-KEY   CHECK OVERFLOW NO IFC.
+000720     02  A-DMM   LINE  23  COLUMN  67  PIC  9(001)
+000730          USING W-DMM   CHECK OVERFLOW NO IFC.
+000740 01  C-DSP.
+000750     02  LINE  W-L.
+000760         03  D-KEY    COLUMN  14  PIC 9(004) FROM  S-KEY.
+000770         03  D-NAME   COLUMN  19  PIC N(024) FROM  S-NAME.
+000780         03  D-KM     COLUMN  69  PIC N(001) FROM  W-KM.          I.100210
+000790 01  C-ERR.
+000800     02  LINE  24.
+000810         03  E-STAT   COLUMN 10   PIC X(010)   FROM  ERR-STAT.
+000820         03  E-ME01   COLUMN 15   PIC N(008)   VALUE              I.061220
+000830              NC"ＥＮＤ　ＤＡＴＡ".                               I.061220
+000840         03  E-ME98   COLUMN 75   PIC X(005)   VALUE ""27"J"05"".
+000850         03  E-ME99   COLUMN 75   PIC X(005)   VALUE ""27"B"05"".
+000860         03  E-CL     COLUMN 15   PIC X(050)   VALUE              I.061220
+000870             "                                                  ".I.061220
+000880 PROCEDURE           DIVISION.
+000890 M-05.
+000900     DISPLAY  C-CLEAR.                                            I.061220
+000910     DISPLAY  C-MID.                                              I.061220
+000920 M-06.                                                            I.061220
+000930     ACCEPT A-SEN.                                                I.061220
+000940     IF ESTAT = PF9                                               I.061220
+000950         GO TO M-95.                                              I.061220
+000960     IF ESTAT NOT = HTB AND SKP                                   I.061220
+000970         GO TO M-06.                                              I.061220
+000980     IF W-SEN > 1                                                 I.061220
+000990         GO TO M-06.                                              I.061220
+001000 M-07.                                                            I.100210
+001010     ACCEPT A-SENK.                                               I.100210
+001020     IF ESTAT = BTB                                               I.100210
+001030         GO TO M-06.                                              I.100210
+001040     IF ESTAT NOT = HTB AND SKP                                   I.100210
+001050         GO TO M-07.                                              I.100210
+001060     IF W-SENK > 1                                                I.100210
+001070         GO TO M-07.                                              I.100210
+001080 M-08.                                                            I.061220
+001090     ACCEPT A-DMM.                                                I.061220
+001100     IF ESTAT = BTB                                               I.061220
+001110         GO TO M-07.                                              I.100210
+001120*****    GO TO M-06.                                              D.100210
+001130     IF ESTAT NOT = HTB AND SKP                                   I.061220
+001140         GO TO M-08.                                              I.061220
+001150     IF W-DMM = 9                                                 I.061220
+001160         GO TO M-06.                                              I.061220
+001170     IF W-DMM NOT = 1                                             I.061220
+001180         GO TO M-08.                                              I.061220
+001190*
+001200     DISPLAY  C-CLEAR.
+001210     DISPLAY  C-MID1.
+001220     OPEN  INPUT  S-M.
+001230     OPEN  INPUT  ST-M.                                           I.100210
+001240 M-10.
+001250     ACCEPT  A-DMM.
+001260     DISPLAY E-CL.                                                I.061220
+001270     IF  ESTAT = PF9
+001280         CLOSE  S-M
+001290         CLOSE  ST-M                                              I.100210
+001300         GO  TO  M-95.
+001310     IF  ESTAT = HTB
+001320         DISPLAY  C-CLEAR
+001330         DISPLAY  C-MID1
+001340         MOVE  3      TO  W-L                                     I.061220
+001350         IF W-END NOT = 0                                         I.061220
+001360             GO TO M-15                                           I.006120
+001370           ELSE                                                   I.061220
+001380             GO  TO  M-20.
+001390     IF  ESTAT NOT = ADV AND SKP
+001400         GO  TO  M-10.
+001410 M-15.
+001420     ACCEPT  A-KEY.
+001430     DISPLAY E-CL.                                                I.061220
+001440     IF  ESTAT = BTB
+001450         GO  TO  M-10.
+001460     IF  ESTAT = PF9
+001470         GO  TO  M-95.
+001480     IF  ESTAT NOT = HTB AND SKP
+001490         GO  TO  M-15.
+001500     MOVE 0 TO W-END.                                             I.061220
+001510     MOVE  W-KEY  TO  S-KEY.
+001520     MOVE  3      TO  W-L.                                        I.070719
+001530 M-20.
+001540*****MOVE  3      TO  W-L.                                        D.061220
+001550*M-21.                                                            D.061220
+001560     START  S-M  KEY NOT < S-KEY  INVALID  KEY
+001570*****    CLOSE  S-M                                               D.061220
+001580         DISPLAY E-ME01                                           I.061220
+001590         GO  TO  M-15.
+001600 M-25.                                                            I.061220
+001610     READ  S-M  NEXT  RECORD  WITH  UNLOCK  AT  END
+001620*****    CLOSE  S-M                                               D.061220
+001630         DISPLAY E-ME01                                           I.061220
+001640         GO  TO  M-15.
+001650     IF W-SEN = 0                                                 I.061220
+001660         IF S-TNG NOT = ZERO                                      I.061220
+001670             GO TO M-25.                                          I.061220
+001680 M-30.
+001690     MOVE S-KEY TO ST-KEY.                                        I.100210
+001700     READ ST-M WITH UNLOCK INVALID KEY                            I.100210
+001710         MOVE ZERO TO ST-PC.                                      I.100210
+001720     IF W-SENK = 1                                                I.100210
+001730         IF ST-PC = ZERO                                          I.100210
+001740             GO TO M-35.                                          I.100210
+001750     IF ST-PC = ZERO                                              I.100210
+001760         MOVE SPACE TO W-KM                                       I.100210
+001770       ELSE                                                       I.100210
+001780         MOVE NC"買" TO W-KM.                                     I.100210
+001790     ADD  1  TO  W-L.
+001800     IF  W-L = 23
+001810         GO  TO  M-10.
+001820     DISPLAY  D-KEY  D-NAME  D-KM.                                I.100210
+001830*****DISPLAY  D-KEY  D-NAME.                                      D.100210
+001840 M-35.                                                            I.061220
+001850     READ  S-M  NEXT  RECORD  WITH  UNLOCK  AT  END
+001860         CLOSE  S-M
+001870         CLOSE  ST-M                                              I.100210
+001880         OPEN  INPUT  S-M
+001890         OPEN  INPUT  ST-M                                        I.100210
+001900         MOVE 1 TO W-END                                          I.061220
+001910         DISPLAY E-ME01                                           I.061220
+001920         GO  TO  M-10.                                            I.061220
+001930     IF W-SEN = 0                                                 I.061220
+001940         IF S-TNG NOT = ZERO                                      I.061220
+001950             GO TO M-35.                                          I.061220
+001960*****    MOVE  ZERO  TO  S-KEY                                    D.061220
+001970*****    GO  TO  M-21.                                            D.061220
+001980     GO  TO  M-30.
+001990 M-95.
+002000     DISPLAY  C-CLEAR.
+002010     STOP  RUN.
+

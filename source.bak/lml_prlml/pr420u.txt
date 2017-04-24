@@ -1,0 +1,230 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID.  PR420U.
+000030 ENVIRONMENT         DIVISION.
+000040 CONFIGURATION       SECTION.
+000050 SOURCE-COMPUTER.    NEAC-SYSTEM100.
+000060 OBJECT-COMPUTER.    NEAC-SYSTEM100.
+000070 INPUT-OUTPUT        SECTION.
+000080 FILE-CONTROL.
+000090     SELECT  AM  ASSIGN TO  F1-MSD
+000100       ORGANIZATION  IS  INDEXED
+000110       RECORD    KEY IS  AM-KEY
+000120       FILE      STATUS  IS  ERR-STAT.
+000130     SELECT  PL  ASSIGN  TO  F2-MSD
+000140       ORGANIZATION  IS  INDEXED
+000150       ACCESS    MODE    DYNAMIC
+000160       RECORD    KEY IS   PL-KEY
+000170       FILE      STATUS  IS  ERR-STAT.
+000180     SELECT  FCTL-F  ASSIGN  TO  F3-MSD                           580708
+000190       ORGANIZATION  IS  INDEXED
+000200       ACCESS    MODE    RANDOM                                   580708
+000210       RECORD    KEY IS  FCTL-KEY                                 580708
+000220       FILE      STATUS  IS  ERR-STAT.
+000230     SELECT  KZM-F   ASSIGN  TO  F4-MSD
+000240       ORGANIZATION  IS  INDEXED
+000250       ACCESS    MODE    RANDOM
+000260       RECORD    KEY IS  KZM-KEY
+000270       FILE      STATUS  IS  ERR-STAT.
+000280 I-O-CONTROL.                                                     580708
+000290     APPLY    SHARED-MODE    ON    FCTL-F  PL KZM-F AM.           580708
+000300 DATA            DIVISION.
+000310 FILE            SECTION.
+000320 COPY    ACCUNT.
+000330 COPY    PL-LIB.
+000340 COPY    FCTL.                                                    580708
+000350 COPY    LKAZAN.                                                  580708
+000360 WORKING-STORAGE SECTION.
+000370 77  ERR-STAT            PIC X(02).
+000380 77  OKC                 PIC X(01).
+000390 01  W1.
+000400     02  I              PIC 99.
+000410     02  W1-WKKIN        PIC S9(11).
+000420     02  W2-WKKIN        PIC S9(11).
+000430     02  IN-YM.
+000440       03  IN-YY         PIC 99.
+000450       03  IN-MM         PIC 99.
+000460     02  OK-IN           PIC X.
+000470 01  WORK-AREA.
+000480     02  MDR             PIC S9(11).
+000490     02  MCR             PIC S9(11).
+000500     02  ZMDR            PIC S9(11).
+000510     02  ZMCR            PIC S9(11).
+000520 01  SOEJI.
+000530     02  FI              PIC 9(02).
+000540     02  TI              PIC 9(02).
+000550     02  TY-SW           PIC 9(01).
+000560*****
+000570 COPY  LWMSG.
+000580*****
+000590 SCREEN          SECTION.
+000600 SD  SCR-D
+000610     END STATUS  IS    ESTAT.
+000620 01  DSP-CLR.
+000630     02  LINE 01  CLEAR SCREEN.
+000640 01  DISP-INIT.
+000650     02  LINE 01.
+000660         03      COLUMN  04  PIC  N(01)  VALUE  NC"年".
+000670         03      COLUMN  08  PIC  N(02)  VALUE  NC"月度".
+000680*****    03      COLUMN  02  PIC  9(02)  FROM  Z-GEMYY.           D.971113
+000690         03      COLUMN  02  PIC  9(02)  FROM  Z-GEMYY2.          I.971113
+000700         03      COLUMN  06  PIC  9(02)  FROM  Z-GEMMM.
+000710         03  COLUMN  31               PIC X(20)  VALUE
+000720         " 損益計算書（月次） "       REVERSE.
+000730     02  LINE 24.
+000740         03  COLUMN  61               PIC N(02)  VALUE
+000750             NC"確認".
+000760         03  COLUMN  66               PIC X(13)  VALUE
+000770             "OK=1,NO=9 ( )".
+000780 01  DISP-BUZZER    LINE  24.
+000790     02  DISP-BUZ-J-02    COLUMN  80  PIC X(05) VALUE ""27"J"02"".
+000800     02  DISP-BUZ-J-05    COLUMN  80  PIC X(05) VALUE ""27"J"05"".
+000810     02  DISP-BUZ-J-09    COLUMN  80  PIC X(05) VALUE ""27"J"09"".
+000820 01  DSP-AREA.
+000830     03  DSP-010    LINE  24.
+000840         05  DSP-011    COLUMN  5  PIC  X(23)
+000850                        VALUE  "ｺﾝﾄﾛｰﾙ  ﾌｧｲﾙ  ｶﾞｲﾄｳ ﾅｼ!".
+000860         05  DSP-012    COLUMN  5  PIC  X(22)
+000870                        VALUE  "P/L ﾌｧｲﾙ ﾘﾗｲﾄ ﾌﾉｳ STOP".
+000880         05  DSP-013    COLUMN  5  PIC  X(21)
+000890                        VALUE  "P/L ﾌｧｲﾙ ﾆ ﾐﾄｳﾛｸ STOP".
+000900         05  DSP-014    COLUMN 30  PIC  9(4)  FROM  AM-KEY.
+000910         05  DSP-015    COLUMN 40  PIC  X(3)  FROM  PLKEY(I).
+000920 01  ACP-AREA.
+000930     03  ACP-010        LINE   24.
+000940         05  ACP-011    COLUMN  30 PIC  X(01)
+000950                        INTO    I  CHECK OVERFLOW NO IFC.
+000960         05  ACP-012    COLUMN  50 PIC  X(01)
+000970                        INTO    I  CHECK OVERFLOW NO IFC.
+000980     03  ACP-020        LINE    24.
+000990         05  ACP-021    COLUMN  77  PIC  X(01)
+001000*****                   INTO  OKC  CHECK OVERFLOW NO IFC.         D.950522
+001010                        USING OKC  CHECK OVERFLOW NO IFC.         I.950522
+001020 COPY  LSMSG.
+001030******************************************************************
+001040 PROCEDURE       DIVISION.
+001050 ST.
+001060*
+001070     OPEN    INPUT    FCTL-F.                                     580708
+001080     MOVE       "DATE  "     TO      FCTL-KEY1.                   580708
+001090     READ    FCTL-F    INVALID                                    580708
+001100             CLOSE     FCTL-F
+001110             MOVE      255  TO    COMPLETION-CODE
+001120             DISPLAY   INV-CON    DISP-BUZ-B
+001130             STOP      RUN.
+001140     MOVE     FCTL-REC1     TO    Z-R.
+001150     CLOSE    FCTL-F.                                             580708
+001160*
+001170     DISPLAY    DSP-CLR  DISP-INIT.
+001180 ST-01.
+001190     ACCEPT     ACP-020.
+001200     IF  ESTAT  =  "P9"
+001210         MOVE   255        TO        COMPLETION-CODE
+001220         STOP   RUN.
+001230     IF  ESTAT  NOT =  "01" AND "06"
+001240         GO  TO  ST-01.
+001250     IF  OKC  NOT =  "1" AND "9"
+001260         GO  TO  ST-01.
+001270     IF  OKC  =  "9"
+001280         MOVE   255        TO        COMPLETION-CODE
+001290         STOP   RUN.
+001300     DISPLAY    DSP-CLR  DISP-INIT  ACP-020.                      I.950522
+001310*****MOVE     Z-GEMYY    TO    IN-YY.                             D.971113
+001320     MOVE     Z-GEMYY2   TO    IN-YY.                             I.971113
+001330     MOVE     Z-GEMMM    TO    IN-MM.
+001340*
+001350     OPEN       INPUT       AM  KZM-F.
+001360     OPEN       I-O         PL.
+001370*
+001380     MOVE  Z-KONYMD     TO  ZYMD.                                 今回日付
+001390     PERFORM  Z-RTN     THRU  Z-EXT.
+001400     IF ZI > 15
+001410        MOVE 255     TO COMPLETION-CODE
+001420        GO TO ST-END.
+001430     MOVE 1     TO TY-SW.                                         前期欄
+001440     MOVE ZI     TO TI.
+001450     IF TI > 12
+001460        MOVE 0      TO TY-SW                                      当期欄
+001470        COMPUTE TI = Z-KSMM + ( TI - 12 )
+001480        IF TI > 12
+001490           COMPUTE TI = TI - 12.
+001500     IF Z-KSMM = 12
+001510        MOVE 1     TO FI
+001520     ELSE
+001530        COMPUTE FI = Z-KSMM + 1.
+001540*
+001550     PERFORM    ZERO-RTN     THRU   ZERO-EX.
+001560     CLOSE          PL.
+001570*
+001580     OPEN       I-O          PL.
+001590 ST-30.
+001600     READ       AM           AT END              GO TO ST-END.
+001610     IF         BS-PL        =      0            GO TO ST-30.
+001620*
+001630     MOVE AM-KEY     TO KZM-KEY.
+001640     READ KZM-F UNLOCK INVALID KEY
+001650          INITIALIZE KZM-R.
+001660     MOVE KZM-TJKR(ZI)     TO MDR.                                当月借方
+001670     MOVE KZM-TJKS(ZI)     TO MCR.                                当月貸方
+001680     IF TY-SW = 0
+001690        MOVE KZM-TJKR(TI)     TO ZMDR                             前年同月
+001700        MOVE KZM-TJKS(TI)     TO ZMCR
+001710     ELSE
+001720        MOVE KZM-ZJKR(TI)     TO ZMDR
+001730        MOVE KZM-ZJKS(TI)     TO ZMCR.                            I.920706
+001740*****   MOVE KZM-ZJKS(TI)     TO ZMCR                             D.920706
+001750     MOVE 1     TO I.
+001760 ST-40.
+001770     IF         PLKEY   (I) =      0            GO TO ST-80.
+001780     MOVE       PLKEY   (I)  TO     PL-KEY.
+001790     READ        PL          INVALID KEY
+001800       DISPLAY  DSP-013  DSP-014  DSP-015  DISP-BUZ-J-02
+001810       ACCEPT   ACP-012
+001820       GO TO    ST-END.
+001830     IF         DR-CR        =      1
+001840       COMPUTE  W1-WKKIN     =      MDR  -  MCR
+001850       COMPUTE  W2-WKKIN     =      ZMDR -  ZMCR
+001860     ELSE
+001870       COMPUTE  W1-WKKIN     =      MCR  -  MDR
+001880       COMPUTE  W2-WKKIN     =      ZMCR -  ZMDR.
+001890*
+001900     IF         PLCOM (I)    =      1
+001910       COMPUTE   PL-TOUMM    =       PL-TOUMM + W1-WKKIN
+001920       COMPUTE   PL-ZENMM    =       PL-ZENMM + W2-WKKIN
+001930     ELSE
+001940       COMPUTE   PL-TOUMM    =       PL-TOUMM - W1-WKKIN
+001950       COMPUTE   PL-ZENMM    =       PL-ZENMM - W2-WKKIN.
+001960     REWRITE     PL-REC      INVALID KEY
+001970       DISPLAY  DSP-012  DISP-BUZ-J-09
+001980       ACCEPT   ACP-011
+001990       GO TO    ST-END.
+002000 ST-80.
+002010     IF         I            <      12
+002020      ADD      1            TO     I
+002030       GO TO    ST-40.
+002040     GO TO  ST-30.
+002050 ST-END.
+002060     PERFORM    CLSE-ENT     THRU   CLSE-EXT.
+002070     STOP       RUN.
+002080*****
+002090 ZERO-RTN.
+002100     READ   PL               NEXT AT END
+002110            GO  TO  ZERO-EX.
+002120     INITIALIZE    PL-MM.
+002130     MOVE IN-YY     TO PL-YYWK.
+002140     MOVE IN-MM     TO PL-MMWK.
+002150     REWRITE     PL-REC       INVALID KEY
+002160       DISPLAY  DSP-013  DISP-BUZ-J-09
+002170       ACCEPT  ACP-011
+002180       PERFORM  CLSE-ENT  THRU  CLSE-EXT
+002190       STOP  RUN.
+002200     GO TO ZERO-RTN.
+002210 ZERO-EX.
+002220     EXIT.
+002230**
+002240 CLSE-ENT.
+002250     CLOSE     PL  KZM-F  AM.
+002260 CLSE-EXT.
+002270     EXIT.
+002280**
+002290 COPY  LPMSG.
+002300**

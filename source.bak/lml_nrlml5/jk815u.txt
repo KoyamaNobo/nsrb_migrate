@@ -1,0 +1,553 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. HMG240.
+000030*********************************************************
+000040*    PROGRAM         :  運送得意先別出荷個数ワーク　作成①
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :  ******                          *
+000070*    COMPILE TYPE    :  COBOL                           *
+000080*********************************************************
+000090 ENVIRONMENT DIVISION.
+000100 CONFIGURATION SECTION.
+000110 SOURCE-COMPUTER. SYSTEM3100.
+000120 OBJECT-COMPUTER. SYSTEM3100.
+000130 INPUT-OUTPUT SECTION.
+000140 FILE-CONTROL.
+000150     COPY LIBCSE.
+000160     SELECT T-M ASSIGN TO T1-MSD T2-MSD
+000170         ORGANIZATION INDEXED
+000180         ACCESS MODE RANDOM
+000190         RECORD KEY T-KEY
+000200         ALTERNATE RECORD KEY T-KEY2
+000210         FILE STATUS ERR-STAT.
+000220     SELECT HI2-M ASSIGN TO HI2-MSD
+000230         ORGANIZATION INDEXED
+000240         ACCESS MODE RANDOM
+000250         RECORD KEY HI-KEY2
+000260         FILE STATUS ERR-STAT.
+000270     SELECT JCON ASSIGN TO JCON-MSD
+000280         ORGANIZATION INDEXED
+000290         ACCESS MODE RANDOM
+000300         RECORD KEY JCON1-KEY
+000310         FILE STATUS ERR-STAT.
+000320     SELECT JSTRRF ASSIGN TO JSTRR-MSD.
+000330     SELECT EXLF ASSIGN TO EXL-MSD.
+000340 I-O-CONTROL.
+000350     APPLY SHARED-MODE ON M-DATE
+000360     APPLY SHARED-MODE ON JCON
+000370     APPLY SHARED-MODE ON HI2-M
+000380     APPLY SHARED-MODE ON T-M.
+000390 DATA DIVISION.
+000400 FILE SECTION.
+000410     COPY LIBFDD.
+000420     COPY L-JCON.
+000430     COPY LITM.
+000440     COPY LIHIM2.
+000450 FD  JSTRRF
+000460     BLOCK  1 RECORDS
+000470     LABEL RECORD STANDARD
+000480     VALUE OF IDENTIFICATION WK0256ID.
+000490 01  JSTRR-R.
+000500     02  JSTRR-KEY.                                               KEY
+000510       03  JSTRR-01     PIC 9(6).                                 ｼｭｯｶｼｽﾞ
+000520       03  JSTRR-02     PIC 9(1).                                 ｷﾞｮｳ
+000530     02  JSTRR-03       PIC 9(1).                                 ﾃﾞﾝｸ
+000540     02  JSTRR-04.                                                ｼｭｯｶﾋﾞ ｻ
+000550       03  JSTRR-0412.                                            ｼｭｯｶﾋﾞ ｻ
+000560         04  JSTRR-041  PIC 9(4).
+000570         04  JSTRR-042  PIC 9(2).                                 ﾂｷ
+000580       03  JSTRR-043    PIC 9(2).                                 ﾋ
+000590     02  JSTRR-05.                                                ｼｭｯｶﾋﾞｼﾞ
+000600       03  JSTRR-0512.                                            ｼｭｯｶﾋﾞｼﾞ
+000610         04  JSTRR-051  PIC 9(4).
+000620         04  JSTRR-052  PIC 9(2).                                 ﾂｷ
+000630       03  JSTRR-053    PIC 9(2).                                 ﾋ
+000640     02  JSTRR-06.                                                ﾁｮｸｿｳ CD
+000650       03  JSTRR-061    PIC 9(4).                                 ﾄｸｲｺｰﾄﾞ
+000660       03  JSTRR-062    PIC 9(3).                                 ﾁｮｸ NO
+000670     02  JSTRR-07       PIC 9(1).                                 ｸﾗ ｺｰﾄﾞ
+000680     02  JSTRR-08.                                                ｼﾞｭﾁｭｳ
+000690       03  JSTRR-081    PIC 9(6).                                 ｼﾞｭﾁｭｳNO
+000700       03  JSTRR-082    PIC 9(1).                                 ｷﾞｮｳ
+000710     02  JSTRR-09       PIC 9(6).                                 ﾋﾝｺｰﾄﾞ
+000720     02  JSTRR-10       PIC 9(1).                                 ｻｲｽﾞｸﾌﾞﾝ
+000730     02  JSTRR-11.                                                ｼｭｯｶｻｼｽﾞ
+000740       03  JSTRR-111    OCCURS  10.                               ｻｲｽﾞﾍﾞﾂ
+000750         04  JSTRR-1111 PIC S9(4).
+000760       03  JSTRR-112    PIC S9(5).
+000770     02  JSTRR-12.                                                ｼｭｯｶｼﾞﾂ
+000780       03  JSTRR-121    OCCURS  10.                               ｻｲｽﾞﾍﾞﾂ
+000790         04  JSTRR-1211 PIC S9(4).
+000800       03  JSTRR-122    PIC S9(5).
+000810     02  JSTRR-13       PIC 9(1).                                 ｱｽﾞｶﾘ KB
+000820     02  JSTRR-14       PIC 9(1).                                 運送ＣＤ
+000830     02  JSTRR-14A      PIC 9(3).                                 セット数
+000840     02  JSTRR-14B      PIC 9(6).                                 送り状№
+000850     02  JSTRR-14C      PIC 9(2).                                 枝番
+000860     02  JSTRR-14D      PIC N(9).                                 配達
+000870     02  JSTRR-15       PIC N(23).                                摘要
+000880     02  JSTRR-20       PIC X(10).                                摘要
+000890     02  JSTRR-15A      PIC S9(03).                               個数
+000900     02  F              PIC X(01).
+000910     02  JSTRR-40.
+000920       03  JSTRR-401.
+000930         04  JSTRR-4011 PIC X(03).
+000940         04  JSTRR-4012 PIC 9(01).
+000950       03  JSTRR-402.
+000960         04  JSTRR-4021 PIC X(03).
+000970         04  JSTRR-4022 PIC 9(01).
+000980         04  JSTRR-4023 PIC 9(01).
+000990     02  FILLER         PIC X(16).
+001000     02  JSTRR-19       PIC X(01).
+001010     02  JSTRR-158      PIC 9(01).
+001020     02  JSTRR-16       PIC 9(01).                                一般教育
+001030     02  JSTRR-17       PIC 9(01).                                更新ｻｲﾝ
+001040 FD  EXLF
+001050     BLOCK  2 RECORDS
+001060     LABEL RECORD IS STANDARD
+001070     VALUE OF IDENTIFICATION WK0128ID.
+001080 01  EXL-R.
+001090     02  EXL-NG         PIC  9(006).
+001100     02  EXL-SKC        PIC  9(001).
+001110     02  EXL-SKN        PIC  N(006).
+001120     02  EXL-USC        PIC  9(001).
+001130     02  EXL-USN        PIC  N(006).
+001140     02  EXL-TCD        PIC  9(004).
+001150     02  EXL-TNA        PIC  N(026).
+001160     02  EXL-KS22       PIC S9(005).
+001170     02  EXL-KS23       PIC S9(005).
+001180     02  EXL-KS24       PIC S9(005).
+001190     02  EXL-KSU        PIC S9(005).
+001200     02  EXL-TNC        PIC  9(002).
+001210     02  F              PIC  X(018).
+001220 WORKING-STORAGE SECTION.
+001230 77  WK0128ID           PIC  X(009) VALUE SPACE.
+001240 77  WK0256ID           PIC  X(009) VALUE SPACE.
+001250 01  STN-NO.
+001260     02  STN-NO1        PIC  X(003).
+001270     02  STN-NO2        PIC  X(003).
+001280 01  W-FID1.
+001290     02  W-FID21        PIC  X(006) VALUE "WK0256".
+001300     02  W-FID22        PIC  X(003).
+001310 01  W-FID2.
+001320     02  W-FID11        PIC  X(006) VALUE "WK0128".
+001330     02  W-FID12        PIC  X(003).
+001340 01  W-DATA.
+001350     02  W-NG           PIC  9(006).
+001360     02  W-NGL   REDEFINES W-NG.
+001370       03  W-NEN        PIC  9(004).
+001380       03  W-NENL  REDEFINES W-NEN.
+001390         04  W-NEN1     PIC  9(002).
+001400         04  W-NEN2     PIC  9(002).
+001410       03  W-GET        PIC  9(002).
+001420     02  W-DATE         PIC  9(006).
+001430     02  W-NGP   REDEFINES W-DATE.
+001440       03  W-NEND       PIC  9(002).
+001450       03  W-GETD       PIC  9(002).
+001460       03  W-PEYD       PIC  9(002).
+001470     02  W-SNG          PIC  9(006).
+001480     02  W-ENG          PIC  9(006).
+001490     02  W-SKC          PIC  9(001).
+001500     02  W-USC          PIC  9(001).
+001510     02  W-TCD          PIC  9(004).
+001520     02  W-BMC          PIC  9(001).
+001530     02  W-BMCD         PIC  9(001).
+001540     02  W-OKJ          PIC  9(006).
+001550     02  W-SUD.
+001560       03  W-SU22       PIC S9(006).
+001570       03  W-SU23       PIC S9(006).
+001580       03  W-SU24       PIC S9(006).
+001590       03  W-ASU        PIC S9(006).
+001600     02  W-KSUD.
+001610       03  W-KS22       PIC S9(005)V9(2).
+001620       03  W-KS22D REDEFINES W-KS22.
+001630         04  W-KS22F    PIC S9(005).
+001640         04  W-KS22R    PIC S9(002).
+001650       03  W-KS23       PIC S9(005)V9(2).
+001660       03  W-KS23D REDEFINES W-KS23.
+001670         04  W-KS23F    PIC S9(005).
+001680         04  W-KS23R    PIC S9(002).
+001690       03  W-KS24       PIC S9(005)V9(2).
+001700       03  W-KS24D REDEFINES W-KS24.
+001710         04  W-KS24F    PIC S9(005).
+001720         04  W-KS24R    PIC S9(002).
+001730       03  W-KSU        PIC S9(005).
+001740       03  W-TKSU       PIC S9(005).
+001750     02  W-DMM          PIC  9(001).
+001760     02  CHK            PIC  9(001).
+001770     02  W-DC           PIC  9(001).
+001780     02  CNT            PIC  9(001).
+001790 01  ERR-STAT           PIC  X(002).
+001800     COPY LSTAT.
+001810 SCREEN SECTION.
+001820 SD  C-CRT
+001830     END STATUS IS ESTAT.
+001840 01  C-CLEAR.
+001850     02  LINE   1  CLEAR SCREEN.
+001860 01  C-MID.
+001870     02  LINE   3  COLUMN  15  PIC  N(024) VALUE
+001880          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001890     02  LINE   4  COLUMN  15  PIC  N(024) VALUE
+001900          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001910     02  LINE   5  COLUMN  15  PIC  N(024) VALUE
+001920          NC"＊＊＊　　　　　　　　　　　　　　　　　　＊＊＊".
+001930     02  LINE   6  COLUMN  15  PIC  N(024) VALUE
+001940          NC"＊＊＊　　運送得意先別　個数ワーク作成　　＊＊＊".
+001950     02  LINE   7  COLUMN  15  PIC  N(024) VALUE
+001960          NC"＊＊＊　　　　　　　　　　　　　　　　　　＊＊＊".
+001970     02  LINE   8  COLUMN  15  PIC  N(024) VALUE
+001980          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001990     02  LINE   9  COLUMN  15  PIC  N(024) VALUE
+002000          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002010     02  LINE  15  COLUMN  28  PIC  X(021) VALUE
+002020            "［　'  年   月 分　］".
+002030     02  LINE  20  COLUMN  35  PIC  X(022) VALUE
+002040            "確認  OK=1 NO=9   ﾘﾀｰﾝ".
+002050 01  C-ACP.
+002060     02  A-NG    LINE  15.
+002070       03  A-NEN   COLUMN  33  PIC  9(002)
+002080            USING W-NEN2                 NO IFC.
+002090       03  A-GET   COLUMN  38  PIC  9(002)
+002100            USING W-GET   CHECK OVERFLOW NO IFC.
+002110     02  A-DMM   LINE  20  COLUMN  52  PIC  9(001)
+002120          USING W-DMM   CHECK OVERFLOW NO IFC.
+002130 01  C-ERR.
+002140     02  LINE 24.
+002150       03  E-ME01.
+002160         04  COLUMN  15  PIC  X(015) VALUE
+002170              "***  TM ﾅｼ  ***".
+002180         04  COLUMN  34  PIC  9(004) FROM  W-TCD.
+002190       03  E-ME02.
+002200         04  COLUMN  15  PIC  X(016) VALUE
+002210              "***  HIM ﾅｼ  ***".
+002220         04  COLUMN  35  PIC  9(006) FROM  JSTRR-09.
+002230       03  E-ME03.
+002240         04  COLUMN  15  PIC  X(016) VALUE
+002250              "***  ? ? ?   ***".
+002260         04  COLUMN  35  PIC  9(006) FROM  W-OKJ.
+002270       03  E-ME98  COLUMN  75  PIC  X(005) VALUE ""27"J"05"".
+002280       03  E-ME99  COLUMN  75  PIC  X(005) VALUE ""27"B"05"".
+002290       03  E-CL    COLUMN  10  PIC  X(050) VALUE
+002300            "                                                  ".
+002310     COPY LIBSCR.
+002320 PROCEDURE DIVISION.
+002330 M-05.
+002340     DISPLAY C-CLEAR.
+002350     DISPLAY C-MID.
+002360     MOVE ZERO TO W-DATA.
+002370     COPY LIBCPR.
+002380     ACCEPT W-DATE FROM DATE.
+002390     MOVE W-NEND TO W-NEN2.
+002400     MOVE W-GETD TO W-GET.
+002410     IF W-NEN2 >= DATE-NF1 AND <= DATE-NT1
+002420         ADD DATE-NC1 TO W-NEN.
+002430     IF W-NEN2 >= DATE-NF2 AND <= DATE-NT2
+002440         ADD DATE-NC2 TO W-NEN.
+002450     MOVE W-NG TO W-ENG.
+002460     SUBTRACT 1 FROM W-NEN.
+002470     MOVE W-NG TO W-SNG.
+002480     ADD 1 TO W-NEN.
+002490     SUBTRACT 1 FROM W-GET.
+002500     IF W-GET = ZERO
+002510         MOVE 12 TO W-GET
+002520         SUBTRACT 1 FROM W-NEN.
+002530     DISPLAY A-NG.
+002540 M-10.
+002550     ACCEPT A-NEN.
+002560     IF ESTAT = PF9
+002570         MOVE 255 TO COMPLETION-CODE
+002580         GO TO M-95.
+002590     IF ESTAT NOT = NOC AND HTB AND SKP
+002600         GO TO M-10.
+002610     MOVE ZERO TO W-NEN1.
+002620     IF W-NEN2 >= DATE-NF1 AND <= DATE-NT1
+002630         ADD DATE-NC1 TO W-NEN.
+002640     IF W-NEN2 >= DATE-NF2 AND <= DATE-NT2
+002650         ADD DATE-NC2 TO W-NEN.
+002660 M-15.
+002670     ACCEPT A-GET.
+002680     IF ESTAT = BTB
+002690         GO TO M-10.
+002700     IF ESTAT NOT = HTB AND SKP
+002710         GO TO M-15.
+002720     IF W-GET < 1 OR > 12
+002730         GO TO M-15.
+002740     IF W-NG < W-SNG OR > W-ENG
+002750         GO TO M-15.
+002760 M-20.
+002770     ACCEPT A-DMM.
+002780     IF ESTAT = BTB
+002790         GO TO M-15.
+002800     IF ESTAT NOT = HTB AND SKP
+002810         GO TO M-20.
+002820     IF W-DMM = 9
+002830         GO TO M-10.
+002840     IF W-DMM NOT = 1
+002850         GO TO M-20.
+002860*
+002870     CALL "CBLSTNNO" USING STN-NO.
+002880     MOVE STN-NO2 TO W-FID12 W-FID22.
+002890     MOVE W-FID1 TO WK0256ID.
+002900     OPEN INPUT JSTRRF.
+002910 M-25.
+002920     READ JSTRRF AT END
+002930         CLOSE JSTRRF
+002940         GO TO M-95.
+002950     IF JSTRR-0512 NOT = W-NG
+002960         GO TO M-25.
+002970     IF JSTRR-061 = 5000                                          I.111128
+002980         GO TO M-25.                                              I.111128
+002990     IF JSTRR-15A = ZERO
+003000         GO TO M-25.
+003010     IF JSTRR-14 = 9
+003020         GO TO M-25.
+003030*
+003040     MOVE W-FID2 TO WK0128ID.
+003050     OPEN OUTPUT EXLF.
+003060     OPEN INPUT T-M HI2-M JCON.
+003070 M-30.
+003080     MOVE ZERO TO W-SUD W-KSUD W-DC CHK.
+003090     MOVE JSTRR-07 TO W-SKC.
+003100     MOVE JSTRR-14 TO W-USC.
+003110     MOVE JSTRR-061 TO W-TCD.
+003120     MOVE JSTRR-14B TO W-OKJ.
+003130     MOVE JSTRR-15A TO W-KSU.
+003140     MOVE W-TCD TO T-KEY.
+003150     READ T-M WITH UNLOCK INVALID KEY
+003160         DISPLAY E-ME01 E-ME99
+003170         DISPLAY E-CL
+003180         MOVE 255 TO COMPLETION-CODE
+003190         GO TO M-90.
+003200     IF JSTRR-14B < 100000
+003210         MOVE 1 TO CHK
+003220         MOVE JSTRR-15A TO W-KS24 W-KSU
+003230         GO TO M-45.
+003240 M-35.
+003250     IF JSTRR-122 = ZERO
+003260         GO TO M-40.
+003270     MOVE JSTRR-09 TO HI-MHCD HI-HCD.
+003280     READ HI2-M WITH UNLOCK INVALID KEY
+003290         DISPLAY E-ME02 E-ME99
+003300         DISPLAY E-CL
+003310         MOVE 255 TO COMPLETION-CODE
+003320         GO TO M-90.
+003330     IF HI-ISU = ZERO
+003340         GO TO M-40.
+003350     ADD JSTRR-122 TO W-ASU.
+003360     IF HI-BC3 = 10
+003370         ADD JSTRR-122 TO W-SU22
+003380       ELSE
+003390         IF HI-BC3 = 20
+003400             ADD JSTRR-122 TO W-SU23
+003410           ELSE
+003420             ADD JSTRR-122 TO W-SU24.
+003430     IF W-DC = 0
+003440         MOVE 1 TO W-DC.
+003450 M-40.
+003460     READ JSTRRF AT END
+003470         GO TO M-95.
+003480     IF JSTRR-0512 NOT = W-NG
+003490         GO TO M-40.
+003500     IF JSTRR-061 = 5000                                          I.111128
+003510         GO TO M-40.                                              I.111128
+003520     IF JSTRR-15A = ZERO
+003530         GO TO M-40.
+003540     IF JSTRR-14 = 9
+003550         GO TO M-40.
+003560     IF JSTRR-09 > 999899
+003570         GO TO M-40.
+003580     IF (JSTRR-07 = W-SKC) AND (JSTRR-14 = W-USC) AND
+003590        (JSTRR-061 = W-TCD) AND (JSTRR-14B = W-OKJ)
+003600         GO TO M-35.
+003610     IF W-KSU = ZERO
+003620         GO TO M-30.
+003630     IF W-ASU = ZERO
+003640         GO TO M-30.
+003650     PERFORM S-05 THRU S-30.
+003660 M-45.
+003670     PERFORM S-40 THRU S-45.
+003680     IF CHK = 0
+003690         GO TO M-30.
+003700 M-50.
+003710     READ JSTRRF AT END
+003720         GO TO M-90.
+003730     IF JSTRR-0512 NOT = W-NG
+003740         GO TO M-50.
+003750     IF JSTRR-061 = 5000                                          I.111128
+003760         GO TO M-50.                                              I.111128
+003770     IF JSTRR-15A = ZERO
+003780         GO TO M-50.
+003790     IF JSTRR-14 = 9
+003800         GO TO M-50.
+003810     IF JSTRR-09 > 999899
+003820         GO TO M-50.
+003830     IF (JSTRR-07 = W-SKC) AND (JSTRR-14 = W-USC) AND
+003840        (JSTRR-061 = W-TCD) AND (JSTRR-14B = W-OKJ)
+003850         GO TO M-50.
+003860     GO TO M-30.
+003870 M-90.
+003880     IF W-DC = 1
+003890         IF W-KSU NOT = ZERO
+003900             IF W-ASU NOT = ZERO
+003910                 PERFORM S-05 THRU S-30
+003920                 PERFORM S-40 THRU S-45.
+003930     CLOSE JSTRRF.
+003940     CLOSE T-M HI2-M JCON.
+003950     CLOSE EXLF.
+003960 M-95.
+003970     DISPLAY C-CLEAR.
+003980     STOP RUN.
+003990 S-05.
+004000     IF W-SU22 NOT = ZERO
+004010         COMPUTE W-KS22 ROUNDED = W-SU22 * W-KSU / W-ASU.
+004020     IF W-SU23 NOT = ZERO
+004030         COMPUTE W-KS23 ROUNDED = W-SU23 * W-KSU / W-ASU.
+004040     IF W-SU24 NOT = ZERO
+004050         COMPUTE W-KS24 ROUNDED = W-SU24 * W-KSU / W-ASU.
+004060     COMPUTE W-TKSU = W-KS22F + W-KS23F + W-KS24F.
+004070     IF W-TKSU = W-KSU
+004080         GO TO S-30.
+004090     MOVE 0 TO CNT.
+004100     IF W-TKSU > W-KSU
+004110         GO TO S-20.
+004120 S-10.
+004130     IF W-KS22R = W-KS23R AND W-KS24R
+004140         IF W-KS22F NOT = ZERO
+004150             ADD 1 TO W-KS22F
+004160             GO TO S-15
+004170           ELSE
+004180             IF W-KS23F NOT = ZERO
+004190                 ADD 1 TO W-KS23F
+004200                 GO TO S-15
+004210               ELSE
+004220                 IF W-KS24F NOT = ZERO
+004230                     ADD 1 TO W-KS24F
+004240                     GO TO S-15.
+004250     IF W-KS22R = W-KS23R AND W-KS24R
+004260         IF W-KS22R NOT = ZERO
+004270             ADD 1 TO W-KS22F
+004280             GO TO S-15
+004290           ELSE
+004300             IF W-KS23R NOT = ZERO
+004310                 ADD 1 TO W-KS23F
+004320                 GO TO S-15
+004330               ELSE
+004340                 IF W-KS24R NOT = ZERO
+004350                     ADD 1 TO W-KS24F
+004360                     GO TO S-15.
+004370     IF W-KS22R > W-KS23R
+004380         IF W-KS22R >= W-KS24R
+004390             ADD 1 TO W-KS22F
+004400             GO TO S-15.
+004410     IF W-KS22R > W-KS24R
+004420         IF W-KS22R >= W-KS23R
+004430             ADD 1 TO W-KS22F
+004440             GO TO S-15.
+004450     IF W-KS23R > W-KS22R
+004460         IF W-KS23R >= W-KS24R
+004470             ADD 1 TO W-KS23F
+004480             GO TO S-15.
+004490     IF W-KS23R > W-KS24R
+004500         IF W-KS23R >= W-KS22R
+004510             ADD 1 TO W-KS23F
+004520             GO TO S-15.
+004530     IF W-KS24R > W-KS22R
+004540         IF W-KS24R >= W-KS23R
+004550             ADD 1 TO W-KS24F
+004560             GO TO S-15.
+004570     IF W-KS24R > W-KS23R
+004580         IF W-KS24R >= W-KS22R
+004590             ADD 1 TO W-KS24F
+004600             GO TO S-15.
+004610 S-15.
+004620     COMPUTE W-TKSU = W-KS22F + W-KS23F + W-KS24F.
+004630     IF W-TKSU = W-KSU
+004640         GO TO S-30.
+004650     ADD 1 TO CNT.
+004660     IF CNT > 2
+004670         DISPLAY E-ME03 E-ME99.
+004680     GO TO S-10.
+004690 S-20.
+004700     IF W-KS22R = W-KS23R AND W-KS24R
+004710         IF W-KS22F NOT = ZERO
+004720             SUBTRACT 1 FROM W-KS22F
+004730             GO TO S-25
+004740           ELSE
+004750             IF W-KS23F NOT = ZERO
+004760                 SUBTRACT 1 FROM W-KS23F
+004770                 GO TO S-25
+004780               ELSE
+004790                 IF W-KS24F NOT = ZERO
+004800                     SUBTRACT 1 FROM W-KS24F
+004810                     GO TO S-25.
+004820     IF W-KS22R = W-KS23R AND W-KS24R
+004830         IF W-KS22R NOT = ZERO
+004840             SUBTRACT 1 FROM W-KS22F
+004850             GO TO S-25
+004860           ELSE
+004870             IF W-KS23R NOT = ZERO
+004880                 SUBTRACT 1 FROM W-KS23F
+004890                 GO TO S-25
+004900               ELSE
+004910                 IF W-KS24R NOT = ZERO
+004920                     SUBTRACT 1 FROM W-KS24F
+004930                     GO TO S-25.
+004940     IF W-KS22R > W-KS23R
+004950         IF W-KS22R >= W-KS24R
+004960             SUBTRACT 1 FROM W-KS22F
+004970             GO TO S-25.
+004980     IF W-KS22R > W-KS24R
+004990         IF W-KS22R >= W-KS23R
+005000             SUBTRACT 1 FROM W-KS22F
+005010             GO TO S-25.
+005020     IF W-KS23R > W-KS22R
+005030         IF W-KS23R >= W-KS24R
+005040             SUBTRACT 1 FROM W-KS23F
+005050             GO TO S-25.
+005060     IF W-KS23R > W-KS24R
+005070         IF W-KS23R >= W-KS22R
+005080             SUBTRACT 1 FROM W-KS23F
+005090             GO TO S-25.
+005100     IF W-KS24R > W-KS22R
+005110         IF W-KS24R >= W-KS23R
+005120             SUBTRACT 1 FROM W-KS24F
+005130             GO TO S-25.
+005140     IF W-KS24R > W-KS23R
+005150         IF W-KS24R >= W-KS22R
+005160             SUBTRACT 1 FROM W-KS24F
+005170             GO TO S-25.
+005180 S-25.
+005190     COMPUTE W-TKSU = W-KS22F + W-KS23F + W-KS24F.
+005200     IF W-TKSU = W-KSU
+005210         GO TO S-30.
+005220     ADD 1 TO CNT.
+005230     IF CNT > 2
+005240         DISPLAY E-ME03 E-ME99.
+005250     GO TO S-20.
+005260 S-30.
+005270     EXIT.
+005280 S-40.
+005290     INITIALIZE EXL-R.
+005300     MOVE W-NG TO EXL-NG.
+005310     MOVE W-SKC TO EXL-SKC.
+005320     MOVE 3 TO JCON3-01.
+005330     MOVE W-SKC TO JCON3-02.
+005340     READ JCON WITH UNLOCK INVALID KEY
+005350         MOVE SPACE TO JCON3-03.
+005360     MOVE JCON3-03 TO EXL-SKN.
+005370     MOVE W-USC TO EXL-USC.
+005380     MOVE 2 TO JCON2-01.
+005390     MOVE W-USC TO JCON2-02.
+005400     READ JCON WITH UNLOCK INVALID KEY
+005410         MOVE SPACE TO JCON2-03.
+005420     MOVE JCON2-03 TO EXL-USN.
+005430     MOVE W-TCD TO EXL-TCD.
+005440     MOVE T-NAME TO EXL-TNA.
+005450     MOVE W-KS22F TO EXL-KS22.
+005460     MOVE W-KS23F TO EXL-KS23.
+005470     MOVE W-KS24F TO EXL-KS24.
+005480     MOVE W-KSU TO EXL-KSU.
+005490     MOVE T-TNC TO EXL-TNC.
+005500     WRITE EXL-R.
+005510 S-45.
+005520     EXIT.
+

@@ -1,0 +1,242 @@
+000010 IDENTIFICATION    DIVISION.
+000020 PROGRAM-ID.       PR030M.
+000030*****************************************************
+000040*    PROGRAM ........ 貸借マスタメンテナンス        *
+000050*    AUTHOR  ........ ﾜﾀﾅﾍﾞ ｹﾝｼﾞ                    *
+000060*    SCREEN  USED ... GR0300                        *
+000070*    DATA WRITTEN ... 90/11/14                      *
+000080*****************************************************
+000090 ENVIRONMENT       DIVISION.
+000100 CONFIGURATION     SECTION.
+000110 SOURCE-COMPUTER.  SYSTEM3100.
+000120 OBJECT-COMPUTER.  SYSTEM3100.
+000130 INPUT-OUTPUT      SECTION.
+000140 FILE-CONTROL.
+000150**   貸借マスタ　　　　　（８５／３）　  **
+000160     SELECT   BS      ASSIGN  TO       F1-MSD
+000170                      ORGANIZATION     INDEXED
+000180                      ACCESS  MODE     RANDOM
+000190                      RECORD  KEY      BS-KEY
+000200                      FILE    STATUS   ERR-STAT.
+000210*
+000220 I-O-CONTROL.
+000230     APPLY  SHARED-MODE       ON       BS.
+000240*
+000250 DATA              DIVISION.
+000260 FILE              SECTION.
+000270*
+000280     COPY   BS-LIB.
+000290*
+000300 WORKING-STORAGE     SECTION.
+000310*
+000320 77  N-10            PIC  N(10)    VALUE  SPACE.
+000330 77  ERR-STAT        PIC  X(02).
+000340 77  ACT             PIC  9(01).                                  ｱｸｼｮﾝ
+000350 01  WORK-AREA.
+000360     03  LN          PIC  9(03).                                  ﾗｲﾝ№
+000370     03  KAI         PIC  9(01).                                  改行数
+000380     03  KARI        PIC  9(01).                                  借方合計
+000390     03  INJI1       PIC  9(01).                                  印字区分
+000400     03  KAMOKU1     PIC  N(10).                                  科目名1
+000410     03  KASHI       PIC  9(01).                                  貸方合計
+000420     03  INJI2       PIC  9(01).                                  印字区分
+000430     03  KAMOKU2     PIC  N(10).                                  科目名2
+000440     03  TRK         PIC  9(01).                                  利益区分
+000450     03  OKC         PIC  X(01).                                  確認
+000460*
+000470     COPY  LWMSG.
+000480*
+000490 SCREEN             SECTION.
+000500*
+000510 SD  CRT-X  END  STATUS  ESTAT.
+000520 01  DSP-CLR.
+000530     03  LINE 1  CLEAR   SCREEN.
+000540 01  CLR-AREA.
+000550*    <  画面クリア項目  >
+000560     03  LINE  05  COLUMN  35  VALUE  "   ".
+000570     03  LINE  06  COLUMN  37  VALUE  " ".
+000580     03  LINE  07  COLUMN  37  VALUE  " ".
+000590     03  LINE  07  COLUMN  75  VALUE  " ".
+000600     03  LINE  08  COLUMN  37  VALUE  " ".
+000610     03  LINE  08  COLUMN  75  VALUE  " ".
+000620     03  LINE  09  COLUMN  18  PIC  N(10)  FROM  N-10.
+000630     03  LINE  09  COLUMN  56  PIC  N(10)  FROM  N-10.
+000640     03  LINE  10  COLUMN  75  VALUE  " ".
+000650     03  LINE  24  COLUMN  77  VALUE  " ".
+000660*    <  画面入力項目  >
+000670 01  ACP-AREA.
+000680     03  ACP-ACT      LINE  03  COLUMN  67  PIC  9(01)            ｱｸｼｮﾝ
+000690                   USING  ACT      CHECK  OVERFLOW  NO  IFC.
+000700     03  ACP-LN       LINE  05  COLUMN  35  PIC  9(03)            ﾗｲﾝ№
+000710                   USING  LN       CHECK  OVERFLOW  NO  IFC.
+000720     03  ACP-KAI      LINE  06  COLUMN  37  PIC  9(01)            改行数
+000730                   USING  KAI      CHECK  OVERFLOW  NO  IFC.
+000740     03  ACP-KARI     LINE  07  COLUMN  37  PIC  9(01)            借方合計
+000750                   USING  KARI     CHECK  OVERFLOW  NO  IFC.
+000760     03  ACP-INJI1    LINE  08  COLUMN  37  PIC  9(01)            印字区分
+000770                   USING  INJI1    CHECK  OVERFLOW  NO  IFC.
+000780     03  ACP-KAMOKU1  LINE  09  COLUMN  18  PIC  N(10)            科目名1
+000790                   USING  KAMOKU1  CHECK  OVERFLOW  NO  IFC.
+000800     03  ACP-KASHI    LINE  07  COLUMN  75  PIC  9(01)            貸方合計
+000810                   USING  KASHI    CHECK  OVERFLOW  NO  IFC.
+000820     03  ACP-INJI2    LINE  08  COLUMN  75  PIC  9(01)            印字区分
+000830                   USING  INJI2    CHECK  OVERFLOW  NO  IFC.
+000840     03  ACP-KAMOKU2  LINE  09  COLUMN  56  PIC  N(10)            科目名2
+000850                   USING  KAMOKU2  CHECK  OVERFLOW  NO  IFC.
+000860     03  ACP-TRK      LINE  10  COLUMN  75  PIC  9(01)            利益区分
+000870                   USING  TRK      CHECK  OVERFLOW  NO  IFC.
+000880     03  ACP-OKC      LINE  24  COLUMN  77  PIC  X(01)            確認
+000890                   INTO   OKC      CHECK  OVERFLOW  NO  IFC.
+000900*    <  画面表示項目  >
+000910 01  DSP-AREA.
+000920     03  LINE  06  COLUMN  37  PIC  9(01)  FROM  BS-LIN.          改行数
+000930     03  LINE  07  COLUMN  37  PIC  9(01)  FROM  BS-GKBDR.        借方合計
+000940     03  LINE  08  COLUMN  37  PIC  9(01)  FROM  BS-PKBDR.        印字区分
+000950     03  LINE  09  COLUMN  18  PIC  N(10)  FROM  BS-NAMDR1.       科目名1
+000960     03  LINE  07  COLUMN  75  PIC  9(01)  FROM  BS-GKBCR.        貸方合計
+000970     03  LINE  08  COLUMN  75  PIC  9(01)  FROM  BS-PKBCR.        印字区分
+000980     03  LINE  09  COLUMN  56  PIC  N(10)  FROM  BS-NAMCR1.       科目名2
+000990     03  LINE  10  COLUMN  75  PIC  9(01)  FROM  BS-RKB.          利益区分
+001000*
+001010     COPY  LSMSG.
+001020*------------------------------------------------------------------------*
+001030 PROCEDURE          DIVISION.
+001040*
+001050 HAJIME.
+001060     DISPLAY    DSP-CLR.
+001070     CALL       "GR0300".
+001080     DISPLAY    CLR-AREA.
+001090     OPEN       I-O    BS.
+001100 PRO-000.
+001110     ACCEPT     ACP-ACT.                                          ｱｸｼｮﾝ
+001120     IF         ESTAT       =  "P9"            GO   TO   OWARI.
+001130     IF         ESTAT  NOT  =  "01" AND "06"   GO   TO   PRO-000.
+001140     IF         ACT    NOT  =  "1" AND "2" AND "3"
+001150                                     GO    TO    PRO-000.
+001160 PRO-005.
+001170     DISPLAY    CLR-AREA.
+001180 PRO-010.
+001190     ACCEPT     ACP-LN.                                           ﾗｲﾝ№
+001200     DISPLAY    DISP-MSG-SPACE.
+001210     IF         ESTAT       =  "09"            GO   TO   PRO-000.
+001220     IF         ESTAT  NOT  =  "01" AND "06"   GO   TO   PRO-010.
+001230*****DISPLAY    ACP-LN.                                           D901218
+001240*****貸借マスタ　　ＲＥＡＤ
+001250     MOVE       LN          TO      BS-KEY.
+001260     READ       BS          INVALID
+001270                MOVE        LOW-VALUE    TO    BS-KEY
+001280                GO          TO      PRO-015.
+001290     IF         ACT         =       "1"
+001300                DISPLAY     NOR-M01 DISP-BUZ-J
+001310                GO          TO      PRO-010.
+001320 PRO-015.
+001330     IF         BS-KEY      =       LOW-VALUE
+001340                IF          ACT  NOT  =  "1"
+001350                            DISPLAY  INV-M01 DISP-BUZ-J
+001360                            GO    TO    PRO-010.
+001370     IF         ACT    NOT  =  "1"
+001380                DISPLAY     DSP-AREA.
+001390     IF         ACT         =  "3"   GO    TO    PRO-100.
+001400 PRO-020.
+001410     ACCEPT     ACP-KAI.                                          改行数
+001420     IF         ESTAT       =  "09"            GO   TO   PRO-010.
+001430     IF         ESTAT  NOT  =  "01" AND "06"   GO   TO   PRO-020.
+001440*****DISPLAY    ACP-KAI.                                          D901218
+001450 PRO-030.
+001460     ACCEPT     ACP-KARI.                                         借方合計
+001470     IF         ESTAT       =  "09"            GO   TO   PRO-020.
+001480     IF         ESTAT  NOT  =  "01" AND "06"   GO   TO   PRO-030.
+001490*****DISPLAY    ACP-KARI.                                         D901218
+001500 PRO-040.
+001510     ACCEPT     ACP-INJI1.                                        印字区分
+001520     IF         ESTAT       =  "09"            GO   TO   PRO-030.
+001530     IF         ESTAT  NOT  =  "01" AND "06"   GO   TO   PRO-040.
+001540*****DISPLAY    ACP-INJI1.                                        D901218
+001550 PRO-050.
+001560     ACCEPT     ACP-KAMOKU1.                                      科目名1
+001570     IF         ESTAT       =  "09"            GO   TO   PRO-040.
+001580     IF         ESTAT  NOT  =  "01" AND "06"   GO   TO   PRO-050.
+001590 PRO-060.
+001600     ACCEPT     ACP-KASHI.                                        貸方合計
+001610     IF         ESTAT       =  "09"            GO   TO   PRO-050.
+001620     IF         ESTAT  NOT  =  "01" AND "06"   GO   TO   PRO-060.
+001630*****DISPLAY    ACP-KASHI.                                        D901218
+001640 PRO-070.
+001650     ACCEPT     ACP-INJI2.                                        印字区分
+001660     IF         ESTAT       =  "09"            GO   TO   PRO-060.
+001670     IF         ESTAT  NOT  =  "01" AND "06"   GO   TO   PRO-070.
+001680*****DISPLAY    ACP-INJI2.                                        D901218
+001690 PRO-080.
+001700     ACCEPT     ACP-KAMOKU2.                                      科目名2
+001710     IF         ESTAT       =  "09"            GO   TO   PRO-070.
+001720     IF         ESTAT  NOT  =  "01" AND "06"   GO   TO   PRO-080.
+001730 PRO-090.
+001740     ACCEPT     ACP-TRK.                                          利益区分
+001750     IF         ESTAT       =  "09"            GO   TO   PRO-080.
+001760     IF         ESTAT  NOT  =  "01" AND "06"   GO   TO   PRO-090.
+001770*****DISPLAY    ACP-TRK.                                          D901218
+001780 PRO-100.
+001790     ACCEPT     ACP-OKC.                                          確認
+001800     IF         ESTAT       =  "09"
+001810                IF     ACT  =  3               GO   TO   PRO-010
+001820                ELSE                           GO   TO   PRO-090.
+001830     IF         OKC    NOT  =  "1" AND "9"     GO   TO   PRO-100.
+001840     IF         OKC         =  "9"
+001850                DISPLAY     CLR-AREA   CAN-01
+001860                INITIALIZE  WORK-AREA
+001870                GO     TO   PRO-005.
+001880     PERFORM    UPD-RTN     THRU     UPD-EX.
+001890     DISPLAY    OK-01.
+001900     GO         TO          PRO-005.
+001910 OWARI.
+001920     PERFORM    CLSE-ENT    THRU     CLSE-EXT.
+001930     STOP       RUN.
+001940*------------------------------*
+001950*    更新処理  <UPD-RTN>       *
+001960*------------------------------*
+001970 UPD-RTN.
+001980     IF         ACT       =  "3"    GO    TO    UPD-010.
+001990     IF         ACT       =  "1"
+002000                MOVE      SPACE     TO    BS-REC
+002010                INITIALIZE                BS-REC.
+002020     MOVE       LN        TO        BS-KEY    ERR-K.
+002030     MOVE       KAI       TO        BS-LIN.
+002040     MOVE       KARI      TO        BS-GKBDR.
+002050     MOVE       INJI1     TO        BS-PKBDR.
+002060     MOVE       KAMOKU1   TO        BS-NAMDR1.
+002070     MOVE       KASHI     TO        BS-GKBCR.
+002080     MOVE       INJI2     TO        BS-PKBCR.
+002090     MOVE       KAMOKU2   TO        BS-NAMCR1.
+002100     MOVE       TRK       TO        BS-RKB.
+002110     MOVE       ZERO      TO        BS-KINDR  BS-KINCR.
+002120     IF         ACT       =         "2"       GO   TO   UPD-000.
+002130     WRITE      BS-REC    INVALID
+002140                MOVE      "BS"      TO    ERR-F
+002150                MOVE      "W"       TO    ERR-M
+002160                PERFORM   ERR-ENT   THRU  ERR-EXT.
+002170     CALL       "CBLTCLS"  USING  BS.
+002180     GO         TO        UPD-EX.
+002190 UPD-000.
+002200     REWRITE    BS-REC    INVALID
+002210                MOVE      "BS"      TO    ERR-F
+002220                MOVE      "R"       TO    ERR-M
+002230                PERFORM   ERR-ENT   THRU  ERR-EXT.
+002240     GO         TO        UPD-EX.
+002250 UPD-010.
+002260     DELETE     BS        INVALID
+002270                MOVE      "BS"      TO    ERR-F
+002280                MOVE      "D"       TO    ERR-M
+002290                PERFORM   ERR-ENT   THRU  ERR-EXT.
+002300     CALL       "CBLTCLS"   USING   BS.
+002310 UPD-EX.
+002320     EXIT.
+002330*--------------------------*
+002340*    ファイルｃｌｏｓｅ    *
+002350*--------------------------*
+002360 CLSE-ENT.
+002370     CLOSE      BS.
+002380 CLSE-EXT.
+002390     EXIT.
+002400*
+002410     COPY  LPMSG.
+002420************ E N D     O F     P R O G R A M *****************************

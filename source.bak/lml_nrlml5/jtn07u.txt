@@ -1,0 +1,539 @@
+000010 IDENTIFICATION   DIVISION.
+000020 PROGRAM-ID. JTN07U.
+000030*********************************************************
+000040*    PROGRAM         :  トラスコ他指図変換              *
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :  ******                          *
+000070*    COMPILE TYPE    :  COBOL                           *
+000080*********************************************************
+000090 ENVIRONMENT DIVISION.
+000100 CONFIGURATION SECTION.
+000110 SOURCE-COMPUTER. SYSTEM3100.
+000120 OBJECT-COMPUTER. SYSTEM3100.
+000130 INPUT-OUTPUT SECTION.
+000140 FILE-CONTROL.
+000150     COPY     LIBCSE.
+000160     SELECT   TSHW     ASSIGN  TO      TSHW-MSD.
+000170     SELECT   TDIF     ASSIGN  TO      TDI-RDB
+000180                       FILE    STATUS  ERR-STAT.
+000190     SELECT   WTNAF    ASSIGN  TO      WTNA-MSD
+000200                       ORGANIZATION    INDEXED
+000210                       ACCESS  MODE    RANDOM
+000220                       RECORD  KEY     WTNA-KEY
+000230                       FILE    STATUS  ERR-STAT.
+000240     SELECT JMSTD ASSIGN TO JMSTD1-MSD JMSTD2-MSD JMSTD3-MSD      I.101027
+000250         ORGANIZATION INDEXED                                     I.101027
+000260         ACCESS MODE DYNAMIC                                      I.101027
+000270         RECORD KEY JMSTD-KEY1                                    I.101027
+000280         ALTERNATE RECORD KEY JMSTD-KEY2                          I.101027
+000290         ALTERNATE RECORD KEY JMSTD-KEY3                          I.101027
+000300         FILE STATUS IS ERR-STAT.                                 I.101027
+000310     SELECT   JSTR     ASSIGN  TO      F1-MSD
+000320                       ORGANIZATION    INDEXED
+000330                       ACCESS  MODE    DYNAMIC
+000340                       RECORD  KEY     JSTR-KEY
+000350                       FILE    STATUS  ERR-STAT.
+000360     SELECT   JCON     ASSIGN  TO      F6-MSD
+000370                       ORGANIZATION    INDEXED
+000380                       ACCESS  MODE    RANDOM
+000390                       RECORD  KEY     JCON1-KEY
+000400                       FILE    STATUS  ERR-STAT.
+000410     SELECT   OKJF     ASSIGN  TO      F7-MSD
+000420                       ORGANIZATION    INDEXED
+000430                       ACCESS  MODE    RANDOM
+000440                       RECORD  KEY     OKJF-KEY
+000450                       FILE    STATUS  ERR-STAT.
+000460     SELECT   JT-DNKN  ASSIGN  TO      F9-MSD
+000470                       ORGANIZATION    INDEXED
+000480                       ACCESS  MODE    RANDOM
+000490                       RECORD  KEY     DNKN-KEY
+000500                       FILE    STATUS  ERR-STAT.
+000510 I-O-CONTROL.
+000520     APPLY SHARED-MODE ON M-DATE
+000530     APPLY SHARED-MODE ON WTNAF
+000540     APPLY SHARED-MODE ON JMSTD                                   I.101027
+000550     APPLY SHARED-MODE ON JSTR
+000560     APPLY SHARED-MODE ON JCON
+000570     APPLY SHARED-MODE ON OKJF
+000580     APPLY SHARED-MODE ON JT-DNKN.
+000590 DATA DIVISION.
+000600 FILE SECTION.
+000610     COPY     LIBFDD.
+000620     COPY     L-TDIF.
+000630     COPY LJMSTD.                                                 I.101027
+000640     COPY     L-JSTR.
+000650     COPY     L-JCON.
+000660     COPY     LOKJF.
+000670     COPY     LTDNKN.
+000680 FD  WTNAF
+000690     BLOCK  4 RECORDS
+000700     LABEL RECORD IS STANDARD
+000710     VALUE OF IDENTIFICATION "WTNAF".
+000720 01  WTNA-R.
+000730     02  WTNA-KEY.
+000740       03  WTNA-TENC    PIC  9(004).                              I.100923
+000750*****  03  WTNA-TENC    PIC  9(003).                              D.100923
+000760     02  WTNA-TNA       PIC  N(026).
+000770     02  WTNA-OSN       PIC  9(001).
+000780     02  F              PIC  X(007).                              I.100923
+000790*****02  F              PIC  X(008).                              D.100923
+000800 FD  TSHW
+000810     BLOCK  1 RECORDS
+000820     LABEL RECORD IS STANDARD
+000830     VALUE OF IDENTIFICATION WK0256ID.
+000840 01  TSHW-R.
+000850     02  TSHW-DATE      PIC  9(006).
+000860     02  TSHW-TCD       PIC  9(004).
+000870     02  TSHW-CCD       PIC  9(003).
+000880*****02  TSHW-TPC       PIC  9(003).                              D.100923
+000890     02  TSHW-TPC       PIC  9(004).                              I.100923
+000900     02  TSHW-SOK       PIC  9(001).
+000910     02  TSHW-UNS       PIC  9(001).
+000920     02  TSHW-HNO       PIC  X(010).
+000930     02  TSHW-JNOD.
+000940       03  TSHW-JNO     PIC  9(006).
+000950       03  TSHW-JGN     PIC  9(001).
+000960     02  TSHW-ISU       PIC  9(003).
+000970     02  TSHW-HCD       PIC  9(006).
+000980     02  TSHW-SKB       PIC  9(001).
+000990     02  TSHW-ASU.
+001000       03  TSHW-SUD   OCCURS  10.
+001010         04  TSHW-SU    PIC S9(004).
+001020     02  TSHW-SUT       PIC S9(005).
+001030     02  TSHW-TEKI      PIC  N(028).
+001040     02  TSHW-TED   REDEFINES TSHW-TEKI.
+001050       03  TSHW-THT     PIC  N(009).
+001060       03  TSHW-TTE     PIC  N(019).
+001070     02  F              PIC  X(109).                              I.100923
+001080*****02  F              PIC  X(110).                              D.100923
+001090 WORKING-STORAGE  SECTION.
+001100 77  ERR-STAT           PIC  X(002).
+001110 77  W-FILE             PIC  X(013).
+001120 77  W-END              PIC  9(001) VALUE 0.
+001130 77  WK0256ID           PIC  X(009) VALUE SPACE.
+001140 01  STN-NO.
+001150     02  STN-NO1        PIC  X(003).
+001160     02  STN-NO2        PIC  X(003).
+001170 01  W-FID.
+001180     02  W-FID1         PIC  X(006) VALUE "WK0256".
+001190     02  W-FID2         PIC  X(003).
+001200 01  W-DATA.
+001210     02  W-NGP.
+001220       03  W-NEN        PIC  9(004).
+001230       03  W-NENL  REDEFINES W-NEN.
+001240         04  W-NEN1     PIC  9(002).
+001250         04  W-NEN2     PIC  9(002).
+001260       03  W-GET        PIC  9(002).
+001270       03  W-PEY        PIC  9(002).
+001280     02  W-NGPL  REDEFINES W-NGP.
+001290       03  F            PIC  9(002).
+001300       03  W-NGPS       PIC  9(006).
+001310     02  W-DATE         PIC  9(008).
+001320     02  W-ONO          PIC  9(006).
+001330     02  W-SNO          PIC  9(006).
+001340     02  W-D.
+001350       03  W-OSC.
+001360         04  W-TCD      PIC  9(004).
+001370         04  W-CCD      PIC  9(003).
+001380*****  03  W-TPC        PIC  9(003).                              D.100923
+001390       03  W-TPC        PIC  9(004).                              I.100923
+001400       03  W-SOK        PIC  9(001).
+001410       03  W-UNS        PIC  9(001).
+001420       03  W-ISU        PIC  9(003).
+001430       03  W-THT        PIC  N(009).
+001440       03  W-TTE        PIC  N(019).
+001450     02  W-NO           PIC  9(002).
+001460     02  W-OEB          PIC  9(002).
+001470     02  W-GNO          PIC  9(001).
+001480     02  W-DC           PIC  9(001).
+001490     02  WRI-SW         PIC  9(001).
+001500     02  W-TEK.
+001510       03  F            PIC  N(001) VALUE NC"№".
+001520       03  W-TK1        PIC  N(002).
+001530       03  F            PIC  N(001) VALUE SPACE.
+001540       03  W-TK2        PIC  N(019).
+001550       03  W-TK2D  REDEFINES W-TK2.
+001560         04  W-TK21     PIC  N(004).                              I.100923
+001570         04  W-TK22     PIC  N(015).                              I.100923
+001580*****    04  W-TK21     PIC  N(003).                              D.100923
+001590*****    04  W-TK22     PIC  N(016).                              D.100923
+001600     02  W-TEKI         PIC  N(016).
+001610     02  W-TEKID REDEFINES W-TEKI.
+001620       03  W-TKD   OCCURS  16.
+001630         04  W-TK       PIC  N(001).
+001640     02  W-TTEA         PIC  N(019).
+001650     02  W-TTED  REDEFINES W-TTEA.
+001660       03  W-TED   OCCURS  19.
+001670         04  W-TE       PIC  N(001).
+001680     02  CNT1           PIC  9(002).
+001690     02  CNT2           PIC  9(002).
+001700 SCREEN SECTION.
+001710 SD  C-CRT
+001720     END STATUS IS ESTAT.
+001730 01  C-CLEAR.
+001740     02  C-CL    LINE   1  CLEAR SCREEN.
+001750 01  C-MID.
+001760     02  LINE   1  COLUMN  15  PIC  N(024) VALUE
+001770          NC"＊＊＊　　トラスコ他　出荷指図書　作成　　＊＊＊".
+001780 01  C-ERR.
+001790     02  LINE  24.
+001800       03  E-ME1   COLUMN  15  PIC  X(017) VALUE
+001810            "***  DATA ﾅｼ  ***".
+001820       03  E-ME2.
+001830         04  COLUMN  15  PIC  X(018) VALUE
+001840              "***  DATA ｴﾗｰ  ***".
+001850         04  COLUMN  45  PIC  9(004) FROM  W-TCD.
+001860         04  COLUMN  50  PIC  9(003) FROM  W-CCD.
+001870         04  COLUMN  54  PIC  9(001) FROM  W-SOK.
+001880         04  COLUMN  56  PIC  9(001) FROM  W-UNS.
+001890       03  E-ME3.
+001900         04  COLUMN  15  PIC  X(017) VALUE
+001910              "***  JCON ﾅｼ  ***".
+001920         04  COLUMN  35  PIC  X(002) FROM  JCON1-KEY.
+001930       03  E-ME11.
+001940         04  COLUMN  15  PIC  X(026) VALUE
+001950              "***  JCON REWRITE ｴﾗｰ  ***".
+001960         04  COLUMN  45  PIC  X(002) FROM  JCON1-KEY.
+001970       03  E-ME12.
+001980         04  COLUMN  15  PIC  X(024) VALUE
+001990              "***  OKJF WRITE ｴﾗｰ  ***".
+002000         04  COLUMN  45  PIC  X(006) FROM  OKJF-KEY.
+002010       03  E-ME13.
+002020         04  COLUMN  15  PIC  X(024) VALUE
+002030              "***  JSTR WRITE ｴﾗｰ  ***".
+002040         04  COLUMN  45  PIC  X(007) FROM  JSTR-KEY.
+002050       03  E-ME14.
+002060         04  COLUMN  15  PIC  X(027) VALUE
+002070              "***  JT-DNKN WRITE ｴﾗｰ  ***".
+002080         04  COLUMN  45  PIC  X(015) FROM  DNKN-KEY.
+002090       03  E-ME17.
+002100         04  COLUMN  15  PIC  X(017) VALUE
+002110              "***  TDIF ﾅｼ  ***".
+002120         04  COLUMN  45  PIC  9(004) FROM  W-TCD.
+002130         04  COLUMN  50  PIC  9(003) FROM  W-CCD.
+002140         04  COLUMN  54  PIC  9(001) FROM  W-SOK.
+002150         04  COLUMN  56  PIC  9(001) FROM  W-UNS.
+002160       03  E-ME18.
+002170         04  COLUMN  15  PIC  X(026) VALUE
+002180              "***  TDIF REWRITE ｴﾗｰ  ***".
+002190         04  COLUMN  45  PIC  X(007) FROM  TDI-KEY.
+002200     COPY LIBSCR.
+002210     COPY LSSEM.
+002220 PROCEDURE DIVISION.
+002230 M-010.
+002240     DISPLAY C-CLEAR.
+002250     DISPLAY C-MID.
+002260*
+002270     CALL "CBLSTNNO" USING STN-NO.
+002280     MOVE STN-NO2 TO W-FID2.
+002290     MOVE W-FID TO WK0256ID.
+002300     OPEN INPUT TSHW.
+002310     READ TSHW AT END
+002320         CLOSE TSHW
+002330*****    MOVE 255 TO COMPLETION-CODE                              D.100223
+002340         MOVE 200 TO COMPLETION-CODE                              I.100223
+002350         DISPLAY E-ME1 E-ME99
+002360         GO TO M-980.
+002370     OPEN I-O TDIF JSTR JCON OKJF JT-DNKN.
+002380     OPEN INPUT WTNAF JMSTD.                                      I.101027
+002390*****OPEN INPUT WTNAF.                                            D.101027
+002400*
+002410     MOVE    "12"        TO    JCON1-KEY.
+002420     READ     JCON       UNLOCK     INVALID
+002430              MOVE 255 TO COMPLETION-CODE
+002440              DISPLAY E-ME78 E-ME3 E-ME99
+002450              GO TO M-960.
+002460     MOVE    "14"        TO    JCON1-KEY.
+002470     READ     JCON       UNLOCK     INVALID
+002480              MOVE 255 TO COMPLETION-CODE
+002490              DISPLAY E-ME78 E-ME3 E-ME99
+002500              GO TO M-960.
+002510*
+002520     MOVE    ZERO      TO   W-NGP.
+002530     MOVE    TSHW-DATE TO   W-NGPS.
+002540     COPY LIBCPR.
+002550     IF W-NEN2 >= DATE-NF1 AND <= DATE-NT1
+002560         ADD DATE-NC1 TO W-NEN.
+002570     IF W-NEN2 >= DATE-NF2 AND <= DATE-NT2
+002580         ADD DATE-NC2 TO W-NEN.
+002590 M-100.
+002600     MOVE      TSHW-TCD TO       W-TCD.
+002610     MOVE      TSHW-CCD TO       W-CCD.
+002620     MOVE      TSHW-SOK TO       W-SOK.
+002630     MOVE      TSHW-UNS TO       W-UNS.
+002640     MOVE      TSHW-THT TO       W-THT.                           I.080606
+002650     MOVE      ZERO     TO       W-OEB W-NO.                      I.080702
+002660     IF  W-UNS        =   9                     GO  TO  M-160.    I.090304
+002670*****IF  W-SOK        =   9                     GO  TO  M-160.    D.090304
+002680     MOVE      1        TO       JCON1-01.
+002690     MOVE      4        TO       JCON1-02.
+002700     READ     JCON               INVALID
+002710              MOVE 255 TO COMPLETION-CODE
+002720              DISPLAY E-ME78 E-ME3 E-ME99
+002730              GO TO M-960.
+002740     IF     JCON1-04  =  199999
+002750                         MOVE     100000    TO    W-ONO
+002760     ELSE
+002770                         COMPUTE  W-ONO  =   JCON1-04  +  1.
+002780     MOVE    W-ONO   TO    JCON1-04.
+002790     REWRITE  JCON1-R    INVALID
+002800              MOVE 255 TO COMPLETION-CODE
+002810              DISPLAY E-STAT E-ME78 E-ME11 E-ME99
+002820              GO TO M-960.
+002830*****MOVE ZERO TO W-OEB W-NO.                                     D.080702
+002840 M-120.
+002850     INITIALIZE                OKJF-R.
+002860     MOVE     W-ONO      TO    OKJF-KEY.
+002870     MOVE     W-UNS      TO    OKJF-02.
+002880     MOVE     W-NGPS     TO    OKJF-03.
+002890     MOVE     W-SOK      TO    OKJF-04.
+002900     MOVE     W-OSC      TO    OKJF-05.
+002910     MOVE     W-THT      TO    OKJF-06.
+002920     MOVE     ZERO       TO    OKJF-07   OKJF-08   OKJF-10.
+002930     MOVE     1          TO    OKJF-09.
+002940     MOVE     1          TO    OKJF-13.
+002950     WRITE    OKJF-R     INVALID
+002960                         DISPLAY  E-STAT E-ME12 E-ME99
+002970                         GO  TO  M-140.
+002980     CALL     "CBLTCLS"  USING    OKJF.
+002990     GO  TO M-160.
+003000 M-140.
+003010     IF ERR-STAT NOT = "24"
+003020         MOVE 255 TO COMPLETION-CODE
+003030         DISPLAY E-ME78 E-ME99
+003040         GO TO M-960.
+003050     DISPLAY E-CL.
+003060     CLOSE OKJF.
+003070     DISPLAY E-ME71 E-ME98 STOP " ".
+003080     DISPLAY E-CL.
+003090     OPEN I-O OKJF.
+003100     GO TO M-120.
+003110 M-160.
+003120     MOVE     TSHW-TPC   TO    W-TPC.
+003130     MOVE     TSHW-ISU   TO    W-ISU.
+003140     MOVE     TSHW-THT   TO    W-THT.
+003150     MOVE     TSHW-TTE   TO    W-TTE.
+003160*
+003170     MOVE     1          TO    JCON1-01.
+003180     MOVE     2          TO    JCON1-02.                          伝票№区
+003190     READ     JCON       INVALID
+003200              MOVE 255 TO COMPLETION-CODE
+003210              DISPLAY E-ME78 E-ME3 E-ME99
+003220              GO TO M-960.
+003230 M-180.
+003240     ADD     1           TO  W-NO.
+003250     IF  W-NO            >   88            GO  TO  M-100.
+003260*
+003270     ADD     1           TO  JCON1-04.
+003280     IF  JCON1-04        =   200000
+003290                         MOVE   100001       TO    JCON1-04.
+003300*
+003310     MOVE     JCON1-04   TO    JSTR-01.
+003320     MOVE     ZERO       TO    JSTR-02.
+003330     START    JSTR  KEY   NOT <  JSTR-KEY   INVALID
+003340                         GO  TO   M-200.
+003350     READ     JSTR       NEXT  UNLOCK  AT  END
+003360                         GO  TO   M-200.
+003370     IF  JSTR-01     NOT =   JCON1-04      GO  TO  M-200
+003380     ELSE            GO  TO   M-180.
+003390 M-200.
+003400     MOVE  JCON1-04  TO  W-SNO.
+003410     REWRITE  JCON1-R    INVALID
+003420              MOVE 255 TO COMPLETION-CODE
+003430              DISPLAY E-STAT E-ME78 E-ME11 E-ME99
+003440              GO TO M-960.
+003450*
+003460     MOVE     ZERO       TO    W-GNO.
+003470 M-220.
+003480     ADD      1          TO    W-GNO
+003490     IF  W-GNO           >     6                GO  TO  M-160.
+003500     IF  W-TCD      NOT  =     9850             GO  TO  M-240.
+003510     IF  W-TPC           =     ZERO             GO  TO  M-240.
+003520     MOVE     W-TPC      TO    WTNA-KEY.
+003530     READ     WTNAF      UNLOCK INVALID
+003540              MOVE     SPACE      TO    WTNA-TNA.
+003550 M-240.
+003560     IF  TSHW-JNOD       =     ZERO                               I.101027
+003570              MOVE     0          TO    JMSTD-01                  I.101027
+003580              GO  TO  M-250.                                      I.101027
+003590     MOVE     TSHW-JNOD  TO    JMSTD-KEY1.                        I.101027
+003600     READ     JMSTD      UNLOCK INVALID                           I.101027
+003610              MOVE     0          TO    JMSTD-01                  I.101027
+003620              GO  TO  M-250.                                      I.101027
+003630 M-250.                                                           I.101027
+003640     MOVE     SPACE      TO    JSTR-R.
+003650     INITIALIZE                JSTR-R.
+003660     MOVE     W-SNO      TO    JSTR-01.
+003670     MOVE     W-GNO      TO    JSTR-02.
+003680     MOVE     0          TO    JSTR-03.
+003690     MOVE     W-NGP      TO    JSTR-04.
+003700     MOVE     TSHW-SU(01) TO    JSTR-111(01).
+003710     MOVE     TSHW-SU(02) TO    JSTR-111(02).
+003720     MOVE     TSHW-SU(03) TO    JSTR-111(03).
+003730     MOVE     TSHW-SU(04) TO    JSTR-111(04).
+003740     MOVE     TSHW-SU(05) TO    JSTR-111(05).
+003750     MOVE     TSHW-SU(06) TO    JSTR-111(06).
+003760     MOVE     TSHW-SU(07) TO    JSTR-111(07).
+003770     MOVE     TSHW-SU(08) TO    JSTR-111(08).
+003780     MOVE     TSHW-SU(09) TO    JSTR-111(09).
+003790     MOVE     TSHW-SU(10) TO    JSTR-111(10).
+003800     COMPUTE  JSTR-112  =  TSHW-SU(01)  +  TSHW-SU(02)
+003810                        +  TSHW-SU(03)  +  TSHW-SU(04)
+003820                        +  TSHW-SU(05)  +  TSHW-SU(06)
+003830                        +  TSHW-SU(07)  +  TSHW-SU(08)
+003840                        +  TSHW-SU(09)  +  TSHW-SU(10).
+003850     MOVE     W-TCD      TO    JSTR-061.
+003860     MOVE     W-CCD      TO    JSTR-062.
+003870     MOVE     W-SOK      TO    JSTR-07.
+003880     MOVE     TSHW-JNO   TO    JSTR-081.
+003890     MOVE     TSHW-JGN   TO    JSTR-082.
+003900     MOVE     TSHW-HCD   TO    JSTR-09.
+003910     MOVE     TSHW-SKB   TO    JSTR-10.
+003920*****MOVE     0          TO    JSTR-13.                           D.101027
+003930     MOVE     JMSTD-01   TO    JSTR-13.                           I.101027
+003940     MOVE     TSHW-UNS   TO    JSTR-14.
+003950     MOVE     0          TO    JSTR-14A.
+003960*****MOVE     W-ONO      TO    JSTR-14B.                          D.090225
+003970*****COMPUTE  W-OEB   =  W-NO       -   1.                        D.090225
+003980*****IF  W-SOK        =   9                                       D.090304
+003990     IF  W-UNS        =   9                                       I.090304
+004000         MOVE     ZERO       TO    JSTR-14B  JSTR-14C             I.090225
+004010       ELSE                                                       I.090225
+004020         MOVE     W-ONO      TO    JSTR-14B                       I.090225
+004030         COMPUTE  W-OEB   =  W-NO       -   1                     I.090225
+004040         MOVE     W-OEB      TO    JSTR-14C.
+004050     MOVE     TSHW-HNO   TO    JSTR-20.
+004060     MOVE     TSHW-THT   TO    JSTR-14D.
+004070     MOVE     W-NO       TO    W-TK1.
+004080     PERFORM  TEK-RTN    THRU  TEK-EX.
+004090     MOVE     W-TEK      TO    JSTR-15.
+004100     MOVE     ZERO       TO    JSTR-15A.
+004110     MOVE     1          TO    JSTR-16.
+004120     MOVE     4          TO    JSTR-30.
+004130*****MOVE     0          TO    JSTR-4012.                         D.090304
+004140     IF  JSTR-14      =   9                                       I.090304
+004150         MOVE     1          TO    JSTR-4012                      I.090304
+004160         MOVE     9          TO    JSTR-17                        I.090304
+004170     ELSE                                                         D.090304
+004180         MOVE     0          TO    JSTR-4012                      D.090304
+004190         MOVE     0          TO    JSTR-17.
+004200     MOVE     0          TO    JSTR-158.
+004210     MOVE     STN-NO2    TO    JSTR-4011.
+004220     WRITE    JSTR-R     INVALID
+004230                         DISPLAY  E-STAT E-ME13 E-ME99
+004240                         GO  TO  M-260.
+004250     CALL     "CBLTCLS"  USING    JSTR.
+004260     GO  TO M-280.
+004270 M-260.
+004280     IF ERR-STAT NOT = "24"
+004290         MOVE 255 TO COMPLETION-CODE
+004300         DISPLAY E-ME78 E-ME99
+004310         GO TO M-960.
+004320     DISPLAY E-CL.
+004330     CLOSE JSTR.
+004340     DISPLAY E-ME71 E-ME98 STOP " ".
+004350     DISPLAY E-CL.
+004360     OPEN I-O JSTR.
+004370     GO TO M-240.
+004380 M-280.
+004390     MOVE     SPACE      TO    DNKN-R.
+004400     INITIALIZE                DNKN-R.
+004410     MOVE     W-SOK      TO    DNKN-01.
+004420     MOVE     TSHW-HCD   TO    DNKN-02.
+004430     MOVE     3          TO    DNKN-03.
+004440     MOVE     W-SNO      TO    DNKN-041.
+004450     MOVE     W-GNO      TO    DNKN-042.
+004460     WRITE    DNKN-R     INVALID
+004470                         DISPLAY  E-STAT E-ME14 E-ME99
+004480                         GO  TO  M-300.
+004490     CALL     "CBLTCLS"  USING    JT-DNKN.
+004500     GO  TO M-400.
+004510 M-300.
+004520     IF ERR-STAT NOT = "24"
+004530         MOVE 255 TO COMPLETION-CODE
+004540         DISPLAY E-ME78 E-ME99
+004550         GO TO M-960.
+004560     DISPLAY E-CL.
+004570     CLOSE JT-DNKN.
+004580     DISPLAY E-ME71 E-ME98 STOP " ".
+004590     DISPLAY E-CL.
+004600     OPEN I-O JT-DNKN.
+004610     GO TO M-280.
+004620 M-400.
+004630     READ TSHW AT END
+004640         GO TO M-900.
+004650     IF (TSHW-TCD  =  W-TCD)  AND  (TSHW-CCD  =  W-CCD) AND
+004660        (TSHW-TPC  =  W-TPC)  AND  (TSHW-SOK  =  W-SOK) AND
+004670        (TSHW-UNS  =  W-UNS)  AND
+004680        (TSHW-ISU  =  W-ISU)  AND  (TSHW-THT  =  W-THT) AND
+004690        (TSHW-TTE  =  W-TTE)
+004700                                               GO  TO  M-220.
+004710     IF (TSHW-TCD  =  W-TCD)  AND  (TSHW-CCD  =  W-CCD) AND
+004720                                   (TSHW-SOK  =  W-SOK) AND
+004730        (TSHW-UNS  =  W-UNS)
+004740                                               GO  TO  M-160.
+004750*
+004760     PERFORM TDR-RTN THRU TDR-EX.
+004770     IF W-DC = 1
+004780         GO  TO  M-100.
+004790     DISPLAY E-ME78 E-ME2 E-ME99.
+004800     GO TO M-960.
+004810 M-900.
+004820     PERFORM TDR-RTN THRU TDR-EX.
+004830     IF W-DC NOT = 1
+004840         DISPLAY E-ME78 E-ME2 E-ME99.
+004850 M-960.
+004860     CLOSE TSHW.
+004870     CLOSE TDIF JSTR JCON OKJF JT-DNKN.
+004880     CLOSE WTNAF JMSTD.                                           I.101027
+004890*****CLOSE WTNAF.                                                 D.101027
+004900 M-980.
+004910     DISPLAY C-CLEAR.
+004920     STOP RUN.
+004930 TEK-RTN.
+004940     MOVE     W-NO       TO    W-TK1.
+004950     IF  W-TCD      NOT  =     9850
+004960         MOVE     TSHW-TTE   TO    W-TK2        GO  TO  TEK-EX.
+004970*****IF  W-TPC           =     ZERO  OR  999                      D.100923
+004980     IF  W-TPC           =     ZERO  OR  9998  OR  9999           I.100923
+004990         MOVE     TSHW-TTE   TO    W-TK2        GO  TO  TEK-EX.
+005000     MOVE     W-TPC      TO    W-TK21.
+005010     MOVE     WTNA-TNA   TO    W-TK22.
+005020     IF  TSHW-TTE        =     SPACE            GO  TO  TEK-EX.
+005030     MOVE     W-TK22     TO    W-TEKI.
+005040     MOVE     17         TO    CNT1.
+005050 TEK-010.
+005060     SUBTRACT   1      FROM    CNT1.
+005070     IF  CNT1            =     ZERO             GO  TO  TEK-020.
+005080     IF  W-TK(CNT1)      =     SPACE            GO  TO  TEK-010.
+005090     ADD        1        TO    CNT1.
+005100 TEK-020.
+005110     MOVE     TSHW-TTE   TO    W-TTEA.
+005120     MOVE     ZERO       TO    CNT2.
+005130 TEK-030.
+005140     ADD        1        TO    CNT1  CNT2.
+005150     IF  CNT1            <     17
+005160         MOVE     W-TE(CNT2) TO    W-TK(CNT1)   GO  TO  TEK-030.
+005170     MOVE     W-TEKI     TO    W-TK22.
+005180 TEK-EX.
+005190     EXIT.
+005200 TDR-RTN.
+005210     MOVE 0     TO W-DC.
+005220     SELECT TDIF  WHERE  TDI-DATE = W-NGPS
+005230                    AND  TDI-TCD = W-TCD AND  TDI-CCD = W-CCD
+005240                    AND  TDI-SOK = W-SOK AND  TDI-UNS = W-UNS
+005250                    AND  TDI-PRC = 2 AND  TDI-UPC = 0.
+005260 TDR-010.
+005270     READ TDIF AT END SCRATCH TDIF
+005280         GO TO TDR-EX.
+005290     MOVE 1 TO TDI-UPC.
+005300     REWRITE  TDI-R     INVALID
+005310         MOVE 255 TO COMPLETION-CODE
+005320         DISPLAY E-STAT E-ME78 E-ME18 E-ME99
+005330         DISPLAY E-CL.
+005340     IF W-DC = 0
+005350         MOVE 1 TO W-DC.
+005360     GO TO TDR-010.
+005370 TDR-EX.
+005380     EXIT.
+

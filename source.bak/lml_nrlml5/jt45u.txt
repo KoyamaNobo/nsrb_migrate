@@ -1,0 +1,230 @@
+000010 IDENTIFICATION   DIVISION.
+000020 PROGRAM-ID.      JT410U.
+000030*********************************************************
+000040*    PROGRAM         :  品名別出荷日報抽出　　　　　　　*
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    DATA WRITTN     :  91/09/13                        *
+000070*    COMPILE TYPE    :  CBL85 (74MODE)                  *
+000080*********************************************************
+000090 ENVIRONMENT      DIVISION.
+000100 CONFIGURATION    SECTION.
+000110 SOURCE-COMPUTER. NEAC-SYSTEM3100.
+000120 OBJECT-COMPUTER. NEAC-SYSTEM3100.
+000130 INPUT-OUTPUT     SECTION.
+000140 FILE-CONTROL.
+000150***  ワークファイル　　　          (256/1)
+000160     SELECT  JT-WK03   ASSIGN  TO  WK03-MSD
+000170         ORGANIZATION  IS SEQUENTIAL
+000180         ACCESS MODE   IS SEQUENTIAL
+000190         FILE STATUS   IS ERR-STAT.
+000200***  出荷指図トラン累積Ｆ          (256/1)
+000210     SELECT   JSTRRF    ASSIGN  F1-MSD.
+000220*
+000230     SELECT   JCON      ASSIGN  F2-MSD
+000240                        ORGANIZATION  INDEXED
+000250                        ACCESS MODE   RANDOM
+000260                        RECORD KEY    JCON6-KEY.
+000270 I-O-CONTROL.
+000280     APPLY SHARED-MODE    ON  JSTRRF  JCON
+000290     APPLY EXCLUSIVE-MODE ON  JT-WK03.
+000300 DATA    DIVISION.
+000310 FILE    SECTION.
+000320 COPY   LTWK03.
+000330 COPY   LJSTRR.
+000340 COPY   L-JCON.
+000350 WORKING-STORAGE  SECTION.
+000360 77  ERR-STAT               PIC X(2).
+000370 77  ERR-SW                 PIC 9(1)  VALUE 0.
+000380 77  WK0256ID               PIC  X(009) VALUE SPACE.              I.960208
+000390 01  STN-NO.                                                      I.960208
+000400     02  STN-NO1            PIC  X(003).                          I.960208
+000410     02  STN-NO2            PIC  X(003).                          I.960208
+000420 01  W-FID.                                                       I.960208
+000430     02  W-FID1             PIC  X(006) VALUE "WK0256".           I.960208
+000440     02  W-FID2             PIC  X(003).                          I.960208
+000450 01  W-JS                   PIC 9(01).
+000460 01  W-JSD                  PIC 9(01).                            I.070419
+000470*01  W-JSP                  PIC 9(01).                            D.030724
+000480 01  W-JS-MEI               PIC N(03).
+000490 01  W-DATE                 PIC 9(08).
+000500 01  W-AREA.
+000510     02  I                  PIC  9(02).                           添字　
+000520*****02  OKC                PIC  9(01).                           D.030724
+000530***
+000540 COPY  LWMSG.
+000550***
+000560 SCREEN      SECTION.
+000570 SD  C-CRT
+000580     END  STATUS  IS  ESTAT.
+000590 01  C-CLEAR.
+000600     02  C-CL     LINE   1  CLEAR SCREEN.
+000610 01  CLR-01.
+000620     02  LINE 24  COLUMN 60  VALUE " ".
+000630***
+000640 01  DSP-AREA.
+000650     02  LINE 1   COLUMN 20   VALUE                               I.930803
+000660         " 品名別出荷日報抽出 "  REVERSE.                         I.930803
+000670     02  LINE 1   COLUMN 1   VALUE  "〔".
+000680     02  LINE 1   COLUMN 9   VALUE  "〕".
+000690 01  DSP-AREA1.                                                   I.030724
+000700     02  LINE 1   COLUMN 3   PIC N(03)   FROM  W-JS-MEI.
+000710*****02  LINE 24  COLUMN 41  VALUE  "確認(OK=1,NO=9)-->   ﾘﾀｰﾝ".  D.030724
+000720*01  ACP-AREA.                                                    D.030724
+000730*****02  ACP-OKC     LINE 24  COLUMN 60  PIC 9(01)  USING OKC     D.030724
+000740*****                         CHECK  OVERFLOW   NO  IFC.          D.030724
+000750*
+000760*01  DSP-ERR.                                                     D.030724
+000770*****02  ERR-1       LINE 24  COLUMN 01  VALUE                    D.030724
+000780*****                NC"ＪＳ－ＳＩＧＮ　エラー".                  D.030724
+000790*
+000800 01  DISP-MSG-SPACE1     LINE 24.
+000810     02  COLUMN 1        PIC X(40)     VALUE " ".
+000820***
+000830 COPY  LSMSG.
+000840***
+000850 PROCEDURE   DIVISION.
+000860****************************
+000870***  ﾒ ｲ ﾝ  R T N        ***
+000880****************************
+000890**
+000900 MR-RTN.
+000910     PERFORM  INI-RTN     THRU   INI-EX.
+000920*
+000930     OPEN   INPUT   JCON.
+000940     MOVE   SPACE   TO    JCON6-KEY.
+000950     MOVE   6       TO    JCON6-01.
+000960     READ   JCON    UNLOCK  INVALID KEY
+000970         MOVE    "JCON"     TO  ERR-F
+000980         MOVE    "I"        TO  ERR-M
+000990         PERFORM    ERR-RTN    THRU    ERR-EX
+001000         CLOSE   JCON
+001010         MOVE    255        TO  COMPLETION-CODE
+001020         DISPLAY C-CLEAR
+001030         STOP    RUN.
+001040     MOVE   JCON6-08      TO  W-JS.                               I.030724
+001050     MOVE   JCON6-09      TO  W-DATE.
+001060     CLOSE   JCON.
+001070     IF  W-JS  =  0                                               I.030724
+001080         MOVE  NC"教　育"     TO  W-JS-MEI.                       I.030724
+001090     IF  W-JS  =  1                                               I.030724
+001100         MOVE  NC"一　般"     TO  W-JS-MEI.                       I.070419
+001110*****    MOVE  NC"ワーク"     TO  W-JS-MEI.                       D.070419
+001120*****IF  W-JS  =  2                                               D.070419
+001130*****    MOVE  NC"カジュ"     TO  W-JS-MEI.                       D.070419
+001140     DISPLAY  DSP-AREA1.                                          I.030724
+001150     PERFORM  GAMEN-RTN   THRU   GAMEN-EX.
+001160     PERFORM  RED-RTN     THRU   RED-EX.
+001170     PERFORM  END-RTN     THRU   END-EX.
+001180     STOP  RUN.
+001190*
+001200*********************************
+001210***   ｲﾆｼｬﾙ   R T N           ***
+001220*********************************
+001230**
+001240 INI-RTN.
+001250     MOVE  255     TO  COMPLETION-CODE.
+001260*****ACCEPT  W-JS.                                                D.030724
+001270     DISPLAY  C-CLEAR.
+001280*****IF  W-JS  NOT =  0  AND  1                                   D.030724
+001290*****    DISPLAY  ERR-1  DISP-BUZ-B                               D.030724
+001300*****    STOP  RUN.                                               D.030724
+001310*****IF  W-JS  =  ZERO                                            D.030724
+001320*****    MOVE  NC"教　育"     TO  W-JS-MEI.                       D.030724
+001330*****IF  W-JS  =  1                                               D.030724
+001340*****    MOVE  NC"一　般"     TO  W-JS-MEI.                       D.030724
+001350     DISPLAY  DSP-AREA.
+001360 INI-EX.
+001370      EXIT.
+001380*
+001390******************************
+001400***   R E D   R T N        ***
+001410******************************
+001420**
+001430 RED-RTN.
+001440 RED-010.
+001450***  出荷指図ファイル　ＲＥＡＤ
+001460     IF    ERR-SW         =   1         GO  TO  RED-EX.
+001470     READ  JSTRRF      AT END           GO  TO  RED-EX.
+001480     IF    JSTRR-03  NOT  =   0  AND  3  AND 7
+001490                                        GO  TO  RED-010.
+001500     IF    JSTRR-17  NOT  =   1         GO  TO  RED-010.
+001510     IF   (JSTRR-1211(01) =  0)  AND  (JSTRR-1211(02) =  0)  AND
+001520          (JSTRR-1211(03) =  0)  AND  (JSTRR-1211(04) =  0)  AND
+001530          (JSTRR-1211(05) =  0)  AND  (JSTRR-1211(06) =  0)  AND
+001540          (JSTRR-1211(07) =  0)  AND  (JSTRR-1211(08) =  0)  AND
+001550          (JSTRR-1211(09) =  0)  AND  (JSTRR-1211(10) =  0)
+001560                                        GO  TO  RED-010.
+001570*****IF    W-JS          =  0                                     D.030724
+001580*****      IF   JSTRR-16   NOT  =  0    GO  TO  RED-010.          D.030724
+001590*****IF    W-JS     NOT  =  0                                     D.030724
+001600*****      IF   JSTRR-16        =  0    GO  TO  RED-010.          D.030724
+001610*****IF   JSTRR-16  NOT  =  W-JS        GO  TO  RED-010.          D.070416
+001620     MOVE  JSTRR-16       TO  W-JSD.                              I.070419
+001630     IF   W-JSD          =  2           MOVE  1        TO  W-JSD. I.070419
+001640     IF   W-JSD     NOT  =  W-JS        GO  TO  RED-010.          I.070416
+001650     IF    JSTRR-90      <  W-DATE      GO  TO  RED-010.
+001660     IF    JSTRR-90      >  W-DATE      GO  TO  RED-EX.
+001670*****
+001680     PERFORM  WRI-RTN     THRU  WRI-EX.
+001690     MOVE  ZERO           TO  COMPLETION-CODE.
+001700     GO  TO  RED-010.
+001710 RED-EX.
+001720     EXIT.
+001730*
+001740*******************************
+001750***   G A M E N   R T N     ***
+001760*******************************
+001770**
+001780 GAMEN-RTN.
+001790*GAMEN-OKC.                                                       D.030724
+001800*****ACCEPT  ACP-OKC.                                             D.030724
+001810*****IF  ESTAT      =  "P9"      STOP  RUN.                       D.030724
+001820*****IF  ESTAT  NOT =  "01"  AND  "06"                            D.030724
+001830*****    GO  TO  GAMEN-OKC.                                       D.030724
+001840*****DISPLAY  ACP-OKC.                                            D.030724
+001850*****IF  OKC  NOT =  "1"  AND  "9"                                D.030724
+001860*****    GO  TO  GAMEN-OKC.                                       D.030724
+001870*****IF  OKC  =  "9"                                              D.030724
+001880*****    DISPLAY  CAN-01                                          D.030724
+001890*****    DISPLAY  CLR-01                                          D.030724
+001900*****    GO  TO  GAMEN-RTN.                                       D.030724
+001910*
+001920*****DISPLAY  DSP-AREA  ACP-OKC.                                  D.030724
+001930     CALL "CBLSTNNO" USING STN-NO.
+001940     MOVE STN-NO2 TO W-FID2.
+001950     MOVE W-FID TO WK0256ID.
+001960     OPEN  INPUT   JSTRRF.
+001970     OPEN  OUTPUT  JT-WK03.
+001980 GAMEN-EX.
+001990     EXIT.
+002000*
+002010***************************
+002020***   W R I   R T N     ***
+002030***************************
+002040**
+002050 WRI-RTN.
+002060     MOVE  SPACE     TO  W03-R.
+002070     INITIALIZE          W03-R.
+002080     MOVE  JSTRR-R   TO  W03-R.
+002090     WRITE    W03-R.
+002100     IF  ERR-STAT  NOT = "00"
+002110              MOVE  1            TO  ERR-SW
+002120              MOVE  "W"          TO  ERR-M
+002130              MOVE  "JT-WK03"    TO  ERR-F
+002140              PERFORM  ERR-RTN   THRU  ERR-EX.
+002150 WRI-EX.
+002160     EXIT.
+002170*
+002180**************************
+002190***  ﾌ ｧ ｲ ﾙ  CLOSE    ***
+002200**************************
+002210**
+002220 END-RTN.
+002230     CLOSE   JT-WK03  JSTRRF.
+002240     DISPLAY  C-CLEAR.
+002250 END-EX.
+002260     EXIT.
+002270***
+002280 COPY  LPMSG.
+002290***
+

@@ -1,0 +1,121 @@
+000010 IDENTIFICATION      DIVISION.
+000020 PROGRAM-ID.         HMD040.
+000030 AUTHOR.             H.KAMASAKA    1996-07-03.
+000040******************************************
+000050******    発送明細ファイル　削除    ******
+000060******************************************
+000070 ENVIRONMENT         DIVISION.
+000080 CONFIGURATION       SECTION.
+000090 SOURCE-COMPUTER.    SYSTEM3100.
+000100 OBJECT-COMPUTER.    SYSTEM3100.
+000110 INPUT-OUTPUT        SECTION.
+000120 FILE-CONTROL.
+000130     COPY LIBCSE.                                                 I.970710
+000140     SELECT  HSMSF  ASSIGN  TO  HSMSF-MSD
+000150             ORGANIZATION   INDEXED
+000160             ACCESS  MODE   DYNAMIC
+000170             RECORD  KEY    HSMS-KEY
+000180             FILE   STATUS  IS  ERR-STAT.
+000190 I-O-CONTROL.
+000200     APPLY  SHARED-MODE  ON  M-DATE                               I.970710
+000210     APPLY  SHARED-MODE  ON  HSMSF.
+000220 DATA                DIVISION.
+000230 FILE                SECTION.
+000240     COPY  LIBFDD.                                                I.970710
+000250     COPY  LIHSMS.
+000260 WORKING-STORAGE      SECTION.
+000270 01  W-DATA.
+000280     02  W-DMM               PIC  9(001).
+000290     02  W-DATE.
+000300*****    03  W-Y             PIC  9(002).                         D.970710
+000310         03  W-Y             PIC  9(004).                         I.970710
+000320         03  W-YD    REDEFINES W-Y.                               I.970710
+000330             04  W-Y1        PIC  9(002).                         I.970710
+000340             04  W-Y2        PIC  9(002).                         I.970710
+000350         03  W-M             PIC  9(002).
+000360         03  W-D             PIC  9(002).
+000370     02  W-NGP   REDEFINES W-DATE.                                I.970710
+000380         03  F               PIC  9(002).                         I.970710
+000390         03  W-NGPS          PIC  9(006).                         I.970710
+000400     02  W-KEY               PIC  9(006).
+000410 01  ERR-STAT                PIC  X(002).
+000420     COPY LSTAT.
+000430 SCREEN              SECTION.
+000440 SD  C-CRT
+000450     END  STATUS  IS  ESTAT.
+000460 01  C-CLEAR.
+000470     02  C-CL    LINE   1    CLEAR  SCREEN.
+000480 01  C-MID.
+000490     02  LINE   1    COLUMN  18    PIC  N(021)    VALUE
+000500           NC"＊＊＊　　発送明細ファイル　削除　　＊＊＊".
+000510     02  LINE  23    COLUMN  40    PIC  X(022)    VALUE
+000520             "確認  OK=1 NO=9   ﾘﾀｰﾝ".
+000530 01  C-ACP.
+000540     02  A-DMM    LINE  23    COLUMN  57    PIC  9(001)
+000550           USING  W-DMM    CHECK  OVERFLOW  NO  IFC.
+000560 01  C-ERR.
+000570     02  LINE  24.
+000580         03  E-STAT   COLUMN 10   PIC X(002)   FROM  ERR-STAT.
+000590         03  E-ME1    COLUMN 15   PIC X(020)   VALUE
+000600               "***  DELETE ｴﾗｰ  ***".
+000610         03  E-ME98   COLUMN 75   PIC X(005)   VALUE ""27"J"05"".
+000620         03  E-ME99   COLUMN 75   PIC X(005)   VALUE ""27"B"05"".
+000630     COPY LIBSCR.                                                 I.970710
+000640 PROCEDURE           DIVISION.
+000650 M-05.
+000660     DISPLAY  C-CLEAR.
+000670     DISPLAY  C-MID.
+000680 M-10.
+000690     ACCEPT  A-DMM.
+000700     IF  ESTAT NOT = HTB AND SKP
+000710         GO  TO  M-10.
+000720     IF  W-DMM = 9
+000730         GO  TO  M-99.
+000740     IF  W-DMM NOT = 1
+000750         GO  TO  M-10.
+000760*
+000770     COPY LIBCPR.                                                 I.970710
+000780     MOVE  ZERO  TO  W-DATE.                                      I.970710
+000790     ACCEPT  W-NGPS  FROM  DATE.                                  I.970710
+000800     IF W-Y2 >= DATE-NF1 AND <= DATE-NT1                          I.970710
+000810         ADD DATE-NC1 TO W-Y.                                     I.970710
+000820     IF W-Y2 >= DATE-NF2 AND <= DATE-NT2                          I.970710
+000830         ADD DATE-NC2 TO W-Y.                                     I.970710
+000840     OPEN  I-O  HSMSF.
+000850     MOVE  ZERO  TO  W-KEY.
+000860*****ACCEPT  W-DATE  FROM  DATE.                                  D.970710
+000870     SUBTRACT  1  FROM  W-M.
+000880     IF  W-M = ZERO
+000890         SUBTRACT  1  FROM  W-Y
+000900         MOVE  12  TO  W-M.
+000910     SUBTRACT  1  FROM  W-M.                                      I.980213
+000920     IF  W-M = ZERO                                               I.980213
+000930         SUBTRACT  1  FROM  W-Y                                   I.980213
+000940         MOVE  12  TO  W-M.                                       I.980213
+000950 M-15.
+000960     READ  HSMSF  NEXT  RECORD  AT  END
+000970         CLOSE  HSMSF
+000980         GO  TO  M-99.
+000990     IF  W-KEY = HSMS-01
+001000         GO  TO  M-20.
+001010*****IF  HSMS-19 = 1                                              D.960826
+001020     IF  HSMS-02 NOT = 7                                          I.960826
+001030         IF  HSMS-19 NOT = ZERO                                   I.960826
+001040*****        IF  HSMS-18 NOT = ZERO                               D.010516
+001050*****            IF  HSMS-21 NOT = ZERO                           D.010516
+001060             MOVE  HSMS-01  TO  W-KEY
+001070             GO  TO  M-20.
+001080     IF  HSMS-02 NOT = 7
+001090         IF  W-DATE > HSMS-05
+001100             MOVE  HSMS-01  TO  W-KEY
+001110             GO  TO  M-20.
+001120     GO  TO  M-15.
+001130 M-20.
+001140     DELETE  HSMSF  INVALID  KEY
+001150         DISPLAY  E-ME1  E-STAT  E-ME98
+001160         CLOSE  HSMSF
+001170         GO  TO  M-99.
+001180     GO  TO  M-15.
+001190 M-99.
+001200     DISPLAY  C-CLEAR.
+001210     STOP  RUN.

@@ -1,0 +1,415 @@
+000010 IDENTIFICATION   DIVISION.
+000020 PROGRAM-ID.      JT090U.
+000030 AUTHOR.          I.NAKANISHI.
+000040*********************************************************
+000050*    PROGRAM         :  棚卸更新                        *
+000060*    PRINTER TYPE    :  JIPS                            *
+000070*    SCREEN          :  ***                             *
+000080*    DATA WRITTN     :  62/08/21                        *
+000090*    COMPILE TYPE    :  COBOL                           *
+000100*********************************************************
+000110 ENVIRONMENT      DIVISION.
+000120 CONFIGURATION    SECTION.
+000130 SOURCE-COMPUTER. NEAC-SYSTEM150.
+000140 OBJECT-COMPUTER. NEAC-SYSTEM150.
+000150 INPUT-OUTPUT     SECTION.
+000160 FILE-CONTROL.
+000170*****SELECT  TANAM  ASSIGN  TO  TANAM-MSD                         D 911014
+000180*********ORGANIZATION  IS INDEXED                                 D 911014
+000190*********ACCESS MODE IS DYNAMIC                                   D 911014
+000200*********RECORD KEY    IS TANAM-KEY                               D 911014
+000210*********FILE STATUS IS ERR-STAT.                                 D 911014
+000220*****SELECT  HZ-M   ASSIGN  TO  HZM-MSD                           D.990304
+000230*****    ORGANIZATION  IS INDEXED                                 D.990304
+000240*****    ACCESS MODE IS DYNAMIC                                   D.990304
+000250*****    RECORD KEY    IS HZ-KEY                                  D.990304
+000260*****    FILE STATUS IS ERR-STAT.                                 D.990304
+000270*****SELECT  JZAI  ASSIGN  TO  JZAI-MSD                           D.970318
+000280*****    ORGANIZATION  IS INDEXED                                 D.970318
+000290*****    ACCESS MODE IS RANDOM                                    D.970318
+000300*****    RECORD KEY    IS JZAI-KEY                                D.970318
+000310*****    FILE STATUS IS ERR-STAT.                                 D.970318
+000320     SELECT  HTIF   ASSIGN  TO  HTI-MSD.                          I.990304
+000330     SELECT  NJZAI ASSIGN  TO  NJZAI-MSD                          I.941004
+000340         ORGANIZATION  IS INDEXED                                 I.941004
+000350         ACCESS MODE IS DYNAMIC                                   I.941004
+000360         RECORD KEY    IS NJZAI-KEY                               I.941004
+000370         FILE STATUS IS ERR-STAT.                                 I.941004
+000380     SELECT  HI-M  ASSIGN  TO  HI1-MSD HI2-MSD                    I.020513
+000390         ORGANIZATION  IS INDEXED                                 I.020513
+000400         ACCESS MODE IS RANDOM                                    I.020513
+000410         RECORD KEY    IS HI-KEY                                  I.020513
+000420         ALTERNATE RECORD KEY HI-KEY2                             I.020513
+000430         FILE STATUS IS ERR-STAT.                                 I.020513
+000440 I-O-CONTROL.
+000450     APPLY SHARED-MODE ON HI-M                                    I.020513
+000460     APPLY EXCLUSIVE-MODE ON NJZAI.                               I.990304
+000470*****APPLY EXCLUSIVE-MODE ON HZ-M   JZAI.                         D.941004
+000480*****APPLY EXCLUSIVE-MODE ON HZ-M   JZAI  NJZAI.                  D.970318
+000490*****APPLY EXCLUSIVE-MODE ON HZ-M   NJZAI.                        D.990304
+000500 DATA    DIVISION.
+000510 FILE    SECTION.
+000520     COPY LIHIM.                                                  I.020513
+000530*COPY   LTANAM.                                                   D 911014
+000540*COPY   LIHZM.                                                    D.990304
+000550*COPY   L-JZAI.                                                   D.970318
+000560 FD  HTIF                                                         I.990304
+000570     BLOCK  1 RECORDS                                             I.990304
+000580     LABEL RECORD IS STANDARD                                     I.990304
+000590     VALUE OF IDENTIFICATION WK0256ID.                            I.990304
+000600 01  HTI-R.                                                       I.990304
+000610*****02  F              PIC  X(007).                              D.000425
+000620     02  F              PIC  X(006).                              I.000425
+000630     02  HTI-GNO        PIC  9(001).                              I.000425
+000640     02  HTI-SNO        PIC  9(001).                              I.990304
+000650     02  HTI-HCD        PIC  9(006).                              I.990304
+000660     02  HTI-SIZ        PIC  9(001).                              I.990304
+000670     02  HTI-SUD.                                                 I.990304
+000680       03  HTI-SU       PIC S9(006)  OCCURS  10.                  I.990304
+000690     02  HTI-BC.                                                  I.990304
+000700       03  HTI-BC1      PIC  9(002).                              I.990304
+000710       03  HTI-BC2      PIC  9(002).                              I.990304
+000720       03  HTI-BC3      PIC  9(002).                              I.990304
+000730     02  HTI-ISU        PIC  9(003).                              I.000425
+000740     02  F              PIC  X(172).                              I.000425
+000750*****02  F              PIC  X(175).                              D.000425
+000760 COPY   LNJZAI.                                                   I.941004
+000770 WORKING-STORAGE  SECTION.
+000780 77  N                  PIC  9(01)   VALUE  ZERO.
+000790 77  I                  PIC  9(02)   VALUE  ZERO.
+000800 77  OKC                PIC  9(01).
+000810 77  WRI-SW             PIC  9(01).                               I.941004
+000820 77  CHK-SW             PIC  9(02).
+000830 77  ERR-STAT           PIC  X(02).
+000840 77  WK0256ID           PIC  X(009) VALUE SPACE.                  I.990304
+000850 01  STN-NO.                                                      I.990304
+000860     02  STN-NO1        PIC  X(003).                              I.990304
+000870     02  STN-NO2        PIC  X(003).                              I.990304
+000880 01  W-FID.                                                       I.990304
+000890     02  W-FID1         PIC  X(006) VALUE "WK0256".               I.990304
+000900     02  W-FID2         PIC  X(003).                              I.990304
+000910*01  W-ASD.                                                       D.990304
+000920*****02  W-SD1          PIC  X(30)  VALUE                         D.990304
+000930*****    "003002001000201301401280290300".                        D.990304
+000940*****02  W-SD2          PIC  X(30)  VALUE                         D.990304
+000950*****    "125130135140150160170180190200".                        D.990304
+000960*****02  W-SD3          PIC  X(30)  VALUE                         D.990304
+000970*****    "210215220225230235240245250   ".                        D.990304
+000980*****02  W-SD4          PIC  X(30)  VALUE                         D.990304
+000990*****    "240245250255260265270275   111".                        D.990304
+001000*01  KURA.                                                        D.990304
+001010*****02  KCA            PIC  X(08)  VALUE    "12534678".          D.891031
+001020*****02  KCA            PIC  X(08)  VALUE    "12345678".          D.990304
+001030*****02  KCA            PIC  X(08)  VALUE    "12346578".          D 921125
+001040*****02  KCB    REDEFINES    KCA.                                 D.990304
+001050*****    03  K          PIC  9(01)    OCCURS   8.                 D.990304
+001060*01  W-SIZ.                                                       D.990304
+001070*****02  W-S            PIC  X(03)  OCCURS  10.                   D.990304
+001080 COPY  LWMSG.
+001090 SCREEN      SECTION.
+001100 SD  C-CRT
+001110     END  STATUS  IS  ESTAT.
+001120 01  C-CLEAR.
+001130     02  C-CL     LINE   1  CLEAR SCREEN.
+001140 01  C-ACP.
+001150     02  A-OKC    LINE  24  COLUMN  65   PIC 9
+001160          USING  OKC      CHECK  OVERFLOW  NO  IFC.
+001170 01  C-PM.
+001180     02  LINE   1  COLUMN  20   PIC X(13) VALUE
+001190          "             "  REVERSE.
+001200     02  LINE   1  COLUMN  21   PIC X(11) VALUE
+001210          "棚 卸 更 新".
+001220     02  LINE  24  COLUMN  41   PIC X(29) VALUE
+001230          "確認（OK=1,終了=PF9）--> ﾘﾀｰﾝ".
+001240 COPY  LSMSG.
+001250 PROCEDURE   DIVISION.
+001260****************************
+001270***  ﾒ ｲ ﾝ  R T N        ***
+001280****************************
+001290**
+001300 MR-RTN.
+001310     PERFORM  INIT-RTN  THRU   INIT-EX.
+001320 MR-10.
+001330     ACCEPT   A-OKC.
+001340     IF   ESTAT  =  "P9"
+001350          MOVE  255  TO  COMPLETION-CODE
+001360                         STOP  RUN.
+001370     IF   ESTAT  NOT =  "01"    GO  TO  MR-10.                    I.990304
+001380     IF   OKC    NOT  =  1      GO  TO  MR-10.
+001390*
+001400*****OPEN  INPUT    HZ-M                                          D.990304
+001410*****      I-O      JZAI.                                         D.941004
+001420*****      I-O      JZAI  NJZAI.                                  D.970318
+001430     CALL "CBLSTNNO" USING STN-NO.                                I.990304
+001440     MOVE STN-NO2 TO W-FID2.                                      I.990304
+001450     MOVE W-FID TO WK0256ID.                                      I.990304
+001460     OPEN  INPUT    HTIF                                          I.990304
+001470           INPUT    HI-M                                          I.020513
+001480           I-O      NJZAI.                                        I.970318
+001490     PERFORM     NJZS-RTN   THRU  NJZS-EX.                        I.941004
+001500     PERFORM     ENT-RTN    THRU  ENT-EX.
+001510 MR-99.
+001520     PERFORM  END-RTN  THRU  END-EX.
+001530     STOP  RUN.
+001540*********************************
+001550***   ｲﾆｼｬﾙ   R T N           ***
+001560*********************************
+001570**
+001580 INIT-RTN.
+001590     DISPLAY   C-CLEAR.
+001600     DISPLAY   C-PM.
+001610 INIT-EX.
+001620      EXIT.
+001630******************************
+001640***   ENT     R T N        ***
+001650******************************
+001660**
+001670 ENT-RTN.
+001680 ENT-01.
+001690*****READ   HZ-M   NEXT   AT  END                                 D.990304
+001700     READ   HTIF          AT  END                                 I.990304
+001710            GO  TO  ENT-EX.
+001720     IF    ZERO    =  HTI-SU(01) AND HTI-SU(02) AND HTI-SU(03)    I.990304
+001730                  AND HTI-SU(04) AND HTI-SU(05) AND HTI-SU(06)    I.990304
+001740                  AND HTI-SU(07) AND HTI-SU(08) AND HTI-SU(09)    I.990304
+001750                  AND HTI-SU(10)                                  I.990304
+001760           GO  TO  ENT-01.                                        I 890515
+001770     MOVE HTI-HCD TO HI-KEY.                                      I.020513
+001780     READ HI-M WITH UNLOCK INVALID KEY                            I.020513
+001790         MOVE HTI-HCD TO HI-MHCD.                                 I.020513
+001800*****PERFORM   CHK-RTN  THRU  CHK-EX.                             D 890515
+001810*****IF    CHK-SW  =  1                GO  TO  ENT-01.            D 890515
+001820*****MOVE  ZERO    TO    N.                                       D.990304
+001830*ENT-02.                                                          D.990304
+001840*****ADD   1         TO  N.                                       D.990304
+001850*****IF    N   >   8                   GO  TO  ENT-01.            D.990304
+001860*
+001870*****MOVE  K(N)      TO  JZAI-01.                                 D.970318
+001880*****MOVE  HZ-HCD    TO  JZAI-02.                                 D.970318
+001890*****MOVE  HZ-SC     TO  JZAI-03.                                 D.970318
+001900*ENT-03.                                                          D.970318
+001910*****READ  JZAI  INVALID  KEY                                     D.970318
+001920*****      GO  TO  ENT-05.                                        D.970318
+001930*****PERFORM  HID-RTN  THRU  HID-EX.                              D.970318
+001940*ENT-04.                                                          D.970318
+001950*****REWRITE  JZAI-R   INVALID                                    D.970318
+001960*****      MOVE  "JZAI"  TO  ERR-F                                D.970318
+001970*****      MOVE  "R"  TO  ERR-M                                   D.970318
+001980*****      MOVE  JZAI-KEY  TO  ERR-K                              D.970318
+001990*****      PERFORM  ERR-RTN  THRU  ERR-EX.                        D.970318
+002000*****GO  TO  ENT-02.                                              D.941004
+002010*****IF    HZ-TSB(N)  =  ZERO       GO  TO  ENT-02.               D.990304
+002020*****GO  TO  ENT-11.                                              D.970318
+002030*ENT-05.                                                          D.970318
+002040*****IF    HZ-TSB(N)  =  ZERO       GO  TO  ENT-02.               D.970318
+002050*****INITIALIZE    JZAI-R.                                        D.970318
+002060*****PERFORM  HID-RTN  THRU  HID-EX.                              D.970318
+002070*****WRITE    JZAI-R   INVALID                                    D.970318
+002080*****      MOVE  "JZAI"  TO  ERR-F                                D.970318
+002090*****      MOVE  "W"  TO  ERR-M                                   D.970318
+002100*****      MOVE  JZAI-KEY  TO  ERR-K                              D.970318
+002110*****      PERFORM  ERR-RTN  THRU  ERR-EX.                        D.970318
+002120 ENT-11.                                                          I.941004
+002130*****MOVE  K(N)      TO  NJZAI-01.                                D.990304
+002140*****MOVE  HZ-HCD    TO  NJZAI-02.                                D.990304
+002150*****MOVE  HZ-SC     TO  NJZAI-03.                                D.990304
+002160     MOVE  HTI-SNO   TO  NJZAI-01.                                I.990304
+002170*****MOVE  HTI-HCD   TO  NJZAI-02.                                D.020513
+002180     MOVE  HI-MHCD   TO  NJZAI-02.                                I.020513
+002190     MOVE  HTI-SIZ   TO  NJZAI-03.                                I.990304
+002200 ENT-13.                                                          I.941004
+002210     READ  NJZAI INVALID  KEY                                     I.941004
+002220           GO  TO  ENT-15.                                        I.941004
+002230     PERFORM  NJS-RTN  THRU  NJS-EX.                              I.941004
+002240*
+002250     PERFORM  NJR-RTN  THRU  NJR-EX.                              I.941004
+002260     GO  TO  ENT-21.                                              I.941004
+002270 ENT-15.                                                          I.941004
+002280     INITIALIZE    NJZAI-R.                                       I.941004
+002290*****MOVE  K(N)      TO  NJZAI-01.                                D.990304
+002300*****MOVE  HZ-HCD    TO  NJZAI-02.                                D.990304
+002310*****MOVE  HZ-SC     TO  NJZAI-03.                                D.990304
+002320     MOVE  HTI-SNO   TO  NJZAI-01.                                I.990304
+002330*****MOVE  HTI-HCD   TO  NJZAI-02.                                D.020513
+002340     MOVE  HI-MHCD   TO  NJZAI-02.                                I.020513
+002350     MOVE  HTI-SIZ   TO  NJZAI-03.                                I.990304
+002360     PERFORM  NJS-RTN  THRU  NJS-EX.                              I.941004
+002370*
+002380     PERFORM  NJW-RTN  THRU  NJW-EX.                              I.941004
+002390     IF  WRI-SW       =  1                     GO  TO  ENT-15.    I.941004
+002400 ENT-21.                                                          I.941004
+002410     MOVE  9         TO  NJZAI-01.                                I.941004
+002420*****MOVE  HTI-HCD   TO  NJZAI-02.                                D.020513
+002430     MOVE  HI-MHCD   TO  NJZAI-02.                                I.020513
+002440     MOVE  HTI-SIZ   TO  NJZAI-03.                                I.990304
+002450*****MOVE  HZ-HCD    TO  NJZAI-02.                                D.990304
+002460*****MOVE  HZ-SC     TO  NJZAI-03.                                D.990304
+002470 ENT-23.                                                          I.941004
+002480     READ  NJZAI INVALID  KEY                                     I.941004
+002490           GO  TO  ENT-25.                                        I.941004
+002500     PERFORM  NJS-RTN  THRU  NJS-EX.                              I.941004
+002510*
+002520     PERFORM  NJR-RTN  THRU  NJR-EX.                              I.941004
+002530     GO  TO  ENT-01.                                              I.990304
+002540*****GO  TO  ENT-02.                                              D.990304
+002550 ENT-25.                                                          I.941004
+002560     INITIALIZE    NJZAI-R.                                       I.941004
+002570     MOVE  9         TO  NJZAI-01.                                I.941004
+002580*****MOVE  HTI-HCD   TO  NJZAI-02.                                D.020513
+002590     MOVE  HI-MHCD   TO  NJZAI-02.                                I.020513
+002600     MOVE  HTI-SIZ   TO  NJZAI-03.                                I.990304
+002610*****MOVE  HZ-HCD    TO  NJZAI-02.                                D.990304
+002620*****MOVE  HZ-SC     TO  NJZAI-03.                                D.990304
+002630     PERFORM  NJS-RTN  THRU  NJS-EX.                              I.941004
+002640*
+002650     PERFORM  NJW-RTN  THRU  NJW-EX.                              I.941004
+002660     IF  WRI-SW       =  1                     GO  TO  ENT-25.    I.941004
+002670     GO  TO  ENT-01.                                              I.990304
+002680*****GO  TO  ENT-02.                                              D.990304
+002690 ENT-EX.                                                          I.941004
+002700     EXIT.                                                        I.941004
+002710*****
+002720****************************
+002730*        HID   RTN         *
+002740****************************
+002750*HID-RTN.                                                         D.970318
+002760*****MOVE  K(N)      TO  JZAI-01.                                 D.970318
+002770*****MOVE  HZ-HCD    TO  JZAI-02.                                 D.970318
+002780*****MOVE  HZ-SC     TO  JZAI-03.                                 D.970318
+002790*****MOVE  1  TO  I.                                              D.970318
+002800*HID-01.                                                          D.970318
+002810*****IF  HZ-SC     =  1                                           D.970318
+002820*****    MOVE  W-SD1  TO  W-SIZ.                                  D.970318
+002830*****IF  HZ-SC     =  2                                           D.970318
+002840*****    MOVE  W-SD2  TO  W-SIZ.                                  D.970318
+002850*****IF  HZ-SC     =  3                                           D.970318
+002860*****    MOVE  W-SD3  TO  W-SIZ.                                  D.970318
+002870*****IF  HZ-SC     =  4                                           D.970318
+002880*****    MOVE  W-SD4  TO  W-SIZ.                                  D.970318
+002890*HID-02.                                                          D.970318
+002900*****IF  HZ-SIZ    =  W-S (I)                                     D.970318
+002910*****    GO  TO  HID-03.                                          D.970318
+002920*****ADD  1  TO  I.                                               D.970318
+002930*****IF  I  >  10                                                 D.970318
+002940*****    GO  TO  HID-EX.                                          D.970318
+002950*****GO  TO  HID-02.                                              D.970318
+002960*HID-03.                                                          D.970318
+002970*****MOVE   HZ-TSB(N)   TO   JZAI-0411(I).                        D.970318
+002980*HID-EX.                                                          D.970318
+002990*****EXIT.                                                        D.970318
+003000*********************************
+003010*    NJZAI ZERO SET RTN         *
+003020*********************************
+003030 NJZS-RTN.                                                        I.941004
+003040     READ  NJZAI     NEXT   AT  END            GO  TO  NJZS-EX.   I.941004
+003050*
+003060     INITIALIZE          NJZAI-04  NJZAI-05  NJZAI-06  NJZAI-11.  I.941004
+003070*
+003080     REWRITE  NJZAI-R   INVALID                                   I.941004
+003090           MOVE  "NJZAI"  TO  ERR-F                               I.941004
+003100           MOVE  "R"  TO  ERR-M                                   I.941004
+003110           MOVE  NJZAI-KEY  TO  ERR-K                             I.941004
+003120           PERFORM  ERR-RTN  THRU  ERR-EX.                        I.941004
+003130     GO  TO  NJZS-RTN.                                            I.941004
+003140 NJZS-EX.                                                         I.941004
+003150     EXIT.                                                        I.941004
+003160****************************
+003170*    NJZAI SET RTN         *
+003180****************************
+003190 NJS-RTN.                                                         I.941004
+003200*****IF  HZ-SC     =  1                                           D.990304
+003210*****    MOVE  W-SD1  TO  W-SIZ.                                  D.990304
+003220*****IF  HZ-SC     =  2                                           D.990304
+003230*****    MOVE  W-SD2  TO  W-SIZ.                                  D.990304
+003240*****IF  HZ-SC     =  3                                           D.990304
+003250*****    MOVE  W-SD3  TO  W-SIZ.                                  D.990304
+003260*****IF  HZ-SC     =  4                                           D.990304
+003270*****    MOVE  W-SD4  TO  W-SIZ.                                  D.990304
+003280*****MOVE  1  TO  I.                                              D.990304
+003290     MOVE  0  TO  I.                                              I.990304
+003300 NJS-02.                                                          I.941004
+003310*****IF  HZ-SIZ    =  W-S (I)                                     D.990304
+003320*****    GO  TO  NJS-03.                                          D.990304
+003330     ADD  1  TO  I.                                               I.941004
+003340     IF  I  >  10                                                 I.941004
+003350         GO  TO  NJS-EX.                                          I.941004
+003360     IF HTI-GNO < 5                                               I.000425
+003370         COMPUTE NJZAI-0611(I) = NJZAI-0611(I) +                  I.000425
+003380                                         (HTI-SU(I) * HTI-ISU)    I.000425
+003390       ELSE                                                       I.000425
+003400         ADD    HTI-SU(I)   TO   NJZAI-0611(I).                   I.941004
+003410     GO  TO  NJS-02.                                              I.941004
+003420*NJS-03.                                                          D.990304
+003430*****MOVE   HZ-TSB(N)   TO   NJZAI-0611(I).                       D.941109
+003440*****ADD    HZ-TSB(N)   TO   NJZAI-0611(I).                       D.990304
+003450 NJS-EX.                                                          I.941004
+003460     EXIT.                                                        I.941004
+003470****************************
+003480*    NJZAI REWRITE RTN     *
+003490****************************
+003500 NJR-RTN.                                                         I.941004
+003510     REWRITE  NJZAI-R   INVALID                                   I.941004
+003520           MOVE  "NJZAI"  TO  ERR-F                               I.941004
+003530           MOVE  "R"  TO  ERR-M                                   I.941004
+003540           MOVE  NJZAI-KEY  TO  ERR-K                             I.941004
+003550           PERFORM  ERR-RTN  THRU  ERR-EX.                        I.941004
+003560 NJR-EX.                                                          I.941004
+003570     EXIT.                                                        I.941004
+003580****************************
+003590*    NJZAI WRITE RTN       *
+003600****************************
+003610 NJW-RTN.                                                         I.941004
+003620     MOVE   0       TO  WRI-SW.                                   I.941004
+003630     WRITE    NJZAI-R   INVALID                 GO  TO  NJW-01.   I.941004
+003640     CALL     "CBLTCLS"  USING  NJZAI.                            I.941004
+003650     GO  TO  NJW-EX.                                              I.941004
+003660 NJW-01.                                                          I.941004
+003670     MOVE  "NJZAI"  TO  ERR-F.                                    I.941004
+003680     MOVE  "W"  TO  ERR-M.                                        I.941004
+003690     MOVE  NJZAI-KEY  TO  ERR-K.                                  I.941004
+003700     IF  ERR-STAT     =  "24"                                     I.941004
+003710           MOVE  ERR-STAT     TO  ERR-FLG                         I.941004
+003720           DISPLAY  ERR-DIS   DISP-BUZ-B                          I.941004
+003730           CLOSE    NJZAI                                         I.941004
+003740           STOP    "ｴﾘｱ ｶｸﾁｮｳｺﾞ,ｻｲｶｲｷｰ ｦ ｵｽ!"                     I.941004
+003750           DISPLAY  DISP-MSG-SPACE                                I.941004
+003760           OPEN     I-O      NJZAI                                I.941004
+003770           MOVE  1            TO  WRI-SW                          I.941004
+003780           GO  TO  NJW-EX.                                        I.941004
+003790     IF  ERR-STAT NOT =  "00"                                     I.941004
+003800           PERFORM  ERR-RTN  THRU  ERR-EX.                        I.941004
+003810     MOVE  2            TO  WRI-SW.                               I.941004
+003820 NJW-EX.                                                          I.941004
+003830     EXIT.                                                        I.941004
+003840*****
+003850****************************
+003860*        CHK   RTN         *
+003870****************************
+003880*CHK-RTN.                                                         D 890515
+003890*****MOVE  0  TO  CHK-SW.                                         D 890515
+003900*****IF    TANAM-061  NOT  =   ZERO    GO  TO  CHK-EX.            D 890515
+003910*****IF    TANAM-062  NOT  =   ZERO    GO  TO  CHK-EX.            D 890515
+003920*****IF    TANAM-063  NOT  =   ZERO    GO  TO  CHK-EX.            D 890515
+003930*****IF    TANAM-064  NOT  =   ZERO    GO  TO  CHK-EX.            D 890515
+003940*****IF    TANAM-065  NOT  =   ZERO    GO  TO  CHK-EX.            D 890515
+003950*****IF    TANAM-066  NOT  =   ZERO    GO  TO  CHK-EX.            D 890515
+003960*****IF    TANAM-067  NOT  =   ZERO    GO  TO  CHK-EX.            D 890515
+003970*****IF    TANAM-068  NOT  =   ZERO    GO  TO  CHK-EX.            D 890515
+003980*****MOVE      1   TO     CHK-SW.                                 D 890515
+003990*CHK-EX.                                                          D 890515
+004000*****EXIT.                                                        D 890515
+004010**************************
+004020***  ﾌ ｧ ｲ ﾙ  CLOSE    ***
+004030**************************
+004040**
+004050 END-RTN.
+004060*****CLOSE   HZ-M   JZAI.                                         D.941004
+004070*****CLOSE   HZ-M   JZAI  NJZAI.                                  D.970318
+004080*****CLOSE   HZ-M   NJZAI.                                        D.990304
+004090     CLOSE   HI-M.                                                I.020513
+004100     CLOSE   HTIF   NJZAI.                                        I.990304
+004110     DISPLAY  C-CLEAR.
+004120 END-EX.
+004130     EXIT.
+004140 COPY  LPMSG.
+

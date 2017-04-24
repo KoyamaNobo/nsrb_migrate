@@ -1,0 +1,1306 @@
+000010 IDENTIFICATION      DIVISION.
+000020 PROGRAM-ID.         JT645R.
+000030******************************************************************
+000040*    <<REMARKS>>                                                 *
+000050*    FUNCTION.......  入出庫明細問合せ                           *
+000060*    AUTHOR.........  I.N                                        *
+000070*    COMPILE MODE...  NORMAL                                     *
+000080*    SCREEN.........  SJ645R                                     *
+000090*    RELEASE DATE...  90/10/22         (REV.001)                 *
+000100******************************************************************
+000110 ENVIRONMENT             DIVISION.
+000120 CONFIGURATION           SECTION.
+000130 SOURCE-COMPUTER.        NEAC-SYSTEM100.
+000140 OBJECT-COMPUTER.        NEAC-SYSTEM100.
+000150 INPUT-OUTPUT            SECTION.
+000160 FILE-CONTROL.
+000170     COPY    LIBCSE.                                              I.980526
+000180*<<  入出庫累積Ｆ  >>*
+000190*****SELECT  JNSR        ASSIGN        F1-MSD                     D.940909
+000200*****SELECT  JNSRD       ASSIGN        F1-MSD                     D.971205
+000210     SELECT  JNSR        ASSIGN        F11-MSD  F12-MSD  F13-MSD  I.971205
+000220                         ORGANIZATION  INDEXED
+000230                         ACCESS        DYNAMIC
+000240                         RECORD        JNSR-KEY1                  I.971205
+000250             ALTERNATE   RECORD        JNSR-KEY2                  I.971205
+000260             ALTERNATE   RECORD        JNSR-KEY3                  I.971205
+000270*****                    RECORD        JNSR-KEY                   D.940909
+000280*****                    RECORD        JNSRD-KEY                  D.971205
+000290             FILE        STATUS        ERR-STAT.
+000300*<<  入出庫ワークＦ  >>*
+000310*****SELECT  JT-WKN2     ASSIGN        F6-MSD                     D.971205
+000320     SELECT  JT-W170     ASSIGN        F61-MSD  F62-MSD           I.971205
+000330                         ORGANIZATION  INDEXED                    I.940909
+000340                         ACCESS        DYNAMIC                    I.940909
+000350                         RECORD        JTW-KEY1                   I.971205
+000360             ALTERNATE   RECORD        JTW-KEY3                   I.971205
+000370*****                    RECORD        WN02-KEY                   D.971205
+000380             FILE        STATUS        ERR-STAT.                  I.940909
+000390*<<  直送先Ｍ  >>*
+000400     SELECT  TC-M        ASSIGN        F2-MSD
+000410                         ORGANIZATION  INDEXED
+000420                         ACCESS        RANDOM
+000430                         RECORD        TC-KEY
+000440             FILE        STATUS        ERR-STAT.
+000450*<<  品名Ｍ  >>*
+000460*****SELECT  SHM         ASSIGN        F3-MSD                     D.010818
+000470     SELECT  HI2-M       ASSIGN        F3-MSD                     I.010818
+000480                         ORGANIZATION  INDEXED
+000490                         ACCESS        RANDOM
+000500                         RECORD        HI-KEY2                    I.010818
+000510*****                    RECORD        SHM-KEY                    D.010818
+000520             FILE        STATUS        ERR-STAT.
+000530*<<  ＴＫＢＭ  >>*
+000540*****SELECT  JTKB        ASSIGN        F4-MSD                     D.940909
+000550*****                    ORGANIZATION  INDEXED                    D.940909
+000560*****                    ACCESS        RANDOM                     D.940909
+000570*****                    RECORD        JTKB-KEY                   D.940909
+000580*****        FILE        STATUS        ERR-STAT.                  D.940909
+000590*<<  在庫データ  >>*
+000600*****SELECT  JZA2        ASSIGN        F5-MSD                     D 911007
+000610*****                    ORGANIZATION  INDEXED                    D 911007
+000620*****                    ACCESS        DYNAMIC                    D 911007
+000630*****                    RECORD        JZA2-KEY                   D 911007
+000640*****        FILE        STATUS        ERR-STAT.                  D 911007
+000650*<<  品名在庫マスタ  >>*
+000660*****SELECT  HZ-M        ASSIGN        F5-MSD                     D.940913
+000670*****                    ORGANIZATION  INDEXED                    D.940913
+000680*****                    ACCESS        DYNAMIC                    D.940913
+000690*****                    RECORD        HZ-KEY                     D.940913
+000700*****        FILE        STATUS        ERR-STAT.                  D.940913
+000710*<<  倉別在庫マスタ  >>*
+000720     SELECT  NJZAI       ASSIGN        F7-MSD                     I.940913
+000730                         ORGANIZATION  INDEXED                    I.940913
+000740                         ACCESS        DYNAMIC                    I.940913
+000750                         RECORD        NJZAI-KEY                  I.940913
+000760             FILE        STATUS        ERR-STAT.                  I.940913
+000770 I-O-CONTROL.
+000780     APPLY  SHARED-MODE     ON  M-DATE                            I.980526
+000790     APPLY  SHARED-MODE     ON  JNSR  TC-M  HI2-M JT-W170  NJZAI. I.010818
+000800*****APPLY  SHARED-MODE     ON  JNSR  TC-M  SHM  JT-W170  NJZAI.  D.010818
+000810*****APPLY  SHARED-MODE     ON  JNSR  TC-M  SHM  JTKB  HZ-M.      D.940909
+000820*****APPLY  SHARED-MODE     ON  JNSRD TC-M  SHM  HZ-M  JT-WKN2.   D.940913
+000830*****APPLY  SHARED-MODE     ON  JNSRD TC-M  SHM  JT-WKN2  NJZAI.  D.971205
+000840 DATA                DIVISION.
+000850 FILE                SECTION.
+000860     COPY  LIBFDD.                                                I.980526
+000870*COPY  L-JNSR.                                                    D.940909
+000880*COPY  LNJNSR.                                                    D.971205
+000890*COPY  LTWKN2.                                                    D.971205
+000900 COPY  L-JNSR.                                                    I.971205
+000910 COPY  LJT170.                                                    I.971205
+000920 COPY  LITCM.
+000930 COPY  LIHIM2.                                                    I.010818
+000940*COPY  L-SHM.                                                     D.010818
+000950*COPY  L-JTKB.                                                    D.940909
+000960*COPY  L-JZA2.                                                    D 911007
+000970*COPY  LIHZM.                                                     D.940913
+000980 COPY  LNJZAI.                                                    I.940913
+000990 WORKING-STORAGE     SECTION.
+001000 77  ERR-STAT             PIC  X(02).
+001010*77  JT-IWS094ID          PIC  X(12).                             D.971205
+001020 77  JT-W170K1ID          PIC  X(12).                             I.971205
+001030 77  JT-W170K3ID          PIC  X(12).                             I.971205
+001040 01  OKC                  PIC  9(01).                             確認
+001050 01  NXT-SW               PIC 9(01).
+001060 01  W-DC                 PIC 9(01).                              I.940909
+001070 01  STN-NO.                                                      I.940909
+001080     02  STN-NO-01        PIC X(03).                              I.940909
+001090     02  STN-NO-02        PIC X(03).                              I.940909
+001100 01  WF1-ID.                                                      I.971205
+001110     02  WORK1-ID-01      PIC X(09) VALUE "JT-W170K1".            I.971205
+001120     02  WORK1-ID-02      PIC X(03).                              I.971205
+001130 01  WF2-ID.                                                      I.971205
+001140     02  WORK2-ID-01      PIC X(09) VALUE "JT-W170K3".            I.971205
+001150     02  WORK2-ID-02      PIC X(03).                              I.971205
+001160*01  WF-ID.                                                       D.971205
+001170*****02  WORK-ID-01       PIC X(09) VALUE "JT-IWS094".            D.971205
+001180*****02  WORK-ID-02       PIC X(03).                              D.971205
+001190 01  NXT-KEY.
+001200     03  NXT-01           PIC 9(06)  COMP-3.
+001210*****03  NXT-02           PIC 9(06)  COMP-3.                      D.980526
+001220     03  NXT-02           PIC 9(08)  COMP-3.                      I.980526
+001230     03  NXT-03           PIC 9(02).
+001240     03  NXT-04           PIC 9(06)  COMP-3.
+001250     03  NXT-05           PIC 9(01).                              I.971205
+001260*****03  NXT-06           PIC 9(01).                              D.971205
+001270 01  WG-AREA.
+001280     02  WG-HINCD         PIC  9(06).
+001290     02  WG-HINNM         PIC  N(20).
+001300     02  WG-FHIZ          PIC  9(08).                             I.980526
+001310     02  WG-FHIZD  REDEFINES WG-FHIZ.                             I.980526
+001320         03  WG-FNEN      PIC  9(04).                             I.980526
+001330         03  WG-FNENL  REDEFINES  WG-FNEN.                        I.980526
+001340             04  WG-FNEN1 PIC  9(02).                             I.980526
+001350             04  WG-FNEN2 PIC  9(02).                             I.980526
+001360         03  WG-FGET      PIC  9(02).                             I.980526
+001370         03  WG-FPEY      PIC  9(02).                             I.980526
+001380     02  WG-FHIZL  REDEFINES WG-FHIZ.                             I.980526
+001390         03  F            PIC  9(02).                             I.980526
+001400         03  WG-FHIZS     PIC  9(06).                             I.980526
+001410     02  WG-THIZ          PIC  9(08).                             I.980526
+001420     02  WG-THIZD  REDEFINES WG-THIZ.                             I.980526
+001430         03  WG-TNEN      PIC  9(04).                             I.980526
+001440         03  WG-TNENL  REDEFINES  WG-TNEN.                        I.980526
+001450             04  WG-TNEN1 PIC  9(02).                             I.980526
+001460             04  WG-TNEN2 PIC  9(02).                             I.980526
+001470         03  WG-TGET      PIC  9(02).                             I.980526
+001480         03  WG-TPEY      PIC  9(02).                             I.980526
+001490     02  WG-THIZL  REDEFINES WG-THIZ.                             I.980526
+001500         03  F            PIC  9(02).                             I.980526
+001510         03  WG-THIZS     PIC  9(06).                             I.980526
+001520*****02  WG-FHIZ          PIC  9(06).                             D.980526
+001530*****02  WG-THIZ          PIC  9(06).                             D.980526
+001540     02  WG-TBL.
+001550         03  WG-TBL12          OCCURS  12.
+001560             05  WG-YYMM.
+001570                 07  WG-MM     PIC  9(02).
+001580                 07  WG-DD     PIC  9(02).
+001590             05  WG-KBN        PIC  9(02).
+001600             05  WG-KBNNM      PIC  N(02).
+001610             05  WG-TCMCD      PIC  9(03).
+001620             05  WG-TCMNM      PIC  N(16).
+001630             05  WG-SOKSU      PIC S9(06).
+001640             05  WG-HAITA      PIC  N(05).
+001650             05  WG-TEKIYO     PIC  N(07).                        I.101022
+001660*****        05  WG-TEKIYO     PIC  N(06).                        D.101022
+001670             05  WG-TBL4       OCCURS  4.
+001680                 07  WG-SUR    PIC S9(06)      OCCURS  10.
+001690             05  WG-GOK    PIC S9(07).
+001700             05  WG-TOKCD      PIC  9(04).
+001710             05  WG-JYUNO      PIC  9(06).                        I.061020
+001720             05  WG-DENNO      PIC  9(06).
+001730             05  WG-OKRNO      PIC  9(06).
+001740             05  WG-KURA       PIC  9(01).                        I.950117
+001750             05  WG-UNSO       PIC  9(01).                        I.061020
+001760             05  WG-SW         PIC  9(01).
+001770         03  WG-TOKNM          PIC  N(18).                        I.061020
+001780*****    03  WG-TOKNM          PIC  N(20).                        D.061020
+001790*
+001800     02  WG-ACT2          PIC  9(02).
+001810     02  WG-DC            PIC  9(01).
+001820     02  WG-DAI           PIC  N(04).
+001830     02  WG-ZAI-TBL.
+001840         03  WG-TBL44      OCCURS  4.
+001850             04  WG-ZAI    PIC S9(06)      OCCURS  10.
+001860         03  WG-ZGOK   PIC S9(07).
+001870 01  WORK-AREA.
+001880     02  LIN              PIC  9(02).
+001890     02  COL              PIC  9(02).
+001900     02  I                PIC  9(02).
+001910     02  N                PIC  9(02).
+001920     02  S                PIC  9(02).
+001930*****02  WK-HIZUKE        PIC  9(06).                             D.980526
+001940     02  WK-HIZUKE        PIC  9(08).                             I.980526
+001950     02  WK-HIZUKER   REDEFINES     WK-HIZUKE.
+001960         03  F            PIC  9(02).                             I.980526
+001970         03  WK-YY        PIC  9(02).
+001980         03  WK-MM        PIC  9(02).
+001990         03  WK-DD        PIC  9(02).
+002000     02  OLD-KEY.
+002010*****    03  OLD-02       PIC  9(06).                             D.980526
+002020         03  OLD-02       PIC  9(08).                             I.980526
+002030         03  OLD-03       PIC  9(02).
+002040         03  OLD-04       PIC  9(06).
+002050         03  OLD-05       PIC  9(01).                             I.971205
+002060*****    03  OLD-06       PIC  9(01).                             D.971205
+002070     02  WK-HINCD         PIC  9(06).
+002080     02  WK-CODE          PIC  9(07).
+002090     02  WK-CODER  REDEFINES   WK-CODE.
+002100         03  F            PIC  X(01).
+002110         03  WK-CD1       PIC  9(06).
+002120     02  CNT1             PIC  9(02).                             I.051215
+002130     02  CNT2             PIC  9(01).                             I.051215
+002140*****02  W-TEKIYO         PIC  N(06).                             D.101022
+002150     02  W-TEKIYO         PIC  N(07).                             I.101022
+002160     02  W-TEKIYOD REDEFINES W-TEKIYO.                            I.051215
+002170*****    03  W-TEKID  OCCURS   6.                                 D.101022
+002180         03  W-TEKID  OCCURS   7.                                 I.101022
+002190             04  W-TEKI   PIC  N(01).                             I.051215
+002200     02  W-TEWD           PIC  N(12).                             I.051215
+002210     02  W-TEAD    REDEFINES W-TEWD.                              I.051215
+002220         03  W-TEA    OCCURS  12.                                 I.051215
+002230             04  W-TE     PIC  N(01).                             I.051215
+002240     COPY  LWMSG.                                                 I.980526
+002250***************************************
+002260*    ｴﾗｰ DISPLAY (ﾜｰｸ)                *
+002270***************************************
+002280*01  DISP-ERR-WORK.                                               D.980526
+002290*****02  DISP-MSG.                                                D.980526
+002300*****    03  ERR-MSGX.                                            D.980526
+002310*****        04  ERR-MSGN     PIC N(20).                          D.980526
+002320*****    03  ERR-SPACE        PIC X(40).                          D.980526
+002330*****    03  ERR-F            PIC X(12).                          D.980526
+002340*****    03  ERR-M            PIC X(01).                          D.980526
+002350*****    03  ERR-K            PIC X(30).                          D.980526
+002360*****    03  ERR-FLG          PIC X(02).                          D.980526
+002370 SCREEN              SECTION.
+002380 SD  CRT-X
+002390     END  STATUS     ESTAT.
+002400 01  ACT-CLEAR.
+002410     02  CLR-GMN     LINE  1   CLEAR  SCREEN.
+002420*01  TKB-ERR.                                                     D.940909
+002430*****02  LINE 24  COLUMN   1  VALUE  NC"ＴＫＢマスター　未登録".  D.940909
+002440*01  SHM-ERR.                                                     D.010818
+002450*****02  LINE 24  COLUMN   1  VALUE  NC"出荷品名マスター　未登録".D.010818
+002460 01  HIM-ERR.                                                     I.010818
+002470     02  LINE 24  COLUMN   1  VALUE  NC"品名マスター　未登録".    I.010818
+002480 01  JNSR-ERR.
+002490     02  LINE 24  COLUMN   1  VALUE  NC"明細データ　無し".
+002500 01  JZA2-ERR.
+002510     02  LINE 24  COLUMN   1  VALUE  NC"在庫データ　無し".
+002520 01  NXT-ERR.
+002530     02  LINE 24  COLUMN   1  VALUE  NC"ＮＥＸＴデータ　無し".
+002540 01  CLR-ERR.
+002550     02  LINE 24  COLUMN   1  PIC X(40)  VALUE  "  ".
+002560 01  ACP-AREA.
+002570*****02  ACP-MAT     LINE  1  COLUMN  14    PIC  9(07)            D.940909
+002580*****USING     JTKB-01        INPUT   MAT        NO IFC.          D.940909
+002590     02  ACP-HINCD   LINE  1  COLUMN  14    PIC  9(06)
+002600     USING     WG-HINCD       CHECK   OVERFLOW   NO IFC.
+002610     02  ACP-FHIZ    LINE  1  COLUMN  68    PIC  9(06)
+002620     USING     WG-FHIZS       CHECK   OVERFLOW   NO IFC.          I.980526
+002630*****USING     WG-FHIZ        CHECK   OVERFLOW   NO IFC.          D.980526
+002640     02  ACP-THIZ    LINE  1  COLUMN  75    PIC  9(06)
+002650     USING     WG-THIZS       CHECK   OVERFLOW   NO IFC.          I.980526
+002660*****USING     WG-THIZ        CHECK   OVERFLOW   NO IFC.          D.980526
+002670     02  ACP-ACT2    LINE 19  COLUMN   2    PIC  9(02)
+002680     USING     WG-ACT2        CHECK   OVERFLOW   NO IFC.
+002690*****02  ACP-OKC     LINE 24  COLUMN  71    PIC  9(01)            D.940909
+002700     02  ACP-OKC     LINE 24  COLUMN  73    PIC  9(01)            I.940909
+002710     USING     OKC            CHECK   OVERFLOW   NO IFC.
+002720 01  DSP-AREA1.
+002730     02  DSP-HINNM   LINE  1  COLUMN  21    PIC  N(20)
+002740         FROM  WG-HINNM.
+002750     02  DSP-TBL12   LINE LIN.
+002760*****    03  DSP-MM     COLUMN  4  PIC  9(02)  FROM  WG-MM(I).    D.940909
+002770         03  DSP-MM     COLUMN  4  PIC  Z(02)  FROM  WG-MM(I).    I.940909
+002780         03  DSP-S      COLUMN  6  PIC  X(01)  VALUE  "/".
+002790*****    03  DSP-DD     COLUMN  7  PIC  9(02)  FROM  WG-DD(I).    D.940909
+002800         03  DSP-DD     COLUMN  7  PIC  Z(02)  FROM  WG-DD(I).    I.940909
+002810         03  DSP-KBNNM  COLUMN 10  PIC  N(02)  FROM  WG-KBNNM(I).
+002820         03  DSP-TCMNM  COLUMN 15  PIC  N(16)  FROM  WG-TCMNM(I).
+002830         03  DSP-SOKSU  COLUMN 49  PIC -----9  FROM  WG-SOKSU(I). I.101022
+002840         03  DSP-HAITA  COLUMN 56  PIC  N(05)  FROM  WG-HAITA(I). I.101022
+002850         03  DSP-TEKIYO COLUMN 67  PIC  N(07)  FROM  WG-TEKIYO(I).I.101022
+002860*****    03  DSP-SOKSU  COLUMN 49  PIC ----,--9 FROM WG-SOKSU(I). D.101022
+002870*****    03  DSP-HAITA  COLUMN 58  PIC  N(05)  FROM  WG-HAITA(I). D.101022
+002880*****    03  DSP-TEKIYO COLUMN 69  PIC  N(06)  FROM  WG-TEKIYO(I).D.101022
+002890 01  DSP-AREA2.
+002900     02  DSP-TBL4    LINE LIN.
+002910         03  DSP-SUR  COLUMN COL   PIC ------
+002920             FROM  WG-SUR(I  N  S).
+002930         03  DSP-ZAI  COLUMN COL   PIC ------
+002940             FROM  WG-ZAI(N  S).
+002950     02  DSP-GOK     LINE 22  COLUMN  74    PIC -------
+002960         FROM  WG-GOK(I).
+002970     02  DSP-ZGOK    LINE 22  COLUMN  74    PIC -------
+002980         FROM  WG-ZGOK.
+002990     02  DSP-DAI     LINE 23  COLUMN   2  PIC  N(04)
+003000         FROM  WG-DAI.
+003010*****02  DSP-TOKNM   LINE 23  COLUMN 14     PIC  N(20)            D.061020
+003020     02  DSP-TOKNM   LINE 23  COLUMN 14     PIC  N(18)            I.061020
+003030         FROM  WG-TOKNM.
+003040     02  DSP-JYUNO   LINE 23  COLUMN 54     PIC  9(06)            I.061020
+003050         FROM  WG-JYUNO(I).                                       I.061020
+003060*****02  DSP-DENNO   LINE 23  COLUMN 61     PIC  9(06)            D.061020
+003070     02  DSP-DENNO   LINE 23  COLUMN 64     PIC  9(06)            I.061020
+003080         FROM  WG-DENNO(I).
+003090     02  DSP-OKRNO   LINE 23  COLUMN 74     PIC  9(06)
+003100         FROM  WG-OKRNO(I).
+003110*****02  DSP-KURA    LINE 22.                                     D.061020
+003120*****    03  COLUMN  2     PIC  X(04)                             D.061020
+003130*****        VALUE  "(倉 ".                                       D.061020
+003140*****    03  COLUMN  6     PIC  9(01)                             D.061020
+003150     02  DSP-KURA    LINE 21.                                     I.061020
+003160         03  COLUMN  1     PIC  X(06)                             I.061020
+003170             VALUE  "(倉庫 ".                                     I.061020
+003180         03  COLUMN  7     PIC  9(01)                             I.061020
+003190             FROM  WG-KURA(I).                                    I.950117
+003200*****    03  COLUMN  7     PIC  X(01)                             D.061020
+003210         03  COLUMN  8     PIC  X(01)                             I.061020
+003220             VALUE  ")".                                          I.950117
+003230     02  DSP-UNSO    LINE 22.                                     I.061020
+003240         03  COLUMN  1     PIC  X(06)                             I.061020
+003250             VALUE  "(運送 ".                                     I.061020
+003260         03  COLUMN  7     PIC  9(01)                             I.061020
+003270             FROM  WG-UNSO(I).                                    I.061020
+003280         03  COLUMN  8     PIC  X(01)                             I.061020
+003290             VALUE  ")".                                          I.061020
+003300 01  CLR-AREA1.
+003310     02  CLR-01  LINE  1  COLUMN 14  PIC X(06)  VALUE  " ".
+003320     02  CLR-01A LINE  1  COLUMN 14  PIC X(07)  VALUE  " ".
+003330     02  CLR-02  LINE  1  COLUMN 21  PIC X(40)  VALUE  " ".
+003340     02  CLR-03  LINE  1  COLUMN 68  PIC X(06)  VALUE  " ".
+003350     02  CLR-04  LINE  1  COLUMN 75  PIC X(06)  VALUE  " ".
+003360     02  CLR-TBL12  LINE  LIN.
+003370         03  COLUMN  4    PIC  X(05)  VALUE  " ".
+003380         03  COLUMN 10    PIC  X(04)  VALUE  " ".
+003390         03  COLUMN 15    PIC  X(40)  VALUE  " ".
+003400         03  COLUMN 49    PIC  X(06)  VALUE  " ".                 I.101022
+003410         03  COLUMN 56    PIC  X(10)  VALUE  " ".                 I.101022
+003420         03  COLUMN 67    PIC  X(14)  VALUE  " ".                 I.101022
+003430*****    03  COLUMN 49    PIC  X(08)  VALUE  " ".                 D.101022
+003440*****    03  COLUMN 58    PIC  X(10)  VALUE  " ".                 D.101022
+003450*****    03  COLUMN 69    PIC  X(12)  VALUE  " ".                 D.101022
+003460 01  CLR-AREA2.
+003470     02  CLR-TBL4   LINE  LIN.
+003480         03  COLUMN 14    PIC  X(67)  VALUE  " ".
+003490     02  CLR-05  LINE 19  COLUMN  2  PIC X(02)  VALUE  " ".
+003500*****02  CLR-11  LINE 22  COLUMN  2  PIC X(06)  VALUE  " ".       D.061020
+003510     02  CLR-11  LINE 21  COLUMN  1  PIC X(08)  VALUE  " ".       I.061020
+003520     02  CLR-12  LINE 22  COLUMN  1  PIC X(08)  VALUE  " ".       I.061020
+003530     02  CLR-06  LINE 23  COLUMN  2  PIC X(08)  VALUE  " ".
+003540     02  CLR-07  LINE 23  COLUMN 14  PIC X(36)  VALUE  " ".       I.061020
+003550*****02  CLR-07  LINE 23  COLUMN 14  PIC X(40)  VALUE  " ".       D.061020
+003560*****02  CLR-08  LINE 23  COLUMN 61  PIC X(06)  VALUE  " ".       D.061020
+003570     02  CLR-13  LINE 23  COLUMN 54  PIC X(06)  VALUE  " ".       I.061020
+003580     02  CLR-08  LINE 23  COLUMN 64  PIC X(06)  VALUE  " ".       I.061020
+003590     02  CLR-09  LINE 23  COLUMN 74  PIC X(06)  VALUE  " ".
+003600     02  CLR-10  LINE 24  COLUMN 73  PIC X(01)  VALUE  " ".       I.940909
+003610************
+003620 COPY  LSMSG.
+003630     COPY  LIBSCR.                                                I.980526
+003640 PROCEDURE           DIVISION.
+003650******************************************************************
+003660*                    ＭＡＩＮ－ＲＴＮ                            *
+003670******************************************************************
+003680 MAIN-RTN.
+003690     PERFORM   OPEN-RTN     THRU         OPEN-EX.
+003700     PERFORM   INP-RTN      THRU         INP-EX.
+003710     PERFORM   END-RTN      THRU         END-EX.
+003720     STOP      RUN.
+003730******************************************************************
+003740*                    ＯＰＥＮ－ＲＴＮ                            *
+003750******************************************************************
+003760 OPEN-RTN.
+003770*****OPEN  INPUT     JNSR   TC-M  SHM  JTKB  HZ-M.                D.940909
+003780     DISPLAY   CLR-GMN.
+003790     CALL      "SJ645R".
+003800     CALL      "CBLSTNNO"   USING   STN-NO.                       I.940909
+003810     MOVE      STN-NO-02    TO      WORK1-ID-02  WORK2-ID-02.     I.971205
+003820     MOVE      WF1-ID       TO      JT-W170K1ID.                  I.971205
+003830     MOVE      WF2-ID       TO      JT-W170K3ID.                  I.971205
+003840*****MOVE      STN-NO-02    TO      WORK-ID-02.                   D.971205
+003850*****MOVE      WF-ID        TO      JT-IWS094ID.                  D.971205
+003860*****OPEN  INPUT     JNSRD  TC-M  SHM  HZ-M  JT-WKN2.             D.940913
+003870*****OPEN  INPUT     JNSRD  TC-M  SHM  JT-WKN2  NJZAI.            D.971205
+003880*****OPEN  INPUT     JNSR   TC-M  SHM  JT-W170  NJZAI.            D.010818
+003890     OPEN  INPUT     JNSR   TC-M  HI2-M JT-W170  NJZAI.           I.010818
+003900     INITIALIZE      WG-AREA  NXT-KEY.
+003910     COPY  LIBCPR.                                                I.980526
+003920 OPEN-EX.
+003930     EXIT.
+003940******************************************************************
+003950*    INP-RTN         画面入力処理　　　                          *
+003960******************************************************************
+003970 INP-RTN.
+003980*<<  ＭＡＴ  >>*
+003990     MOVE      WG-HINCD   TO    WK-HINCD.
+004000*****ACCEPT    ACP-MAT.                                           D.940909
+004010*****DISPLAY   CLR-ERR.                                           D.940909
+004020*****IF    ESTAT  =   "P9"                   GO  TO  INP-EX.      D.940909
+004030*****IF    ESTAT  =   "02"                                        D.940909
+004040*****      MOVE   WK-HINCD      TO    WG-HINCD                    D.940909
+004050*****                                        GO  TO  INP-010.     D.940909
+004060*****IF    ESTAT  NOT =   "00"  AND  "01"  AND  "06"              D.940909
+004070*****                                        GO  TO  INP-RTN.     D.940909
+004080*****MOVE      1          TO    JTKB-02.                          D.940909
+004090*****READ      JTKB             UNLOCK       INVALID  KEY         D.940909
+004100*****          DISPLAY    TKB-ERR  DISP-BUZ-J                     D.940909
+004110*****                                        GO  TO  INP-RTN.     D.940909
+004120*****MOVE      JTKB-03    TO    WK-CODE.                          D.940909
+004130*****MOVE      WK-CD1     TO    WG-HINCD.                         D.940909
+004140*****DISPLAY   CLR-01A  ACP-HINCD.                                D.940909
+004150*****GO  TO    INP-020.                                           D.940909
+004160 INP-010.
+004170*<<  品名コード  >>*
+004180     DISPLAY   CLR-01A.
+004190*****DISPLAY   ACP-HINCD.                                         D.940909
+004200     ACCEPT    ACP-HINCD.
+004210     IF    ESTAT  =   "P9"                   GO  TO  INP-EX.      I.940909
+004220     IF    ESTAT  NOT =   "01"  AND  "06"    GO  TO  INP-010.
+004230 INP-020.
+004240*****MOVE      WG-HINCD  TO   SHM-KEY.                            D.010818
+004250*****READ      SHM       UNLOCK   INVALID                         D.010818
+004260*****          DISPLAY  SHM-ERR  DISP-BUZ-J  GO  TO  INP-RTN.     D.010818
+004270*****MOVE      SHM-02    TO   WG-HINNM.                           D.010818
+004280     MOVE      WG-HINCD  TO   HI-MHCD HI-HCD.                     I.010818
+004290     READ      HI2-M     UNLOCK   INVALID                         I.010818
+004300               DISPLAY  HIM-ERR  DISP-BUZ-J  GO  TO  INP-RTN.     I.010818
+004310     MOVE      HI-NAME   TO   WG-HINNM.                           I.010818
+004320     DISPLAY   DSP-HINNM.
+004330     IF    WG-HINCD   >    999899            GO  TO  INP-010.     I.971209
+004340 INP-030.
+004350*<<  日付ＦＲＯＭ  >>*
+004360     ACCEPT    ACP-FHIZ.
+004370     IF        ESTAT      =   "09"           GO  TO  INP-RTN.
+004380*****IF        ESTAT  NOT =   "01" AND "06"  GO  TO  INP-030.     D.090409
+004390     IF    ESTAT  NOT =  "01" AND "04" AND "06"  GO  TO  INP-030. I.090409
+004400     IF        ESTAT      =   "04"                                I.090409
+004410                          ACCEPT  WG-FHIZS FROM DATE              I.090409
+004420                          DISPLAY  ACP-FHIZ.                      I.980526
+004430*****IF        WG-FHIZ    =   ZERO                                D.980526
+004440     IF        WG-FHIZS   =   ZERO                                I.980526
+004450                          DISPLAY  ACP-FHIZ                       I.980526
+004460                          MOVE  ZERO       TO  WG-FNEN1           I.980526
+004470                          GO  TO  INP-040.                        I.980526
+004480     IF  (WG-FGET  <  1  OR  >  12)  OR                           I.980526
+004490         (WG-FPEY  <  1  OR  >  31)                               I.980526
+004500                          GO  TO  INP-030.                        I.980526
+004510     MOVE  ZERO       TO  WG-FNEN1.                               I.980526
+004520     IF WG-FNEN2 >= DATE-NF1 AND <= DATE-NT1                      I.980526
+004530         ADD DATE-NC1 TO WG-FNEN.                                 I.980526
+004540     IF WG-FNEN2 >= DATE-NF2 AND <= DATE-NT2                      I.980526
+004550         ADD DATE-NC2 TO WG-FNEN.                                 I.980526
+004560*****                     DISPLAY  ACP-FHIZ.                      D.980526
+004570 INP-040.
+004580*<<  日付ＴＯ  >>*
+004590     ACCEPT    ACP-THIZ.
+004600     IF        ESTAT      =   "09"           GO  TO  INP-030.
+004610*****IF        ESTAT  NOT =   "01" AND "06"  GO  TO  INP-040.     D.090409
+004620     IF    ESTAT  NOT =  "01" AND "04" AND "06"  GO  TO  INP-040. I.090409
+004630     IF        ESTAT      =   "04"                                I.090409
+004640                          ACCEPT  WG-THIZS FROM DATE              I.090409
+004650                          DISPLAY  ACP-THIZ.                      I.980526
+004660*****IF        WG-THIZ    =   ZERO                                D.980526
+004670*****                     MOVE  999999   TO  WG-THIZ              D.980526
+004680     IF        WG-THIZS   =   ZERO  OR  999999                    I.980526
+004690                          MOVE  99999999 TO  WG-THIZ              I.980526
+004700                          DISPLAY  ACP-THIZ  GO  TO  INP-050.
+004710     IF  (WG-TGET  <  1  OR  >  12)  OR                           I.980526
+004720         (WG-TPEY  <  1  OR  >  31)                               I.980526
+004730                          GO  TO  INP-040.                        I.980526
+004740     MOVE  ZERO       TO  WG-TNEN1.                               I.980526
+004750     IF WG-TNEN2 >= DATE-NF1 AND <= DATE-NT1                      I.980526
+004760         ADD DATE-NC1 TO WG-TNEN.                                 I.980526
+004770     IF WG-TNEN2 >= DATE-NF2 AND <= DATE-NT2                      I.980526
+004780         ADD DATE-NC2 TO WG-TNEN.                                 I.980526
+004790     IF        WG-FHIZ    >   WG-THIZ        GO  TO  INP-040.
+004800     PERFORM   CLR-010    THRU     CLR-EX.
+004810 INP-050.
+004820     MOVE      0          TO  I  N  S.
+004830     MOVE      0          TO  W-DC.                               I.940909
+004840     MOVE      WG-HINCD   TO  JNSR-01.                            I.971205
+004850     MOVE      WG-FHIZ    TO  JNSR-02.                            I.971205
+004860     MOVE      ZERO       TO  JNSR-03  JNSR-04  JNSR-05.          I.971205
+004870*****MOVE      WG-HINCD   TO  JNSRD-01.                           D.971205
+004880*****MOVE      WG-FHIZ    TO  JNSRD-02.                           D.971205
+004890*****MOVE      ZERO       TO  JNSR-03  JNSR-04  JNSR-05  JNSR-06. D 911113
+004900*****MOVE      ZERO       TO  JNSRD-03  JNSRD-04  JNSRD-06.       D.971205
+004910 INP-055.
+004920*****START     JNSRD      KEY     NOT <      JNSRD-KEY            D.971205
+004930*****                     INVALID   DISPLAY  JNSR-ERR  DISP-BUZ-J D.940909
+004940*****                                        GO  TO  INP-999.     D.940909
+004950     START     JNSR       KEY     NOT <      JNSR-KEY1            I.971205
+004960                          INVALID            GO  TO  INP-062.     I.940909
+004970 INP-060.
+004980*****READ      JNSRD      NEXT  UNLOCK  AT   END                  D.971205
+004990*****                                        GO  TO  INP-070.     D.940909
+005000     READ      JNSR       NEXT  UNLOCK  AT   END                  I.971205
+005010                                             GO  TO  INP-062.     I.940909
+005020     IF        JNSR-10        = 2            GO  TO  INP-060.     I.971211
+005030     IF        JNSR-01        > 999899       GO  TO  INP-060.     I.971211
+005040*****IF        JNSR-01    NOT = WG-HINCD     GO  TO  INP-070.     D.940909
+005050*****IF        JNSR-02    >     WG-THIZ      GO  TO  INP-070.     D.940909
+005060*****IF        JNSRD-01    NOT = WG-HINCD     GO  TO  INP-062.    D.971205
+005070*****IF        JNSRD-02    >     WG-THIZ      GO  TO  INP-062.    D.971205
+005080     IF        JNSR-01     NOT = WG-HINCD     GO  TO  INP-062.    I.971205
+005090     IF        JNSR-02     >     WG-THIZ      GO  TO  INP-062.    I.971205
+005100     IF        I          =   0
+005110                          MOVE  0          TO  NXT-SW
+005120                          MOVE  JNSR-02    TO  OLD-02             I.971205
+005130                          MOVE  JNSR-03    TO  OLD-03             I.971205
+005140                          MOVE  JNSR-04    TO  OLD-04             I.971205
+005150                          MOVE  JNSR-05    TO  OLD-05.            I.971205
+005160*****                     MOVE  JNSRD-02    TO  OLD-02            D.971205
+005170*****                     MOVE  JNSRD-03    TO  OLD-03            D.971205
+005180*****                     MOVE  JNSRD-04    TO  OLD-04            D.971205
+005190***                       MOVE  JNSRD-05    TO  OLD-05.           D 911113
+005200*****                     MOVE  JNSRD-06    TO  OLD-06.           D.971205
+005210     PERFORM   MOV1-RTN    THRU  MOV1-EX.
+005220     IF         I         >   12
+005230                          MOVE  1          TO  NXT-SW
+005240                          MOVE  JNSR-KEY1  TO  NXT-KEY            I.971205
+005250*****                     MOVE  JNSRD-KEY   TO  NXT-KEY           D.971205
+005260                          GO  TO  INP-070.
+005270     MOVE      JNSR-02    TO    OLD-02.                           I.971205
+005280     MOVE      JNSR-03    TO    OLD-03.                           I.971205
+005290     MOVE      JNSR-04    TO    OLD-04.                           I.971205
+005300     MOVE      JNSR-05    TO    OLD-05.                           I.971205
+005310*****MOVE      JNSRD-02    TO    OLD-02.                          D.971205
+005320*****MOVE      JNSRD-03    TO    OLD-03.                          D.971205
+005330*****MOVE      JNSRD-04    TO    OLD-04.                          D.971205
+005340*****MOVE      JNSR-05    TO    OLD-05.                           D 911113
+005350*****MOVE      JNSRD-06    TO    OLD-06.                          D.971205
+005360     GO  TO  INP-060.
+005370 INP-062.                                                         I.940909
+005380*****MOVE      0          TO  I  N  S.
+005390     MOVE      1          TO  W-DC.                               I.940909
+005400     MOVE      WG-HINCD   TO  JTW-01.                             I.971205
+005410     MOVE      WG-FHIZ    TO  JTW-02.                             I.971205
+005420     MOVE      ZERO       TO  JTW-03  JTW-04  JTW-05.             I.971205
+005430*****MOVE      WG-HINCD   TO  WN02-01.                            D.971205
+005440*****MOVE      WG-FHIZ    TO  WN02-02.                            D.971205
+005450*****MOVE      ZERO       TO  WN02-03  WN02-04           WN02-06. D.971205
+005460 INP-064.                                                         I.940909
+005470*****START     JT-WKN2    KEY     NOT <      WN02-KEY             D.971205
+005480*****                     INVALID   DISPLAY  JNSR-ERR  DISP-BUZ-J I.940909
+005490*****                     INVALID            GO  TO  INP-999.     D.950412
+005500     START     JT-W170    KEY     NOT <      JTW-KEY1             I.971205
+005510                          INVALID            GO  TO  INP-070.     I.950412
+005520 INP-067.                                                         I.940909
+005530*****READ      JT-WKN2    NEXT  UNLOCK  AT   END                  D.971205
+005540     READ      JT-W170    NEXT  UNLOCK  AT   END                  I.971205
+005550                                             GO  TO  INP-070.     I.940909
+005560     IF        JTW-10         = 2            GO  TO  INP-067.     I.090623
+005570     IF        JTW-01     NOT = WG-HINCD     GO  TO  INP-070.     I.971205
+005580     IF        JTW-02     >     WG-THIZ      GO  TO  INP-070.     I.971205
+005590*****IF        WN02-01    NOT = WG-HINCD     GO  TO  INP-070.     D.971205
+005600*****IF        WN02-02    >     WG-THIZ      GO  TO  INP-070.     D.971205
+005610     IF        I          =   0                                   I.940909
+005620                          MOVE  0          TO  NXT-SW             I.940909
+005630                          MOVE  JTW-02     TO  OLD-02             I.971205
+005640                          MOVE  JTW-03     TO  OLD-03             I.971205
+005650                          MOVE  JTW-04     TO  OLD-04             I.971205
+005660                          MOVE  JTW-05     TO  OLD-05.            I.971205
+005670*****                     MOVE  WN02-02    TO  OLD-02             D.971205
+005680*****                     MOVE  WN02-03    TO  OLD-03             D.971205
+005690*****                     MOVE  WN02-04    TO  OLD-04             D.971205
+005700*****                     MOVE  WN02-06    TO  OLD-06.            D.971205
+005710     PERFORM   MOV2-RTN    THRU  MOV2-EX.                         I.940909
+005720     IF         I         >   12                                  I.940909
+005730                          MOVE  1          TO  NXT-SW             I.940909
+005740*****                     MOVE  WN02-KEY   TO  NXT-KEY            D.971205
+005750                          MOVE  JTW-KEY1   TO  NXT-KEY            I.971205
+005760                          GO  TO  INP-070.                        I.940909
+005770*****MOVE      WN02-02    TO    OLD-02.                           D.971205
+005780*****MOVE      WN02-03    TO    OLD-03.                           D.971205
+005790*****MOVE      WN02-04    TO    OLD-04.                           D.971205
+005800*****MOVE      WN02-06    TO    OLD-06.                           D.971205
+005810     MOVE      JTW-02     TO    OLD-02.                           I.971205
+005820     MOVE      JTW-03     TO    OLD-03.                           I.971205
+005830     MOVE      JTW-04     TO    OLD-04.                           I.971205
+005840     MOVE      JTW-05     TO    OLD-05.                           I.971205
+005850     GO  TO  INP-067.                                             I.940909
+005860 INP-070.
+005870     PERFORM   DSP1-RTN   THRU  DSP1-EX.
+005880 INP-999.
+005890*<<  確認  >>*
+005900     ACCEPT    ACP-OKC.
+005910     DISPLAY   CLR-ERR.
+005920*****IF        ESTAT      =   "09"           GO  TO  INP-RTN.     D.940909
+005930     IF        ESTAT      =   "09"                                I.940909
+005940               PERFORM   SHOSAI-RTN    THRU  SHOSAI-EX            I.940909
+005950        ELSE   GO  TO    INP-110.                                 I.940909
+005960     IF        ESTAT      =   "09"           GO  TO  INP-999.     I.940909
+005970 INP-110.                                                         I.940909
+005980     IF        ESTAT  NOT =   "01" AND "06"  GO  TO  INP-999.
+005990     IF        OKC        =   9
+006000                          PERFORM  CLR-RTN  THRU  CLR-EX
+006010                                             GO  TO  INP-RTN.
+006020     IF        OKC        =   1
+006030               IF     NXT-SW       NOT =   1
+006040                          DISPLAY  NXT-ERR   GO  TO  INP-999
+006050               ELSE
+006060                      PERFORM  CLR-010  THRU  CLR-EX
+006070*****                 MOVE  NXT-KEY  TO  JNSRD-KEY                D.971205
+006080                      MOVE  NXT-KEY  TO  JNSR-KEY1                I.971205
+006090                      MOVE  0      TO  I N S
+006100                      IF    W-DC           =   0                  I.940909
+006110                                           GO  TO  INP-055        I.940909
+006120                                    ELSE   GO  TO  INP-064.       I.940909
+006130     GO  TO  INP-999.                                             I.940909
+006140*****                 GO  TO  INP-055.                            D.940909
+006150*****IF        OKC    NOT =   2              GO  TO  INP-999.     D.940909
+006160 INP-EX.                                                          I.940909
+006170     EXIT.                                                        I.940909
+006180******************************************************************
+006190*    SHOSAI-RTN    詳細表示                                      *
+006200******************************************************************
+006210*INP-100.                                                         D.940909
+006220 SHOSAI-RTN.                                                      I.940909
+006230     ACCEPT    ACP-ACT2.
+006240     DISPLAY   CLR-ERR.
+006250*****IF        ESTAT      =   "09"           GO  TO  INP-999.     D.940909
+006260*****IF        ESTAT  NOT =   "01" AND "06"  GO  TO  INP-100.     D.940909
+006270     IF        ESTAT      =   "09"           GO  TO  SHOSAI-EX.   I.940909
+006280     IF        ESTAT  NOT =   "01" AND "06"  GO  TO  SHOSAI-RTN.  I.940909
+006290     IF      ( WG-ACT2    NOT <   1   AND  NOT >  12 )
+006300*****          OR   ( WG-ACT2      =  99 )                        D.940912
+006310           OR   ( WG-ACT2      =  91  OR  92  OR  99 )            I.940912
+006320                          NEXT  SENTENCE
+006330     ELSE                                    GO  TO  SHOSAI-RTN.  I.940909
+006340*****ELSE                                    GO  TO  INP-100.     D.940909
+006350     MOVE      WG-ACT2        TO  I.
+006360*****IF        WG-ACT2     NOT =  99                              D.940912
+006370*****       IF       WG-SW(I)    =  0        GO  TO  INP-100.     D.940909
+006380     IF        WG-ACT2         <  91                              I.940912
+006390            IF       WG-SW(I)    =  0        GO  TO  SHOSAI-RTN.  I.940909
+006400     IF        WG-ACT2     =  99
+006410               PERFORM  ZAI-RTN    THRU  ZAI-EX
+006420     ELSE   IF       WG-ACT2     >  90                            I.940912
+006430                     PERFORM  NSK-RTN    THRU  NSK-EX             I.940912
+006440           ELSE      PERFORM  DSP2-RTN   THRU  DSP2-EX.
+006450     GO  TO  SHOSAI-RTN.                                          I.940909
+006460*****GO  TO  INP-999.                                             D.940909
+006470 SHOSAI-EX.                                                       I.940909
+006480     EXIT.                                                        I.940909
+006490*INP-EX.                                                          D.940909
+006500*****EXIT.                                                        D.940909
+006510******************************************************************
+006520*    MOV1-RTN   １～１２行　項目セット処理    （入出庫累積Ｆ）
+006530******************************************************************
+006540 MOV1-RTN.
+006550     IF    I         =   0
+006560                     MOVE  1          TO  I  GO  TO  MOV1-010.
+006570*****IF    JNSRD-02   NOT =  OLD-02    OR                         D.971205
+006580*****           JNSRD-03    NOT =  OLD-03   OR                    D.971205
+006590*****                JNSRD-04    NOT =  OLD-04                    D.971205
+006600     IF    JNSR-02    NOT =  OLD-02    OR                         I.971205
+006610                JNSR-03     NOT =  OLD-03   OR                    I.971205
+006620                     JNSR-04     NOT =  OLD-04                    I.971205
+006630                         ADD  1       TO  I
+006640     ELSE                                    GO  TO  MOV1-020.
+006650 MOV1-010.
+006660     IF    I         >   12                  GO  TO  MOV1-EX.
+006670     MOVE  1             TO  WG-SW(I).
+006680*****MOVE  JNSRD-02       TO  WK-HIZUKE.                          D.971205
+006690     MOVE  JNSR-02        TO  WK-HIZUKE.                          I.971205
+006700     MOVE  WK-MM         TO  WG-MM(I).
+006710     MOVE  WK-DD         TO  WG-DD(I).
+006720*****MOVE  JNSRD-03       TO  WG-KBN(I).                          D.971205
+006730*****IF  JNSRD-03  =  10 OR 11  MOVE  NC"入庫"  TO  WG-KBNNM(I).  D.971205
+006740*****IF  JNSRD-03  =  20        MOVE  NC"出庫"  TO  WG-KBNNM(I).  D.971205
+006750*****IF  JNSRD-03  =  21        MOVE  NC"移動"  TO  WG-KBNNM(I).  D.971205
+006760*****IF  JNSRD-03  =  22        MOVE  NC"出荷"  TO  WG-KBNNM(I).  D.971205
+006770*****IF  JNSRD-03  =  23        MOVE  NC"返品"  TO  WG-KBNNM(I).  D.971205
+006780*****IF  JNSRD-03  =  24        MOVE  NC"不良"  TO  WG-KBNNM(I).  D.971205
+006790*****IF  JNSRD-03  =  25        MOVE  NC"訂正"  TO  WG-KBNNM(I).  D.971205
+006800*****MOVE  JNSRD-10       TO  TC-TCD  WG-TOKCD(I).                D.971205
+006810*****MOVE  JNSRD-11       TO  TC-CCD  WG-TCMCD(I).                D.971205
+006820     MOVE  JNSR-03        TO  WG-KBN(I).                          I.971205
+006830     IF  JNSR-03  =  10 OR 11   MOVE  NC"入庫"  TO  WG-KBNNM(I).  I.971205
+006840     IF  JNSR-03  =  12         MOVE  NC"格外"  TO  WG-KBNNM(I).  I.070322
+006850     IF  JNSR-03  =  20         MOVE  NC"出庫"  TO  WG-KBNNM(I).  I.971205
+006860     IF  JNSR-03  =  21         MOVE  NC"移動"  TO  WG-KBNNM(I).  I.971205
+006870     IF  JNSR-03  =  22         MOVE  NC"出荷"  TO  WG-KBNNM(I).  I.971205
+006880     IF  JNSR-03  =  23         MOVE  NC"返品"  TO  WG-KBNNM(I).  I.971205
+006890     IF  JNSR-03  =  24         MOVE  NC"不良"  TO  WG-KBNNM(I).  I.971205
+006900     IF  JNSR-03  =  25         MOVE  NC"訂正"  TO  WG-KBNNM(I).  I.971205
+006910     MOVE  JNSR-111       TO  TC-TCD  WG-TOKCD(I).                I.971205
+006920     MOVE  JNSR-112       TO  TC-CCD  WG-TCMCD(I).                I.971205
+006930     READ  TC-M     UNLOCK   INVALID
+006940                         MOVE  SPACE   TO  TC-NAME.
+006950     MOVE  TC-NAME        TO  WG-TCMNM(I).
+006960     MOVE  JNSR-23        TO  WG-HAITA(I).                        I.971205
+006970*****MOVE  JNSR-24        TO  WG-TEKIYO(I).                       D.051215
+006980     MOVE  SPACE          TO  W-TEKIYO  W-TEWD.                   I.051215
+006990     MOVE  JNSR-24        TO  W-TEWD.                             I.061023
+007000     PERFORM  MOV9-RTN    THRU  MOV9-EX.                          I.061023
+007010*****MOVE  ZERO           TO  CNT1  CNT2.                         D.061023
+007020*****MOVE  JNSR-24        TO  W-TEWD.                             D.061023
+007030*MOV1-012.                                                        D.061023
+007040*****ADD   1              TO  CNT1  CNT2.                         D.061023
+007050*****IF  CNT1           =  1                                      D.061023
+007060*****    IF  W-TE(CNT1)     =  NC"№"                             D.061023
+007070*****        SUBTRACT   1      FROM   CNT2                        D.061023
+007080*****        GO  TO  MOV1-012.                                    D.061023
+007090*****IF (CNT1           =  13)  OR  (CNT2            =  7)        D.061023
+007100*****    GO  TO  MOV1-016.                                        D.061023
+007110*****MOVE  W-TE(CNT1)     TO  W-TEKI(CNT2).                       D.061023
+007120*****IF  W-TE(CNT1) NOT =  SPACE                                  D.061023
+007130*****    GO  TO  MOV1-012.                                        D.061023
+007140*MOV1-014.                                                        D.061023
+007150*****ADD   1              TO  CNT1.                               D.061023
+007160*****IF  CNT1           =  13                                     D.061023
+007170*****    GO  TO  MOV1-016.                                        D.061023
+007180*****IF  W-TE(CNT1)     =  SPACE                                  D.061023
+007190*****    GO  TO  MOV1-014.                                        D.061023
+007200*****ADD   1              TO  CNT2                                D.061023
+007210*****IF  CNT2           =  7                                      D.061023
+007220*****    GO  TO  MOV1-016                                         D.061023
+007230*****  ELSE                                                       D.061023
+007240*****    MOVE  W-TE(CNT1)     TO  W-TEKI(CNT2)                    D.061023
+007250*****    GO  TO  MOV1-012.                                        D.061023
+007260*MOV1-016.                                                        D.061023
+007270     MOVE  W-TEKIYO       TO  WG-TEKIYO(I).                       I.051215
+007280     MOVE  JNSR-151       TO  WG-JYUNO(I).                        I.061020
+007290     MOVE  JNSR-04        TO  WG-DENNO(I).                        I.971205
+007300     MOVE  JNSR-12        TO  WG-OKRNO(I).                        I.971205
+007310     MOVE  JNSR-06        TO  WG-KURA(I).                         I.971205
+007320     MOVE  JNSR-14        TO  WG-UNSO(I).                         I.061020
+007330*****MOVE  JNSRD-12       TO  WG-HAITA(I).                        D.971205
+007340*****MOVE  JNSRD-13       TO  WG-TEKIYO(I).                       D.971205
+007350*****MOVE  JNSRD-04       TO  WG-DENNO(I).                        D.971205
+007360*****MOVE  JNSRD-14       TO  WG-OKRNO(I).                        D.971205
+007370*****MOVE  JNSRD-07       TO  WG-KURA(I).                         D.971205
+007380 MOV1-020.
+007390*****MOVE  JNSRD-05       TO  N.                                  D.971205
+007400     MOVE  JNSR-07        TO  N.                                  I.971205
+007410     PERFORM  SUR-SET-RTN    THRU  SUR-SET-EX.
+007420 MOV1-EX.
+007430     EXIT.
+007440******************************************************************
+007450*    MOV2-RTN   １～１２行　項目セット処理    （入出庫ワークＦ）
+007460******************************************************************
+007470 MOV2-RTN.                                                        I.940909
+007480     IF    I         =   0                                        I.940909
+007490                     MOVE  1          TO  I  GO  TO  MOV2-010.    I.940909
+007500*****IF    WN02-02   NOT =  OLD-02    OR                          D.971205
+007510*****           WN02-03    NOT =  OLD-03   OR                     D.971205
+007520*****                WN02-04    NOT =  OLD-04                     D.971205
+007530     IF    JTW-02    NOT =  OLD-02    OR                          I.971205
+007540                JTW-03     NOT =  OLD-03   OR                     I.971205
+007550                     JTW-04     NOT =  OLD-04                     I.971205
+007560                         ADD  1       TO  I                       I.940909
+007570     ELSE                                    GO  TO  MOV2-020.    I.940909
+007580 MOV2-010.                                                        I.940909
+007590     IF    I         >   12                  GO  TO  MOV2-EX.     I.940909
+007600     MOVE  1             TO  WG-SW(I).                            I.940909
+007610     MOVE  ZERO          TO  WK-HIZUKE.                           I.940909
+007620     MOVE  WK-MM         TO  WG-MM(I).                            I.940909
+007630     MOVE  WK-DD         TO  WG-DD(I).                            I.940909
+007640*****MOVE  WN02-03       TO  WG-KBN(I).                           D.971205
+007650*****IF    WN02-03  =  10 OR 11  MOVE  NC"入庫"  TO  WG-KBNNM(I). D.971205
+007660*****IF    WN02-03  =  20        MOVE  NC"出庫"  TO  WG-KBNNM(I). D.971205
+007670*****IF    WN02-03  =  21        MOVE  NC"移動"  TO  WG-KBNNM(I). D.971205
+007680*****IF    WN02-03  =  22        MOVE  NC"出荷"  TO  WG-KBNNM(I). D.971205
+007690*****IF    WN02-03  =  23        MOVE  NC"返品"  TO  WG-KBNNM(I). D.971205
+007700*****IF    WN02-03  =  24        MOVE  NC"不良"  TO  WG-KBNNM(I). D.971205
+007710*****IF    WN02-03  =  25        MOVE  NC"訂正"  TO  WG-KBNNM(I). D.971205
+007720*****MOVE  WN02-10       TO  TC-TCD  WG-TOKCD(I).                 D.971205
+007730*****MOVE  WN02-11       TO  TC-CCD  WG-TCMCD(I).                 D.971205
+007740     MOVE  JTW-03        TO  WG-KBN(I).                           I.971205
+007750*****IF    JTW-03   =  10 OR 11  MOVE  NC"入庫"  TO  WG-KBNNM(I). D.060613
+007760     IF    JTW-03   =  10        MOVE  NC"入庫"  TO  WG-KBNNM(I). I.060613
+007770     IF    JTW-03   =  12        MOVE  NC"格外"  TO  WG-KBNNM(I). I.070322
+007780     IF    JTW-03   =  11        MOVE  NC"移入"  TO  WG-KBNNM(I). I.060613
+007790     IF    JTW-03   =  20        MOVE  NC"出庫"  TO  WG-KBNNM(I). I.971205
+007800*****IF    JTW-03   =  21        MOVE  NC"移動"  TO  WG-KBNNM(I). D.060613
+007810     IF    JTW-03   =  21        MOVE  NC"移出"  TO  WG-KBNNM(I). I.060613
+007820     IF    JTW-03   =  22        MOVE  NC"出荷"  TO  WG-KBNNM(I). I.971205
+007830     IF    JTW-03   =  23        MOVE  NC"返品"  TO  WG-KBNNM(I). I.971205
+007840     IF    JTW-03   =  24        MOVE  NC"不良"  TO  WG-KBNNM(I). I.971205
+007850     IF    JTW-03   =  25        MOVE  NC"訂正"  TO  WG-KBNNM(I). I.971205
+007860     MOVE  JTW-111       TO  TC-TCD  WG-TOKCD(I).                 I.971205
+007870     MOVE  JTW-112       TO  TC-CCD  WG-TCMCD(I).                 I.971205
+007880     READ  TC-M     UNLOCK   INVALID                              I.940909
+007890                         MOVE  SPACE   TO  TC-NAME.               I.940909
+007900     MOVE  TC-NAME       TO  WG-TCMNM(I).                         I.940909
+007910     MOVE  JTW-23        TO  WG-HAITA(I).                         I.971205
+007920*****MOVE  JTW-24        TO  WG-TEKIYO(I).                        D.061023
+007930     MOVE  SPACE         TO  W-TEKIYO  W-TEWD.                    I.061023
+007940     MOVE  JTW-24        TO  W-TEWD.                              I.061023
+007950     PERFORM  MOV9-RTN   THRU  MOV9-EX.                           I.061023
+007960     MOVE  W-TEKIYO      TO  WG-TEKIYO(I).                        I.061023
+007970     MOVE  JTW-151       TO  WG-JYUNO(I).                         I.061020
+007980     MOVE  JTW-04        TO  WG-DENNO(I).                         I.971205
+007990     MOVE  JTW-12        TO  WG-OKRNO(I).                         I.971205
+008000     MOVE  JTW-06        TO  WG-KURA(I).                          I.971205
+008010     MOVE  JTW-14        TO  WG-UNSO(I).                          I.971205
+008020*****MOVE  WN02-12       TO  WG-HAITA(I).                         D.971205
+008030*****MOVE  WN02-13       TO  WG-TEKIYO(I).                        D.971205
+008040*****MOVE  WN02-04       TO  WG-DENNO(I).                         D.971205
+008050*****MOVE  WN02-14       TO  WG-OKRNO(I).                         D.971205
+008060*****MOVE  WN02-07       TO  WG-KURA(I).                          D.971205
+008070 MOV2-020.                                                        I.940909
+008080*****MOVE  WN02-05       TO  N.                                   D.971205
+008090     MOVE  JTW-07        TO  N.                                   I.971205
+008100     PERFORM  SUR-SET-RTN    THRU  SUR-SET-EX.                    I.940909
+008110 MOV2-EX.                                                         I.940909
+008120     EXIT.                                                        I.940909
+008130******************************************************************
+008140*    MOV9-RTN   １～１２行　摘要項目セット処理（入出庫ワークＦ）
+008150******************************************************************
+008160 MOV9-RTN.                                                        I.061023
+008170     MOVE  ZERO           TO  CNT1  CNT2.                         I.061023
+008180 MOV9-010.                                                        I.061023
+008190     ADD   1              TO  CNT1  CNT2.                         I.061023
+008200     IF  CNT1           =  1                                      I.061023
+008210         IF  W-TE(CNT1)     =  NC"№"                             I.061023
+008220             SUBTRACT   1      FROM   CNT2                        I.061023
+008230             GO  TO  MOV9-010.                                    I.061023
+008240*****IF (CNT1           =  13)  OR  (CNT2            =  7)        D.101022
+008250     IF (CNT1           =  13)  OR  (CNT2            =  8)        I.101022
+008260         GO  TO  MOV9-EX.                                         I.061023
+008270     MOVE  W-TE(CNT1)     TO  W-TEKI(CNT2).                       I.061023
+008280     IF  W-TE(CNT1) NOT =  SPACE                                  I.061023
+008290         GO  TO  MOV9-010.                                        I.061023
+008300 MOV9-020.                                                        I.061023
+008310     ADD   1              TO  CNT1.                               I.061023
+008320     IF  CNT1           =  13                                     I.061023
+008330         GO  TO  MOV9-EX.                                         I.061023
+008340     IF  W-TE(CNT1)     =  SPACE                                  I.061023
+008350         GO  TO  MOV9-020.                                        I.061023
+008360     ADD   1              TO  CNT2                                I.061023
+008370*****IF  CNT2           =  7                                      D.101022
+008380     IF  CNT2           =  8                                      I.101022
+008390         GO  TO  MOV9-EX                                          I.061023
+008400       ELSE                                                       I.061023
+008410         MOVE  W-TE(CNT1)     TO  W-TEKI(CNT2)                    I.061023
+008420         GO  TO  MOV9-010.                                        I.061023
+008430 MOV9-EX.                                                         I.061023
+008440     EXIT.                                                        I.061023
+008450******************************************************************
+008460*    SUR-SET-RTN     数量セット処理                              *
+008470******************************************************************
+008480 SUR-SET-RTN.
+008490     MOVE  1             TO  S.
+008500 SUR-SET-010.
+008510     IF    S      >      10                  GO  TO  SUR-SET-EX.
+008520     IF    W-DC   =      0                                        I.940909
+008530                  ADD   JNSR-081(S)   TO  WG-SUR(I N S)           I.971205
+008540                  ADD   JNSR-081(S)   TO  WG-GOK(I)  WG-SOKSU(I)  I.971205
+008550           ELSE   ADD   JTW-081(S)    TO  WG-SUR(I N S)           I.971205
+008560                  ADD   JTW-081(S)    TO  WG-GOK(I)  WG-SOKSU(I). I.971205
+008570*****             ADD   JNSRD-081(S)   TO  WG-SUR(I N S)          D.971205
+008580*****             ADD   JNSRD-081(S)   TO  WG-GOK(I)  WG-SOKSU(I) D.971205
+008590*****      ELSE   ADD   WN02-081(S)   TO  WG-SUR(I N S)           D.971205
+008600*****             ADD   WN02-081(S)   TO  WG-GOK(I)  WG-SOKSU(I). D.971205
+008610*****ADD   JNSR-081(S)   TO  WG-SUR(I N S).                       D.940909
+008620*****ADD   JNSR-081(S)   TO  WG-GOK(I)  WG-SOKSU(I).              D.940909
+008630     ADD   1             TO  S.
+008640     GO  TO  SUR-SET-010.
+008650 SUR-SET-EX.
+008660     EXIT.
+008670******************************************************************
+008680*    DSP1-RTN   １～１２行　画面表示処理                         *
+008690******************************************************************
+008700 DSP1-RTN.
+008710     MOVE  1               TO  I.
+008720     MOVE  3               TO  LIN.
+008730 DSP1-010.
+008740     IF    I      >        12
+008750           OR     WG-SW(I)     =  0          GO  TO  DSP1-EX.
+008760     DISPLAY      DSP-TBL12.
+008770     ADD   1               TO  I  LIN.
+008780     GO  TO  DSP1-010.
+008790 DSP1-EX.
+008800     EXIT.
+008810******************************************************************
+008820*    DSP2-RTN   行明細　　　画面表示処理                         *
+008830******************************************************************
+008840 DSP2-RTN.
+008850     MOVE  NC"得意先名"    TO  WG-DAI.
+008860     MOVE  WG-TOKCD(I)     TO  TC-TCD.
+008870     MOVE  001             TO  TC-CCD.
+008880     READ  TC-M       UNLOCK   INVALID
+008890           MOVE  SPACE         TO  TC-NAME.
+008900     MOVE  TC-NAME         TO  WG-TOKNM.
+008910     DISPLAY  DSP-DAI.
+008920     IF    WG-KBN(I)  NOT <  22  AND  NOT  >  25
+008930           DISPLAY    DSP-TOKNM  DSP-JYUNO  DSP-DENNO  DSP-OKRNO. I.061020
+008940*****      DISPLAY    DSP-TOKNM  DSP-DENNO  DSP-OKRNO.            D.061020
+008950     IF    WG-KBN(I)  =  10   OR   11                             I.000905
+008960           DISPLAY    DSP-DENNO.                                  I.000905
+008970     DISPLAY  DSP-KURA  DSP-UNSO.                                 I.061020
+008980*****DISPLAY  DSP-KURA.                                           D.061020
+008990     MOVE  19            TO  LIN.
+009000     MOVE  14            TO  COL.
+009010     MOVE  1             TO  N  S.
+009020 DSP2-010.
+009030     IF    N               >  4              GO  TO  DSP2-020.
+009040     DISPLAY    DSP-SUR.
+009050     IF    S           NOT =  10
+009060                         ADD  1        TO  S
+009070                         ADD  6        TO  COL
+009080                         GO  TO  DSP2-010.
+009090     ADD   1              TO  N  LIN.
+009100     MOVE  1              TO  S.
+009110     MOVE  14             TO  COL.
+009120     GO  TO  DSP2-010.
+009130 DSP2-020.
+009140     DISPLAY    DSP-GOK.
+009150 DSP2-EX.
+009160     EXIT.
+009170******************************************************************
+009180*    ZAI-RTN    行明細　　　画面表示処理  （在庫）               *
+009190******************************************************************
+009200 ZAI-RTN.
+009210     INITIALIZE                WG-ZAI-TBL.
+009220     MOVE  NC"在　　庫"    TO  WG-DAI.
+009230*****MOVE  WG-HINCD        TO  HZ-HCD.                            D.940913
+009240*****MOVE  0               TO  HZ-SC  HZ-SIZ.                     D.940913
+009250*****START  HZ-M   KEY  NOT <  HZ-KEY                             D.940913
+009260     INITIALIZE                NJZAI-KEY.                         I.940913
+009270     MOVE  9               TO  NJZAI-01.                          I.940913
+009280     MOVE  WG-HINCD        TO  NJZAI-02.                          I.940913
+009290     START  NJZAI  KEY  NOT <  NJZAI-KEY                          I.940913
+009300                   INVALID     DISPLAY  JZA2-ERR  DISP-BUZ-J
+009310                               GO  TO  ZAI-EX.
+009320 ZAI-010.
+009330*****READ  HZ-M       NEXT  UNLOCK  AT   END                      D.940913
+009340     READ  NJZAI      NEXT  UNLOCK  AT   END                      I.940913
+009350                                             GO  TO  ZAI-020.
+009360     IF    NJZAI-02     NOT =  WG-HINCD      GO  TO  ZAI-020.     I.940913
+009370*****IF    HZ-HCD       NOT =  WG-HINCD      GO  TO  ZAI-020.     D.940913
+009380*****MOVE  HZ-SC            TO  N.                                D.940913
+009390     MOVE  NJZAI-03         TO  N.                                I.940913
+009400     PERFORM  ZAI-SET-RTN   THRU  ZAI-SET-EX.
+009410     GO  TO  ZAI-010.
+009420*
+009430 ZAI-020.
+009440     PERFORM  DSP3-RTN   THRU  DSP3-EX.                           I.940912
+009450*****DISPLAY  CLR-06  CLR-07  CLR-08  CLR-09.                     D.940912
+009460*****DISPLAY  DSP-DAI.                                            D.940912
+009470*****MOVE  1              TO  N  S.                               D.940912
+009480*****MOVE  19             TO  LIN.                                D.940912
+009490*****MOVE  14             TO  COL.                                D.940912
+009500*ZAI-030.                                                         D.940912
+009510*****IF    N               >  4              GO  TO  ZAI-040.     D.940912
+009520*****DISPLAY    DSP-ZAI.                                          D.940912
+009530*****IF    S           NOT =  10                                  D.940912
+009540*****                    ADD  1        TO  S                      D.940912
+009550*****                    ADD  6        TO  COL                    D.940912
+009560*****                    GO  TO  ZAI-030.                         D.940912
+009570*****ADD   1              TO  N  LIN.                             D.940912
+009580*****MOVE  1              TO  S.                                  D.940912
+009590*****MOVE  14             TO  COL.                                D.940912
+009600*****GO  TO  ZAI-030.                                             D.940912
+009610*ZAI-040.                                                         D.940912
+009620*****DISPLAY    DSP-ZGOK.                                         D.940912
+009630 ZAI-EX.
+009640     EXIT.
+009650******************************************************************
+009660*    ZAI-SET-RTN     数量セット処理    （在庫）                  *
+009670******************************************************************
+009680 ZAI-SET-RTN.
+009690     MOVE  ZERO          TO  S.                                   I.940913
+009700*****MOVE  1             TO  S.                                   D 911007
+009710*****IF  N  =  1         GO  TO  ZAI-SET-010.                     D.940913
+009720*****IF  N  =  2         GO  TO  ZAI-SET-020.                     D.940913
+009730*****IF  N  =  3         GO  TO  ZAI-SET-030.                     D.940913
+009740*****IF  N  =  4         GO  TO  ZAI-SET-040.                     D.940913
+009750 ZAI-SET-010.
+009760     ADD   1             TO  S.                                   I.940913
+009770     IF  S               =   11           GO  TO  ZAI-SET-EX.     I.940913
+009780     COMPUTE  WG-ZAI(N,S)  =    WG-ZAI(N,S)  +  NJZAI-0411(S)  -  I.941007
+009790              NJZAI-0511(S)  +  NJZAI-0611(S)  +  NJZAI-0711(S)   I.941007
+009800           -  NJZAI-0811(S)  -  NJZAI-0911(S)  +  NJZAI-1111(S).  I.941007
+009810     COMPUTE  WG-ZGOK      =    WG-ZGOK      +  NJZAI-0411(S)  -  I.941007
+009820              NJZAI-0511(S)  +  NJZAI-0611(S)  +  NJZAI-0711(S)   I.941007
+009830           -  NJZAI-0811(S)  -  NJZAI-0911(S)  +  NJZAI-1111(S).  I.941007
+009840*****COMPUTE  WG-ZAI(N,S)  =   WG-ZAI(N,S) +  NJZAI-0411(S)  +    D.941007
+009850*****         NJZAI-0511(S)  -  NJZAI-0611(S)  -  NJZAI-0911(S).  D.941007
+009860*****COMPUTE  WG-ZGOK      =   WG-ZGOK     +  NJZAI-0411(S)  +    D.941007
+009870*****         NJZAI-0511(S)  -  NJZAI-0611(S)  -  NJZAI-0911(S).  D.941007
+009880*****IF  HZ-SIZ  =  "003"                                         D.940913
+009890*****    MOVE  1         TO  S.                                   D.940913
+009900*****IF  HZ-SIZ  =  "002"                                         D.940913
+009910*****    MOVE  2         TO  S.                                   D.940913
+009920*****IF  HZ-SIZ  =  "001"                                         D.940913
+009930*****    MOVE  3         TO  S.                                   D.940913
+009940*****IF  HZ-SIZ  =  "000"                                         D.940913
+009950*****    MOVE  4         TO  S.                                   D.940913
+009960*****IF  HZ-SIZ  =  "201"                                         D.940913
+009970*****    MOVE  5         TO  S.                                   D.940913
+009980*****IF  HZ-SIZ  =  "301"                                         D.940913
+009990*****    MOVE  6         TO  S.                                   D.940913
+010000*****IF  HZ-SIZ  =  "401"                                         D.940913
+010010*****    MOVE  7         TO  S.                                   D.940913
+010020*****IF  HZ-SIZ  =  "280"                                         D.940913
+010030*****    MOVE  8         TO  S.                                   D.940913
+010040*****IF  HZ-SIZ  =  "290"                                         D.940913
+010050*****    MOVE  9         TO  S.                                   D.940913
+010060*****IF  HZ-SIZ  =  "300"                                         D.940913
+010070*****    MOVE  10        TO  S.                                   D.940913
+010080*****GO  TO  ZAI-SET-050.                                         D.940913
+010090* ZAI-SET-020.                                                    D.940913
+010100*****IF  HZ-SIZ  =  "125"                                         D.940913
+010110*****    MOVE  1         TO  S.                                   D.940913
+010120*****IF  HZ-SIZ  =  "130"                                         D.940913
+010130*****    MOVE  2         TO  S.                                   D.940913
+010140*****IF  HZ-SIZ  =  "135"                                         D.940913
+010150*****    MOVE  3         TO  S.                                   D.940913
+010160*****IF  HZ-SIZ  =  "140"                                         D.940913
+010170*****    MOVE  4         TO  S.                                   D.940913
+010180*****IF  HZ-SIZ  =  "150"                                         D.940913
+010190*****    MOVE  5         TO  S.                                   D.940913
+010200*****IF  HZ-SIZ  =  "160"                                         D.940913
+010210*****    MOVE  6         TO  S.                                   D.940913
+010220*****IF  HZ-SIZ  =  "170"                                         D.940913
+010230*****    MOVE  7         TO  S.                                   D.940913
+010240*****IF  HZ-SIZ  =  "180"                                         D.940913
+010250*****    MOVE  8         TO  S.                                   D.940913
+010260*****IF  HZ-SIZ  =  "190"                                         D.940913
+010270*****    MOVE  9         TO  S.                                   D.940913
+010280*****IF  HZ-SIZ  =  "200"                                         D.940913
+010290*****    MOVE  10        TO  S.                                   D.940913
+010300*****GO  TO  ZAI-SET-050.                                         D.940913
+010310* ZAI-SET-030.                                                    D.940913
+010320*****IF  HZ-SIZ  =  "210"                                         D.940913
+010330*****    MOVE  1         TO  S.                                   D.940913
+010340*****IF  HZ-SIZ  =  "215"                                         D.940913
+010350*****    MOVE  2         TO  S.                                   D.940913
+010360*****IF  HZ-SIZ  =  "220"                                         D.940913
+010370*****    MOVE  3         TO  S.                                   D.940913
+010380*****IF  HZ-SIZ  =  "225"                                         D.940913
+010390*****    MOVE  4         TO  S.                                   D.940913
+010400*****IF  HZ-SIZ  =  "230"                                         D.940913
+010410*****    MOVE  5         TO  S.                                   D.940913
+010420*****IF  HZ-SIZ  =  "235"                                         D.940913
+010430*****    MOVE  6         TO  S.                                   D.940913
+010440*****IF  HZ-SIZ  =  "240"                                         D.940913
+010450*****    MOVE  7         TO  S.                                   D.940913
+010460*****IF  HZ-SIZ  =  "245"                                         D.940913
+010470*****    MOVE  8         TO  S.                                   D.940913
+010480*****IF  HZ-SIZ  =  "250"                                         D.940913
+010490*****    MOVE  9         TO  S.                                   D.940913
+010500*****GO  TO  ZAI-SET-050.                                         D.940913
+010510* ZAI-SET-040.                                                    D.940913
+010520*****IF  HZ-SIZ  =  "240"                                         D.940913
+010530*****    MOVE  1         TO  S.                                   D.940913
+010540*****IF  HZ-SIZ  =  "245"                                         D.940913
+010550*****    MOVE  2         TO  S.                                   D.940913
+010560*****IF  HZ-SIZ  =  "250"                                         D.940913
+010570*****    MOVE  3         TO  S.                                   D.940913
+010580*****IF  HZ-SIZ  =  "255"                                         D.940913
+010590*****    MOVE  4         TO  S.                                   D.940913
+010600*****IF  HZ-SIZ  =  "260"                                         D.940913
+010610*****    MOVE  5         TO  S.                                   D.940913
+010620*****IF  HZ-SIZ  =  "265"                                         D.940913
+010630*****    MOVE  6         TO  S.                                   D.940913
+010640*****IF  HZ-SIZ  =  "270"                                         D.940913
+010650*****    MOVE  7         TO  S.                                   D.940913
+010660*****IF  HZ-SIZ  =  "275"                                         D.940913
+010670*****    MOVE  8         TO  S.                                   D.940913
+010680*****IF  HZ-SIZ  =  "111"                                         D.940913
+010690*****    MOVE  10        TO  S.                                   D.940913
+010700*****GO  TO  ZAI-SET-050.                                         D.940913
+010710* ZAI-SET-050.                                                    D.940913
+010720*****IF    S      >      10                  GO  TO  ZAI-SET-EX.  D 911007
+010730*****COMPUTE  WG-ZAI(N S)    =  JZA2-0311(S) + JZA2-0411(S) -     D 911007
+010740*****                           JZA2-0511(S).                     D 911007
+010750*****MOVE  HZ-GSU        TO  WG-ZAI(N S).                         D.940913
+010760*****ADD   WG-ZAI(N S)   TO  WG-ZGOK.                             D.940913
+010770*****ADD   1             TO  S.                                   D 911007
+010780     GO  TO  ZAI-SET-010.
+010790 ZAI-SET-EX.
+010800     EXIT.
+010810******************************************************************
+010820*    NSK-RTN    行明細　　画面表示処理  （入出庫計）             *
+010830******************************************************************
+010840 NSK-RTN.                                                         I.940912
+010850     INITIALIZE                WG-ZAI-TBL.                        I.940912
+010860     IF        WG-ACT2         =  91                              I.940912
+010870                               MOVE  NC"入庫計　"    TO  WG-DAI   I.940912
+010880                         ELSE  MOVE  NC"出庫計　"    TO  WG-DAI.  I.940912
+010890     MOVE      0          TO  WG-DC.                              I.940912
+010900     MOVE      WG-HINCD   TO  JNSR-01.                            I.971205
+010910     MOVE      WG-FHIZ    TO  JNSR-02.                            I.971205
+010920     MOVE      ZERO       TO  JNSR-03  JNSR-04  JNSR-05.          I.971205
+010930*****MOVE      WG-HINCD   TO  JNSRD-01.                           D.971205
+010940*****MOVE      WG-FHIZ    TO  JNSRD-02.                           D.971205
+010950*****MOVE      ZERO       TO  JNSRD-03  JNSRD-04  JNSRD-06.       D.971205
+010960*
+010970*****START     JNSRD      KEY     NOT <      JNSRD-KEY    INVALID D.971205
+010980     START     JNSR       KEY     NOT <      JNSR-KEY1   INVALID  I.971205
+010990                               GO  TO   NSK-020.                  I.940912
+011000 NSK-010.                                                         I.940912
+011010*****READ      JNSRD      NEXT  UNLOCK  AT   END                  D.971205
+011020     READ      JNSR       NEXT  UNLOCK  AT   END                  I.971205
+011030                                             GO  TO  NSK-020.     I.940912
+011040     IF        JNSR-10         = 2           GO  TO  NSK-010.     I.971211
+011050     IF        JNSR-01     NOT = WG-HINCD    GO  TO  NSK-020.     I.971205
+011060     IF        JNSR-02     >     WG-THIZ     GO  TO  NSK-020.     I.971205
+011070*****IF        JNSRD-01    NOT = WG-HINCD    GO  TO  NSK-020.     D.971205
+011080*****IF        JNSRD-02    >     WG-THIZ     GO  TO  NSK-020.     D.971205
+011090     IF        WG-ACT2         =  91                              I.940912
+011100               IF     JNSR-03     >   19     GO  TO  NSK-010.     I.971205
+011110*****          IF     JNSRD-03    >   19     GO  TO  NSK-010.     D.971205
+011120     IF        WG-ACT2         =  92                              I.940912
+011130               IF     JNSR-03     <   20     GO  TO  NSK-010.     I.971205
+011140*****          IF     JNSRD-03    <   20     GO  TO  NSK-010.     D.971205
+011150     PERFORM  NSK-SET-RTN   THRU  NSK-SET-EX.                     I.940912
+011160     GO  TO  NSK-010.                                             I.940912
+011170*                                                                 I.940912
+011180 NSK-020.                                                         I.940912
+011190     IF        WG-ACT2         =  91         GO  TO  NSK-090.     I.940912
+011200*****IF        WG-THIZ    NOT  =  999999     GO  TO  NSK-090.     D.980526
+011210     IF        WG-THIZ    NOT  =  99999999   GO  TO  NSK-090.     I.980526
+011220     MOVE      1          TO  WG-DC.                              I.940912
+011230     MOVE      WG-HINCD   TO  JTW-01.                             I.971205
+011240     MOVE      WG-FHIZ    TO  JTW-02.                             I.971205
+011250     MOVE      ZERO       TO  JTW-03  JTW-04  JTW-05.             I.971205
+011260*****MOVE      WG-HINCD   TO  WN02-01.                            D.971205
+011270*****MOVE      WG-FHIZ    TO  WN02-02.                            D.971205
+011280*****MOVE      ZERO       TO  WN02-03  WN02-04  WN02-06.          D.971205
+011290*
+011300*****START     JT-WKN2    KEY     NOT <      WN02-KEY     INVALID D.971205
+011310     START     JT-W170    KEY     NOT <      JTW-KEY1     INVALID I.971205
+011320                               GO  TO   NSK-090.                  I.940912
+011330 NSK-030.                                                         I.940912
+011340*****READ      JT-WKN2    NEXT  UNLOCK  AT   END                  D.971205
+011350     READ      JT-W170    NEXT  UNLOCK  AT   END                  I.971205
+011360                                             GO  TO  NSK-090.     I.940912
+011370     IF        JTW-10          = 2           GO  TO  NSK-030.     I.090623
+011380     IF        JTW-01      NOT = WG-HINCD    GO  TO  NSK-090.     I.971205
+011390     IF        JTW-02      >     WG-THIZ     GO  TO  NSK-090.     I.971205
+011400*****IF        WN02-01     NOT = WG-HINCD    GO  TO  NSK-090.     D.971205
+011410*****IF        WN02-02     >     WG-THIZ     GO  TO  NSK-090.     D.971205
+011420     PERFORM  NSK-SET-RTN   THRU  NSK-SET-EX.                     I.940912
+011430     GO  TO  NSK-030.                                             I.940912
+011440 NSK-090.                                                         I.940912
+011450     PERFORM  DSP3-RTN   THRU  DSP3-EX.                           I.940912
+011460 NSK-EX.                                                          I.940912
+011470     EXIT.                                                        I.940912
+011480******************************************************************
+011490*    NSK-SET-RTN     数量セット処理    （入庫・出庫計）          *
+011500******************************************************************
+011510 NSK-SET-RTN.
+011520     IF  WG-ACT2     =  91                                        I.070322
+011530         IF  WG-DC         =     0                                I.070322
+011540             IF  JNSR-03         =  12                            I.070322
+011550                 GO  TO  NSK-SET-010.                             I.070322
+011560     IF  WG-ACT2     =  92                                        I.040617
+011570         IF  WG-DC         =     0                                I.040617
+011580             IF  JNSR-03         =  23                            I.040617
+011590                 GO  TO  NSK-SET-010.                             I.040617
+011600     IF  WG-ACT2     =  92                                        I.040617
+011610         IF  WG-DC         =     1                                I.040617
+011620             IF  JTW-03          =  23                            I.040617
+011630                 GO  TO  NSK-SET-010.                             I.040617
+011640     IF        WG-DC       =     0                                I.940912
+011650               MOVE  JNSR-07      TO  N                           I.971205
+011660               ADD   JNSR-081(01) TO  WG-ZAI(N,01)  WG-ZGOK       I.971205
+011670               ADD   JNSR-081(02) TO  WG-ZAI(N,02)  WG-ZGOK       I.971205
+011680               ADD   JNSR-081(03) TO  WG-ZAI(N,03)  WG-ZGOK       I.971205
+011690               ADD   JNSR-081(04) TO  WG-ZAI(N,04)  WG-ZGOK       I.971205
+011700               ADD   JNSR-081(05) TO  WG-ZAI(N,05)  WG-ZGOK       I.971205
+011710               ADD   JNSR-081(06) TO  WG-ZAI(N,06)  WG-ZGOK       I.971205
+011720               ADD   JNSR-081(07) TO  WG-ZAI(N,07)  WG-ZGOK       I.971205
+011730               ADD   JNSR-081(08) TO  WG-ZAI(N,08)  WG-ZGOK       I.971205
+011740               ADD   JNSR-081(09) TO  WG-ZAI(N,09)  WG-ZGOK       I.971205
+011750               ADD   JNSR-081(10) TO  WG-ZAI(N,10)  WG-ZGOK       I.971205
+011760         ELSE  MOVE  JTW-07       TO  N                           I.971205
+011770               ADD   JTW-081(01)  TO  WG-ZAI(N,01)  WG-ZGOK       I.971205
+011780               ADD   JTW-081(02)  TO  WG-ZAI(N,02)  WG-ZGOK       I.971205
+011790               ADD   JTW-081(03)  TO  WG-ZAI(N,03)  WG-ZGOK       I.971205
+011800               ADD   JTW-081(04)  TO  WG-ZAI(N,04)  WG-ZGOK       I.971205
+011810               ADD   JTW-081(05)  TO  WG-ZAI(N,05)  WG-ZGOK       I.971205
+011820               ADD   JTW-081(06)  TO  WG-ZAI(N,06)  WG-ZGOK       I.971205
+011830               ADD   JTW-081(07)  TO  WG-ZAI(N,07)  WG-ZGOK       I.971205
+011840               ADD   JTW-081(08)  TO  WG-ZAI(N,08)  WG-ZGOK       I.971205
+011850               ADD   JTW-081(09)  TO  WG-ZAI(N,09)  WG-ZGOK       I.971205
+011860               ADD   JTW-081(10)  TO  WG-ZAI(N,10)  WG-ZGOK.      I.971205
+011870     GO  TO  NSK-SET-EX.                                          I.040617
+011880*****          MOVE  JNSRD-05      TO  N                          D.971205
+011890*****          ADD   JNSRD-081(01) TO  WG-ZAI(N,01)  WG-ZGOK      D.971205
+011900*****          ADD   JNSRD-081(02) TO  WG-ZAI(N,02)  WG-ZGOK      D.971205
+011910*****          ADD   JNSRD-081(03) TO  WG-ZAI(N,03)  WG-ZGOK      D.971205
+011920*****          ADD   JNSRD-081(04) TO  WG-ZAI(N,04)  WG-ZGOK      D.971205
+011930*****          ADD   JNSRD-081(05) TO  WG-ZAI(N,05)  WG-ZGOK      D.971205
+011940*****          ADD   JNSRD-081(06) TO  WG-ZAI(N,06)  WG-ZGOK      D.971205
+011950*****          ADD   JNSRD-081(07) TO  WG-ZAI(N,07)  WG-ZGOK      D.971205
+011960*****          ADD   JNSRD-081(08) TO  WG-ZAI(N,08)  WG-ZGOK      D.971205
+011970*****          ADD   JNSRD-081(09) TO  WG-ZAI(N,09)  WG-ZGOK      D.971205
+011980*****          ADD   JNSRD-081(10) TO  WG-ZAI(N,10)  WG-ZGOK      D.971205
+011990*****    ELSE  MOVE  WN02-05       TO  N                          D.971205
+012000*****          ADD   WN02-081(01)  TO  WG-ZAI(N,01)  WG-ZGOK      D.971205
+012010*****          ADD   WN02-081(02)  TO  WG-ZAI(N,02)  WG-ZGOK      D.971205
+012020*****          ADD   WN02-081(03)  TO  WG-ZAI(N,03)  WG-ZGOK      D.971205
+012030*****          ADD   WN02-081(04)  TO  WG-ZAI(N,04)  WG-ZGOK      D.971205
+012040*****          ADD   WN02-081(05)  TO  WG-ZAI(N,05)  WG-ZGOK      D.971205
+012050*****          ADD   WN02-081(06)  TO  WG-ZAI(N,06)  WG-ZGOK      D.971205
+012060*****          ADD   WN02-081(07)  TO  WG-ZAI(N,07)  WG-ZGOK      D.971205
+012070*****          ADD   WN02-081(08)  TO  WG-ZAI(N,08)  WG-ZGOK      D.971205
+012080*****          ADD   WN02-081(09)  TO  WG-ZAI(N,09)  WG-ZGOK      D.971205
+012090*****          ADD   WN02-081(10)  TO  WG-ZAI(N,10)  WG-ZGOK.     D.971205
+012100 NSK-SET-010.                                                     I.040617
+012110     IF        WG-DC       =     0                                I.040617
+012120               MOVE  JNSR-07      TO  N                           I.040617
+012130               SUBTRACT JNSR-081(01) FROM  WG-ZAI(N,01)  WG-ZGOK  I.040617
+012140               SUBTRACT JNSR-081(02) FROM  WG-ZAI(N,02)  WG-ZGOK  I.971205
+012150               SUBTRACT JNSR-081(03) FROM  WG-ZAI(N,03)  WG-ZGOK  I.971205
+012160               SUBTRACT JNSR-081(04) FROM  WG-ZAI(N,04)  WG-ZGOK  I.971205
+012170               SUBTRACT JNSR-081(05) FROM  WG-ZAI(N,05)  WG-ZGOK  I.971205
+012180               SUBTRACT JNSR-081(06) FROM  WG-ZAI(N,06)  WG-ZGOK  I.971205
+012190               SUBTRACT JNSR-081(07) FROM  WG-ZAI(N,07)  WG-ZGOK  I.971205
+012200               SUBTRACT JNSR-081(08) FROM  WG-ZAI(N,08)  WG-ZGOK  I.971205
+012210               SUBTRACT JNSR-081(09) FROM  WG-ZAI(N,09)  WG-ZGOK  I.971205
+012220               SUBTRACT JNSR-081(10) FROM  WG-ZAI(N,10)  WG-ZGOK  I.971205
+012230         ELSE  MOVE  JTW-07       TO  N                           I.971205
+012240               SUBTRACT JTW-081(01)  FROM  WG-ZAI(N,01)  WG-ZGOK  I.971205
+012250               SUBTRACT JTW-081(02)  FROM  WG-ZAI(N,02)  WG-ZGOK  I.971205
+012260               SUBTRACT JTW-081(03)  FROM  WG-ZAI(N,03)  WG-ZGOK  I.971205
+012270               SUBTRACT JTW-081(04)  FROM  WG-ZAI(N,04)  WG-ZGOK  I.971205
+012280               SUBTRACT JTW-081(05)  FROM  WG-ZAI(N,05)  WG-ZGOK  I.971205
+012290               SUBTRACT JTW-081(06)  FROM  WG-ZAI(N,06)  WG-ZGOK  I.971205
+012300               SUBTRACT JTW-081(07)  FROM  WG-ZAI(N,07)  WG-ZGOK  I.971205
+012310               SUBTRACT JTW-081(08)  FROM  WG-ZAI(N,08)  WG-ZGOK  I.971205
+012320               SUBTRACT JTW-081(09)  FROM  WG-ZAI(N,09)  WG-ZGOK  I.971205
+012330               SUBTRACT JTW-081(10)  FROM  WG-ZAI(N,10)  WG-ZGOK. I.971205
+012340 NSK-SET-EX.                                                      I.940912
+012350     EXIT.                                                        I.940912
+012360******************************************************************
+012370*    DSP3-RTN   行明細　画面表示処理  （入庫計・出庫計・在庫）   *
+012380******************************************************************
+012390 DSP3-RTN.                                                        I.940912
+012400*****DISPLAY  CLR-06  CLR-07  CLR-08  CLR-09.                     D.950117
+012410*****DISPLAY  CLR-06  CLR-07  CLR-08  CLR-09  CLR-11.             D.061020
+012420     DISPLAY  CLR-06  CLR-07  CLR-13  CLR-08  CLR-09              I.061020
+012430                                      CLR-11  CLR-12.             I.061020
+012440     DISPLAY  DSP-DAI.                                            I.940912
+012450     MOVE  1              TO  N  S.                               I.940912
+012460     MOVE  19             TO  LIN.                                I.940912
+012470     MOVE  14             TO  COL.                                I.940912
+012480 DSP3-010.                                                        I.940912
+012490     IF    N               >  4              GO  TO  DSP3-020.    I.940912
+012500     DISPLAY    DSP-ZAI.                                          I.940912
+012510     IF    S           NOT =  10                                  I.940912
+012520                         ADD  1        TO  S                      I.940912
+012530                         ADD  6        TO  COL                    I.940912
+012540                         GO  TO  DSP3-010.                        I.940912
+012550     ADD   1              TO  N  LIN.                             I.940912
+012560     MOVE  1              TO  S.                                  I.940912
+012570     MOVE  14             TO  COL.                                I.940912
+012580     GO  TO  DSP3-010.                                            I.940912
+012590 DSP3-020.                                                        I.940912
+012600     DISPLAY    DSP-ZGOK.                                         I.940912
+012610 DSP3-EX.                                                         I.940912
+012620     EXIT.                                                        I.940912
+012630******************************************************************
+012640*    CLR-RTN         画面クリア処理  　　　　　　　              *
+012650******************************************************************
+012660 CLR-RTN.
+012670     MOVE  ZERO          TO  WG-HINCD  WG-FHIZ  WG-THIZ.
+012680     MOVE  SPACE         TO  WG-HINNM.
+012690     DISPLAY  CLR-01  CLR-02  CLR-03  CLR-04.
+012700 CLR-010.
+012710     MOVE  1             TO  I.
+012720     MOVE  3             TO  LIN.
+012730 CLR-015.
+012740     IF  I     >     12                      GO  TO  CLR-020.
+012750     INITIALIZE          WG-TBL12(I).
+012760     DISPLAY  CLR-TBL12.
+012770     ADD   1             TO  I  LIN.
+012780     GO  TO  CLR-015.
+012790 CLR-020.
+012800     MOVE  19            TO  LIN.
+012810 CLR-025.
+012820     IF  LIN   >     22                      GO  TO  CLR-030.
+012830     DISPLAY  CLR-TBL4.
+012840     ADD   1             TO  LIN.
+012850     GO  TO  CLR-025.
+012860 CLR-030.
+012870*****DISPLAY  CLR-05  CLR-06  CLR-07  CLR-08  CLR-09.             D.940909
+012880*****DISPLAY  CLR-05  CLR-06  CLR-07  CLR-08  CLR-09  CLR-10.     D.950117
+012890     DISPLAY  CLR-05  CLR-06  CLR-07  CLR-08  CLR-09  CLR-10      I.950117
+012900                                      CLR-13  CLR-11  CLR-12.     I.061020
+012910*****                                                 CLR-11.     D.061020
+012920 CLR-EX.
+012930     EXIT.
+012940******************************************************************
+012950*                    ＥＮＤ－ＲＴＮ                              *
+012960******************************************************************
+012970 END-RTN.
+012980*****CLOSE      JNSR    TC-M   SHM   JTKB  HZ-M.                  D.940909
+012990*****CLOSE      JNSRD   TC-M   SHM   HZ-M  JT-WKN2.               D.940913
+013000*****CLOSE      JNSRD   TC-M   SHM   JT-WKN2  NJZAI.              D.971205
+013010*****CLOSE      JNSR    TC-M   SHM   JT-W170  NJZAI.              D.010818
+013020     CLOSE      JNSR    TC-M   HI2-M JT-W170  NJZAI.              I.010818
+013030 END-EX.
+013040     EXIT.
+013050 COPY  LPMSG.
+

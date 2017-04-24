@@ -1,0 +1,642 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. HMS020.
+000030 AUTHOR. Y-KII.
+000040*********************************************************
+000050*    PROGRAM         :  荷札・入日記　入力　　　　      *
+000060*    PRINTER TYPE    :  ****                            *
+000070*    SCREEN          :  SCHS02                          *
+000080*        変更　　　  :  62/05/25                        *
+000090*    COMPILE TYPE    :  COBOL                           *
+000100*********************************************************
+000110 ENVIRONMENT DIVISION.
+000120 CONFIGURATION SECTION.
+000130 SOURCE-COMPUTER. SYSTEM3100.
+000140 OBJECT-COMPUTER. SYSTEM3100.
+000150 INPUT-OUTPUT SECTION.
+000160 FILE-CONTROL.
+000170     SELECT SNF-F ASSIGN TO SNF-MSD.
+000180     SELECT SIN-F ASSIGN TO SIN-MSD.
+000190*****SELECT SH-M  ASSIGN TO SH-MSD                                D.010818
+000200     SELECT HI2-M  ASSIGN TO HI-MSD                               I.010818
+000210         ORGANIZATION INDEXED
+000220         ACCESS MODE RANDOM
+000230         RECORD KEY HI-KEY2.                                      I.010818
+000240*****    RECORD KEY SH-CO.                                        D.010818
+000250     SELECT TC-M ASSIGN TO TC-MSD
+000260         ORGANIZATION INDEXED
+000270         ACCESS MODE RANDOM
+000280         RECORD KEY TC-KEY.
+000290     SELECT JCON ASSIGN TO JCON-MSD                               I.960517
+000300         ORGANIZATION INDEXED                                     I.960517
+000310         ACCESS MODE RANDOM                                       I.960517
+000320         RECORD KEY JCON1-KEY.                                    I.960517
+000330 I-O-CONTROL.
+000340     APPLY SHARED-MODE ON JCON                                    I.960517
+000350*****APPLY SHARED-MODE ON SH-M                                    D.010818
+000360     APPLY SHARED-MODE ON HI2-M                                   I.010818
+000370     APPLY SHARED-MODE ON TC-M.
+000380 DATA DIVISION.
+000390 FILE SECTION.
+000400     COPY L-JCON.                                                 I.960517
+000410     COPY LITCM.
+000420     COPY LIHIM2.                                                 I.010818
+000430 FD  SNF-F
+000440     BLOCK 5 RECORDS                                              C 62/05
+000450     LABEL RECORD IS STANDARD
+000460     VALUE OF IDENTIFICATION "SNFF".                              C 62/05
+000470 01  SNF-R.
+000480     02  SNF-NO      PIC 9(3).
+000490     02  SNF-CO      PIC 9(7).
+000500     02  SNF-UCO     PIC 9.
+000510     02  SNF-CSU     PIC 9(3).
+000520     02  SNF-MSU     PIC 9(3).
+000530     02  SNF-TY      PIC N(36).
+000540*****02  F           PIC X(13).                                   D.950920
+000550     02  SNF-DATE    PIC 9(06).                                   I.950920
+000560     02  F           PIC X(07).                                   I.950920
+000570 FD  SIN-F
+000580     BLOCK 3 RECORDS
+000590     LABEL RECORD IS STANDARD
+000600     VALUE OF IDENTIFICATION "SINF".                              C 62/05
+000610 01  SIN-R.
+000620     02  SIN-NO         PIC X(3).
+000630     02  SIN-CO         PIC 9(6).
+000640     02  SIN-SU      OCCURS 27 PIC 9(2).
+000650     02  SIN-GOKEI      PIC 9(2).
+000660     02  F              PIC X(20).
+000670*FD  SH-M                                                         D.010818
+000680*****BLOCK 3 RECORDS                                              D.010818
+000690*****LABEL RECORD IS STANDARD                                     D.010818
+000700*****VALUE OF IDENTIFICATION "SHM".                               D.010818
+000710*01  SH-R.                                                        D.010818
+000720*****02  SH-CO        PIC X(6).                                   D.010818
+000730*****02  SH-NAME      PIC N(24).                                  D.010818
+000740*****02  SH-SKC       PIC 9(01).                                  D.010818
+000750*****02  SH-SIZE1     PIC X(10).                                  D.010818
+000760*****02  SH-SIZE2     PIC X(10).                                  D.010818
+000770*****02  SH-SIZE3     PIC X(10).                                  D.010818
+000780*****02  SH-SIZE4     PIC X(10).                                  D.010818
+000790*****02  F            PIC X(75).                                  D.010818
+000800 WORKING-STORAGE      SECTION.
+000810 77  ERR-STAT         PIC X(2).
+000820 01  WN-R.
+000830     02  WN-NO        PIC 9(3).
+000840     02  WN-CO        PIC 9(7).
+000850     02  WN-UCO       PIC 9.
+000860     02  WN-CSU       PIC 9(3).
+000870     02  WN-MSU       PIC 9(3).
+000880     02  WN-TY        PIC N(36).
+000890*****02  F            PIC X(13).                                  D.950920
+000900     02  WN-DATE      PIC 9(6).                                   I.950920
+000910     02  F            PIC X(07).                                  I.950920
+000920 01  WI-R.
+000930     02  WI-NO        PIC 9(3).
+000940     02  WI-CO        PIC 9(6).
+000950     02  WI-SIZ.
+000960       03  WI-SIZD   OCCURS 18 PIC X(3).
+000970       03  WI-SSD    OCCURS 18 PIC 9(2).
+000980     02  WI-GOKEI     PIC 9(2).
+000990 01  WI-AD.
+001000     02  WI-D         OCCURS 6 PIC X(101).
+001010 01  TEIGI-1.
+001020*****02  H-DATE.                                                  D.950920
+001030*****    03  NEN       PIC 9(2).                                  D.950920
+001040*****    03  S-1       PIC X.                                     D.950920
+001050*****    03  TUKI      PIC 9(2).                                  D.950920
+001060*****    03  S-2       PIC X.                                     D.950920
+001070*****    03  HI        PIC 9(2).                                  D.950920
+001080*****02  HIZUKE.                                                  D.950920
+001090*****    03  WNEN      PIC 9(2).                                  D.950920
+001100*****    03  WTUKI     PIC 9(2).                                  D.950920
+001110*****    03  WHI       PIC 9(2).                                  D.950920
+001120     02  WCODE         PIC 9(7).
+001130     02  WSIZE-1       PIC X(3).
+001140     02  WSURYOW-1     PIC 9(2).
+001150     02  KAKUNIN-1     PIC 9.
+001160 01  TEIGI-2.
+001170     02  TATE.
+001180       03  TATE-1      PIC 9(2).
+001190       03  TATE-2      PIC 9(2).
+001200       03  TATE-3      PIC 9(2).
+001210     02  TATE-A.
+001220       03  TATE-1A     PIC 9(2).
+001230       03  TATE-2A     PIC 9(2).
+001240       03  TATE-3A     PIC 9(2).
+001250     02  YOKO.
+001260       03  YOKO-1      PIC 9(2).
+001270       03  YOKO-2      PIC 9(2).
+001280     02  KAZU.
+001290       03  KAZU-1      PIC 9.
+001300       03  KAZU-2      PIC 9.
+001310     02  CNT.
+001320       03  CNT-1       PIC 9(2).
+001330       03  CNT-2       PIC 9(2).
+001340     02  NAMBER        PIC 9(3).
+001350     02  JUMBAN        PIC 9.
+001360     02  W-DCHK        PIC 9.
+001370     02  W-CODE        PIC 9(7).
+001380     02  W-CSU1        PIC 9(3).
+001390     02  W-CSU2        PIC 9(3).
+001400     02  W-UNSOW1      PIC 9.
+001410     02  W-UNSOW2      PIC 9.
+001420     02  W-TY          PIC N(36).
+001430 01  TEIGI-3.
+001440     02  W-SCHK.
+001450       03  W-SCHK1     PIC  X(30) VALUE
+001460            "003002001000201301401280290300".
+001470       03  W-SCHK2     PIC  X(30) VALUE
+001480            "125130135140150160170180190200".
+001490       03  W-SCHK3     PIC X(30)  VALUE
+001500            "210215220225230235240245250   ".
+001510       03  W-SCHK4     PIC X(30)  VALUE
+001520            "240245250255260265270275      ".
+001530     02  W-SCHKD.
+001540       03  W-SCHK9  OCCURS 10  PIC X(3).
+001550     02  W-SC.
+001560       03  W-SCD    OCCURS 10  PIC 9.
+001570     02  W-SCNT.
+001580       03  W-SCNT1.
+001590         04  F       PIC X(42) VALUE
+001600              "125130135140150160170180190200210215220225".
+001610         04  F       PIC X(39) VALUE
+001620              "230235240245250255260265270275280290300".
+001630       03  W-SCNT2.
+001640         04  F       PIC X(42) VALUE
+001650              "003002001000201301401999999999999999999999".
+001660         04  F       PIC X(39) VALUE
+001670              "999999999999999999999999999999999999999".
+001680     02  W-SCNTD.
+001690       03  W-SCNT9   OCCURS 27   PIC X(3).
+001700*****02  WUNSO-2.                                                 D.960517
+001710*****  03  F          PIC N(21)  VALUE                            D.960517
+001720*****       NC"福　通名　鉄県貨物トナミ佐　川内　外フット".       D.960517
+001730*****  03  F          PIC N(06)  VALUE  NC"　　　　　　".         D.960517
+001740*****02  WUNSO-7.                                                 D.960517
+001750*****  03  WUNSO-3    OCCURS 9   PIC N(3).                        D.960517
+001760*****02  W-UN         PIC N(3).                                   D.960517
+001770     02  W-UND.                                                   I.960517
+001780       03  W-UN       PIC N(03).                                  I.960517
+001790       03  F          PIC N(03).                                  I.960517
+001800 01  SUWZI            PIC 9(2).
+001810 01  W-DATA.                                                      I.950920
+001820     02  W-NGP        PIC 9(6).                                   I.950920
+001830     02  W-NGPD  REDEFINES W-NGP.                                 I.950920
+001840       03  W-NEN      PIC 9(2).                                   I.950920
+001850       03  W-GET      PIC 9(2).                                   I.950920
+001860       03  W-PEY      PIC 9(2).                                   I.950920
+001870     COPY LSTAT.
+001880 SCREEN                 SECTION.
+001890 SD  GAMEN END STATUS IS ENDS.
+001900 01  HYOJI1.
+001910     02  HYO LINE 1 CLEAR SCREEN.
+001920 01  NYURYOKU.
+001930     02  NYURYOKU-0     LINE 2.
+001940*****  03 S-DATE.                                                 D.950920
+001950*****     04  S-DATA1  COLUMN 6 PIC ZZ FROM NEN.                  D.950920
+001960*****     04  GS-1     COLUMN 8 PIC X  FROM S-1.                  D.950920
+001970*****     04  S-DATE2  COLUMN 9  PIC ZZ FROM TUKI.                D.950920
+001980*****     04  GS-2     COLUMN 11 PIC X FROM S-2.                  D.950920
+001990*****     04  S-DATE3  COLUMN 12 PIC ZZ FROM HI.                  D.950920
+002000*****  03 S-DATE1  COLUMN 6 PIC 9(6) USING HIZUKE                 D.950920
+002010*****                       CHECK OVERFLOW.                       D.950920
+002020       03  A-DATE     COLUMN  6  PIC 9(6)                         I.950920
+002030            USING W-NGP   CHECK WITH OVERFLOW NO IFC.             I.950920
+002040     02  NYURYOKU-1     LINE 3.
+002050       03 SCODE       COLUMN 6 PIC 9(7) USING WCODE
+002060                            CHECK WITH OVERFLOW NO IFC.
+002070       03 SNAME       COLUMN 13 PIC N(24) FROM TC-NAME.
+002080       03 SUNSO-1     COLUMN 66 PIC 9     USING W-UNSOW1
+002090                              CHECK WITH OVERFLOW NO IFC.
+002100       03 SUNSO-2     COLUMN 67 PIC N(3)  FROM W-UN.
+002110       03 SUNSO-3     COLUMN 66 PIC 9     USING W-UNSOW2
+002120                              CHECK WITH OVERFLOW NO IFC.
+002130       03 SUNSO-5     COLUMN 67 PIC N(3)  FROM W-UN.
+002140       03 SCSU        COLUMN 78 PIC 9(3)  USING W-CSU1
+002150                              CHECK WITH OVERFLOW NO IFC.
+002160     02  NYURYOKU-2     LINE TATE-1.
+002170       03 SHCODE      COLUMN 10 PIC 9(6)  USING WI-CO
+002180                              CHECK WITH OVERFLOW NO IFC.
+002190*****  03 SHNAME      COLUMN 22 PIC N(24) FROM SH-NAME.           D.010818
+002200       03 SHNAME      COLUMN 22 PIC N(24) FROM HI-NAME.           I.010818
+002210     02  NYURYOKU-3     LINE TATE-2.
+002220       03 SSIZE       COLUMN YOKO-1 PIC 9(3) USING WSIZE-1
+002230                              CHECK WITH OVERFLOW NO IFC.
+002240     02  NYURYOKU-4     LINE TATE-3.
+002250       03 SSURYOW     COLUMN YOKO-2 PIC 9(2) USING WSURYOW-1
+002260                              CHECK WITH OVERFLOW NO IFC.
+002270     02  NYURYOKU-5     LINE 22.
+002280       03 STY    COLUMN  8 PIC N(36) USING WN-TY
+002290                              CHECK WITH OVERFLOW NO IFC.
+002300     02  NYURYOKU-6     LINE 23.                                  A 62/05
+002310       03 SMSU        COLUMN 76 PIC 9(3)  USING WN-MSU
+002320                              CHECK WITH OVERFLOW NO IFC.
+002330     02  KAKUNIN        LINE 23.
+002340       03 SKAKUNIN    COLUMN 50 PIC 9     USING KAKUNIN-1
+002350                              CHECK WITH OVERFLOW NO IFC.
+002360 01  HYOJI.
+002370     02  HYOJI3         LINE 3.
+002380       03  SCSU-1     COLUMN 78 PIC ZZ9    FROM W-CSU1.
+002390     02  HYOJI4         LINE TATE-3.
+002400       03  SSURYOW-1  COLUMN YOKO-2 PIC Z9 FROM WSURYOW-1.
+002410     02  HYOJI5         LINE TATE-1.
+002420       03  SGOKEI     COLUMN 76 PIC ZZ9    FROM WI-GOKEI.
+002430     02  HYOJI6         LINE 23.
+002440       03  SMSU-1     COLUMN 76 PIC ZZ9 FROM WN-MSU.
+002450 01  C-CLEAR.
+002460     02  C-CLEAR1  LINE TATE-1.
+002470       03  C-SHCODE   COLUMN 10 PIC X(6) VALUE "      ".
+002480       03  C-SHNAME   COLUMN 22 PIC X(48) VALUE
+002490            "                                                ".
+002500       03  C-SGOKEI   COLUMN 76 PIC X(3) VALUE "   ".
+002510     02  C-CLEAR2  LINE TATE-2.
+002520       03  C-SSIZE1   COLUMN  8 PIC X(36) VALUE
+002530          "                                    ".
+002540       03  C-SSIZE2   COLUMN 44 PIC X(35) VALUE
+002550          "                                   ".
+002560       03  C-SSIZE    COLUMN YOKO-1 PIC X(3) VALUE "   ".
+002570     02  C-CLEAR3  LINE TATE-3.
+002580       03  C-SSURYOW1 COLUMN 8 PIC X(36)    VALUE
+002590          "                                    ".
+002600       03  C-SSURYOW2 COLUMN 44 PIC X(35)   VALUE
+002610          "                                   ".
+002620       03  C-SSURYOW  COLUMN YOKO-2 PIC X(2) VALUE "  ".
+002630 01  ERRORSHORI       LINE 24.
+002640     02  ERR-1        COLUMN 80 PIC X(5) VALUE ""27"J"05"".
+002650     02  ERR-2        COLUMN 31 PIC X(19) VALUE
+002660                      "***  ﾀﾞﾌﾞﾙｴﾗｰ  ***".
+002670     02  ERR-31       COLUMN 31 PIC X(22) VALUE
+002680                      "***  PROGRAM ｴﾗｰ 1 ***".
+002690     02  ERR-32       COLUMN 31 PIC X(22) VALUE
+002700                      "***  PROGRAM ｴﾗｰ 2 ***".
+002710     02  ERR-4        COLUMN 31 PIC X(19) VALUE
+002720                      "***  ｻｲｽﾞ 無し  ***".
+002730     02  ERR-5        COLUMN 31 PIC X(19) VALUE
+002740                      "***  HI-M 無し  ***".                      I.010818
+002750*****                 "***  SH-M 無し  ***".                      D.010818
+002760     02  ERR-6        COLUMN 31 PIC X(19) VALUE
+002770                      "***  TC-M 無し  ***".
+002780     02  ERR-7        COLUMN 31 PIC X(18) VALUE
+002790                      "***  ｺｰﾄﾞ ｴﾗｰ ***".
+002800     02  C-ERR        COLUMN 30 PIC X(30) VALUE
+002810                      "                              ".
+002820 PROCEDURE          DIVISION.
+002830 M-000.
+002840     OPEN INPUT SIN-F.
+002850     MOVE ZERO TO NAMBER.
+002860 M-005.
+002870     READ SIN-F AT END
+002880         CLOSE SIN-F
+002890         GO TO M-010.
+002900     MOVE SIN-NO TO NAMBER.
+002910     GO TO M-005.
+002920 M-010.
+002930     DISPLAY HYOJI1.
+002940*****OPEN INPUT SH-M TC-M.                                        D.010818
+002950     OPEN INPUT HI2-M TC-M.                                       I.010818
+002960     OPEN INPUT JCON.                                             I.960517
+002970     OPEN EXTEND SNF-F SIN-F.
+002980*****MOVE WUNSO-2 TO WUNSO-7.                                     D.960517
+002990     MOVE SPACE TO W-TY.
+003000     ACCEPT W-NGP FROM DATE.                                      I.950920
+003010     MOVE ZERO TO W-CODE.                                         I.950920
+003020 M-020.
+003030     CALL "SCHS02".
+003040     DISPLAY A-DATE.                                              I.950920
+003050*****ACCEPT HIZUKE FROM DATE.                                     D.950920
+003060*****DISPLAY S-DATE1.                                             D.950920
+003070*****MOVE WNEN TO NEN.                                            D.950920
+003080*****MOVE WTUKI TO TUKI.                                          D.950920
+003090*****MOVE WHI TO HI.                                              D.950920
+003100*****MOVE "/" TO S-1 S-2.                                         D.950920
+003110*****DISPLAY S-DATE.                                              D.950920
+003120*****MOVE ZERO TO W-CODE.                                         D.950920
+003130 M-025.                                                           I.950920
+003140     ACCEPT A-DATE.                                               I.950920
+003150     IF ENDS = PF9 OR C2                                          I.950920
+003160         GO TO M-900.                                             I.950920
+003170     IF ENDS NOT = HTB AND SKP                                    I.950920
+003180         GO TO M-025.                                             I.950920
+003190     IF W-NGP = ZERO                                              I.950920
+003200         GO TO M-030.                                             I.950920
+003210     IF W-GET < 1 OR > 12                                         I.950920
+003220         GO TO M-025.                                             I.950920
+003230     IF W-PEY < 1 OR > 31                                         I.950920
+003240         GO TO M-025.                                             I.950920
+003250 M-030.
+003260     PERFORM S-05 THRU S-15.
+003270     MOVE W-CODE TO WCODE.
+003280     MOVE W-TY TO WN-TY.
+003290     MOVE W-NGP TO WN-DATE.                                       I.950920
+003300 M-031.
+003310     IF WCODE NOT = ZERO DISPLAY SCODE.
+003320     ACCEPT SCODE.
+003330     DISPLAY C-ERR.
+003340     IF ENDS = C2 AND PF9 GO TO M-900.                            I.010818
+003350*****IF ENDS = C2 GO TO M-900.                                    D.010818
+003360*****IF ENDS = BTB GO TO M-020.                                   D.950920
+003370     IF ENDS = BTB GO TO M-025.                                   I.950920
+003380     IF ENDS NOT = HTB AND SKP  GO TO M-030.
+003390     IF WCODE = W-CODE GO TO M-040.
+003400     MOVE WCODE TO TC-KEY.
+003410     READ TC-M WITH UNLOCK INVALID KEY
+003420         DISPLAY ERR-6 ERR-1 GO TO M-030.
+003430     MOVE TC-UCD TO W-UNSOW1.
+003440     MOVE ZERO TO W-CSU1.
+003450     GO TO M-050.
+003460 M-040.
+003470     MOVE W-UNSOW2 TO W-UNSOW1.
+003480     MOVE W-CSU2 TO W-CSU1.
+003490 M-050.
+003500*****IF W-UNSOW1 = ZERO                                           D.960517
+003510*****    MOVE SPACE TO W-UN                                       D.960517
+003520*****  ELSE                                                       D.960517
+003530*****    MOVE WUNSO-3(W-UNSOW1) TO W-UN.                          D.960517
+003540     PERFORM S-75 THRU S-80.                                      I.960517
+003550     DISPLAY SNAME SUNSO-1 SUNSO-2 SCSU-1.
+003560     ACCEPT SUNSO-1.
+003570     IF ENDS = BTB GO TO M-031.
+003580*****IF W-UNSOW1 = ZERO GO TO M-040.                              D.960517
+003590*****MOVE WUNSO-3(W-UNSOW1) TO W-UN.                              D.960517
+003600     PERFORM S-75 THRU S-80.                                      I.960517
+003610     DISPLAY SUNSO-2.
+003620 M-070.
+003630     ACCEPT SCSU.
+003640     DISPLAY SCSU-1.
+003650     IF ENDS = BTB GO TO M-050.
+003660     IF W-CSU1 = ZERO GO TO M-070.
+003670     MOVE 1 TO WN-MSU.
+003680 M-080.
+003690     MOVE ZERO TO KAZU-1.
+003700     MOVE 1 TO TATE-1.
+003710     MOVE 2 TO TATE-2.
+003720     MOVE 3 TO TATE-3.
+003730 M-090.
+003740     ADD 1 TO KAZU-1.
+003750     IF KAZU-1 > 6 GO TO M-300.
+003760     ADD 3 TO TATE-1 TATE-2 TATE-3.
+003770 M-100.
+003780     MOVE WI-D(KAZU-1) TO WI-R.
+003790     ACCEPT SHCODE.
+003800     DISPLAY C-ERR.
+003810     IF ENDS = BTB GO TO M-270.
+003820     IF ENDS = C1 OR ADV GO TO M-280.                             I.021114
+003830*****IF ENDS = C1 GO TO M-280.                                    D.021114
+003840*****MOVE WI-CO TO SH-CO.                                         D.010818
+003850*****READ SH-M WITH UNLOCK INVALID KEY                            D.010818
+003860     MOVE WI-CO TO HI-MHCD HI-HCD.                                I.010818
+003870     READ HI2-M WITH UNLOCK INVALID KEY                           I.010818
+003880         DISPLAY ERR-5 ERR-1 GO TO M-100.
+003890     DISPLAY SHNAME.
+003900     MOVE 4 TO YOKO-1.
+003910     MOVE 5 TO YOKO-2.
+003920     MOVE ZERO TO CNT-2.
+003930 M-110.
+003940     ADD 1 TO CNT-2.
+003950     IF CNT-2 > 18 GO TO M-270.
+003960     ADD 4 TO YOKO-1 YOKO-2.
+003970 M-120.
+003980     MOVE WI-SIZD(CNT-2) TO WSIZE-1.
+003990     ACCEPT SSIZE.
+004000     DISPLAY C-ERR.
+004010     IF ENDS = ADV GO TO M-250.
+004020     IF ENDS = BTB GO TO M-240.
+004030     MOVE W-SCHK1 TO W-SCHKD.
+004040*****MOVE SH-SIZE1 TO W-SC.                                       D.010818
+004050     MOVE HI-SS1 TO W-SC.                                         I.010818
+004060     MOVE 1 TO JUMBAN.
+004070     MOVE ZERO TO CNT-1.
+004080 M-130.
+004090     ADD 1 TO CNT-1.
+004100     IF CNT-1 > 10  GO TO M-140.
+004110     IF W-SCHK9(CNT-1) NOT = WSIZE-1 GO TO M-130.
+004120     GO TO M-200.
+004130 M-140.
+004140     MOVE W-SCHK2 TO W-SCHKD.
+004150*****MOVE SH-SIZE2 TO W-SC.                                       D.010818
+004160     MOVE HI-SS2 TO W-SC.                                         I.010818
+004170     MOVE 2 TO JUMBAN.
+004180     MOVE ZERO TO CNT-1.
+004190 M-150.
+004200     ADD 1 TO CNT-1.
+004210     IF CNT-1 > 10  GO TO M-160.
+004220     IF W-SCHK9(CNT-1) NOT = WSIZE-1 GO TO M-150.
+004230     GO TO M-200.
+004240 M-160.
+004250     MOVE W-SCHK3 TO W-SCHKD.
+004260*****MOVE SH-SIZE3 TO W-SC.                                       D.010818
+004270     MOVE HI-SS3 TO W-SC.                                         I.010818
+004280     MOVE 3 TO JUMBAN.
+004290     MOVE ZERO TO CNT-1.
+004300 M-170.
+004310     ADD 1 TO CNT-1.
+004320     IF CNT-1 > 10 GO TO M-180.
+004330     IF W-SCHK9(CNT-1) NOT = WSIZE-1 GO TO M-170.
+004340     GO TO M-200.
+004350 M-180.
+004360     MOVE W-SCHK4 TO W-SCHKD.
+004370*****MOVE SH-SIZE4 TO W-SC.                                       D.010818
+004380     MOVE HI-SS4 TO W-SC.                                         I.010818
+004390     MOVE 4 TO JUMBAN.
+004400     MOVE ZERO TO CNT-1.
+004410 M-190.
+004420     ADD 1 TO CNT-1.
+004430     IF CNT-1 > 10 GO TO M-210.
+004440     IF W-SCHK9(CNT-1) NOT = WSIZE-1 GO TO M-190.
+004450 M-200.
+004460*****IF W-SCD(CNT-1) = 1 GO TO M-220.                             D.010818
+004470     IF W-SCD(CNT-1) NOT = 0 GO TO M-220.                         I.010818
+004480     IF JUMBAN = 3 GO TO M-180.
+004490 M-210.
+004500     DISPLAY ERR-4 ERR-1.
+004510     GO TO M-120.
+004520 M-220.
+004530     PERFORM S-50 THRU S-60.
+004540     IF W-DCHK NOT = ZERO  GO TO M-120.
+004550     MOVE WSIZE-1 TO WI-SIZD(CNT-2).
+004560 M-230.
+004570     MOVE WI-SSD(CNT-2) TO WSURYOW-1.
+004580     ACCEPT SSURYOW.
+004590     DISPLAY SSURYOW-1.
+004600     IF ENDS = BTB GO TO M-120.
+004610     IF WSURYOW-1 = ZERO GO TO M-230.
+004620     MOVE WSURYOW-1 TO WI-SSD(CNT-2).
+004630     GO TO M-110.
+004640 M-240.
+004650     SUBTRACT 1 FROM CNT-2.
+004660     IF CNT-2 = ZERO GO TO M-100.
+004670     SUBTRACT 4 FROM YOKO-1 YOKO-2.
+004680     GO TO M-120.
+004690 M-250.
+004700     IF CNT-2 = 1 GO TO M-120.
+004710     PERFORM S-40 THRU S-45.
+004720 M-260.
+004730     PERFORM S-20 THRU S-35.
+004740     GO TO M-090.
+004750 M-270.
+004760     PERFORM S-20 THRU S-35.
+004770     SUBTRACT 1 FROM KAZU-1.
+004780     IF KAZU-1 = ZERO GO TO M-070.
+004790     SUBTRACT 3 FROM TATE-1 TATE-2 TATE-3.
+004800     GO TO M-100.
+004810 M-280.
+004820     MOVE KAZU-1 TO KAZU-2.
+004830     COMPUTE TATE-1A = TATE-1 - 3.
+004840     COMPUTE TATE-2A = TATE-2 - 3.
+004850     COMPUTE TATE-3A = TATE-3 - 3.
+004860 M-290.
+004870     MOVE ZERO TO WI-R.
+004880     MOVE SPACE TO WI-SIZ.
+004890     MOVE WI-R TO WI-D(KAZU-2).
+004900     DISPLAY C-SHCODE C-SHNAME C-SGOKEI.
+004910     DISPLAY C-SSIZE1 C-SSIZE2.
+004920     DISPLAY C-SSURYOW1 C-SSURYOW2.
+004930     ADD 1 TO KAZU-2.
+004940     IF KAZU-2 = 7  MOVE TATE-1A TO TATE-1
+004950                    MOVE TATE-2A TO TATE-2
+004960                    MOVE TATE-3A TO TATE-3
+004970                    GO TO M-300.
+004980     ADD 3 TO TATE-1 TATE-2 TATE-3.
+004990     GO TO M-290.
+005000 M-300.
+005010     DISPLAY STY.                                                 A 62/05
+005020     ACCEPT STY.
+005030     IF ENDS = HTB OR SKP    GO TO M-305.
+005040     IF ENDS NOT = BTB GO TO M-300.
+005050     SUBTRACT 1 FROM KAZU-1.
+005060     IF KAZU-1 = ZERO                                             I.021114
+005070         GO TO M-070.                                             I.021114
+005080     GO TO M-100.
+005090 M-305.
+005100     DISPLAY SMSU-1.
+005110     ACCEPT SMSU.
+005120     IF ENDS = BTB GO TO M-300.
+005130     IF WN-MSU = ZERO GO TO M-305.
+005140     DISPLAY SMSU-1.
+005150 M-310.
+005160     ACCEPT SKAKUNIN.
+005170     IF ENDS = BTB GO TO M-305.
+005180     IF ENDS NOT = HTB AND SKP  GO TO M-310.
+005190     IF KAKUNIN-1 = 9 GO TO M-020.
+005200     IF KAKUNIN-1 NOT = 1 GO TO M-310.
+005210     MOVE WN-TY TO W-TY.
+005220     ADD 1 TO NAMBER.
+005230     MOVE NAMBER TO WN-NO.
+005240     MOVE ZERO TO SNF-R.
+005250     MOVE WCODE TO WN-CO.
+005260     MOVE W-CSU1 TO WN-CSU.
+005270     MOVE W-UNSOW1 TO WN-UCO.
+005280     MOVE WN-R TO SNF-R.
+005290     WRITE SNF-R.
+005300     MOVE WCODE TO W-CODE.
+005310     MOVE W-CSU1 TO W-CSU2.
+005320     MOVE W-UNSOW1 TO W-UNSOW2.
+005330     MOVE ZERO TO KAZU-2.
+005340 M-320.
+005350     ADD 1 TO KAZU-2.
+005360     IF KAZU-2 = 7 GO TO M-030.
+005370     MOVE WI-D(KAZU-2) TO WI-R.
+005380     IF WI-CO = ZERO GO TO M-030.
+005390     MOVE NAMBER TO WI-NO.
+005400     MOVE ZERO TO SIN-R.
+005410     MOVE WI-NO TO SIN-NO.
+005420     MOVE WI-CO TO SIN-CO.
+005430     MOVE WI-GOKEI TO SIN-GOKEI.
+005440     MOVE ZERO TO CNT-2.
+005450 M-330.
+005460     ADD 1 TO CNT-2.
+005470     IF CNT-2 = 19  WRITE SIN-R  GO TO M-320.
+005480     MOVE WI-SIZD(CNT-2) TO WSIZE-1.
+005490     IF WSIZE-1 = SPACE GO TO M-330.
+005500     MOVE W-SCNT1 TO W-SCNTD.
+005510     MOVE ZERO TO CNT-1.
+005520 M-340.
+005530     ADD 1 TO CNT-1.
+005540     IF CNT-1 > 27  GO TO M-350.
+005550     IF W-SCNT9(CNT-1) NOT = WSIZE-1 GO TO M-340.
+005560     GO TO M-370.
+005570 M-350.
+005580     MOVE W-SCNT2 TO W-SCNTD.
+005590     MOVE ZERO TO CNT-1.
+005600 M-360.
+005610     ADD 1 TO CNT-1.
+005620     IF CNT-1 > 7  DISPLAY ERR-31 ERR-1  GO TO M-900.
+005630     IF W-SCNT9(CNT-1) NOT = WSIZE-1  GO TO M-360.
+005640 M-370.
+005650     IF SIN-SU(CNT-1) NOT = ZERO AND SPACE DISPLAY ERR-32 ERR-1
+005660     GO TO M-900.
+005670     MOVE WI-SSD(CNT-2) TO SIN-SU(CNT-1).
+005680     GO TO M-330.
+005690 M-900.
+005700*****CLOSE SH-M TC-M SNF-F SIN-F.                                 D.010818
+005710     CLOSE HI2-M TC-M SNF-F SIN-F.                                I.010818
+005720     DISPLAY HYOJI1.
+005730     STOP RUN.
+005740 S-05.
+005750     CALL "SCHS02".                                               I.950920
+005760     DISPLAY A-DATE.                                              I.950920
+005770     MOVE ZERO TO WN-R WI-R.
+005780     MOVE SPACE TO WN-TY WI-SIZ.
+005790     MOVE ALL NX"2121" TO WN-TY.
+005800     MOVE ZERO TO CNT-1.
+005810 S-10.
+005820     ADD 1 TO CNT-1.
+005830     IF CNT-1 = 7  GO TO S-15.
+005840     MOVE SPACE TO WI-D(CNT-1).
+005850     GO TO S-10.
+005860 S-15.
+005870     EXIT.
+005880 S-20.
+005890     MOVE ZERO TO WI-GOKEI CNT-1.
+005900 S-25.
+005910     ADD 1 TO CNT-1.
+005920     IF CNT-1 = 19  GO TO S-30.
+005930     ADD WI-SSD(CNT-1) TO WI-GOKEI.
+005940     GO TO S-25.
+005950 S-30.
+005960     DISPLAY SGOKEI.
+005970     MOVE WI-R TO WI-D(KAZU-1).
+005980 S-35.
+005990     EXIT.
+006000 S-40.
+006010     MOVE SPACE TO WSIZE-1.
+006020     MOVE ZERO TO WSURYOW-1.
+006030     DISPLAY C-SSIZE C-SSURYOW.
+006040     MOVE WSIZE-1 TO WI-SIZD(CNT-2).
+006050     MOVE WSURYOW-1 TO WI-SSD(CNT-2).
+006060     ADD 1 TO CNT-2.
+006070     IF CNT-2 = 19  GO TO S-45.
+006080     ADD 4 TO YOKO-1 YOKO-2.
+006090     GO TO S-40.
+006100 S-45.
+006110     EXIT.
+006120 S-50.
+006130     MOVE ZERO TO W-DCHK CNT-1.
+006140 S-55.
+006150     ADD 1 TO CNT-1.
+006160     IF CNT-1 > 18 GO TO S-60.
+006170     IF WI-SIZD(CNT-1) = SPACE
+006180     GO TO S-60.
+006190     IF WI-SIZD(CNT-1) NOT = WSIZE-1  GO TO S-55.
+006200     IF CNT-1 = CNT-2   GO TO S-55.
+006210     DISPLAY ERR-2 ERR-1.
+006220     MOVE 5 TO W-DCHK.
+006230 S-60.
+006240     EXIT.
+006250 S-65.
+006260     DISPLAY C-ERR.
+006270     IF ENDS = C2 GO TO M-900.
+006280     IF ENDS NOT = HTB AND SKP  GO TO M-030.
+006290     MOVE W-CODE TO TC-KEY.
+006300     READ TC-M WITH UNLOCK INVALID KEY
+006310         DISPLAY ERR-6 ERR-1 GO TO M-030.
+006320     DISPLAY SNAME.
+006330 S-70.
+006340     EXIT.
+006350 S-75.                                                            I.960517
+006360     MOVE 2 TO JCON1-01.                                          I.960517
+006370     MOVE W-UNSOW1 TO JCON1-02.                                   I.960517
+006380     READ JCON WITH UNLOCK INVALID KEY                            I.960517
+006390         MOVE SPACE TO JCON2-03.                                  I.960517
+006400     MOVE JCON2-03 TO W-UND.                                      I.960517
+006410 S-80.                                                            I.960517
+006420     EXIT.                                                        I.960517

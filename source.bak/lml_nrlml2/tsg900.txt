@@ -1,0 +1,194 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. TSG900.
+000030*******************************************
+000040*****     支払手形　手形期日抽出      *****
+000050*******************************************
+000060 ENVIRONMENT DIVISION.
+000070 CONFIGURATION SECTION.
+000080 SOURCE-COMPUTER. SYSTEM3100.
+000090 OBJECT-COMPUTER. SYSTEM3100.
+000100 INPUT-OUTPUT SECTION.
+000110 FILE-CONTROL.
+000120     SELECT S-M ASSIGN TO S-MSD                                   I.081124
+000130         ORGANIZATION INDEXED                                     I.081124
+000140         ACCESS MODE RANDOM                                       I.081124
+000150         RECORD KEY S-KEY.                                        I.081124
+000160     SELECT SHIT-F ASSIGN TO SHIT-MSD.
+000170     SELECT SAITO-F ASSIGN TO SAITO-MSD.
+000180 I-O-CONTROL.                                                     I.081124
+000190     APPLY SHARED-MODE ON S-M.                                    I.081124
+000200 DATA DIVISION.
+000210 FILE SECTION.
+000220     COPY LISM.                                                   I.081124
+000230     COPY LSSHIT.
+000240 FD  SAITO-F
+000250     BLOCK  4 RECORDS
+000260     LABEL RECORD IS STANDARD
+000270     VALUE OF IDENTIFICATION WK0064ID.
+000280 01  SAITO-R.
+000290     02  SAITO-TCD      PIC  9(004).                              仕入先CD
+000300     02  SAITO-TTS      PIC  9(002).                              支手ｻｲﾄ
+000310     02  SAITO-THN      PIC  9(002).                              支手 日
+000320     02  SAITO-TMC      PIC  9(001).                              支手複数
+000330     02  F              PIC  X(055).
+000340 WORKING-STORAGE SECTION.
+000350 77  WK0128ID           PIC  X(009) VALUE SPACE.
+000360 77  WK0064ID           PIC  X(009) VALUE SPACE.
+000370 01  STN-NO.
+000380     02  STN-NO1        PIC  X(003).
+000390     02  STN-NO2        PIC  X(003).
+000400 01  W-FID1.
+000410     02  W-FID11        PIC  X(006) VALUE "WK0128".
+000420     02  W-FID12        PIC  X(003).
+000430 01  W-FID2.
+000440     02  W-FID21        PIC  X(006) VALUE "WK0064".
+000450     02  W-FID22        PIC  X(003).
+000460 01  W-DATA.
+000470     02  W-MGET         PIC  9(002).
+000480     02  W-FGET         PIC  9(002).
+000490     02  W-TCD          PIC  9(004).
+000500     02  W-DC           PIC  9(001).
+000510     02  W-D.
+000520       03  W-STS        PIC  9(003).                              I.081124
+000530       03  W-TTS        PIC  9(002).                              支手ｻｲﾄ
+000540       03  W-THN        PIC  9(002).                              支手 日
+000550       03  W-TMC        PIC  9(001).                              支手複数
+000560 01  ERR-STAT           PIC  X(002).
+000570 SCREEN SECTION.
+000580 SD  C-CRT
+000590     END STATUS IS ESTAT.
+000600 01  C-CLEAR.
+000610     02  LINE   1  CLEAR SCREEN.
+000620 01  C-MID.
+000630     02  LINE   3  COLUMN  10  PIC  N(017) VALUE
+000640          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+000650     02  LINE   4  COLUMN  10  PIC  N(017) VALUE
+000660          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+000670     02  LINE   5  COLUMN  10  PIC  N(017) VALUE
+000680          NC"＊＊＊　　　　　　　　　　　＊＊＊".
+000690     02  LINE   6  COLUMN  10  PIC  N(017) VALUE
+000700          NC"＊＊＊　　手形期日　抽出　　＊＊＊".
+000710     02  LINE   7  COLUMN  10  PIC  N(017) VALUE
+000720          NC"＊＊＊　　　　　　　　　　　＊＊＊".
+000730     02  LINE   8  COLUMN  10  PIC  N(017) VALUE
+000740          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+000750     02  LINE   9  COLUMN  10  PIC  N(017) VALUE
+000760          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+000770 01  C-ERR.
+000780     02  LINE  24.
+000790       03  E-ME1   COLUMN  10  PIC  X(017) VALUE                  I.081124
+000800            "***  DATA ﾅｼ  ***".                                  I.081124
+000810       03  E-ME2   COLUMN  10  PIC  X(015) VALUE                  I.081124
+000820            "***  SM ﾅｼ  ***".                                    I.081124
+000830       03  E-ME3   COLUMN  10  PIC  X(019) VALUE                  I.081124
+000840            "***  SM ｻｲﾄ ﾅｼ  ***".                                I.081124
+000850       03  E-KEY   COLUMN  35  PIC  X(004) FROM  S-KEY.           I.081124
+000860       03  E-STAT  COLUMN  10  PIC  X(002) FROM  ERR-STAT.
+000870       03  E-ME98  COLUMN  75  PIC  X(005) VALUE ""27"J"05"".
+000880       03  E-ME99  COLUMN  75  PIC  X(005) VALUE ""27"B"05"".
+000890 PROCEDURE DIVISION.
+000900 M-05.
+000910     DISPLAY C-CLEAR.
+000920     DISPLAY C-MID.
+000930*
+000940     CALL "CBLSTNNO" USING STN-NO.
+000950     MOVE STN-NO2 TO W-FID12 W-FID22.
+000960     MOVE W-FID1 TO WK0128ID.
+000970     MOVE W-FID2 TO WK0064ID.
+000980     OPEN INPUT SHIT-F.
+000990*****OPEN OUTPUT SAITO-F.                                         D.081124
+001000*
+001010     READ SHIT-F AT END
+001020         MOVE 255 TO COMPLETION-CODE                              I.081124
+001030         CLOSE SHIT-F                                             I.081124
+001040         DISPLAY E-ME1 E-ME99                                     I.081124
+001050         GO TO M-95.                                              I.081124
+001060*****    GO TO M-90.                                              D.081124
+001070     OPEN OUTPUT SAITO-F.                                         I.081124
+001080     OPEN INPUT S-M.                                              I.081124
+001090 M-25.
+001100*****MOVE 0 TO W-DC.                                              D.081124
+001110     MOVE ST-TCD TO W-TCD.
+001120     MOVE W-TCD TO S-KEY.                                         I.081124
+001130     READ S-M WITH UNLOCK INVALID KEY                             I.081124
+001140         MOVE 255 TO COMPLETION-CODE                              I.081124
+001150         DISPLAY E-ME2 E-KEY E-ME99                               I.081124
+001160         GO TO M-90.                                              I.081124
+001170     IF S-STS = ZERO                                              I.081124
+001180         MOVE 255 TO COMPLETION-CODE                              I.081124
+001190         DISPLAY E-ME3 E-KEY E-ME99                               I.081124
+001200         GO TO M-90.                                              I.081124
+001210     MOVE ZERO TO W-D.                                            I.081124
+001220     COMPUTE W-STS = S-STS + 20.                                  I.081124
+001230     DIVIDE 30 INTO W-STS GIVING W-TTS REMAINDER W-THN.           I.081124
+001240 M-30.
+001250     MOVE ST-FDG TO W-FGET.                                       I.081124
+001260     MOVE ST-MKG TO W-MGET.                                       I.081124
+001270*****MOVE ST-FDG TO W-FGET W-MGET.                                D.081124
+001280*****MOVE ZERO TO W-D.                                            D.081124
+001290*****IF W-DC = 0                                                  D.081124
+001300*****    MOVE 1 TO W-DC                                           D.081124
+001310*****    IF ST-MKG = 01 OR 05                                     D.081124
+001320*****        COMPUTE W-THN = ST-MKP - 5                           D.081124
+001330*****      ELSE                                                   D.081124
+001340*****        MOVE ST-MKP TO W-THN.                                D.081124
+001350*M-35.                                                            D.081124
+001360*****IF ST-MKG = W-MGET                                           D.081124
+001370*****    GO TO M-40.                                              D.081124
+001380*****ADD 1 TO W-MGET W-TTS.                                       D.081124
+001390*****IF W-MGET = 13                                               D.081124
+001400*****    MOVE 1 TO W-MGET.                                        D.081124
+001410*****GO TO M-35.                                                  D.081124
+001420 M-40.
+001430     READ SHIT-F AT END
+001440         GO TO M-80.
+001450     IF ST-TCD NOT = W-TCD
+001460         GO TO M-45.
+001470     IF W-TMC = 1                                                 I.081124
+001480         GO TO M-40.                                              I.081124
+001490     IF ST-FDG NOT = W-FGET
+001500*****    MOVE 0 TO W-DC                                           D.081124
+001510         GO TO M-30.
+001520     IF ST-MKG NOT = W-MGET                                       I.081124
+001530         MOVE 1 TO W-TMC.                                         ﾌｸｽｳ
+001540     GO TO M-40.
+001550 M-45.
+001560     PERFORM S-05 THRU S-15.
+001570     GO TO M-25.
+001580 M-80.
+001590     PERFORM S-05 THRU S-15.
+001600 M-90.
+001610     CLOSE SAITO-F.
+001620     CLOSE SHIT-F.
+001630 M-95.
+001640     DISPLAY C-CLEAR.
+001650     STOP RUN.
+001660 S-05.
+001670*****IF W-THN = 5 OR 10 OR 15 OR 20 OR 25 OR 30 OR 31             D.081124
+001680*****    GO TO S-10.                                              D.081124
+001690*****IF W-THN < 5                                                 D.081124
+001700*****    MOVE 30 TO W-THN                                         D.081124
+001710*****    GO TO S-10.                                              D.081124
+001720*****IF W-THN < 10                                                D.081124
+001730*****    MOVE  5 TO W-THN                                         D.081124
+001740*****    GO TO S-10.                                              D.081124
+001750*****IF W-THN < 15                                                D.081124
+001760*****    MOVE 10 TO W-THN                                         D.081124
+001770*****    GO TO S-10.                                              D.081124
+001780*****IF W-THN < 20                                                D.081124
+001790*****    MOVE 15 TO W-THN                                         D.081124
+001800*****    GO TO S-10.                                              D.081124
+001810*****IF W-THN < 25                                                D.081124
+001820*****    MOVE 20 TO W-THN                                         D.081124
+001830*****    GO TO S-10.                                              D.081124
+001840*****IF W-THN < 30                                                D.081124
+001850*****    MOVE 25 TO W-THN.                                        D.081124
+001860*S-10.                                                            D.081124
+001870     MOVE ZERO TO SAITO-R.
+001880     MOVE W-TCD TO SAITO-TCD.                                     仕入先CD
+001890     MOVE W-TTS TO SAITO-TTS.                                     支手ｻｲﾄ
+001900     MOVE W-THN TO SAITO-THN.                                     支手 日
+001910     MOVE W-TMC TO SAITO-TMC.                                     支手複数
+001920     WRITE SAITO-R.
+001930 S-15.
+001940     EXIT.

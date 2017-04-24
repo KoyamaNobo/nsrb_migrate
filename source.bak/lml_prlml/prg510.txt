@@ -1,0 +1,407 @@
+000010*************************************************
+000020*    PROGRAM        :　仕訳データ抽出(EXCEL)    *
+000030*************************************************
+000040 IDENTIFICATION  DIVISION.
+000050 PROGRAM-ID.     PRG510.
+000060 ENVIRONMENT         DIVISION.
+000070 CONFIGURATION       SECTION.
+000080 SOURCE-COMPUTER.    NEAC-SYSTEM3100.
+000090 OBJECT-COMPUTER.    NEAC-SYSTEM3100.
+000100 INPUT-OUTPUT        SECTION.
+000110 FILE-CONTROL.
+000120     SELECT  SDH  ASSIGN  TO  F1-MSD
+000130             ORGANIZATION      INDEXED
+000140             ACCESS    MODE    DYNAMIC
+000150             RECORD    KEY     SH-KEY3.                           I.130125
+000160*****        RECORD    KEY     SH-KEY1.                           D.130125
+000170     SELECT      KNG         ASSIGN  TO     KNG-MSD               I.130125
+000180                             ORGANIZATION    INDEXED              I.130125
+000190                             ACCESS  MODE    RANDOM               I.130125
+000200                             RECORD  KEY     KNG-KEY.             I.130125
+000210*****SELECT  FCTL-F  ASSIGN  TO  F2-MSD
+000220*****        ORGANIZATION      INDEXED
+000230*****        ACCESS    MODE    RANDOM
+000240*****        RECORD    KEY     FCTL-KEY.
+000250     SELECT  SIWA-F  ASSIGN  TO  SIWA-MSD.
+000260*
+000270 I-O-CONTROL.
+000280     APPLY  SHARED-MODE     ON  KNG                               I.130125
+000290     APPLY  SHARED-MODE     ON  SDH.
+000300*****APPLY  SHARED-MODE     ON  FCTL-F.
+000310*
+000320 DATA           DIVISION.
+000330 FILE           SECTION.
+000340 FD  SDH
+000350     BLOCK      3     RECORDS
+000360     LABEL  RECORD  STANDARD
+000370     VALUE  OF  IDENTIFICATION  "SIWAKE-H3".                      I.130125
+000380*****VALUE  OF  IDENTIFICATION  "SIWAKE-H1".                      D.130125
+000390 COPY  SIWAKH.
+000400 COPY KANGEL.                                                     I.130125
+000410***
+000420*COPY  FCTL.
+000430***
+000440 FD  SIWA-F
+000450     BLOCK      CONTAINS     2      RECORDS
+000460     LABEL      RECORD       STANDARD
+000470     VALUE      OF           IDENTIFICATION     "WK0128000".
+000480 01  SIWA-REC.
+000490     02  S-KACD1.
+000500       03  S-ACCNTCD     PIC 9(4).
+000510       03  S-HOACCNT     PIC 9(4).
+000520     02  S-KNGNMN        PIC N(10).                               I.130125
+000530     02  S-TRDATE        PIC 9(8).
+000540     02  S-JUNLNO        PIC 9(6).
+000550     02  S-LINENO        PIC 9(2).
+000560     02  S-DR-CR         PIC 9(1).
+000570     02  S-SECTCD        PIC 9(4).
+000580*****02  S-SKINCD        PIC 9(3).
+000590*****02  S-TAXKB         PIC X(1).
+000600     02  S-AMOUNT        PIC S9(10).
+000610*****02  S-TEG-BAN       PIC 9(2).
+000620     02  S-KACD2.
+000630       03  S-OPPCD       PIC 9(4).
+000640       03  S-HOOPPCD     PIC 9(4).
+000650*****02  S-CUSTCD        PIC 9(5).
+000660*****02  S-TEKICD        PIC 9(3).
+000670     02  S-TEKIYO        PIC N(20).
+000680*****02  S-KEIHIKB       PIC 9(1).
+000690     02  S-NAMEN         PIC N(10).
+000700     02  F               PIC X(01).                               I.130125
+000710*****02  F               PIC X(4).
+000720*****02  S-ETAX          PIC X(1).
+000730*****02  S-DELKB         PIC X(1).
+000740*****02  F               PIC X(21).                               D.130125
+000750*
+000760 WORKING-STORAGE SECTION.
+000770 77  ERR-STAT            PIC X(02).
+000780 77  W-DMM               PIC 9(01).                               確認
+000790*77  WK0128ID            PIC  X(009) VALUE SPACE.
+000800*01  STN-NO.
+000810*    02  STN-NO1         PIC  X(003).
+000820*    02  STN-NO2         PIC  X(003).
+000830*01  W-FID.
+000840*    02  W-FID1          PIC  X(006) VALUE "WK0128".
+000850*    02  W-FID2          PIC  X(003).
+000860 01  W-DATA.
+000870     02  W-SNGP          PIC  9(08).
+000880     02  W-SNGPD REDEFINES W-SNGP.
+000890       03  W-SNEN        PIC 9(04).
+000900       03  W-SGET        PIC 9(02).
+000910       03  W-SPEY        PIC 9(02).
+000920     02  W-ENGP          PIC  9(08).
+000930     02  W-ENGPD REDEFINES W-ENGP.
+000940       03  W-ENEN        PIC 9(04).
+000950       03  W-EGET        PIC 9(02).
+000960       03  W-EPEY        PIC 9(02).
+000970     02  W-L             PIC  9(02).                              I.130125
+000980     02  CNT             PIC  9(02).                              I.130125
+000990     02  W-DC            PIC  9(01).                              I.130125
+001000     02  W-AKAM.                                                  I.130125
+001010       03  W-KAMD  OCCURS 10.                                     I.130125
+001020         04  W-KAM       PIC  9(04).                              I.130125
+001030         04  W-HOJ       PIC  9(04).                              I.130125
+001040     02  W-AKAN.                                                  I.130125
+001050       03  W-KAND  OCCURS 10.                                     I.130125
+001060         04  W-KAN       PIC  N(10).                              I.130125
+001070     COPY LWMSG.
+001080*
+001090 SCREEN          SECTION.
+001100 SD  C-CRT
+001110     END STATUS  IS      ESTAT.
+001120 01  C-CLEAR.
+001130     02  LINE 01  CLEAR  SCREEN.
+001140 01  C-MID.
+001150     02  LINE 01.
+001160         03  COLUMN 25     VALUE
+001170             NC"　仕訳データ　抽出　"  REVERSE.                   I.130125
+001180*****        NC"売掛金仕訳データ抽出"  REVERSE.                   D.130125
+001190*****02  LINE 08.                                                 D.130125
+001200     02  LINE 05.                                                 I.130125
+001210         03  COLUMN 16     PIC  X(38) VALUE
+001220             "'    年   月   日 ～ '    年   月   日".
+001230     02  LINE 09     COLUMN 16     PIC  X(40) VALUE               I.130125
+001240             "科目ｺｰﾄﾞ      -                         ".          I.130125
+001250     02  LINE 10     COLUMN 16     PIC  X(40) VALUE               I.130125
+001260             "              -                         ".          I.130125
+001270     02  LINE 11     COLUMN 16     PIC  X(40) VALUE               I.130125
+001280             "              -                         ".          I.130125
+001290     02  LINE 12     COLUMN 16     PIC  X(40) VALUE               I.130125
+001300             "              -                         ".          I.130125
+001310     02  LINE 13     COLUMN 16     PIC  X(40) VALUE               I.130125
+001320             "              -                         ".          I.130125
+001330     02  LINE 14     COLUMN 16     PIC  X(40) VALUE               I.130125
+001340             "              -                         ".          I.130125
+001350     02  LINE 15     COLUMN 16     PIC  X(40) VALUE               I.130125
+001360             "              -                         ".          I.130125
+001370     02  LINE 16     COLUMN 16     PIC  X(40) VALUE               I.130125
+001380             "              -                         ".          I.130125
+001390     02  LINE 17     COLUMN 16     PIC  X(40) VALUE               I.130125
+001400             "              -                         ".          I.130125
+001410     02  LINE 18     COLUMN 16     PIC  X(40) VALUE               I.130125
+001420             "              -                         ".          I.130125
+001430     02  LINE 23  COLUMN 61  VALUE  "確認 OK=1,NO=9 ( )".
+001440*
+001450 01  C-ACP.
+001460*****02  LINE 08.                                                 D.130125
+001470     02  LINE 05.                                                 I.130125
+001480         03  A-SNEN    COLUMN 17  PIC 9(04) USING W-SNEN
+001490                   CHECK  OVERFLOW  NO  IFC.
+001500         03  A-SGET    COLUMN 24  PIC 9(02) USING W-SGET
+001510                   CHECK  OVERFLOW  NO  IFC.
+001520         03  A-SPEY    COLUMN 29  PIC 9(02) USING W-SPEY
+001530                   CHECK  OVERFLOW  NO  IFC.
+001540         03  A-ENEN    COLUMN 38  PIC 9(04) USING W-ENEN
+001550                   CHECK  OVERFLOW  NO  IFC.
+001560         03  A-EGET    COLUMN 45  PIC 9(02) USING W-EGET
+001570                   CHECK  OVERFLOW  NO  IFC.
+001580         03  A-EPEY    COLUMN 50  PIC 9(02) USING W-EPEY
+001590                   CHECK  OVERFLOW  NO  IFC.
+001600     02  LINE W-L.                                                I.130125
+001610         03  A-KAM     COLUMN 26  PIC 9(04) USING W-KAM(CNT)      I.130125
+001620                   CHECK  OVERFLOW  NO  IFC.                      I.130125
+001630         03  A-HOJ     COLUMN 31  PIC 9(04) USING W-HOJ(CNT)      I.130125
+001640                   CHECK  OVERFLOW  NO  IFC.                      I.130125
+001650     02  A-DMM     LINE 23  COLUMN 77  PIC 9(01) INTO  W-DMM      確認
+001660                   CHECK  OVERFLOW  NO  IFC.
+001670 01  C-DSP.                                                       I.130125
+001680     02  DSP-KAMD    LINE W-L  COLUMN 36    PIC N(10)             I.130125
+001690         FROM  KNGNMN OF KNG.                                     I.130125
+001700     02  DSP-KAMC    LINE W-L.                                    I.130125
+001710       03  COLUMN 26    PIC X(04)   VALUE "    ".                 I.130125
+001720       03  COLUMN 31    PIC X(04)   VALUE "    ".                 I.130125
+001730       03  COLUMN 36    PIC X(20)   VALUE "                    ". I.130125
+001740 01  C-ERR     LINE  24.
+001750     02  E-ME1    COLUMN  15   PIC  X(17)  VALUE
+001760          "***  DATA ﾅｼ  ***".
+001770     02  E-ME2    COLUMN  15   PIC  X(16)  VALUE                  I.130125
+001780          "***  ｶﾓｸ ﾅｼ  ***".                                     I.130125
+001790*****02  E-KEY    COLUMN  40   PIC  X(17)  FROM   SH-KEY1.        I.971114
+001800     02  E-ME99   COLUMN  75   PIC  X(05)  VALUE  ""27"B"05"".
+001810     COPY LSMSG.                                                  I.971114
+001820*
+001830 PROCEDURE       DIVISION.
+001840 M-05.
+001850     DISPLAY  C-CLEAR.
+001860     DISPLAY  C-MID.
+001870     MOVE 000      TO  COMPLETION-CODE.
+001880     OPEN     INPUT      KNG.                                     I.130125
+001890*
+001900     MOVE  ZERO    TO  W-AKAM.                                    I.130125
+001910     MOVE  SPACE   TO  W-AKAN.                                    I.130125
+001920     PERFORM  S-05    THRU  S-95.
+001930     IF  COMPLETION-CODE   =  255
+001940         CLOSE   KNG                                              I.130125
+001950         GO  TO  M-95.
+001960*
+001970*    CALL "CBLSTNNO" USING STN-NO.
+001980*    MOVE STN-NO2 TO W-FID2.
+001990*    MOVE W-FID TO WK0128ID.
+002000     OPEN     INPUT      SDH.
+002010     OPEN     OUTPUT     SIWA-F.
+002020*
+002030     MOVE  ZERO  TO  CNT  W-DC.                                   I.130125
+002040 M-10.                                                            I.130125
+002050     ADD   1       TO  CNT.                                       I.130125
+002060     IF  CNT   =  11                                              I.130125
+002070         GO  TO  M-50.                                            I.130125
+002080     IF  ZERO  =  W-KAM(CNT)  AND  W-HOJ(CNT)                     I.130125
+002090         GO  TO  M-50.                                            I.130125
+002100 M-15.
+002110     MOVE SPACE        TO SH-KEY3.
+002120     MOVE W-KAM(CNT)   TO HACCNTCD.                               I.130125
+002130     MOVE W-HOJ(CNT)   TO HHOACCNT.                               I.130125
+002140     MOVE W-SNGP       TO HTRDATE.
+002150     START SDH KEY NOT LESS SH-KEY3 INVALID KEY                   I.130125
+002160           GO  TO  M-10.                                          I.130125
+002170*****START SDH KEY NOT LESS SH-KEY1 INVALID KEY                   D.130125
+002180*****      DISPLAY  E-ME1  E-ME99                                 D.130125
+002190*****      CLOSE    SDH  SIWA-F                                   D.130125
+002200*****      MOVE 255      TO  COMPLETION-CODE                      D.130125
+002210*****      GO  TO  M-95.                                          D.130125
+002220 M-20.
+002230     READ  SDH  NEXT  UNLOCK  AT  END
+002240           GO  TO  M-10.                                          I.130125
+002250     IF (W-KAM(CNT)  NOT =  HACCNTCD)  OR                         I.130125
+002260        (W-HOJ(CNT)  NOT =  HHOACCNT)                             I.130125
+002270           GO  TO  M-10.                                          I.130125
+002280*****      DISPLAY  E-ME1  E-ME99                                 D.130125
+002290*****      CLOSE    SDH  SIWA-F                                   D.130125
+002300*****      MOVE 255      TO  COMPLETION-CODE                      D.130125
+002310*****      GO  TO  M-95.                                          D.130125
+002320     IF  HTRDATE      >  W-ENGP
+002330           GO  TO  M-10.                                          I.130125
+002340*****      DISPLAY  E-ME1  E-ME99                                 D.130125
+002350*****      CLOSE    SDH  SIWA-F                                   D.130125
+002360*****      MOVE 255      TO  COMPLETION-CODE                      D.130125
+002370*****      GO  TO  M-95.                                          D.130125
+002380*****IF  HACCNTCD NOT = 0140                                      D.130125
+002390*****      GO  TO  M-20.                                          D.130125
+002400     IF  W-DC         =  0                                        I.130125
+002410         MOVE  1     TO  W-DC.                                    I.130125
+002420 M-25.
+002430     MOVE  SPACE        TO  SIWA-REC.
+002440     MOVE  HKACD1       TO  S-KACD1.
+002450     MOVE  W-KAN(CNT)   TO  S-KNGNMN.                             I.130125
+002460     MOVE  HTRDATE      TO  S-TRDATE.
+002470     MOVE  HJUNLNO      TO  S-JUNLNO.
+002480     MOVE  HLINENO      TO  S-LINENO.
+002490     MOVE  HDR-CR       TO  S-DR-CR.
+002500     MOVE  HSECTCD      TO  S-SECTCD.
+002510*****MOVE  HSKINCD      TO  S-SKINCD.
+002520*****MOVE  HTAXKB       TO  S-TAXKB.
+002530     MOVE  HAMOUNT      TO  S-AMOUNT.
+002540*****MOVE  HTEG-BAN     TO  S-TEG-BAN.
+002550     MOVE  HKACD2       TO  S-KACD2.
+002560*****MOVE  HCUSTCD      TO  S-CUSTCD.
+002570*****MOVE  HTEKICD      TO  S-TEKICD.
+002580     MOVE  HTEKIYO      TO  S-TEKIYO.
+002590*****MOVE  HKEIHIKB     TO  S-KEIHIKB.
+002600     MOVE  HNAMEN       TO  S-NAMEN.
+002610*****MOVE  HETAX        TO  S-ETAX.
+002620*****MOVE  HDELKB       TO  S-DELKB.
+002630     WRITE   SIWA-REC.
+002640 M-30.
+002650     READ  SDH  NEXT  UNLOCK  AT  END
+002660           GO  TO  M-10.                                          I.130125
+002670*****      GO  TO  M-50.                                          D.130125
+002680     IF (W-KAM(CNT)  NOT =  HACCNTCD)  OR                         I.130125
+002690        (W-HOJ(CNT)  NOT =  HHOACCNT)                             I.130125
+002700           GO  TO  M-10.                                          I.130125
+002710     IF  HTRDATE      >  W-ENGP
+002720           GO  TO  M-10.                                          I.130125
+002730*****      GO  TO  M-50.                                          D.130125
+002740*****IF  HACCNTCD NOT = 0140                                      D.130125
+002750*****      GO  TO  M-30.                                          D.130125
+002760     GO  TO  M-25.
+002770 M-50.
+002780     IF  W-DC     =  0                                            I.130125
+002790           DISPLAY  E-ME1  E-ME99                                 I.130125
+002800           MOVE 255      TO  COMPLETION-CODE.                     I.130125
+002810     CLOSE  SDH  KNG  SIWA-F.                                     I.130125
+002820*****CLOSE  SDH  SIWA-F.                                          D.130125
+002830 M-95.
+002840     DISPLAY  C-CLEAR.
+002850     STOP RUN.
+002860*
+002870 S-05.
+002880     ACCEPT  A-SNEN.
+002890     IF ESTAT         = "P9"
+002900         MOVE  255     TO  COMPLETION-CODE
+002910         GO TO S-95.
+002920     IF ESTAT     NOT = "01" AND "06"
+002930         GO TO S-05.
+002940 S-10.
+002950     ACCEPT  A-SGET.
+002960     IF ESTAT         = "09"
+002970         GO TO S-05.
+002980     IF ESTAT     NOT = "01" AND "06"
+002990         GO TO S-10.
+003000     IF  W-SGET       <  1    OR  >  12
+003010           GO  TO  S-10.
+003020 S-15.
+003030     ACCEPT  A-SPEY.
+003040     IF ESTAT         = "09"
+003050         GO TO S-10.
+003060     IF ESTAT     NOT = "01" AND "06"
+003070         GO TO S-15.
+003080     IF  W-SPEY       <  1    OR  >  31
+003090           GO  TO  S-15.
+003100 S-20.
+003110     ACCEPT  A-ENEN.
+003120     IF ESTAT         = "09"
+003130         GO TO S-15.
+003140     IF ESTAT     NOT = "01" AND "06"
+003150         GO TO S-20.
+003160 S-25.
+003170     ACCEPT  A-EGET.
+003180     IF ESTAT         = "09"
+003190         GO TO S-20.
+003200     IF ESTAT     NOT = "01" AND "06"
+003210         GO TO S-25.
+003220     IF  W-EGET       <  1    OR  >  12
+003230           GO  TO  S-25.
+003240 S-30.
+003250     ACCEPT  A-EPEY.
+003260     IF ESTAT         = "09"
+003270         GO TO S-25.
+003280     IF ESTAT     NOT = "01" AND "06"
+003290         GO TO S-30.
+003300     IF  W-EPEY       <  1    OR  >  31
+003310           GO  TO  S-30.
+003320     IF  W-SNGP    >  W-ENGP
+003330         GO TO S-20.
+003340*
+003350     MOVE  ZERO    TO  CNT.                                       I.130125
+003360     MOVE  8       TO  W-L.                                       I.130125
+003370 S-35.                                                            I.130125
+003380     ADD   1       TO  CNT  W-L.                                  I.130125
+003390     IF  CNT   =  11                                              I.130125
+003400         GO  TO  S-80.                                            I.130125
+003410 S-40.                                                            I.130125
+003420     ACCEPT  A-KAM.                                               I.130125
+003430     DISPLAY DISP-MSG-SPACE.                                      I.130125
+003440     IF ESTAT         = "P9"                                      I.130125
+003450         MOVE  255     TO  COMPLETION-CODE                        I.130125
+003460         GO TO S-95.                                              I.130125
+003470     IF  ESTAT = "09"                                             I.130125
+003480         GO  TO  S-50.                                            I.130125
+003490     IF ESTAT     NOT = "01" AND "06"                             I.130125
+003500         GO  TO  S-40.                                            I.130125
+003510 S-45.                                                            I.130125
+003520     ACCEPT  A-HOJ.                                               I.130125
+003530     IF  ESTAT = "09"                                             I.130125
+003540         GO  TO  S-40.                                            I.130125
+003550     IF ESTAT     NOT = "01" AND "06"                             I.130125
+003560         GO  TO  S-45.                                            I.130125
+003570*
+003580     IF  ZERO  =  W-KAM(CNT)  AND  W-HOJ(CNT)                     I.130125
+003590         IF  CNT      =   1                                       I.130125
+003600             GO  TO  S-40                                         I.130125
+003610           ELSE                                                   I.130125
+003620             GO  TO  S-55.                                        I.130125
+003630     MOVE  W-KAM(CNT)  TO K-ACCD.                                 I.130125
+003640     MOVE  W-HOJ(CNT)  TO K-HOCD.                                 I.130125
+003650     READ KNG UNLOCK INVALID KEY                                  I.130125
+003660          DISPLAY  E-ME2 DISP-BUZ-J                               I.130125
+003670          GO  TO  S-40.                                           I.130125
+003680     DISPLAY DSP-KAMD.                                            I.130125
+003690     MOVE  KNGNMN      TO W-KAN(CNT).                             I.130125
+003700     GO  TO  S-35.                                                I.130125
+003710 S-50.
+003720     SUBTRACT  1   FROM  CNT  W-L.                                I.130125
+003730     IF  CNT   =  ZERO                                            I.130125
+003740         GO  TO  S-30.                                            I.130125
+003750 S-55.
+003760     MOVE  ZERO   TO  W-KAM(CNT)  W-HOJ(CNT).                     I.130125
+003770     MOVE  SPACE       TO W-KAN(CNT).                             I.130125
+003780     DISPLAY DSP-KAMC.                                            I.130125
+003790     ADD   1       TO  CNT  W-L.                                  I.130125
+003800     IF  CNT   <  11                                              I.130125
+003810         GO  TO  S-55.                                            I.130125
+003820 S-80.
+003830     ACCEPT  A-DMM.                                               確認
+003840     IF  ESTAT = "09"
+003850         GO  TO  S-85.                                            D.130125
+003860*****    GO  TO  S-30.                                            D.130125
+003870     IF ESTAT     NOT = "01" AND "06"
+003880         GO  TO  S-80.
+003890     IF  W-DMM  =  9
+003900         GO  TO  S-05.
+003910     IF  W-DMM  NOT =  1
+003920         GO  TO  S-80.
+003930     GO  TO  S-95.                                                I.130125
+003940 S-85.                                                            I.130125
+003950     SUBTRACT  1   FROM  CNT  W-L.                                I.130125
+003960     IF  ZERO  =  W-KAM(CNT)  AND  W-HOJ(CNT)                     I.130125
+003970         GO  TO  S-85.                                            I.130125
+003980     IF  CNT   =  ZERO                                            I.130125
+003990         GO  TO  S-30                                             I.130125
+004000       ELSE                                                       I.130125
+004010         GO  TO  S-40.                                            I.130125
+004020 S-95.
+004030     EXIT.
+004040 CLSE-ENT.
+004050 CLSE-EXT.
+004060     EXIT.
+004070     COPY LPMSG.

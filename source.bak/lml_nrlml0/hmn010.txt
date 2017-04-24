@@ -1,0 +1,120 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. HMN010.
+000030*********************************************************
+000040*    PROGRAM         :  履物棚卸ファイル　クリア        *
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :  ______                          *
+000070*    COMPILE TYPE    :  COBOL                           *
+000080*********************************************************
+000090 ENVIRONMENT DIVISION.
+000100 CONFIGURATION SECTION.
+000110 SOURCE-COMPUTER. SYSTEM3100.
+000120 OBJECT-COMPUTER. SYSTEM3100.
+000130 INPUT-OUTPUT SECTION.
+000140 FILE-CONTROL.
+000150     SELECT HI-M ASSIGN TO HI1-MSD HI2-MSD
+000160         ORGANIZATION INDEXED
+000170         ACCESS MODE DYNAMIC
+000180         RECORD KEY HI-KEY
+000190         ALTERNATE RECORD KEY HI-KEY2
+000200         FILE STATUS IS ERR-STAT.
+000210     SELECT HTI-M ASSIGN TO HTI-MSD
+000220         ORGANIZATION INDEXED
+000230         RECORD KEY HTI-KEY
+000240         ACCESS MODE DYNAMIC
+000250         FILE STATUS IS ERR-STAT.
+000260     SELECT HTIW-M ASSIGN TO HTIW-MSD                             I.090417
+000270         ORGANIZATION INDEXED                                     I.090417
+000280         RECORD KEY HTIW-KEY                                      I.090417
+000290         ACCESS MODE DYNAMIC                                      I.090417
+000300         FILE STATUS IS ERR-STAT.                                 I.090417
+000310 I-O-CONTROL.
+000320     APPLY SHARED-MODE ON HI-M
+000330     APPLY SHARED-MODE ON HTI-M.
+000340 DATA DIVISION.
+000350 FILE SECTION.
+000360     COPY LIHIM.
+000370     COPY LIHTIM.
+000380 FD  HTIW-M                                                       I.090417
+000390     BLOCK  3 RECORDS                                             I.090417
+000400     LABEL RECORD IS STANDARD                                     I.090417
+000410     VALUE OF IDENTIFICATION "HTIMW".                             I.090417
+000420 01  HTIW-R.                                                      I.090417
+000430     02  HTIW-KEY.                                                I.090417
+000440       03  HTIW-DNO.                                              I.090417
+000450         04  HTIW-DNO1  PIC  9(005).                              I.090417
+000460         04  HTIW-DNO2  PIC  X(001).                              I.090417
+000470       03  HTIW-GNO     PIC  9(001).                              I.090417
+000480     02  F              PIC  X(078).                              I.090417
+000490 WORKING-STORAGE SECTION.
+000500 77  W-MSG              PIC  X(040).
+000510 77  W-FILE             PIC  X(013).
+000520 01  W-DATA.
+000530     02  W-DMM          PIC  9(001).
+000540 01  ERR-STAT           PIC  X(002).
+000550     COPY LSTAT.
+000560 SCREEN SECTION.
+000570 SD  C-CRT
+000580     END STATUS IS ESTAT.
+000590 01  C-CLEAR.
+000600     02  LINE  1  CLEAR SCREEN.
+000610 01  C-MID.
+000620     02  LINE   3  COLUMN  10  PIC  N(023) VALUE
+000630          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+000640     02  LINE   4  COLUMN  10  PIC  N(023) VALUE
+000650          NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+000660     02  LINE   5  COLUMN  10  PIC  N(023) VALUE
+000670          NC"＊＊＊　　履物　棚卸ファイル　クリア　　＊＊＊".
+000680     02  LINE   6  COLUMN  10  PIC  N(023) VALUE
+000690          NC"＊＊＊　　　　　　　　　　　　　　　　　＊＊＊".
+000700     02  LINE   7  COLUMN  10  PIC  N(023) VALUE
+000710          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+000720     02  LINE  20  COLUMN  40  PIC  X(022) VALUE
+000730          "確認  OK=1 NO=9   ﾘﾀｰﾝ".
+000740 01  C-ACP.
+000750     02  A-DMM   LINE  20  COLUMN  57  PIC  9(001)
+000760          USING W-DMM   CHECK OVERFLOW NO IFC.
+000770 01  C-ERR.
+000780     02  LINE  24.
+000790       03  E-ME    COLUMN  15  PIC  X(040) FROM  W-MSG.
+000800       03  E-FILE  COLUMN  60  PIC  X(013) FROM  W-FILE.
+000810     COPY LSSEM.
+000820     COPY LIBSCR.
+000830 PROCEDURE DIVISION.
+000840 M-05.
+000850     DISPLAY C-CLEAR.
+000860     DISPLAY C-MID.
+000870 M-10.
+000880     ACCEPT A-DMM.
+000890     DISPLAY E-CL.
+000900     IF ESTAT NOT = HTB AND SKP
+000910         GO TO M-10.
+000920     IF W-DMM = 9
+000930         MOVE SPACE TO W-MSG
+000940         MOVE "***  ｷｬﾝｾﾙ  ***" TO W-MSG
+000950         DISPLAY E-ME E-ME99
+000960         GO TO M-95.
+000970     IF W-DMM NOT = 1
+000980         GO TO M-10.
+000990*
+001000     OPEN OUTPUT HTI-M.
+001010     CLOSE HTI-M.
+001020     OPEN OUTPUT HTIW-M.                                          I.090417
+001030     CLOSE HTIW-M.                                                I.090417
+001040     OPEN I-O HI-M.
+001050 M-15.
+001060     READ HI-M NEXT RECORD AT END
+001070         GO TO M-90.
+001080     MOVE ZERO TO HI-KT.
+001090     REWRITE HI-R INVALID KEY
+001100         MOVE SPACE TO W-FILE W-MSG
+001110         MOVE "HIM" TO W-FILE
+001120         MOVE "***  REWRITE ｴﾗｰ  ***" TO W-MSG
+001130         DISPLAY E-STAT E-ME E-FILE E-ME99
+001140         GO TO M-90.
+001150     GO TO M-15.
+001160 M-90.
+001170     CLOSE HI-M.
+001180 M-95.
+001190     DISPLAY C-CLEAR.
+001200     STOP RUN.

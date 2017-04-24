@@ -1,0 +1,661 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. HKG200.
+000030*******************************************************************
+000040*    PROGRAM         :  請求チェックデータ　抽出                  *
+000050*    JS-SIGN         :  0=請求リスト , 1=非請求リスト             *
+000060*                    :  2=生協請求リスト                          *
+000070*******************************************************************
+000080 ENVIRONMENT DIVISION.
+000090 CONFIGURATION SECTION.
+000100 SOURCE-COMPUTER. SYSTEM3100.
+000110 OBJECT-COMPUTER. SYSTEM3100.
+000120 INPUT-OUTPUT SECTION.
+000130 FILE-CONTROL.
+000140     COPY LIBCSE.
+000150*****SELECT SKDF ASSIGN TO SKD-MSD                                D.040329
+000160     SELECT SKDF ASSIGN TO SKD-RDB                                I.040329
+000170         ORGANIZATION IS INDEXED
+000180         ACCESS MODE IS DYNAMIC
+000190         RECORD KEY IS SKD-KEY
+000200         FILE STATUS IS ERR-STAT.
+000210     SELECT T-M ASSIGN TO T1-MSD T2-MSD
+000220         ORGANIZATION IS INDEXED
+000230         ACCESS MODE IS RANDOM
+000240         RECORD KEY IS T-KEY
+000250         ALTERNATE RECORD KEY T-KEY2
+000260         FILE STATUS IS ERR-STAT.
+000270     SELECT SKCF ASSIGN TO SKC-MSD.
+000280 I-O-CONTROL.
+000290     APPLY SHARED-MODE ON M-DATE
+000300     APPLY SHARED-MODE ON T-M
+000310     APPLY SHARED-MODE ON SKDF.
+000320 DATA DIVISION.
+000330 FILE SECTION.
+000340     COPY LIBFDD.
+000350     COPY LITM.
+000360     COPY LRSKDF.                                                 I.040329
+000370*****COPY LISKDF.                                                 D.040329
+000380 FD  SKCF
+000390     BLOCK  1 RECORDS
+000400     LABEL RECORD IS STANDARD
+000410     VALUE OF IDENTIFICATION WK0256ID.
+000420 01  SKC-R.
+000430     02  SKC-D          PIC  X(192).
+000440     02  F              PIC  X(048).                              I.030708
+000450     02  SKC-SNGP       PIC  9(008).                              I.030708
+000460     02  SKC-ENGP       PIC  9(008).                              I.030708
+000470*****02  F              PIC  X(064).                              D.030708
+000480 WORKING-STORAGE SECTION.
+000490 77  JS-SIGN            PIC  9(001).
+000500 77  W-FILE             PIC  X(013).
+000510 77  WK0256ID           PIC  X(009) VALUE SPACE.
+000520 01  STN-NO.
+000530     02  STN-NO1        PIC  X(003).
+000540     02  STN-NO2        PIC  X(003).
+000550 01  W-FID.
+000560     02  W-FID1         PIC  X(006) VALUE "WK0256".
+000570     02  W-FID2         PIC  X(003).
+000580 01  W-DATA.
+000590     02  W-DATE         PIC  9(008).
+000600     02  W-NGP   REDEFINES W-DATE.
+000610       03  W-NEN        PIC  9(004).
+000620       03  W-NENL  REDEFINES W-NEN.
+000630         04  W-NEN1     PIC  9(002).
+000640         04  W-NEN2     PIC  9(002).
+000650       03  W-GET        PIC  9(002).
+000660       03  W-PEY        PIC  9(002).
+000670     02  W-NGPL  REDEFINES W-DATE.
+000680       03  F            PIC  9(002).
+000690       03  W-NGPS       PIC  9(006).
+000700       03  W-NGPM  REDEFINES W-NGPS.
+000710         04  W-NGS      PIC  9(004).
+000720         04  F          PIC  9(002).
+000730     02  W-DMM          PIC  9(001).
+000740     02  W-DC           PIC  9(001).
+000750     02  W-TCD          PIC  9(004).
+000760*****02  W-NGPD.                                                  D.030708
+000770*****  03  W-NEND       PIC  9(004).                              D.030708
+000780*****  03  W-GETD       PIC  9(002).                              D.030708
+000790*****  03  W-PEYD       PIC  9(002).                              D.030708
+000800     02  W-SETN.                                                  I.030708
+000810       03  W-STNC       PIC  9(002).                              I.030708
+000820       03  W-ETNC       PIC  9(002).                              I.030708
+000830     02  W-SKC          PIC  9(001).                              I.030708
+000840     02  W-SETC.                                                  I.030708
+000850       03  W-STCD       PIC  9(004).                              I.030708
+000860       03  W-ETCD       PIC  9(004).                              I.030708
+000870     02  W-SED.
+000880*****  03  W-SNGP.                                                D.040329
+000890       03  W-SNGP       PIC  9(008).                              I.040329
+000900       03  W-SNGPD REDEFINES W-SNGP.                              I.040329
+000910         04  W-SNEN     PIC  9(004).
+000920         04  W-SGET     PIC  9(002).
+000930         04  W-SPEY     PIC  9(002).
+000940*****  03  W-ENGP.                                                D.040329
+000950       03  W-ENGP       PIC  9(008).                              I.040329
+000960       03  W-ENGPD REDEFINES W-ENGP.                              I.040329
+000970         04  W-ENEN     PIC  9(004).
+000980         04  W-EGET     PIC  9(002).
+000990         04  W-EPEY     PIC  9(002).
+001000     02  W-SS           PIC  9(002).
+001010     02  W-SSD          PIC  9(002).
+001020     02  W-INV          PIC  9(001).
+001030 01  ERR-STAT           PIC  X(002).
+001040     COPY LSTAT.
+001050 SCREEN SECTION.
+001060 SD  C-CRT
+001070     END STATUS IS ESTAT.
+001080 01  C-CLEAR.
+001090     02  C-CL    LINE   1  CLEAR SCREEN.
+001100 01  C-MID.
+001110     02  LINE   3  COLUMN  10  PIC  N(022) VALUE
+001120          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001130     02  LINE   4  COLUMN  10  PIC  N(022) VALUE
+001140          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001150     02  LINE   5  COLUMN  10  PIC  N(022) VALUE
+001160          NC"＊＊＊　　　　　　　　　　　　　　　　＊＊＊".
+001170     02  LINE   6  COLUMN  10  PIC  N(022) VALUE
+001180          NC"＊＊＊　　請求チェックデータ　抽出　　＊＊＊".       I.030708
+001190*****     NC"＊＊＊　　　　請求データ　抽出　　　　＊＊＊".       D.030708
+001200     02  LINE   7  COLUMN  10  PIC  N(022) VALUE
+001210          NC"＊＊＊　　　　　　　　　　　　　　　　＊＊＊".
+001220     02  LINE   8  COLUMN  10  PIC  N(022) VALUE
+001230          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001240     02  LINE   9  COLUMN  10  PIC  N(022) VALUE
+001250          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001260     02  LINE  14  COLUMN  13  PIC  X(022) VALUE                  I.030708
+001270          "担当者ｺｰﾄﾞ    00 ～ 99".                               I.030708
+001280     02  LINE  16  COLUMN  13  PIC  X(024) VALUE                  I.030708
+001290          "得意先ｺｰﾄﾞ  0000 ～ 9999".                             I.030708
+001300     02  LINE  18  COLUMN  13  PIC  X(038) VALUE                  I.030708
+001310          "    年   月   日　～　    年   月   日".               I.030708
+001320*****02  LINE  20  COLUMN  21  PIC  X(022) VALUE                  D.030707
+001330     02  LINE  22  COLUMN  21  PIC  X(022) VALUE                  I.030707
+001340          "確認  OK=1 NO=9   ﾘﾀｰﾝ".
+001350 01  C-MID1.
+001360*****02  LINE  13  COLUMN  22  PIC  X(019) VALUE                  D.030707
+001370     02  LINE  12  COLUMN  22  PIC  X(019) VALUE                  I.030707
+001380          "    年   月   日 分".
+001390 01  C-MID2.
+001400     02  LINE   6  COLUMN  18  PIC  N(001) VALUE NC"非".          I.030708
+001410*****02  LINE   6  COLUMN  22  PIC  N(001) VALUE NC"非".          D.030708
+001420*****02  LINE  13  COLUMN  13  PIC  X(038) VALUE                  D.030708
+001430*****     "    年   月   日　～　    年   月   日".               D.030708
+001440*****02  LINE  15  COLUMN  22  PIC  X(030) VALUE                  D.030708
+001450     02  LINE  20  COLUMN  22  PIC  X(030) VALUE                  I.030708
+001460          "  日締め（マスター）   全部=99".                       I.030707
+001470*****02  LINE  15  COLUMN  22  PIC  X(020) VALUE                  D.030707
+001480*****     "  日締め（マスター）".                                 D.030707
+001490     02  LINE  14  COLUMN  40  PIC  X(028) VALUE                  I.030708
+001500          "( 生協印字  ｼﾅｲ=0 , ｽﾙ=1   )".                         I.030708
+001510 01  C-ACP.
+001520*****02  LINE  13.                                                D.030708
+001530     02  LINE  12.                                                I.030708
+001540       03  A-NEN   COLUMN  22  PIC  9(004)
+001550            USING W-NEN   CHECK OVERFLOW NO IFC.
+001560       03  A-GET   COLUMN  29  PIC  9(002)
+001570            USING W-GET   CHECK OVERFLOW NO IFC.
+001580       03  A-PEY   COLUMN  34  PIC  9(002)
+001590            USING W-PEY   CHECK OVERFLOW NO IFC.
+001600     02  LINE  14.                                                I.030708
+001610       03  A-STNC  COLUMN  27  PIC  9(002)                        I.030708
+001620            USING W-STNC  CHECK OVERFLOW NO IFC.                  I.030708
+001630       03  A-ETNC  COLUMN  33  PIC  9(002)                        I.030708
+001640            USING W-ETNC  CHECK OVERFLOW NO IFC.                  I.030708
+001650       03  A-SKC   COLUMN  66  PIC  9(001)                        I.030708
+001660            USING W-SKC   CHECK OVERFLOW NO IFC.                  I.030708
+001670     02  LINE  16.                                                I.030708
+001680       03  A-STCD  COLUMN  25  PIC  9(004)                        I.030708
+001690            USING W-STCD  CHECK OVERFLOW NO IFC.                  I.030708
+001700       03  A-ETCD  COLUMN  33  PIC  9(004)                        I.030708
+001710            USING W-ETCD  CHECK OVERFLOW NO IFC.                  I.030708
+001720     02  LINE  18.                                                I.030708
+001730       03  A-SNEN  COLUMN  13  PIC  9(004)
+001740            USING W-SNEN  CHECK OVERFLOW NO IFC.
+001750       03  A-SGET  COLUMN  20  PIC  9(002)
+001760            USING W-SGET  CHECK OVERFLOW NO IFC.
+001770       03  A-SPEY  COLUMN  25  PIC  9(002)
+001780            USING W-SPEY  CHECK OVERFLOW NO IFC.
+001790       03  A-ENEN  COLUMN  35  PIC  9(004)
+001800            USING W-ENEN  CHECK OVERFLOW NO IFC.
+001810       03  A-EGET  COLUMN  42  PIC  9(002)
+001820            USING W-EGET  CHECK OVERFLOW NO IFC.
+001830       03  A-EPEY  COLUMN  47  PIC  9(002)
+001840            USING W-EPEY  CHECK OVERFLOW NO IFC.
+001850*****02  A-SS    LINE  15  COLUMN  22  PIC  9(002)                D.030708
+001860     02  A-SS    LINE  20  COLUMN  22  PIC  9(002)                I.030708
+001870          USING W-SS    CHECK OVERFLOW NO IFC.
+001880*
+001890*****02  A-DMM   LINE  20  COLUMN  38  PIC  9(001)                D.030707
+001900     02  A-DMM   LINE  22  COLUMN  38  PIC  9(001)                D.030707
+001910          USING W-DMM   CHECK OVERFLOW NO IFC.
+001920 01  C-DSP.                                                       I.030708
+001930     02  D-SKS   LINE  7  COLUMN  26  PIC  N(006) VALUE           I.030709
+001940          NC"【　生協　】".                                       I.030709
+001950     02  LINE  14.                                                I.030708
+001960       03  D-SKM   COLUMN  40  PIC  X(029) VALUE                  I.030708
+001970            "( 生協印字  ｼﾅｲ=0 , ｽﾙ=1    )".                      I.030708
+001980       03  D-SKMC  COLUMN  40  PIC  X(029) VALUE                  I.030708
+001990            "                             ".                      I.030708
+002000*01  C-DSP.                                                       D.030707
+002010*****02  D-DM.                                                    D.030707
+002020*****  03  LINE  16.                                              D.030707
+002030*****    04  COLUMN  16  PIC  9(004) FROM  SKD-SNEN.              D.030707
+002040*****    04  COLUMN  20  PIC  N(001) VALUE NC"年".                D.030707
+002050*****    04  COLUMN  23  PIC Z9      FROM  SKD-SGET.              D.030707
+002060*****    04  COLUMN  25  PIC  N(001) VALUE NC"月".                D.030707
+002070*****    04  COLUMN  28  PIC Z9      FROM  SKD-SPEY.              D.030707
+002080*****    04  COLUMN  30  PIC  N(001) VALUE NC"日".                D.030707
+002090*****    04  COLUMN  33  PIC  N(008) VALUE NC"分　請求書未発行".  D.030707
+002100*****  03  LINE  18.                                              D.030707
+002110*****    04  COLUMN  16  PIC  X(004) VALUE "ｺｰﾄﾞ".                D.030707
+002120*****    04  COLUMN  21  PIC  9(004) FROM  SKD-TCD.               D.030707
+002130*****    04  COLUMN  27  PIC  N(003) VALUE NC"伝票№".            D.030707
+002140*****    04  COLUMN  34  PIC  9(006) FROM  SKD-DNO.               D.030707
+002150 01  C-ERR.
+002160     02  LINE  24.
+002170       03  E-ME1   COLUMN  15  PIC  X(017) VALUE
+002180            "***  DATA ﾅｼ  ***".
+002190       03  E-ME4   COLUMN  15  PIC  X(018) VALUE
+002200            "***  ﾄｸｲｻｷ ﾅｼ  ***".
+002210       03  E-TCD   COLUMN  35  PIC  9(004) FROM  SKD-TCD.
+002220     COPY LSSEM.
+002230     COPY LIBSCR.
+002240 PROCEDURE DIVISION.
+002250 M-05.
+002260     ACCEPT JS-SIGN.
+002270     IF JS-SIGN NOT = 0 AND 1 AND 2
+002280         MOVE 255 TO COMPLETION-CODE
+002290         STOP RUN.
+002300     MOVE ZERO TO W-DATA.
+002310     MOVE 99 TO W-ETNC.                                           I.151102
+002320     MOVE 9999 TO W-ETCD.                                         I.151102
+002330     COPY LIBCPR.
+002340     DISPLAY C-CLEAR.
+002350     DISPLAY C-MID.
+002360     IF JS-SIGN = 2                                               I.030709
+002370         DISPLAY D-SKS.                                           I.030709
+002380*
+002390     PERFORM ACP-RTN THRU ACP-EX.
+002400     IF COMPLETION-CODE = 255
+002410         GO TO M-95.
+002420*
+002430     OPEN INPUT SKDF.
+002440     CALL "CBLSTNNO" USING STN-NO.
+002450     MOVE STN-NO2 TO W-FID2.
+002460     MOVE W-FID TO WK0256ID.
+002470     OPEN OUTPUT SKCF.
+002480*****IF JS-SIGN = 1 OR 2                                          D.030708
+002490     OPEN INPUT T-M.
+002500*****MOVE SPACE TO SKD-KEY.                                       D.040329
+002510*****MOVE W-STCD TO SKD-TCD.                                      D.040329
+002520*****START SKDF KEY NOT < SKD-KEY INVALID KEY                     D.040329
+002530*****    GO TO M-90.                                              D.040329
+002540     IF JS-SIGN = 0 OR 2                                          I.040329
+002550         SELECT SKDF WHERE SKD-TCD >= W-STCD AND                  I.040329
+002560                           SKD-TCD <= W-ETCD AND                  I.040329
+002570                           SKD-TNC >= W-STNC AND                  I.040329
+002580                           SKD-TNC <= W-ETNC AND                  I.040329
+002590                           SKD-DATE >= W-SNGP AND                 I.040329
+002600                           SKD-DATE <= W-ENGP AND                 I.040329
+002610                           SKD-DTC NOT = 3 AND                    I.040329
+002620                           SKD-DTC NOT = 5 AND                    I.040329
+002630                           SKD-SKD = W-DATE                       I.040422
+002640                     ORDER BY SKD-KEY.                            I.040422
+002650*****                      SKD-SKD = W-DATE.                      D.040422
+002660     IF JS-SIGN = 1                                               I.040329
+002670         SELECT SKDF WHERE SKD-TCD >= W-STCD AND                  I.040329
+002680                           SKD-TCD <= W-ETCD AND                  I.040329
+002690                           SKD-TNC >= W-STNC AND                  I.040329
+002700                           SKD-TNC <= W-ETNC AND                  I.040329
+002710                           SKD-DATE >= W-SNGP AND                 I.040329
+002720                           SKD-DATE <= W-ENGP AND                 I.040329
+002730                           SKD-DTC NOT = 3 AND                    I.040329
+002740                           SKD-DTC NOT = 5                        I.040422
+002750                     ORDER BY SKD-KEY.                            I.040422
+002760*****                      SKD-DTC NOT = 5.                       D.040422
+002770 M-10.
+002780     READ SKDF NEXT RECORD WITH UNLOCK AT END
+002790         SCRATCH SKDF                                             I.040329
+002800         GO TO M-90.
+002810*****IF SKD-TCD > W-ETCD                                          D.040329
+002820*****    GO TO M-90.                                              D.040329
+002830*****IF SKD-TNC < W-STNC OR > W-ETNC                              D.040329
+002840*****    GO TO M-10.                                              D.040329
+002850*****IF SKD-DATE < W-SNGP OR > W-ENGP                             D.040329
+002860*****    GO TO M-10.                                              D.040329
+002870*****IF SKD-DTC = 3 OR 5                                          D.040329
+002880*****    GO TO M-10.                                              D.040329
+002890*****IF JS-SIGN = 0 OR 2                                          D.040329
+002900*****    IF SKD-SKD NOT = W-DATE                                  D.040329
+002910*****        GO TO M-10.                                          D.040329
+002920     IF JS-SIGN = 1
+002930         IF SKD-SKD NOT = ZERO AND 99999999
+002940             GO TO M-10.
+002950*****IF JS-SIGN = 0                                               D.030708
+002960*****    GO TO M-15.                                              D.030708
+002970     MOVE 0 TO W-INV.
+002980     MOVE SKD-TCD TO T-KEY.
+002990     READ T-M WITH UNLOCK INVALID KEY
+003000         MOVE 1 TO W-INV
+003010         DISPLAY E-ME4 E-TCD E-ME99
+003020         DISPLAY E-CL
+003030         MOVE ZERO TO T-R.
+003040     IF JS-SIGN = 0                                               I.030708
+003050         IF W-SKC = 0                                             I.030708
+003060             IF T-SSC = 1                                         I.030708
+003070                 GO TO M-10.                                      I.030708
+003080     IF JS-SIGN = 2
+003090         IF W-STCD NOT = W-ETCD                                   I.071030
+003100             IF T-SSC NOT = 1
+003110                 GO TO M-10.                                      I.030708
+003120*****        GO TO M-10                                           D.030708
+003130*****      ELSE                                                   D.030708
+003140     IF JS-SIGN NOT = 1                                           I.030708
+003150             GO TO M-15.
+003160*****IF (SKD-DATE < W-SNGP OR > W-ENGP) OR                        D.030708
+003170*****   (SKD-SKD NOT = ZERO AND 99999999)                         D.030708
+003180*****    GO TO M-10.                                              D.030708
+003190     IF T-SS = 00 OR 99
+003200         GO TO M-10.
+003210     IF W-SS = 99                                                 I.030707
+003220         GO TO M-15.                                              I.030707
+003230     MOVE T-SS TO W-SSD.
+003240     IF W-SSD = 30
+003250         MOVE 31 TO W-SSD.
+003260     IF W-SS NOT = W-SSD
+003270         GO TO M-10.
+003280 M-15.
+003290*****IF JS-SIGN = 1                                               D.030707
+003300     IF SKD-TCD NOT = W-TCD
+003310         MOVE SKD-TCD TO W-TCD.
+003320     MOVE 1 TO W-DC.
+003330     INITIALIZE SKC-D.
+003340     MOVE SKD-R TO SKC-D.
+003350     MOVE W-SNGP TO SKC-SNGP.                                     I.030708
+003360     MOVE W-ENGP TO SKC-ENGP.                                     I.030708
+003370     WRITE SKC-R.
+003380 M-20.
+003390     READ SKDF NEXT RECORD WITH UNLOCK AT END
+003400         SCRATCH SKDF                                             I.040329
+003410         GO TO M-90.
+003420*****IF SKD-TCD > W-ETCD                                          D.040329
+003430*****    GO TO M-90.                                              D.040329
+003440*****IF SKD-TNC < W-STNC OR > W-ETNC                              D.040329
+003450*****    GO TO M-20.                                              D.040329
+003460*****IF SKD-DATE < W-SNGP OR > W-ENGP                             D.040329
+003470*****    GO TO M-20.                                              D.040329
+003480*****IF SKD-DTC = 3 OR 5                                          D.040329
+003490*****    GO TO M-20.                                              D.040329
+003500*****IF JS-SIGN = 0 OR 2                                          D.040329
+003510*****    IF SKD-SKD NOT = W-DATE                                  D.040329
+003520*****        GO TO M-20.                                          D.040329
+003530     IF JS-SIGN = 1
+003540         IF SKD-SKD NOT = ZERO AND 99999999
+003550             GO TO M-20.
+003560*****IF JS-SIGN = 0                                               D.030708
+003570*****    GO TO M-15.                                              D.030708
+003580     IF SKD-TCD = W-TCD                                           I.030708
+003590         GO TO M-15.                                              I.030708
+003600     MOVE 0 TO W-INV.
+003610     MOVE SKD-TCD TO T-KEY.
+003620     READ T-M WITH UNLOCK INVALID KEY
+003630         MOVE 1 TO W-INV
+003640         DISPLAY E-ME4 E-TCD E-ME99
+003650         DISPLAY E-CL
+003660         MOVE ZERO TO T-R.
+003670     IF JS-SIGN = 0                                               I.030708
+003680         IF W-SKC = 0                                             I.030708
+003690             IF T-SSC = 1                                         I.030708
+003700                 GO TO M-20.                                      I.030708
+003710     IF JS-SIGN = 2
+003720         IF W-STCD NOT = W-ETCD                                   I.071030
+003730             IF T-SSC NOT = 1
+003740                 GO TO M-20.                                      I.030708
+003750*****        GO TO M-20                                           D.030708
+003760*****      ELSE                                                   D.030708
+003770     IF JS-SIGN NOT = 1                                           I.030708
+003780         GO TO M-15.
+003790*****IF (SKD-DATE < W-SNGP OR > W-ENGP) OR                        D.030708
+003800*****   (SKD-SKD NOT = ZERO AND 99999999)                         D.030708
+003810*****    GO TO M-20.                                              D.030708
+003820*****IF SKD-TCD = W-TCD                                           D.030708
+003830*****    GO TO M-15.                                              D.030708
+003840*****IF T-SS = ZERO                                               D.030707
+003850     IF T-SS = 00 OR 99                                           I.030707
+003860         GO TO M-20.
+003870     IF W-SS = 99                                                 I.030707
+003880         GO TO M-15.                                              I.030707
+003890     MOVE T-SS TO W-SSD.
+003900     IF W-SSD = 30
+003910         MOVE 31 TO W-SSD.
+003920     IF W-SS NOT = W-SSD
+003930         GO TO M-20.
+003940     GO TO M-15.
+003950 M-90.
+003960     CLOSE SKDF.
+003970     CLOSE SKCF.
+003980*****IF JS-SIGN = 1 OR 2                                          D.030708
+003990     CLOSE T-M.
+004000     IF W-DC = 0
+004010         MOVE 255 TO COMPLETION-CODE
+004020         DISPLAY E-ME1 E-ME99.
+004030 M-95.
+004040     DISPLAY C-CLEAR.
+004050     STOP RUN.
+004060 ACP-RTN.
+004070*****IF JS-SIGN = 1                                               D.030708
+004080*****    MOVE DATE-02R TO W-NGPS                                  D.030708
+004090*****  ELSE                                                       D.030708
+004100     MOVE D-NHNG TO W-NGS.
+004110     IF W-NEN2 >= DATE-NF1 AND <= DATE-NT1
+004120         ADD DATE-NC1 TO W-NEN.
+004130     IF W-NEN2 >= DATE-NF2 AND <= DATE-NT2
+004140         ADD DATE-NC2 TO W-NEN.
+004150*****IF JS-SIGN = 0 OR 2                                          D.030708
+004160*****    DISPLAY C-MID1                                           D.030708
+004170*****    DISPLAY A-NEN A-GET                                      D.030708
+004180*****    GO TO ACP-030.                                           D.030708
+004190*****MOVE W-DATE TO W-SNGP W-ENGP.                                D.030708
+004200     MOVE W-NEN TO W-SNEN W-ENEN.                                 I.030708
+004210     MOVE W-GET TO W-SGET W-EGET.                                 I.030708
+004220     MOVE 1 TO W-SPEY.
+004230*****DISPLAY C-MID2                                               D.030708
+004240     DISPLAY A-SNEN A-SGET A-SPEY A-ENEN A-EGET A-EPEY.
+004250     IF JS-SIGN = 1                                               I.030708
+004260         DISPLAY C-MID2                                           I.030708
+004270         GO TO ACP-032                                            I.030708
+004280       ELSE                                                       I.030708
+004290         DISPLAY C-MID1                                           I.030708
+004300         DISPLAY A-NEN A-GET                                      I.030708
+004310         GO TO ACP-030.                                           I.030708
+004320*****GO TO ACP-060.                                               D.030708
+004330 ACP-010.
+004340     ACCEPT A-NEN.
+004350     IF ESTAT = PF9
+004360         MOVE 255 TO COMPLETION-CODE
+004370         GO TO ACP-EX.
+004380     IF ESTAT NOT = HTB AND SKP
+004390         GO TO ACP-010.
+004400     IF W-NEN = ZERO
+004410         GO TO ACP-010.
+004420 ACP-020.
+004430     ACCEPT A-GET.
+004440     IF ESTAT = PF9
+004450         MOVE 255 TO COMPLETION-CODE
+004460         GO TO ACP-EX.
+004470     IF ESTAT = BTB
+004480         GO TO ACP-010.
+004490     IF ESTAT NOT = HTB AND SKP
+004500         GO TO ACP-020.
+004510     IF W-GET < 1 OR > 12
+004520         GO TO ACP-020.
+004530 ACP-030.
+004540     ACCEPT A-PEY.
+004550     IF ESTAT = PF9
+004560         MOVE 255 TO COMPLETION-CODE
+004570         GO TO ACP-EX.
+004580     IF ESTAT = BTB
+004590         GO TO ACP-020.
+004600     IF ESTAT NOT = HTB AND SKP
+004610         GO TO ACP-030.
+004620     IF W-PEY < 1 OR > 31
+004630         GO TO ACP-030.
+004640     IF JS-SIGN = 2                                               I.030708
+004650         MOVE 00 TO W-STNC                                        I.030708
+004660         MOVE 99 TO W-ETNC                                        I.030708
+004670         DISPLAY A-STNC A-ETNC                                    I.030708
+004680         GO TO ACP-036.                                           I.030708
+004690 ACP-032.                                                         I.030708
+004700     ACCEPT A-STNC.                                               I.030708
+004710     IF ESTAT = PF9                                               I.030708
+004720         MOVE 255 TO COMPLETION-CODE                              I.030708
+004730         GO TO ACP-EX.                                            I.030708
+004740     IF ESTAT = BTB                                               I.030708
+004750         IF JS-SIGN = 0                                           I.030708
+004760             GO TO ACP-030.                                       I.030708
+004770     IF ESTAT NOT = HTB AND SKP                                   I.030708
+004780         GO TO ACP-032.                                           I.030708
+004790 ACP-034.                                                         I.030708
+004800     ACCEPT A-ETNC.                                               I.030708
+004810     IF ESTAT = PF9                                               I.030708
+004820         MOVE 255 TO COMPLETION-CODE                              I.030708
+004830         GO TO ACP-EX.                                            I.030708
+004840     IF ESTAT = BTB                                               I.030708
+004850         GO TO ACP-032.                                           I.030708
+004860     IF ESTAT NOT = HTB AND SKP                                   I.030708
+004870         GO TO ACP-034.                                           I.030708
+004880     IF W-STNC > W-ETNC                                           I.030708
+004890         GO TO ACP-034.                                           I.030708
+004900     IF 13 < W-STNC OR > W-ETNC                                   I.030708
+004910         DISPLAY D-SKMC                                           I.030708
+004920         MOVE 0 TO W-SKC                                          I.030708
+004930         GO TO ACP-036.                                           I.030708
+004940     DISPLAY D-SKM A-SKC.                                         I.030708
+004950 ACP-035.                                                         I.030708
+004960     ACCEPT A-SKC.                                                I.030708
+004970     IF ESTAT = PF9                                               I.030708
+004980         MOVE 255 TO COMPLETION-CODE                              I.030708
+004990         GO TO ACP-EX.                                            I.030708
+005000     IF ESTAT = BTB                                               I.030708
+005010         GO TO ACP-034.                                           I.030708
+005020     IF ESTAT NOT = HTB AND SKP                                   I.030708
+005030         GO TO ACP-035.                                           I.030708
+005040     IF W-SKC > 1                                                 I.030708
+005050         GO TO ACP-035.                                           I.030708
+005060 ACP-036.                                                         I.030708
+005070     ACCEPT A-STCD.                                               I.030708
+005080     IF ESTAT = PF9                                               I.030708
+005090         MOVE 255 TO COMPLETION-CODE                              I.030708
+005100         GO TO ACP-EX.                                            I.030708
+005110     IF ESTAT = BTB                                               I.030708
+005120         IF JS-SIGN = 2                                           I.030708
+005130             GO TO ACP-030                                        I.030708
+005140           ELSE                                                   I.030708
+005150             IF JS-SIGN = 1                                       I.030708
+005160                 GO TO ACP-034                                    I.030708
+005170               ELSE                                               I.030708
+005180                 IF 13 < W-STNC OR > W-ETNC                       I.030708
+005190                     GO TO ACP-034                                I.030708
+005200                   ELSE                                           I.030708
+005210                     GO TO ACP-035.                               I.030708
+005220     IF ESTAT NOT = HTB AND SKP                                   I.030708
+005230         GO TO ACP-032.                                           I.030708
+005240 ACP-038.                                                         I.030708
+005250     ACCEPT A-ETCD.                                               I.030708
+005260     IF ESTAT = PF9                                               I.030708
+005270         MOVE 255 TO COMPLETION-CODE                              I.030708
+005280         GO TO ACP-EX.                                            I.030708
+005290     IF ESTAT = BTB                                               I.030708
+005300         GO TO ACP-036.                                           I.030708
+005310     IF ESTAT NOT = HTB AND SKP                                   I.030708
+005320         GO TO ACP-038.                                           I.030708
+005330     IF W-STCD > W-ETCD                                           I.030708
+005340         GO TO ACP-038.                                           I.030708
+005350*****IF JS-SIGN = 0 OR 2                                          D.030707
+005360*****    GO TO ACP-130.                                           D.030707
+005370*
+005380*****OPEN INPUT SKDF.                                             D.030707
+005390*****MOVE W-DATE TO W-NGPD.                                       D.030707
+005400*ACP-AAA.                                                         D.030707
+005410*****READ SKDF NEXT RECORD WITH UNLOCK AT END                     D.030707
+005420*****    CLOSE SKDF                                               D.030707
+005430*****    GO TO ACP-BBB.                                           D.030707
+005440*****IF SKD-SKD = ZERO OR 99999999                                D.030707
+005450*****    GO TO ACP-AAA.                                           D.030707
+005460*****IF SKD-SNO NOT = ZERO                                        D.030707
+005470*****    GO TO ACP-AAA.                                           D.030707
+005480*****IF SKD-SKD > W-DATE                                          D.030707
+005490*****    GO TO ACP-AAA.                                           D.030707
+005500*****IF SKD-SKD < W-DATE                                          D.030707
+005510*****    DISPLAY D-DM E-ME99                                      D.030707
+005520*****    DISPLAY E-CL                                             D.030707
+005530*****    MOVE SKD-SKD TO W-NGPD.                                  D.030707
+005540*****GO TO ACP-AAA.                                               D.030707
+005550*ACP-BBB.                                                         D.030707
+005560*****IF W-DATE > W-NGPD                                           D.030707
+005570*****    GO TO ACP-030.                                           D.030707
+005580*****GO TO ACP-130.                                               D.030708
+005590*
+005600 ACP-060.
+005610     ACCEPT A-SNEN.
+005620     IF ESTAT = PF9
+005630         MOVE 255 TO COMPLETION-CODE
+005640         GO TO ACP-EX.
+005650     IF ESTAT = BTB                                               I.030708
+005660         GO TO ACP-038.                                           I.030708
+005670     IF ESTAT NOT = HTB AND SKP
+005680         GO TO ACP-060.
+005690     IF W-SNEN = ZERO
+005700         GO TO ACP-060.
+005710 ACP-070.
+005720     ACCEPT A-SGET.
+005730     IF ESTAT = PF9
+005740         MOVE 255 TO COMPLETION-CODE
+005750         GO TO ACP-EX.
+005760     IF ESTAT = BTB
+005770         GO TO ACP-060.
+005780     IF ESTAT NOT = HTB AND SKP
+005790         GO TO ACP-070.
+005800     IF W-SGET < 1 OR > 12
+005810         GO TO ACP-070.
+005820 ACP-080.
+005830     ACCEPT A-SPEY.
+005840     IF ESTAT = PF9
+005850         MOVE 255 TO COMPLETION-CODE
+005860         GO TO ACP-EX.
+005870     IF ESTAT = BTB
+005880         GO TO ACP-070.
+005890     IF ESTAT NOT = HTB AND SKP
+005900         GO TO ACP-080.
+005910     IF W-SPEY < 1 OR > 31
+005920         GO TO ACP-080.
+005930 ACP-090.
+005940     ACCEPT A-ENEN.
+005950     IF ESTAT = PF9
+005960         MOVE 255 TO COMPLETION-CODE
+005970         GO TO ACP-EX.
+005980     IF ESTAT = BTB
+005990         GO TO ACP-080.
+006000     IF ESTAT NOT = HTB AND SKP
+006010         GO TO ACP-090.
+006020     IF W-ENEN < W-SNEN
+006030         GO TO ACP-090.
+006040 ACP-100.
+006050     ACCEPT A-EGET.
+006060     IF ESTAT = PF9
+006070         MOVE 255 TO COMPLETION-CODE
+006080         GO TO ACP-EX.
+006090     IF ESTAT = BTB
+006100         GO TO ACP-090.
+006110     IF ESTAT NOT = HTB AND SKP
+006120         GO TO ACP-100.
+006130     IF W-EGET < 1 OR > 12
+006140         GO TO ACP-100.
+006150 ACP-110.
+006160     ACCEPT A-EPEY.
+006170     IF ESTAT = PF9
+006180         MOVE 255 TO COMPLETION-CODE
+006190         GO TO ACP-EX.
+006200     IF ESTAT = BTB
+006210         GO TO ACP-100.
+006220     IF ESTAT NOT = HTB AND SKP
+006230         GO TO ACP-110.
+006240     IF W-EPEY < 1 OR > 31
+006250         GO TO ACP-110.
+006260     IF W-SNGP > W-ENGP
+006270         GO TO ACP-060.
+006280     IF JS-SIGN = 0 OR 2                                          I.030708
+006290         GO TO ACP-130.                                           I.030708
+006300 ACP-120.
+006310     ACCEPT A-SS.
+006320     IF ESTAT = BTB
+006330         GO TO ACP-110.
+006340     IF ESTAT NOT = HTB AND SKP
+006350         GO TO ACP-120.
+006360     IF W-SS NOT = 99                                             I.030707
+006370         IF W-SS < 1 OR > 31
+006380             GO TO ACP-120.
+006390     IF W-SS = 30
+006400         MOVE 31 TO W-SS.
+006410 ACP-130.
+006420     ACCEPT A-DMM.
+006430     IF ESTAT = BTB
+006440         IF JS-SIGN = 0 OR 2
+006450             GO TO ACP-110                                        I.030708
+006460*****        GO TO ACP-030                                        D.030708
+006470           ELSE
+006480             GO TO ACP-120.
+006490     IF ESTAT NOT = HTB AND SKP
+006500         GO TO ACP-130.
+006510     IF W-DMM = 9
+006520         IF JS-SIGN = 0 OR 2
+006530             GO TO ACP-030
+006540           ELSE
+006550             GO TO ACP-036.                                       I.030708
+006560*****        GO TO ACP-060.                                       D.030708
+006570     IF W-DMM NOT = 1
+006580         GO TO ACP-130.
+006590 ACP-EX.
+006600     EXIT.
+

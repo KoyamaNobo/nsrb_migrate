@@ -1,0 +1,584 @@
+000010 IDENTIFICATION   DIVISION.
+000020 PROGRAM-ID.      JT500M.
+000030 AUTHOR.          SAKIKO.D
+000040*********************************************************
+000050*    PROGRAM         :  類似品マスターメンテナンス      *
+000060*    PRINTER TYPE    :  JIPS                            *
+000070*    SCREEN          :  SJ500M                          *
+000080*    DATA WRITTN     :  91/08/12                        *
+000090*    COMPILE TYPE    :  COBOL                           *
+000100*********************************************************
+000110 ENVIRONMENT      DIVISION.
+000120 CONFIGURATION    SECTION.
+000130 SOURCE-COMPUTER. NEAC-SYSTEM3100.
+000140 OBJECT-COMPUTER. NEAC-SYSTEM3100.
+000150 INPUT-OUTPUT     SECTION.
+000160 FILE-CONTROL.
+000170     SELECT  JT-RUIJ  ASSIGN  TO  F1-MSD
+000180         ORGANIZATION  IS INDEXED
+000190         ACCESS MODE   IS DYNAMIC
+000200         RECORD KEY    IS RUIJ-KEY
+000210         FILE STATUS   IS ERR-STAT.
+000220*****SELECT  HI-M    ASSIGN  TO  F2-MSD                           D.010818
+000230     SELECT  HI2-M   ASSIGN  TO  F2-MSD                           I.010818
+000240         ORGANIZATION  IS INDEXED
+000250         ACCESS MODE   IS RANDOM
+000260         RECORD KEY    IS HI-KEY2                                 I.010818
+000270*****    RECORD KEY    IS HI-KEY                                  D.010818
+000280         FILE STATUS   IS ERR-STAT.
+000290     SELECT  P-F    ASSIGN   TO   P-PRN999.
+000300 I-O-CONTROL.
+000310*****APPLY SHARED-MODE ON JT-RUIJ HI-M                            D.010818
+000320     APPLY SHARED-MODE ON JT-RUIJ HI2-M                           I.010818
+000330     APPLY SHIFT-CODE  ON P-F.
+000340 DATA    DIVISION.
+000350 FILE    SECTION.
+000360 COPY   LTRUIJ.
+000370 COPY   LIHIM2.                                                   I.010818
+000380*COPY   LIHIM.                                                    D.010818
+000390 FD  P-F
+000400     LABEL RECORD IS OMITTED.
+000410 01  P-R                PIC X(170).
+000420 01  PR1.
+000430     02  KCD1           PIC X(05).
+000440     02  P1-01          PIC 9(06).
+000450     02  FILLER         PIC X(01).
+000460     02  P1-02          PIC N(24).
+000470     02  FILLER         PIC X(06).
+000480     02  P1-03          PIC 9(06).
+000490     02  F              PIC X(1).
+000500     02  P1-04          PIC N(24).
+000510 WORKING-STORAGE  SECTION.
+000520 77  LCNT               PIC  9(02)   VALUE  90.
+000530 77  PCNT               PIC  9(02)   VALUE  ZERO.
+000540 77  CHK-SW             PIC  9(01).
+000550 77  ERR-STAT           PIC X(2).
+000560 77  OLDKEY             PIC 9(06).
+000570 77  W-KBN              PIC 9(02).
+000580 77  K15                PIC X(05)  VALUE  ""3FE04F40A0"".
+000590 01  WORK-AREA.
+000600     02  W-SPA          PIC N(24)   VALUE  SPACE.
+000610     02  HIZUKE.
+000620         03  HI-YY      PIC 9(2).
+000630         03  HI-MM      PIC 9(2).
+000640         03  HI-DD      PIC 9(2).
+000650 01  HEAD1.
+000660     02  F              PIC X(05) VALUE ""3FE04FE080"".
+000670     02  F              PIC X(04) VALUE SPACE.
+000680     02  M1-01          PIC N(04).
+000690     02  F              PIC X(07) VALUE SPACE.
+000700     02  F              PIC X(31) VALUE
+000710          "＊＊＊　　類 似 品 マ ス タ ー ".
+000720     02  F              PIC X(30) VALUE
+000730          "プ ル ー フ リ ス ト　　＊＊＊".
+000740     02  F              PIC X(19) VALUE SPACE.
+000750     02  F              PIC X(5)  VALUE "DATE.".
+000760     02  M-YY           PIC Z9.
+000770     02  F              PIC X     VALUE "/".
+000780     02  M-MM           PIC Z9.
+000790     02  F              PIC X     VALUE "/".
+000800     02  M-DD           PIC Z9.
+000810     02  F              PIC X(15) VALUE SPACE.
+000820     02  F              PIC X(5)  VALUE "PAGE.".
+000830     02  WPCNT          PIC ZZZ9.
+000840 01  HEAD2.
+000850     02  M2-01          PIC N(05).
+000860     02  F              PIC X(39) VALUE SPACE.
+000870     02  M2-02          PIC N(05).
+000880 01  W-AREA.
+000890     02  ACT            PIC 9 VALUE ZERO.
+000900     02  OKC            PIC 9.
+000910     02  W-AREA1.
+000920         03  KBN        PIC 9.
+000930         03  W-HCD1     PIC 9(6).
+000940         03  W-AREA2.
+000950             04  W-A    PIC N(07).
+000960             04  W-B    PIC N(07).
+000970             04  W-C    PIC N(05).
+000980             04  W-D    PIC N(05).
+000990             04  W-HIM1 PIC N(24).
+001000     02  W-AREA3.
+001010         03  W-HCD2     PIC 9(6).
+001020         03  W-HIM2     PIC N(24).
+001030     02  W-AREA4.
+001040         03  W-KUBUN    PIC 9.
+001050         03  W-FROM     PIC 9(06) VALUE ZERO.
+001060         03  W-TO       PIC 9(06) VALUE ZERO.
+001070 01  W-STAT.
+001080     02  HTB            PIC X(2)  VALUE  "01".
+001090     02  SKP            PIC X(2)  VALUE  "06".
+001100     02  BTB            PIC X(2)  VALUE  "09".
+001110 COPY  LWMSG.
+001120 SCREEN      SECTION.
+001130 SD  C-CRT
+001140     END  STATUS  IS  ESTAT.
+001150 01  C-CLEAR.
+001160     02  C-CL     LINE   1  CLEAR SCREEN.
+001170     02  C-CL1    LINE  24  COLUMN  1  VALUE
+001180             "                              ".
+001190     02  C-CL2    LINE   6  COLUMN  25  PIC X(01) VALUE " ".
+001200     02  C-CL3    LINE   6  COLUMN  38  PIC X(06) VALUE " ".
+001210     02  C-CL4    LINE   6  COLUMN  50  PIC X(06) VALUE " ".
+001220     02  C-CL5    LINE  23  COLUMN  38  PIC X(01) VALUE " ".
+001230 01  C-CLE.
+001240     02  CLE-01  LINE  06  COLUMN  04  PIC  X(01)  VALUE " ".
+001250     02  CLE-02  LINE  08  COLUMN  02  PIC  N(07)  FROM W-SPA.
+001260     02  CLE-03  LINE  08  COLUMN  17  PIC  N(05)  FROM W-SPA.
+001270     02  C-CLE1.
+001280         03  CLE-04  LINE  09  COLUMN  06  PIC  X(06)
+001290                     VALUE "      ".
+001300         03  CLE-05  LINE  09  COLUMN  17  PIC  N(24)  FROM W-SPA.
+001310     02  C-CLE11.
+001320         03  CLE-06  LINE  11  COLUMN  02  PIC  N(07)  FROM W-SPA.
+001330         03  CLE-07  LINE  11  COLUMN  17  PIC  N(05)  FROM W-SPA.
+001340     02  C-CLE2.
+001350         03  CLE-08  LINE  12  COLUMN  06  PIC  X(06)
+001360                     VALUE "      ".
+001370         03  CLE-09  LINE  12  COLUMN  17  PIC  N(24)  FROM W-SPA.
+001380 01  C-ACP.
+001390     02  A-ACT    LINE   3  COLUMN  58   PIC 9
+001400          USING  ACT      CHECK  OVERFLOW  NO  IFC.
+001410     02  A-KBN    LINE   6  COLUMN  04   PIC 9
+001420          USING  KBN      CHECK  OVERFLOW  NO  IFC.
+001430     02  A-HCD1   LINE  09  COLUMN  06   PIC 9(06)
+001440          USING  W-HCD1   CHECK  OVERFLOW  NO  IFC.
+001450     02  A-HCD2   LINE  12  COLUMN  06   PIC 9(06)
+001460          USING  W-HCD2   CHECK  OVERFLOW  NO  IFC.
+001470     02  LINE   6.
+001480       03  A-KUBUN    COLUMN  25   PIC 9(01)
+001490            USING  W-KUBUN   CHECK  OVERFLOW  NO  IFC.
+001500       03  A-FROM     COLUMN  38   PIC 9(06)
+001510            USING  W-FROM    CHECK  OVERFLOW  NO  IFC.
+001520       03  A-TO       COLUMN  50   PIC 9(06)
+001530            USING  W-TO      CHECK  OVERFLOW  NO  IFC.
+001540     02  A-OKC    LINE  23  COLUMN  38   PIC 9
+001550          USING  OKC      CHECK  OVERFLOW  NO  IFC.
+001560 01  C-DSP.
+001570     02  D-A      LINE   8  COLUMN  02   PIC N(07)  FROM  W-A.
+001580     02  D-B      LINE  11  COLUMN  02   PIC N(07)  FROM  W-B.
+001590     02  D-C      LINE   8  COLUMN  17   PIC N(05)  FROM  W-C.
+001600     02  D-D      LINE  11  COLUMN  17   PIC N(05)  FROM  W-D.
+001610 01  C-DSP1.
+001620     02  D-HIM1   LINE  09  COLUMN  17   PIC N(24)  FROM  W-HIM1.
+001630     02  D-HIM2   LINE  12  COLUMN  17   PIC N(24)  FROM  W-HIM2.
+001640 01  C-PM.
+001650     02  LINE   1  COLUMN  17   PIC N(22) VALUE
+001660        NC"＊＊＊　類似品マスター　メンテナンス　＊＊＊".
+001670     02  LINE   3  COLUMN  17   PIC X(46) VALUE
+001680          "登録=1        削除=3 作表=4 終了=9　ACT   ﾘﾀｰﾝ".
+001690     02  LINE  23  COLUMN  22   PIC X(21) VALUE
+001700          "確認 OK=1 NO=9   ﾘﾀｰﾝ".
+001710 01  C-PM1.
+001720     02  LINE   5  CLEAR  LINE  TO 12.
+001730     02  LINE   6  COLUMN  17   PIC X(53) VALUE
+001740         "<  区分   の品名ｺｰﾄﾞ        より        まで打出し  >".
+001750 01  DISP-ERR-AREA  LINE 24.
+001760     02  INV-HIM.
+001770         03  COLUMN 1    VALUE
+001780             NC"品名ＩＮＤＥＸＥＤマスタ　未登録".
+001790 COPY  LSMSG.
+001800 PROCEDURE   DIVISION.
+001810****************************
+001820***  ﾒ ｲ ﾝ  R T N        ***
+001830****************************
+001840**
+001850 MR-RTN.
+001860     PERFORM  INIT-RTN  THRU   INIT-EX.
+001870     DISPLAY  C-CL C-PM.
+001880 MR-10.
+001890     ACCEPT   A-ACT.
+001900     DISPLAY  DISP-MSG-SPACE.
+001910     IF  ESTAT  NOT  =  HTB  AND  SKP
+001920            GO  TO  MR-10.
+001930     IF   ACT  =  1  OR  3    PERFORM    ENT-RTN THRU ENT-EX.
+001940     IF   ACT  =  4           PERFORM    LIS-RTN THRU LIS-EX.
+001950     IF   ACT  =  9           PERFORM    END-RTN THRU END-EX
+001960                                               STOP RUN.
+001970     GO   TO   MR-10.
+001980*********************************
+001990***   ｲﾆｼｬﾙ   R T N           ***
+002000*********************************
+002010**
+002020 INIT-RTN.
+002030     OPEN  I-O    JT-RUIJ
+002040     OPEN  INPUT  HI2-M.                                          I.010818
+002050*****OPEN  INPUT  HI-M.                                           D.010818
+002060     ACCEPT   HIZUKE  FROM  DATE.
+002070     MOVE  HI-YY     TO  M-YY.
+002080     MOVE  HI-MM     TO  M-MM.
+002090     MOVE  HI-DD     TO  M-DD.
+002100 INIT-EX.
+002110      EXIT.
+002120*********************************
+002130*     ﾄｳﾛｸ ｻｸｼﾞｮ  R T N       ***
+002140*********************************
+002150**
+002160 ENT-RTN.
+002170     CALL   "SJ500M".
+002180     DISPLAY  C-CLE.
+002190 ENT-10.
+002200     ACCEPT   A-KBN.
+002210     DISPLAY  DISP-MSG-SPACE.
+002220     IF  ESTAT       =  BTB     GO  TO ENT-EX.
+002230     IF  ESTAT  NOT  =  HTB  AND  SKP     GO  TO ENT-10.
+002240     IF  KBN    NOT  =   1   AND   2      GO  TO ENT-10.
+002250     IF  KBN    =    1
+002260         MOVE   NC"　親品名ＣＤ　"   TO   W-A
+002270         MOVE   NC"　子品名ＣＤ　"   TO   W-B
+002280         MOVE   NC"親品名　　"       TO   W-C
+002290         MOVE   NC"子品名　　"       TO   W-D
+002300     ELSE
+002310         MOVE   NC"変更元品名ＣＤ"   TO   W-A
+002320         MOVE   NC"変更先品名ＣＤ"   TO   W-B
+002330         MOVE   NC"変更元品名"       TO   W-C
+002340         MOVE   NC"変更先品名"       TO   W-D.
+002350     DISPLAY  C-DSP  C-CLE1  C-CLE2.
+002360 ENT-20.
+002370     ACCEPT   A-HCD1.
+002380     DISPLAY  DISP-MSG-SPACE.
+002390     IF  ESTAT       =  BTB     GO  TO ENT-10.
+002400     IF  ESTAT  NOT  =  HTB  AND  SKP     GO  TO ENT-20.
+002410*****MOVE   W-HCD1  TO   HI-KEY.                                  D.010818
+002420*****READ   HI-M         INVALID   GO  TO ENT-30.                 D.010818
+002430     MOVE   W-HCD1  TO   HI-MHCD HI-HCD.                          I.010818
+002440     READ   HI2-M        INVALID   GO  TO ENT-30.                 I.010818
+002450     MOVE   HI-NAME TO   W-HIM1.
+002460     DISPLAY   D-HIM1.
+002470     GO   TO   ENT-40.
+002480 ENT-30.
+002490     MOVE   SPACE   TO   W-HIM1.
+002500     DISPLAY CLE-05.
+002510     IF  ACT  =  3
+002520         GO TO ENT-40.
+002530     DISPLAY  INV-HIM.
+002540     GO TO ENT-20.
+002550 ENT-40.
+002560     ACCEPT   A-HCD2.
+002570     DISPLAY  DISP-MSG-SPACE.
+002580     IF  ESTAT       =  BTB     GO  TO ENT-20.
+002590     IF  ESTAT  NOT  =  HTB  AND  SKP     GO  TO ENT-40.
+002600*****MOVE   W-HCD2  TO   HI-KEY.                                  D.010818
+002610*****READ   HI-M         INVALID   GO  TO ENT-50.                 D.010818
+002620     MOVE   W-HCD2  TO   HI-MHCD HI-HCD.                          I.010818
+002630     READ   HI2-M        INVALID   GO  TO ENT-50.                 I.010818
+002640     MOVE   HI-NAME TO   W-HIM2.
+002650     DISPLAY   D-HIM2.
+002660     GO   TO   ENT-60.
+002670 ENT-50.
+002680     MOVE   SPACE   TO   W-HIM2.
+002690     DISPLAY CLE-09.
+002700     IF  ACT  =  3
+002710         GO TO ENT-60.
+002720     DISPLAY  INV-HIM.
+002730     GO TO ENT-40.
+002740 ENT-60.
+002750     IF  KBN  =  1
+002760         MOVE  10      TO  RUIJ-01
+002770         MOVE  W-HCD1  TO  RUIJ-02
+002780         MOVE  W-HCD2  TO  RUIJ-03
+002790     ELSE
+002800         MOVE  20      TO  RUIJ-01
+002810         MOVE  W-HCD1  TO  RUIJ-02
+002820         MOVE  W-HCD2  TO  RUIJ-03.
+002830     READ   JT-RUIJ     INVALID   GO  TO  ENT-70.
+002840     GO   TO   ENT-80.
+002850 ENT-70.
+002860     IF  ACT  NOT  =  1
+002870         DISPLAY  INV-M01
+002880         GO  TO  ENT-40.
+002890     IF  KBN   =  1               GO  TO  ENT-90.
+002900     GO  TO  ENT-100.
+002910 ENT-80.
+002920     IF  ACT  NOT  =  1           GO  TO  ENT-100.
+002930     DISPLAY  NOR-M01.
+002940     GO  TO  ENT-40.
+002950 ENT-90.
+002960     PERFORM  CHK-RTN  THRU  CHK-EX.
+002970     IF  CHK-SW  =  1
+002980         DISPLAY  NOR-M01
+002990         GO  TO  ENT-40.
+003000 ENT-100.
+003010     DISPLAY C-CL5.
+003020     ACCEPT  A-OKC.
+003030     IF  ESTAT       =  BTB       GO  TO  ENT-40.
+003040     IF  ESTAT  NOT  =  HTB  AND  SKP       GO  TO  ENT-100.
+003050     IF  OKC              =  9
+003060                DISPLAY  CAN-01  C-CLE  C-CL5
+003070                MOVE   ZERO   TO  KBN  W-HCD1  OKC
+003080                MOVE   SPACE  TO  W-AREA2
+003090                GO  TO  ENT-10.
+003100     IF   OKC       NOT  =  1          GO  TO  ENT-100.
+003110     PERFORM    GET-RTN   THRU    GET-EX.
+003120     DISPLAY  OK-01  C-CLE2  C-CL5
+003130     MOVE  ZERO   TO  W-HCD2  OKC
+003140     MOVE  SPACE  TO  W-HIM2.
+003150     GO   TO   ENT-40.
+003160 ENT-EX.
+003170     EXIT.
+003180************************************
+003190***    C H E C K     R T N       ***
+003200************************************
+003210**
+003220 CHK-RTN.
+003230     MOVE  ZERO    TO  CHK-SW.
+003240     MOVE  11      TO  RUIJ-01.
+003250     MOVE  W-HCD2  TO  RUIJ-02.
+003260     MOVE  ZERO    TO  RUIJ-03.
+003270     START JT-RUIJ KEY IS NOT < RUIJ-KEY INVALID
+003280           GO  TO  CHK-EX.
+003290 CHK-01.
+003300     READ  JT-RUIJ    NEXT  AT  END
+003310           GO  TO  CHK-EX.
+003320     IF  RUIJ-01  >  11          GO  TO  CHK-EX.
+003330     IF  RUIJ-02  >  W-HCD2      GO  TO  CHK-EX.
+003340     IF  RUIJ-02  NOT =  W-HCD2  GO  TO  CHK-01.
+003350     MOVE   1    TO   CHK-SW.
+003360 CHK-EX.
+003370     EXIT.
+003380******************************
+003390***   ﾘ ｽ ﾄ   R T N        ***
+003400******************************
+003410**
+003420 LIS-RTN.
+003430     DISPLAY  C-PM1.
+003440 LIS-00.
+003450     ACCEPT  A-KUBUN.
+003460     DISPLAY  DISP-MSG-SPACE.
+003470     IF  ESTAT       =  BTB     GO  TO  LIS-EX.
+003480     IF  ESTAT  NOT  =  HTB  AND  SKP     GO  TO  LIS-00.
+003490     IF  W-KUBUN  NOT =  1   AND   2      GO  TO  LIS-00.
+003500 LIS-01.
+003510     ACCEPT  A-FROM.
+003520     DISPLAY  DISP-MSG-SPACE.
+003530     IF  ESTAT       =  BTB     GO  TO  LIS-00.
+003540     IF  ESTAT  NOT  =  HTB  AND  SKP     GO  TO  LIS-01.
+003550 LIS-01A.
+003560     ACCEPT  A-TO.
+003570     DISPLAY  DISP-MSG-SPACE.
+003580     IF  ESTAT  =  BTB    GO  TO LIS-01.
+003590     IF  ESTAT  NOT  =   HTB  AND  SKP
+003600                GO  TO  LIS-01A.
+003610     IF  W-FROM  >  W-TO        GO  TO  LIS-01.
+003620 LIS-02.
+003630     DISPLAY C-CL5.
+003640     ACCEPT  A-OKC.
+003650     IF  ESTAT       =  BTB     GO  TO  LIS-01A.
+003660     IF  ESTAT  NOT  =  HTB  AND  SKP     GO  TO  LIS-02.
+003670     IF  OKC         =    9
+003680                MOVE  ZERO  TO  W-AREA4
+003690                DISPLAY  C-CL2  C-CL3  C-CL4  C-CL5
+003700                DISPLAY  CAN-01
+003710                GO  TO  LIS-00.
+003720     IF  OKC    NOT  =    1     GO  TO  LIS-02.
+003730     OPEN  OUTPUT  P-F.
+003740     MOVE  90    TO  LCNT.
+003750     MOVE   0    TO  PCNT.
+003760     IF  W-KUBUN  =  1
+003770         MOVE  10  TO  RUIJ-01  W-KBN
+003780     ELSE
+003790         MOVE  20  TO  RUIJ-01  W-KBN.
+003800     MOVE  W-FROM  TO  RUIJ-02.
+003810     MOVE  ZERO    TO  RUIJ-03.
+003820     START JT-RUIJ KEY  IS  NOT  <  RUIJ-KEY
+003830                    INVALID KEY    GO  TO  LIS-99.
+003840 LIS-03.
+003850     READ  JT-RUIJ  NEXT  AT  END    GO  TO  LIS-99.
+003860     IF  RUIJ-02   >    W-TO         GO  TO  LIS-99.
+003870     IF  RUIJ-01  NOT =  W-KBN       GO  TO  LIS-99.
+003880     IF  LCNT  NOT <  62
+003890         PERFORM  HEAD-RTN  THRU  HEAD-EX.
+003900     IF  RUIJ-01  =  10              GO  TO  LIS-04.
+003910*
+003920*****MOVE    RUIJ-02     TO    P1-01  HI-KEY.                     D.010818
+003930     MOVE    RUIJ-02     TO    P1-01  HI-MHCD HI-HCD.             I.010818
+003940     PERFORM  HIM-RTN  THRU  HIM-EX.
+003950     MOVE    HI-NAME     TO    P1-02.
+003960*****MOVE    RUIJ-03     TO    P1-03  HI-KEY.                     D.010818
+003970     MOVE    RUIJ-03     TO    P1-03  HI-MHCD HI-HCD.             I.010818
+003980     PERFORM  HIM-RTN  THRU  HIM-EX.
+003990     MOVE    HI-NAME     TO    P1-04.
+004000     MOVE    K15         TO    KCD1.
+004010     WRITE   P-R         AFTER 2.
+004020     MOVE    SPACE       TO  P-R.
+004030     ADD     2           TO  LCNT.
+004040     GO  TO  LIS-03.
+004050 LIS-04.
+004060     IF  RUIJ-02  NOT =  OLDKEY       GO  TO  LIS-05.
+004070     IF  LCNT         =  4            GO  TO  LIS-05.
+004080     MOVE    SPACE       TO    P1-02.
+004090*****MOVE    RUIJ-03     TO    P1-03  HI-KEY.                     D.010818
+004100     MOVE    RUIJ-03     TO    P1-03  HI-MHCD HI-HCD.             I.010818
+004110     PERFORM  HIM-RTN  THRU  HIM-EX.
+004120     MOVE    HI-NAME     TO    P1-04.
+004130     MOVE    K15         TO    KCD1.
+004140     WRITE   P-R         AFTER 1.
+004150     MOVE    SPACE       TO  P-R.
+004160     ADD     1           TO  LCNT.
+004170     MOVE    RUIJ-02     TO  OLDKEY.
+004180     GO  TO  LIS-03.
+004190 LIS-05.
+004200*****MOVE    RUIJ-02     TO    P1-01  HI-KEY.                     D.010818
+004210     MOVE    RUIJ-02     TO    P1-01  HI-MHCD HI-HCD.             I.010818
+004220     PERFORM  HIM-RTN  THRU  HIM-EX.
+004230     MOVE    HI-NAME     TO    P1-02.
+004240*****MOVE    RUIJ-03     TO    P1-03  HI-KEY.                     D.010818
+004250     MOVE    RUIJ-03     TO    P1-03  HI-MHCD HI-HCD.             I.010818
+004260     PERFORM  HIM-RTN  THRU  HIM-EX.
+004270     MOVE    HI-NAME     TO    P1-04.
+004280     MOVE    K15         TO    KCD1.
+004290     WRITE   P-R         AFTER 2.
+004300     MOVE    SPACE       TO  P-R.
+004310     ADD     2           TO  LCNT.
+004320     MOVE    RUIJ-02     TO  OLDKEY.
+004330     GO  TO  LIS-03.
+004340 LIS-99.
+004350     MOVE  ZERO  TO  W-AREA4.
+004360     DISPLAY  C-CL2  C-CL3  C-CL4  C-CL5
+004370     CLOSE  P-F.
+004380     IF  LCNT = 90
+004390         DISPLAY  ERR-02
+004400     ELSE
+004410         DISPLAY  OK-01.
+004420     GO  TO  LIS-00.
+004430 LIS-EX.
+004440     EXIT.
+004450*****************************
+004460***    G E T   R T N      ***
+004470*****************************
+004480**
+004490 GET-RTN.
+004500     IF    ACT    =    1    GO    TO    GET-R1.
+004510     IF    ACT    =    3    GO    TO    GET-R3.
+004520*
+004530*    W R I T E           *
+004540*
+004550 GET-R1.
+004560     IF  KBN  =  2          GO    TO    GET-R2.
+004570     MOVE  SPACE  TO  RUIJ-R.
+004580     INITIALIZE       RUIJ-R.
+004590     MOVE  10     TO  RUIJ-01.
+004600     MOVE  W-HCD1 TO  RUIJ-02.
+004610     MOVE  W-HCD2 TO  RUIJ-03.
+004620     PERFORM  WRI-RTN  THRU  WRI-EX.
+004630*
+004640     MOVE  SPACE  TO  RUIJ-R.
+004650     INITIALIZE       RUIJ-R.
+004660     MOVE  11     TO  RUIJ-01.
+004670     MOVE  W-HCD2 TO  RUIJ-02.
+004680     MOVE  W-HCD1 TO  RUIJ-03.
+004690     PERFORM  WRI-RTN  THRU  WRI-EX.
+004700     CALL  "CBLTCLS"  USING  JT-RUIJ.
+004710     GO  TO  GET-EX.
+004720 GET-R2.
+004730     MOVE  SPACE  TO  RUIJ-R.
+004740     INITIALIZE       RUIJ-R.
+004750     MOVE  20     TO  RUIJ-01.
+004760     MOVE  W-HCD1 TO  RUIJ-02.
+004770     MOVE  W-HCD2 TO  RUIJ-03.
+004780     PERFORM  WRI-RTN  THRU  WRI-EX.
+004790     CALL  "CBLTCLS"  USING  JT-RUIJ.
+004800     GO  TO  GET-EX.
+004810*
+004820*    D E L E T E         *
+004830*
+004840 GET-R3.
+004850     IF  KBN  =  2          GO    TO    GET-R4.
+004860     MOVE  10     TO  RUIJ-01.
+004870     MOVE  W-HCD1 TO  RUIJ-02.
+004880     MOVE  W-HCD2 TO  RUIJ-03.
+004890     PERFORM  DEL-RTN  THRU  DEL-EX.
+004900*
+004910     MOVE  11     TO  RUIJ-01.
+004920     MOVE  W-HCD2 TO  RUIJ-02.
+004930     MOVE  W-HCD1 TO  RUIJ-03.
+004940     PERFORM  DEL-RTN  THRU  DEL-EX.
+004950     CALL  "CBLTCLS"  USING  JT-RUIJ.
+004960     GO  TO  GET-EX.
+004970 GET-R4.
+004980     MOVE  20     TO  RUIJ-01.
+004990     MOVE  W-HCD1 TO  RUIJ-02.
+005000     MOVE  W-HCD2 TO  RUIJ-03.
+005010     PERFORM  DEL-RTN  THRU  DEL-EX.
+005020     CALL  "CBLTCLS"  USING  JT-RUIJ.
+005030     GO  TO  GET-EX.
+005040 GET-EX.
+005050     EXIT.
+005060*
+005070*****************************
+005080***   W R I T E   R T N   ***
+005090*****************************
+005100**
+005110 WRI-RTN.
+005120     MOVE  RUIJ-KEY  TO  ERR-K.
+005130     WRITE RUIJ-R      INVALID KEY
+005140               MOVE  "JT-RUIJ"  TO  ERR-F
+005150               MOVE  "W"        TO  ERR-M
+005160               PERFORM  ERR-RTN  THRU  ERR-EX.
+005170 WRI-EX.
+005180     EXIT.
+005190*
+005200*****************************
+005210***  D E L E T E  R T N   ***
+005220*****************************
+005230**
+005240 DEL-RTN.
+005250     MOVE  RUIJ-KEY  TO  ERR-K.
+005260     DELETE JT-RUIJ   INVALID KEY
+005270               MOVE  "JT-RUIJ"  TO  ERR-F
+005280               MOVE  "D"        TO  ERR-M
+005290               PERFORM  ERR-RTN  THRU  ERR-EX.
+005300 DEL-EX.
+005310     EXIT.
+005320*
+005330*****************************
+005340***    ﾐ ﾀﾞ ｼ  R T N      ***
+005350*****************************
+005360**
+005370 HEAD-RTN.
+005380     IF  LCNT  NOT =  90
+005390          MOVE   SPACE   TO   P-R
+005400          WRITE  P-R     AFTER  PAGE.
+005410     ADD   1   TO    PCNT.
+005420     MOVE  PCNT  TO  WPCNT.
+005430     IF  RUIJ-01  =  10
+005440         MOVE  NC"類似品"      TO  M1-01
+005450     ELSE
+005460         MOVE  NC"品名変更"    TO  M1-01.
+005470     MOVE   HEAD1    TO    P-R.
+005480     WRITE  P-R      AFTER  1.
+005490     MOVE   SPACE   TO     P-R.
+005500     IF  RUIJ-01  =  10
+005510         MOVE  NC"親品名"      TO  M2-01
+005520         MOVE  NC"子品名"      TO  M2-02
+005530     ELSE
+005540         MOVE  NC"変更元品名"  TO  M2-01
+005550         MOVE  NC"変更先品名"  TO  M2-02.
+005560     MOVE   HEAD2    TO    P-R.
+005570     WRITE  P-R   AFTER  2.
+005580     MOVE   SPACE   TO     P-R.
+005590     MOVE   4       TO     LCNT.
+005600 HEAD-EX.
+005610     EXIT.
+005620**************************
+005630***  H I M - R T N     ***
+005640**************************
+005650**
+005660 HIM-RTN.
+005670*****READ  HI-M  UNLOCK  INVALID                                  D.010818
+005680     READ  HI2-M  UNLOCK  INVALID                                 I.010818
+005690           MOVE SPACE   TO HI-NAME.
+005700 HIM-EX.
+005710     EXIT.
+005720****
+005730**************************
+005740***  ﾌ ｧ ｲ ﾙ  CLOSE    ***
+005750**************************
+005760**
+005770 END-RTN.
+005780     CLOSE   JT-RUIJ  HI2-M.                                      I.010818
+005790*****CLOSE   JT-RUIJ  HI-M.                                       D.010818
+005800 END-EX.
+005810     EXIT.
+005820****
+005830 COPY  LPMSG.
+

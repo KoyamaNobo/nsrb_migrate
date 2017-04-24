@@ -1,0 +1,2662 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. HMD210.
+000030*********************************************************
+000040*    PROGRAM         :  履物売上・値引入力              *
+000050*    SCREEN          :  SCHD01,SCHD11                   *
+000060*    COMPILE TYPE    :  COBOL                           *
+000070*    JS-SIGN         :  当月=0 , 翌月=1                 *
+000080*********************************************************
+000090 ENVIRONMENT DIVISION.
+000100 CONFIGURATION SECTION.
+000110 SOURCE-COMPUTER. SYSTEM3100.
+000120 OBJECT-COMPUTER. SYSTEM3100.
+000130 INPUT-OUTPUT SECTION.
+000140 FILE-CONTROL.
+000150     COPY LIBCSE.
+000160     SELECT T-M ASSIGN TO T1-MSD T2-MSD
+000170         ORGANIZATION INDEXED
+000180         ACCESS MODE RANDOM
+000190         RECORD KEY T-KEY
+000200         ALTERNATE RECORD KEY T-KEY2.
+000210*****SELECT HI-M ASSIGN TO HI-MSD                                 D.010802
+000220     SELECT HI-M ASSIGN TO HI1-MSD HI2-MSD                        I.010802
+000230         ORGANIZATION INDEXED
+000240         ACCESS MODE RANDOM
+000250         RECORD KEY HI-KEY                                        I.010802
+000260         ALTERNATE RECORD KEY HI-KEY2.                            I.010802
+000270*****    RECORD KEY HI-KEY.                                       D.010802
+000280*****SELECT TAZ-M ASSIGN TO TAZ-MSD                               D.070124
+000290*****    ACCESS MODE RANDOM                                       D.070124
+000300*****    ORGANIZATION INDEXED                                     D.070124
+000310*****    RECORD KEY TAZ-KEY                                       D.070124
+000320*****    FILE STATUS IS ERR-STAT.                                 D.070124
+000330     SELECT TC-M ASSIGN TO TC-MSD
+000340         ORGANIZATION INDEXED
+000350         ACCESS MODE RANDOM
+000360         RECORD KEY TC-KEY.
+000370     SELECT S-TRAN ASSIGN TO S-MSD
+000380         FILE STATUS IS ERR-STAT.
+000390     SELECT JCON ASSIGN TO F4-MSD
+000400         ORGANIZATION INDEXED
+000410         ACCESS MODE RANDOM
+000420         RECORD KEY JCON3-KEY
+000430         FILE STATUS IS ERR-STAT.
+000440*****SELECT JT-THTN ASSIGN TO F5-MSD                              D.010419
+000450     SELECT THTM ASSIGN TO THT1-MSD THT2-MSD                      I.010419
+000460         ORGANIZATION INDEXED
+000470         ACCESS MODE RANDOM
+000480         RECORD KEY THT-KEY                                       I.010419
+000490         ALTERNATE RECORD KEY THT-KEY2                            I.010419
+000500*****    RECORD KEY THTN-KEY                                      D.010419
+000510         FILE STATUS IS ERR-STAT.
+000520     SELECT OTHTM ASSIGN TO OTHT1-MSD OTHT2-MSD                   I.110407
+000530         ORGANIZATION INDEXED                                     I.110407
+000540         ACCESS MODE RANDOM                                       I.110407
+000550         RECORD KEY OTHT-KEY                                      I.110407
+000560         ALTERNATE RECORD KEY OTHT-KEY2                           I.110407
+000570         FILE STATUS IS ERR-STAT.                                 I.110407
+000580     SELECT HSMSF ASSIGN TO HSMS-MSD
+000590         ORGANIZATION INDEXED
+000600         ACCESS MODE DYNAMIC
+000610         RECORD KEY HSMS-KEY
+000620         FILE STATUS IS ERR-STAT.
+000630     SELECT HKBM  ASSIGN TO HKB-MSD
+000640         ORGANIZATION INDEXED
+000650         ACCESS MODE RANDOM
+000660         RECORD KEY HKB-KEY
+000670         FILE STATUS IS ERR-STAT.
+000680     SELECT TSKF  ASSIGN TO TSK-MSD                               I.000922
+000690         ORGANIZATION INDEXED                                     I.000922
+000700         ACCESS MODE RANDOM                                       I.000922
+000710         RECORD KEY TSK-KEY                                       I.000922
+000720         FILE STATUS IS ERR-STAT.                                 I.000922
+000730     SELECT HUH-M ASSIGN TO HUH-MSD                               I.020215
+000740         ORGANIZATION INDEXED                                     I.020215
+000750         ACCESS MODE RANDOM                                       I.020215
+000760         RECORD KEY HUH-KEY                                       I.020215
+000770         FILE STATUS IS ERR-STAT.                                 I.020215
+000780 I-O-CONTROL.
+000790     APPLY SHARED-MODE ON T-M
+000800     APPLY SHARED-MODE ON JCON
+000810*****APPLY SHARED-MODE ON JT-THTN                                 D.010419
+000820     APPLY SHARED-MODE ON THTM                                    I.010419
+000830     APPLY SHARED-MODE ON OTHTM                                   I.110407
+000840     APPLY SHARED-MODE ON HI-M
+000850*****APPLY SHARED-MODE ON TAZ-M                                   D.070124
+000860     APPLY SHARED-MODE ON TC-M
+000870     APPLY SHARED-MODE ON HSMSF
+000880     APPLY SHARED-MODE ON HKBM
+000890     APPLY SHARED-MODE ON TSKF                                    I.000922
+000900     APPLY SHARED-MODE ON HUH-M                                   I.020215
+000910     APPLY SHARED-MODE ON M-DATE.
+000920 DATA DIVISION.
+000930 FILE SECTION.
+000940     COPY LIBFDD.
+000950     COPY LITM.
+000960     COPY LIHIM.
+000970     COPY LITCM.
+000980     COPY LIHSMS.
+000990     COPY LIHKBM.
+001000*****COPY LTHTN.                                                  D.010419
+001010     COPY LITHTM.                                                 I.010419
+001020     COPY LIOTHT.                                                 I.110407
+001030     COPY L-JCON.
+001040     COPY LITSKF.                                                 I.000922
+001050     COPY LIHUHM.                                                 I.020215
+001060*FD  TAZ-M                                                        D.070124
+001070*****BLOCK  8 RECORDS                                             D.020821
+001080*****BLOCK  6 RECORDS                                             D.070124
+001090*****LABEL RECORD IS STANDARD                                     D.070124
+001100*****VALUE OF IDENTIFICATION "TAZM".                              D.070124
+001110*01  TAZ-R.                                                       D.070124
+001120*****02  TAZ-KEY.                                                 D.070124
+001130*****  03  TAZ-TCD      PIC  9(004).                              D.070124
+001140*****  03  TAZ-HCD      PIC  9(006).                              D.070124
+001150*****02  TAZ-ZS         PIC S9(005).                              D.020821
+001160*****02  TAZ-AS         PIC S9(005).                              D.020821
+001170*****02  F              PIC  X(006).                              D.020821
+001180*****02  F              PIC  X(026).                              D.070124
+001190*****02  TAZ-NG         PIC  9(006).                              D.070124
+001200 FD  S-TRAN
+001210     BLOCK  2 RECORDS
+001220     LABEL RECORD IS STANDARD
+001230     VALUE OF IDENTIFICATION "STRAN".
+001240 01  S-R.
+001250     02  S-DNO          PIC  9(006).
+001260     02  S-GNO          PIC  9(001).
+001270     02  S-DATE         PIC  9(008).
+001280     02  S-TCD          PIC  9(004).
+001290     02  F              PIC  X(107).
+001300     02  S-DHC          PIC  9(001).
+001310     02  S-SNC          PIC  9(001).
+001320 WORKING-STORAGE SECTION.
+001330 77  JS-SIGN            PIC  9(001).                              I.160907
+001340 77  W-FILE             PIC  X(013).
+001350 77  W-END              PIC  9(001) VALUE 0.
+001360 77  CHK                PIC  9(001) VALUE 0.
+001370 77  W-INV              PIC  9(001) VALUE 0.
+001380 77  W-ADV              PIC  9(001) VALUE 0.
+001390 01  ERR-STAT           PIC  X(002).
+001400 01  W-SR.
+001410     02  W-DNO          PIC  9(006).
+001420     02  W-GNO          PIC  9(001).
+001430     02  W-DATE         PIC  9(008).
+001440     02  W-TCD          PIC  9(004).
+001450     02  W-DT1          PIC  X(107).
+001460     02  W-DT2   REDEFINES W-DT1.
+001470       03  W-ZD1.
+001480         04  W-HCD      PIC  9(006).
+001490         04  W-SIZ      PIC  9(001).
+001500         04  W-SUS.
+001510           05  W-SUSD  OCCURS  10.
+001520             06  W-SU   PIC S9(004)  COMP-3.
+001530         04  W-SUT      PIC S9(005).
+001540         04  W-BT       PIC S9(005).
+001550       03  W-KIN        PIC S9(008).
+001560       03  W-CSC        PIC  9(001).
+001570       03  W-DC         PIC  9(001).
+001580       03  W-FT         PIC  9(005).
+001590       03  W-CCD        PIC  9(003).
+001600       03  W-ZD2.
+001610         04  W-BC1      PIC  9(002).
+001620         04  W-BC2.
+001630           05  W-BC21   PIC  9(001).
+001640           05  W-BC22   PIC  9(001).
+001650         04  W-BC3      PIC  9(002).
+001660         04  W-SOK      PIC  9(001).
+001670       03  W-TC2        PIC  9(002).
+001680       03  W-FKC        PIC  9(002).
+001690       03  W-HSC        PIC  9(001).
+001700       03  W-KOSU       PIC  9(003).
+001710       03  W-FRC        PIC  9(001).
+001720       03  W-TCD2       PIC  9(004).
+001730       03  W-BIK        PIC  X(010).
+001740       03  W-SDT        PIC  9(008).
+001750       03  W-BMC        PIC  9(002).                              I.020517
+001760       03  W-BMNO       PIC  9(001).                              I.020517
+001770       03  W-USC        PIC  9(001).                              I.040324
+001780*****  03  F            PIC  X(001).                              D.040324
+001790*****  03  F            PIC  X(004).                              D.020517
+001800     02  W-DHC          PIC  9(001).
+001810     02  W-UNC          PIC  9(001).
+001820 01  W-ASR.
+001830     02  W-AS    OCCURS   6  PIC  X(128).
+001840 01  W-BR.
+001850     02  W-BI           PIC  N(024).
+001860     02  W-HANO         PIC  9(006).                              I.081222
+001870     02  F              PIC  X(030).                              I.081222
+001880*****02  W-HANO.                                                  D.081222
+001890*****  03  W-HA    OCCURS   6  PIC  9(006).                       D.081222
+001900     02  W-TAX          PIC S9(007).
+001910     02  W-UZZ          PIC S9(007).
+001920     02  W-UZ           PIC S9(009).
+001930 01  W-ASD.
+001940     02  W-SD    OCCURS  10  PIC  9(001).
+001950 01  W-DATA.
+001960     02  W-L.
+001970       03  W-L1         PIC  9(002).
+001980       03  W-L2         PIC  9(002).
+001990       03  W-L3         PIC  9(002).
+002000     02  W-C            PIC S9(002).
+002010     02  W-GSUT         PIC S9(006).
+002020     02  W-UNCD         PIC  9(001).
+002030     02  W-RC           PIC  9(001).
+002040     02  W-SC           PIC  9(002).
+002050     02  W-DMM          PIC  9(001).
+002060     02  W-DNOD         PIC  9(006).
+002070     02  W-DNOO         PIC  9(006).
+002080     02  W-NGP          PIC  9(008).
+002090     02  W-NGPD  REDEFINES W-NGP.
+002100       03  W-NGD.
+002110         04  W-ND       PIC  9(004).
+002120         04  W-NDD   REDEFINES W-ND.
+002130           05  W-ND1    PIC  9(002).
+002140           05  W-ND2    PIC  9(002).
+002150         04  W-GD       PIC  9(002).
+002160       03  W-PD         PIC  9(002).
+002170     02  W-NGPSD REDEFINES W-NGP.
+002180       03  F            PIC  9(002).
+002190       03  W-NGPS       PIC  9(006).
+002200     02  W-TCDD         PIC  9(004).
+002210     02  W-TCDN         PIC  9(004).
+002220     02  W-CCDD         PIC  9(003).
+002230     02  W-HCDD         PIC  9(006).
+002240     02  W-HCDO         PIC  9(006).                              I.010419
+002250     02  W-CSCD         PIC  9(001).
+002260     02  W-HNOD         PIC  9(006).                              I.081222
+002270*****02  W-HNOD.                                                  D.081222
+002280*****  03  W-HN1        PIC  9(006).                              D.081222
+002290*****  03  W-HN2        PIC  9(006).                              D.081222
+002300*****  03  W-HN3        PIC  9(006).                              D.081222
+002310*****  03  W-HN4        PIC  9(006).                              D.081222
+002320*****  03  W-HN5        PIC  9(006).                              D.081222
+002330*****  03  W-HN6        PIC  9(006).                              D.081222
+002340     02  W-DCD          PIC  9(001).
+002350     02  W-DCC          PIC  9(001).
+002360     02  W-ZC           PIC  9(001).
+002370*****02  W-CNA          PIC  N(024).                              D.020425
+002380     02  W-CNG.
+002390       03  W-CN         PIC  9(004).
+002400       03  W-CND   REDEFINES W-CN.
+002410         04  W-CN1      PIC  9(002).
+002420         04  W-CN2      PIC  9(002).
+002430       03  W-CG         PIC  9(002).
+002440     02  W-SNGD  REDEFINES W-CNG.
+002450       03  F            PIC  9(002).
+002460       03  W-CNGS       PIC  9(004).
+002470     02  W-HSCD         PIC  9(001).
+002480     02  W-HNC          PIC  9(001).
+002490     02  W-HNCD         PIC  9(001).
+002500     02  W-SCD          PIC  9(001).
+002510     02  W-KOSUR        PIC  9(003).
+002520     02  WK-TAN         PIC S9(005).
+002530     02  W-FRCD         PIC  9(001).
+002540     02  W-DTW1         PIC  9(003).
+002550     02  W-DTW2         PIC  9(001).
+002560     02  W-SDTD         PIC  9(008).
+002570     02  W-SDTM  REDEFINES W-SDTD.
+002580       03  W-SDTNG.
+002590         04  W-SDTN     PIC  9(004).
+002600         04  W-SDTG     PIC  9(002).
+002610       03  W-SDTP       PIC  9(002).
+002620     02  W-HMN          PIC  9(006).
+002630     02  WK-SCD         PIC  9(001).
+002640     02  WK-DC          PIC  9(001).
+002650     02  WK-BI          PIC  N(024).
+002660     02  W-EC           PIC  9(001).
+002670     02  W-DEL          PIC  9(001).
+002680     02  W-RCD          PIC  9(001).
+002690     02  CNT            PIC  9(001).
+002700     02  W-HC           PIC  9(001).                              I.011012
+002710     02  W-LD           PIC  9(006).                              I.020404
+002720     02  W-RCB          PIC  9(001).                              I.020404
+002730     02  W-LB           PIC  9(006).                              I.020404
+002740     02  W-DSPC         PIC  9(001).                              I.020404
+002750*****02  W-LD.                                                    D.020404
+002760*****  03  W-L1D        PIC  9(002).                              D.020404
+002770*****  03  W-L2D        PIC  9(002).                              D.020404
+002780*****  03  W-L3D        PIC  9(002).                              D.020404
+002790*****02  W-CSN          PIC  N(003).                              D.020405
+002800     02  W-DKIN         PIC S9(008).
+002810     02  W-SDATE        PIC  9(008).                              I.000922
+002820     02  W-HIC          PIC  9(001).                              I.020214
+002830     02  W-FTD          PIC  9(005).                              I.020215
+002840     02  W-TCHK         PIC  9(001).                              I.110407
+002850     COPY LSTAT.
+002860 SCREEN SECTION.
+002870 SD  C-CRT
+002880     END STATUS IS ESTAT.
+002890 01  C-CLEAR.
+002900     02  LINE   1  CLEAR SCREEN.
+002910 01  C-MID.
+002920     02  LINE   3  COLUMN  15  PIC  N(022) VALUE
+002930          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002940     02  LINE   4  COLUMN  15  PIC  N(022) VALUE
+002950          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002960     02  LINE   5  COLUMN  15  PIC  N(022) VALUE
+002970          NC"＊＊＊　　　　　　　　　　　　　　　　＊＊＊".
+002980     02  LINE   6  COLUMN  15  PIC  N(022) VALUE
+002990          NC"＊＊＊　　履物売上・値引伝票　入力　　＊＊＊".
+003000     02  LINE   7  COLUMN  15  PIC  N(022) VALUE
+003010          NC"＊＊＊　　　　　　　　　　　　　　　　＊＊＊".
+003020     02  LINE   8  COLUMN  15  PIC  N(022) VALUE
+003030          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+003040     02  LINE   9  COLUMN  15  PIC  N(022) VALUE
+003050          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+003060     02  LINE  15  COLUMN  26  PIC  X(022) VALUE
+003070          "売上=0 , 値引=1   ﾘﾀｰﾝ".
+003080 01  C-ACP.
+003090     02  A-UNC   LINE  15  COLUMN  43  PIC  9(001)
+003100          USING W-UNCD  CHECK OVERFLOW NO IFC.
+003110*
+003120     02  LINE   1.
+003130       03  AU-NGP   COLUMN  16  PIC  9(006)
+003140            USING W-NGPS  CHECK OVERFLOW NO IFC.
+003150       03  AU-HMN   COLUMN  30  PIC  9(006)
+003160            USING W-HMN   CHECK OVERFLOW NO IFC.
+003170       03  AU-SOK   COLUMN  42  PIC  9(001)
+003180            USING W-SCD   CHECK OVERFLOW NO IFC.
+003190*****  03  AU-HN1   COLUMN  68  PIC  9(006)                       D.081222
+003200*****       USING W-HN1   CHECK OVERFLOW NO IFC.                  D.081222
+003210*****  03  AU-HN2   COLUMN  75  PIC  9(006)                       D.081222
+003220*****       USING W-HN2   CHECK OVERFLOW NO IFC.                  D.081222
+003230     02  LINE   2.
+003240*****  03  AU-TCD   COLUMN   8  PIC  9(004)                       D.020405
+003250       03  AU-TCD   COLUMN   6  PIC  9(004)                       I.020405
+003260            USING W-TCDD  CHECK OVERFLOW NO IFC.
+003270*****  03  AU-HN3   COLUMN  68  PIC  9(006)                       D.081222
+003280*****       USING W-HN3   CHECK OVERFLOW NO IFC.                  D.081222
+003290*****  03  AU-HN4   COLUMN  75  PIC  9(006)                       D.081222
+003300*****       USING W-HN4   CHECK OVERFLOW NO IFC.                  D.081222
+003310     02  LINE   3.
+003320*****  03  AU-CCD   COLUMN   8  PIC  9(003)                       D.020405
+003330       03  AU-CCD   COLUMN   6  PIC  9(003)                       I.020405
+003340            USING W-CCDD  CHECK OVERFLOW NO IFC.
+003350*****  03  AU-CSC   COLUMN  64  PIC  9(001)                       D.020405
+003360       03  AU-CSC   COLUMN  65  PIC  9(001)                       I.020405
+003370            USING W-CSCD  CHECK OVERFLOW NO IFC.
+003380*****  03  AU-HN5   COLUMN  68  PIC  9(006)                       D.081222
+003390*****       USING W-HN5   CHECK OVERFLOW NO IFC.                  D.081222
+003400*****  03  AU-HN6   COLUMN  75  PIC  9(006)                       D.081222
+003410*****       USING W-HN6   CHECK OVERFLOW NO IFC.                  D.081222
+003420     02  LINE W-L1.
+003430       03  AU-DC    COLUMN   4  PIC  9(001)
+003440            USING W-DC    CHECK OVERFLOW NO IFC.
+003450       03  AU-HCD   COLUMN  11  PIC  9(006)
+003460            USING W-HCD   CHECK OVERFLOW NO IFC.
+003470       03  AU-BIK   COLUMN  71  PIC  X(010)
+003480            USING W-BIK   CHECK OVERFLOW NO IFC.
+003490     02  LINE W-L3.
+003500       03  AU-SIZ   COLUMN   1  PIC  9(001)
+003510            USING W-SIZ   CHECK OVERFLOW NO IFC.
+003520       03  AU-SU    COLUMN W-C  PIC S9(004)
+003530            USING W-SU(W-SC) CHECK OVERFLOW NO IFC.
+003540       03  AU-SU1   COLUMN W-C  PIC S9(003)
+003550            USING W-SU(W-SC) CHECK OVERFLOW NO IFC.
+003560       03  AU-SUT   COLUMN  60  PIC S9(005)
+003570            USING W-SUT   CHECK OVERFLOW NO IFC.
+003580       03  AU-BT    COLUMN  67  PIC  9(005)
+003590            USING W-BT    CHECK OVERFLOW NO IFC.
+003600       03  AU-KIN   COLUMN  73  PIC S9(007)
+003610            USING W-KIN   CHECK OVERFLOW NO IFC.
+003620     02  AU-BI    LINE  22  COLUMN   6  PIC  N(024)
+003630          USING W-BI    CHECK OVERFLOW NO IFC.
+003640     02  LINE  23.
+003650       03  AU-KOSU  COLUMN   6  PIC  9(003)
+003660            USING W-KOSUR CHECK OVERFLOW NO IFC.
+003670       03  AU-HSC   COLUMN  17  PIC  9(001)
+003680            USING W-HSCD  CHECK OVERFLOW NO IFC.
+003690       03  AU-FRC   COLUMN  24  PIC  9(001)
+003700            USING W-FRCD  CHECK OVERFLOW NO IFC.
+003710       03  AU-SDT   COLUMN  33  PIC  9(008)
+003720            USING W-SDTD  CHECK OVERFLOW NO IFC.
+003730       03  AU-DMM   COLUMN  63  PIC  9(001)
+003740            USING W-DMM   CHECK OVERFLOW NO IFC.
+003750*
+003760     02  AN-NGP   LINE   4  COLUMN   8  PIC  9(006)
+003770          USING W-NGPS  CHECK OVERFLOW NO IFC.
+003780     02  AN-TCD   LINE   5  COLUMN   8  PIC  9(004)
+003790          USING W-TCDD  CHECK OVERFLOW NO IFC.
+003800*****02  AN-CSC   LINE   5  COLUMN  71  PIC  9(001)               D.020405
+003810     02  AN-CSC   LINE   5  COLUMN  75  PIC  9(001)               I.020405
+003820          USING W-CSCD  CHECK OVERFLOW NO IFC.
+003830     02  LINE W-L1.
+003840       03  AN-HCD   COLUMN  01  PIC  9(006)
+003850            USING W-HCD  CHECK OVERFLOW NO IFC.
+003860       03  AN-SUT   COLUMN  58  PIC S9(005)
+003870            USING W-SUT  CHECK OVERFLOW NO IFC.
+003880       03  AN-BT    COLUMN  65  PIC S9(004)
+003890            USING W-BT   CHECK OVERFLOW NO IFC.
+003900       03  AN-KIN   COLUMN  71  PIC S9(008)
+003910            USING W-KIN   CHECK OVERFLOW NO IFC.
+003920     02  AN-BI    LINE  15  COLUMN  08  PIC  N(024)
+003930          USING W-BI    CHECK OVERFLOW NO IFC.
+003940     02  AN-HSC   LINE  16  COLUMN  12  PIC  9(001)
+003950          USING W-HSCD  CHECK OVERFLOW NO IFC.
+003960     02  AN-SDT   LINE  17  COLUMN   8  PIC  9(008)
+003970            USING W-SDTD  CHECK OVERFLOW NO IFC.
+003980     02  AN-DMM   LINE  20  COLUMN  46  PIC  9(001)
+003990          USING W-DMM   CHECK OVERFLOW NO IFC.
+004000*
+004010     02  A-CHK   LINE  24  COLUMN  55  PIC  9(001)
+004020          USING CHK     CHECK OVERFLOW NO IFC.
+004030 01  C-DSP.
+004040     02  DU-SNA   LINE   1  COLUMN  44  PIC  N(006) FROM
+004050          JCON3-03.
+004060     02  DU-TNA   LINE   2  COLUMN  11  PIC  N(026) FROM  T-NAME. I.020405
+004070     02  DU-CNA   LINE   3  COLUMN  11  PIC  N(026) FROM  TC-NAME.I.020405
+004080*****02  DU-TNA   LINE   2  COLUMN  13  PIC  N(024) FROM  T-NAME. D.020405
+004090*****02  DU-CNA   LINE   3  COLUMN  13  PIC  N(024) FROM  TC-NAME.D.020405
+004100     02  LINE W-L1.
+004110       03  DU-HNA   COLUMN  18  PIC  N(024)    FROM  HI-NAME.
+004120       03  DU-SZM   COLUMN  18  PIC  N(006)    VALUE
+004130            NC"消費税調整分".
+004140     02  LINE W-L2.
+004150       03  DU-S1.
+004160*****    04  COLUMN   3  PIC  X(005) VALUE "３号 ".               D.081222
+004170*****    04  COLUMN   9  PIC  X(005) VALUE "２号 ".               D.081222
+004180*****    04  COLUMN  15  PIC  X(005) VALUE "１号 ".               D.081222
+004190*****    04  COLUMN  21  PIC  X(005) VALUE "０号 ".               D.081222
+004200*****    04  COLUMN  27  PIC  X(005) VALUE " 中　".               D.081222
+004210*****    04  COLUMN  33  PIC  X(005) VALUE " 大　".               D.081222
+004220*****    04  COLUMN  39  PIC  X(005) VALUE "特大 ".               D.081222
+004230         04  COLUMN   3  PIC  X(005) VALUE "     ".               I.081222
+004240         04  COLUMN   9  PIC  X(005) VALUE "     ".               I.081222
+004250         04  COLUMN  15  PIC  X(005) VALUE " SS  ".               I.081222
+004260         04  COLUMN  21  PIC  X(005) VALUE "  S  ".               I.081222
+004270         04  COLUMN  27  PIC  X(005) VALUE "  M  ".               I.081222
+004280         04  COLUMN  33  PIC  X(005) VALUE "  L  ".               I.081222
+004290         04  COLUMN  39  PIC  X(005) VALUE " LL  ".               I.081222
+004300         04  COLUMN  45  PIC  X(004) VALUE "28.0".
+004310         04  COLUMN  50  PIC  X(004) VALUE "29.0".
+004320         04  COLUMN  55  PIC  X(004) VALUE "30.0".
+004330       03  DU-S2.
+004340         04  COLUMN   3  PIC  X(005) VALUE "12.5 ".
+004350         04  COLUMN   9  PIC  X(005) VALUE "13.0 ".
+004360         04  COLUMN  15  PIC  X(005) VALUE "13.5 ".
+004370         04  COLUMN  21  PIC  X(005) VALUE "14.0 ".
+004380         04  COLUMN  27  PIC  X(005) VALUE "15.0 ".
+004390         04  COLUMN  33  PIC  X(005) VALUE "16.0 ".
+004400         04  COLUMN  39  PIC  X(005) VALUE "17.0 ".
+004410         04  COLUMN  45  PIC  X(004) VALUE "18.0".
+004420         04  COLUMN  50  PIC  X(004) VALUE "19.0".
+004430         04  COLUMN  55  PIC  X(004) VALUE "20.0".
+004440       03  DU-S3.
+004450         04  COLUMN   3  PIC  X(005) VALUE "21.0 ".
+004460         04  COLUMN   9  PIC  X(005) VALUE "21.5 ".
+004470         04  COLUMN  15  PIC  X(005) VALUE "22.0 ".
+004480         04  COLUMN  21  PIC  X(005) VALUE "22.5 ".
+004490         04  COLUMN  27  PIC  X(005) VALUE "23.0 ".
+004500         04  COLUMN  33  PIC  X(005) VALUE "23.5 ".
+004510         04  COLUMN  39  PIC  X(005) VALUE "24.0 ".
+004520         04  COLUMN  45  PIC  X(004) VALUE "24.5".
+004530         04  COLUMN  50  PIC  X(004) VALUE "25.0".
+004540         04  COLUMN  55  PIC  X(004) VALUE "    ".
+004550       03  DU-S4.
+004560         04  COLUMN   3  PIC  X(005) VALUE "24.0 ".
+004570         04  COLUMN   9  PIC  X(005) VALUE "24.5 ".
+004580         04  COLUMN  15  PIC  X(005) VALUE "25.0 ".
+004590         04  COLUMN  21  PIC  X(005) VALUE "25.5 ".
+004600         04  COLUMN  27  PIC  X(005) VALUE "26.0 ".
+004610         04  COLUMN  33  PIC  X(005) VALUE "26.5 ".
+004620         04  COLUMN  39  PIC  X(005) VALUE "27.0 ".
+004630         04  COLUMN  45  PIC  X(004) VALUE "27.5".
+004640         04  COLUMN  50  PIC  X(004) VALUE "    ".
+004650         04  COLUMN  55  PIC  X(004) VALUE "    ".
+004660     02  LINE W-L3.
+004670       03  DU-SU    COLUMN W-C  PIC ZZZZ-     FROM  W-SU(W-SC).
+004680       03  DU-SU1   COLUMN W-C  PIC ZZZ-      FROM  W-SU(W-SC).
+004690       03  DU-SUT   COLUMN  60  PIC ZZZZZ-    FROM  W-SUT.
+004700       03  DU-BT    COLUMN  67  PIC ZZZZZ     FROM  W-BT.
+004710       03  DU-KIN   COLUMN  73  PIC ZZZZZZZ-  FROM  W-KIN.
+004720     02  LINE  22.
+004730       03  DU-GSUT  COLUMN  58  PIC ZZZ,ZZZ-  FROM  W-GSUT.
+004740     02  LINE  23.
+004750       03  DU-KOSU  COLUMN   6  PIC ZZ9       FROM  W-KOSUR.
+004760*
+004770*****02  DN-TNA   LINE   5  COLUMN  13  PIC  N(024) FROM  T-NAME. D.020405
+004780*****02  DN-CSN   LINE   5  COLUMN  73  PIC  N(003) FROM  W-CSN.  D.020405
+004790     02  DN-TNA   LINE   5  COLUMN  13  PIC  N(026) FROM  T-NAME. I.020405
+004800     02  LINE W-L1.
+004810       03  DN-HNA   COLUMN   8  PIC  N(024)    FROM  HI-NAME.
+004820       03  DN-SUT   COLUMN  57  PIC ZZZZZZ-    FROM  W-SUT.
+004830       03  DN-BT    COLUMN  65  PIC ZZZZ-      FROM  W-BT.
+004840       03  DN-KIN   COLUMN  71  PIC ZZZZZZZZ-  FROM  W-KIN.
+004850     02  DN-DKIN.
+004860       03  LINE  14  COLUMN  69  PIC ZZ,ZZZ,ZZ9-  FROM  W-DKIN.
+004870 01  C-SPC.
+004880     02  SU-HNO.
+004890       03  LINE   1.
+004900         04  SU-DATE  COLUMN  16  PIC  X(006) VALUE "      ".
+004910         04  SU-HMN   COLUMN  30  PIC  X(006) VALUE "      ".
+004920         04  SU-SOK   COLUMN  42  PIC  X(014) VALUE
+004930              "            ".
+004940         04  SU-HNM   COLUMN  56  PIC  X(010) VALUE "          ".
+004950*****    04  SU-HN1   COLUMN  68  PIC  X(006) VALUE "      ".     D.081222
+004960*****    04  SU-HN2   COLUMN  75  PIC  X(006) VALUE "      ".     D.081222
+004970*****  03  LINE  2.                                               D.081222
+004980*****    04  SU-HN3   COLUMN  68  PIC  X(006) VALUE "      ".     D.081222
+004990*****    04  SU-HN4   COLUMN  75  PIC  X(006) VALUE "      ".     D.081222
+005000*****  03  LINE  3.                                               D.081222
+005010*****    04  SU-HN5   COLUMN  68  PIC  X(006) VALUE "      ".     D.081222
+005020*****    04  SU-HN6   COLUMN  75  PIC  X(006) VALUE "      ".     D.081222
+005030     02  SU-CNA   LINE   3.
+005040       03  COLUMN   6  PIC  X(003) VALUE "   ".                   I.020405
+005050       03  COLUMN  11  PIC  X(052) VALUE                          I.020405
+005060           "                                                    ".I.020405
+005070*****  03  COLUMN   8  PIC  X(003) VALUE "   ".                   D.020405
+005080*****  03  COLUMN  13  PIC  X(048) VALUE                          D.020405
+005090*****       "                                                ".   D.020405
+005100     02  SU-D1    LINE W-L1.
+005110       03  COLUMN   4  PIC  X(001) VALUE " ".
+005120       03  COLUMN  11  PIC  X(006) VALUE "     ".
+005130       03  COLUMN  18  PIC  X(048) VALUE
+005140            "                                                ".
+005150       03  SU-BIK   COLUMN  71  PIC  X(010) VALUE "          ".
+005160     02  SU-D2    LINE W-L2.
+005170       03  COLUMN   3  PIC  X(005) VALUE "     ".
+005180       03  COLUMN   9  PIC  X(005) VALUE "     ".
+005190       03  COLUMN  15  PIC  X(005) VALUE "     ".
+005200       03  COLUMN  21  PIC  X(005) VALUE "     ".
+005210       03  COLUMN  27  PIC  X(005) VALUE "     ".
+005220       03  COLUMN  33  PIC  X(005) VALUE "     ".
+005230       03  COLUMN  39  PIC  X(005) VALUE "     ".
+005240       03  COLUMN  45  PIC  X(004) VALUE "    ".
+005250       03  COLUMN  50  PIC  X(004) VALUE "    ".
+005260       03  COLUMN  55  PIC  X(004) VALUE "    ".
+005270     02  SU-D3    LINE W-L3.
+005280       03  SU-D31.
+005290         04  COLUMN   1  PIC  X(001) VALUE " ".
+005300         04  COLUMN   3  PIC  X(005) VALUE "     ".
+005310         04  COLUMN   9  PIC  X(005) VALUE "     ".
+005320         04  COLUMN  15  PIC  X(005) VALUE "     ".
+005330         04  COLUMN  21  PIC  X(005) VALUE "     ".
+005340         04  COLUMN  27  PIC  X(005) VALUE "     ".
+005350         04  COLUMN  33  PIC  X(005) VALUE "     ".
+005360         04  COLUMN  39  PIC  X(005) VALUE "     ".
+005370         04  COLUMN  45  PIC  X(004) VALUE "    ".
+005380         04  COLUMN  50  PIC  X(004) VALUE "    ".
+005390         04  COLUMN  55  PIC  X(004) VALUE "    ".
+005400       03          COLUMN  60  PIC  X(006) VALUE "      ".
+005410       03  SU-BT    COLUMN  67  PIC  X(005) VALUE "     ".
+005420       03  SU-KIN   COLUMN  73  PIC  X(008) VALUE "        ".
+005430     02  LINE  23.
+005440       03  SU-KOSU  COLUMN   6  PIC  X(003) VALUE "   ".
+005450       03  SU-HSC   COLUMN  17  PIC  X(001) VALUE " ".
+005460       03  SU-FRC   COLUMN  24  PIC  X(001) VALUE " ".
+005470*
+005480     02  SN-DS    LINE W-L1.
+005490       03  COLUMN  01  PIC  X(006) VALUE "      ".
+005500       03  COLUMN   8  PIC  X(048) VALUE
+005510            "                                                ".
+005520       03  COLUMN  57  PIC  X(007) VALUE "       ".
+005530       03  COLUMN  65  PIC  X(005) VALUE "     ".
+005540       03  COLUMN  71  PIC  X(009) VALUE "         ".
+005550 01  C-ERR.
+005560     02  LINE  24.
+005570       03  E-ME1   COLUMN  15  PIC  X(015) VALUE
+005580            "***  TM ﾅｼ  ***".
+005590       03  E-ME2   COLUMN  15  PIC  X(016) VALUE
+005600            "***  TCM ﾅｼ  ***".
+005610       03  E-ME3   COLUMN  15  PIC  X(021) VALUE
+005620            "***  PROGRAM ｴﾗｰ  ***".
+005630       03  E-ME4   COLUMN  15  PIC  X(020) VALUE
+005640            "***  区分エラー  ***".
+005650       03  E-ME5   COLUMN  15  PIC  X(020) VALUE
+005660            "***  直送エラー ***".
+005670       03  E-ME6.                                                 I.020214
+005680         04  COLUMN  15  PIC  X(016) VALUE                        I.020214
+005690              "***  HIM ﾅｼ  ***".                                 I.020214
+005700         04  COLUMN  34  PIC  9(006) FROM  W-HCD.                 I.020214
+005710       03  E-ME7.                                                 I.020214
+005720         04  COLUMN  15  PIC  X(022) VALUE                        I.020214
+005730              "***  振替単価無し  ***".                           I.020214
+005740         04  COLUMN  40  PIC  9(006) FROM  W-HCD.                 I.020214
+005750*****  03  E-ME6   COLUMN  15  PIC  X(016) VALUE                  D.020214
+005760*****       "***  HIM ﾅｼ  ***".                                   D.020214
+005770*****  03  E-ME7   COLUMN  15  PIC  X(022) VALUE                  D.020214
+005780*****       "***  振替単価無し  ***".                             D.020214
+005790       03  E-ME8   COLUMN  15  PIC  X(024) VALUE
+005800            "***  預りサイズ無し  ***".
+005810       03  E-ME9   COLUMN  15  PIC  X(020) VALUE
+005820            "***  サイズ無し  ***".
+005830*****  03  E-ME10  COLUMN  15  PIC  X(025) VALUE                  D.070124
+005840*****       "***  TAZ-M WRITE ｴﾗｰ  ***".                          D.070124
+005850*****  03  E-ME11  COLUMN  15  PIC  X(022) VALUE                  D.070124
+005860*****       "***  預りチェック  ***".                             D.070124
+005870       03  E-ME12  COLUMN  15  PIC  X(020) VALUE
+005880            "***  日付エラー ***".
+005890*****  03  E-ME13  COLUMN  15  PIC  X(025) VALUE                  D.010531
+005900*****       "***  価格ランクエラー ***".                          D.010531
+005910       03  E-ME14  COLUMN  15  PIC  X(025) VALUE
+005920            "***  発送明細№ CHECK ***".
+005930       03  E-ME15  COLUMN  15  PIC  X(025) VALUE
+005940            "***  単価  ZERO CHECK ***".
+005950       03  E-ME16  COLUMN  15  PIC  X(025) VALUE
+005960            "***  STRAN WRITE ｴﾗｰ  ***".
+005970       03  E-ME17  COLUMN  15  PIC  X(027) VALUE
+005980            "***  STRAN REWRITE ｴﾗｰ  ***".
+005990       03  E-ME19  COLUMN  15  PIC  X(028) VALUE
+006000            "***  未更新データ　有り  ***".
+006010       03  E-ME20  COLUMN  15  PIC  X(041) VALUE
+006020            "伝票未発行データ有り   消す  OK=1 NO=5   ".          I.050226
+006030*****       "未更新データ　有り     消す  OK=1 NO=5   ".          D.050226
+006040       03  E-ME21  COLUMN  15  PIC  X(017) VALUE
+006050            "***  ﾃﾞｰﾀ ﾅｼ  ***".
+006060       03  E-ME22  COLUMN  15  PIC  X(027) VALUE
+006070            "***  HSMSF REWRITE ｴﾗｰ  ***".
+006080       03  E-ME23  COLUMN  15  PIC  X(017) VALUE
+006090            "***  HKBM ﾅｼ  ***".
+006100       03  E-ME24  COLUMN  15  PIC  X(026) VALUE
+006110            "***  HKBM REWRITE ｴﾗｰ  ***".
+006120       03  E-ME25.                                                I.000922
+006130         04  COLUMN  15  PIC  N(008) VALUE                        I.000922
+006140              NC"請求書　発行済み".                               I.000922
+006150         04  COLUMN  34  PIC 9999/99/99  FROM  W-SDATE.           I.000922
+006160       03  E-ME26  COLUMN  15  PIC  X(024) VALUE                  I.010419
+006170            "***  THTM WRITE ｴﾗｰ  ***".                           I.010419
+006180       03  E-ME27  COLUMN  15  PIC  X(026) VALUE                  I.010419
+006190            "***  THTM REWRITE ｴﾗｰ  ***".                         I.010419
+006200       03  E-ME28  COLUMN  15  PIC  X(017) VALUE                  I.020215
+006210            "***  HUHM ﾅｼ  ***".                                  I.020215
+006220       03  E-ME29  COLUMN  15  PIC  X(030) VALUE                  I.020215
+006230            "***  マスター　単価エラー  ***".                     I.020215
+006240       03  E-ME30  COLUMN  15  PIC  X(030) VALUE                  I.050706
+006250            "***  データが入っていない  ***".                     I.050706
+006260       03  E-ME90  COLUMN  15  PIC  X(021) VALUE
+006270            "---   キャンセル  ---".
+006280       03  MG-03   COLUMN  15  PIC  X(024) VALUE
+006290            "***  ｺﾝﾄﾛｰﾙＦ未登録  ***".
+006300       03  MG-05   COLUMN  15  PIC  X(022) VALUE
+006310            "***  倉庫省略不可  ***".
+006320     COPY LSSEM.
+006330     COPY LIBSCR.
+006340 PROCEDURE DIVISION.
+006350 M-05.
+006360     COPY LIBCPR.
+006370     MOVE ZERO TO W-CNG.
+006380     MOVE D-NHNG TO W-CNGS.
+006390     IF W-CN2 >= DATE-NF1 AND <= DATE-NT1
+006400         ADD DATE-NC1 TO W-CN.
+006410     IF W-CN2 >= DATE-NF2 AND <= DATE-NT2
+006420         ADD DATE-NC2 TO W-CN.
+006430     ACCEPT JS-SIGN.                                              I.160907
+006440     IF JS-SIGN > 1                                               I.160907
+006450         MOVE 255 TO COMPLETION-CODE                              I.160907
+006460         STOP RUN.                                                I.190907
+006470     IF JS-SIGN = 1                                               I.160907
+006480         PERFORM NGC-RTN THRU NGC-EX.                             I.160907
+006490*
+006500     DISPLAY C-CLEAR.
+006510     DISPLAY C-MID.
+006520*****OPEN INPUT T-M HI-M TC-M JCON JT-THTN.                       D.000922
+006530*****OPEN INPUT T-M HI-M TC-M JCON JT-THTN TSKF.                  D.010419
+006540*****OPEN INPUT T-M HI-M TC-M JCON TSKF.                          D.020215
+006550     OPEN INPUT T-M HI-M TC-M JCON TSKF HUH-M.                    I.020215
+006560     OPEN INPUT OTHTM.                                            I.110407
+006570*****OPEN I-O TAZ-M.                                              D.070124
+006580     OPEN I-O HSMSF.
+006590     OPEN I-O THTM.                                               I.010419
+006600     OPEN INPUT S-TRAN.
+006610     READ S-TRAN AT END
+006620         GO TO M-20.
+006630 M-10.
+006640     IF S-DHC NOT = 0
+006650         DISPLAY E-ME19 E-ME99
+006660         MOVE 255 TO COMPLETION-CODE
+006670         GO TO M-95.
+006680     READ S-TRAN AT END
+006690         DISPLAY E-ME20 E-ME99
+006700         GO TO M-15.
+006710     GO TO M-10.
+006720 M-15.
+006730     ACCEPT A-CHK.
+006740     IF ESTAT NOT = HTB AND SKP
+006750         GO TO M-15.
+006760     IF CHK = 1
+006770         GO TO M-20.
+006780     IF CHK = 5
+006790         MOVE 255 TO COMPLETION-CODE
+006800         GO TO M-95.
+006810     GO TO M-15.
+006820 M-20.
+006830     CLOSE S-TRAN.
+006840     OPEN INPUT HKBM.
+006850     MOVE SPACE TO HKB-KEY.
+006860     MOVE "05" TO HKB-NO.
+006870     READ HKBM WITH UNLOCK INVALID KEY
+006880         CLOSE HKBM
+006890         DISPLAY E-ME78 E-ME23 E-ME99
+006900         MOVE 255 TO COMPLETION-CODE
+006910         GO TO M-95.
+006920     MOVE HKB-UNN TO W-DNOD W-DNOO.
+006930     CLOSE HKBM.
+006940     OPEN OUTPUT S-TRAN.
+006950 M-25.
+006960     ACCEPT A-UNC.
+006970     IF ESTAT = C2 OR PF9
+006980         GO TO M-95.
+006990     IF ESTAT NOT = HTB AND SKP
+007000         GO TO M-25.
+007010*
+007020     MOVE ZERO TO W-NGP.
+007030     IF W-UNCD > 1
+007040         GO TO M-25.
+007050 M-30.
+007060     IF W-UNCD = 1
+007070         GO TO M-35.
+007080*
+007090     PERFORM UAC-RTN THRU UAC-EX.
+007100     IF ESTAT = BTB
+007110         DISPLAY C-CLEAR
+007120         DISPLAY C-MID
+007130         GO TO M-25.
+007140     IF W-END NOT = 0
+007150         GO TO M-95.
+007160     GO TO M-80.
+007170 M-35.
+007180     PERFORM NAC-RTN THRU NAC-EX.
+007190     IF ESTAT = BTB
+007200         DISPLAY C-CLEAR
+007210         DISPLAY C-MID
+007220         GO TO M-25.
+007230     IF W-END NOT = 0
+007240         GO TO M-95.
+007250 M-80.
+007260     PERFORM UPD-RTN THRU UPD-EX.
+007270     CLOSE THTM.                                                  I.150407
+007280     OPEN I-O THTM.                                               I.150407
+007290     IF W-END = 0
+007300         GO TO M-30.
+007310 M-95.
+007320*****CLOSE T-M HI-M TC-M JCON JT-THTN.                            D.000922
+007330*****CLOSE T-M HI-M TC-M JCON JT-THTN TSKF.                       D.010419
+007340*****CLOSE T-M HI-M TC-M JCON TSKF.                               D.020215
+007350     CLOSE T-M HI-M TC-M JCON TSKF HUH-M.                         I.020215
+007360*****CLOSE TAZ-M.                                                 D.070124
+007370     CLOSE HSMSF.
+007380     CLOSE OTHTM.                                                 I.110407
+007390     CLOSE THTM.                                                  I.010419
+007400     CLOSE S-TRAN.
+007410     DISPLAY C-CLEAR.
+007420     STOP RUN.
+007430 NGC-RTN.                                                         I.160907
+007440     ADD 1 TO W-CG.                                               I.160907
+007450     IF W-CG = 13                                                 I.160907
+007460         MOVE 1 TO W-CG                                           I.160907
+007470         ADD 1 TO W-CN.                                           I.160907
+007480 NGC-EX.                                                          I.160907
+007490     EXIT.                                                        I.160907
+007500*----------  出荷　入力  -------------------------------------------------
+007510 UAC-RTN.
+007520     IF W-NGP NOT = ZERO
+007530         GO TO UAC-040.
+007540     MOVE ZERO TO W-TCDD W-CSCD W-HNOD.
+007550     MOVE ZERO TO W-NGP.
+007560     MOVE DATE-02R TO W-NGPS.
+007570 UAC-020.
+007580     CALL "SCHD01".
+007590     DISPLAY AU-NGP.
+007600     ACCEPT AU-NGP.
+007610     DISPLAY E-CL.
+007620     IF ESTAT = C2 OR PF9
+007630         MOVE 1 TO W-END
+007640         GO TO UAC-EX.
+007650     IF ESTAT = BTB
+007660         GO TO UAC-EX.
+007670     IF ESTAT NOT = HTB AND SKP
+007680         GO TO UAC-020.
+007690     IF W-NGPS = ZERO
+007700         MOVE DATE-02R TO W-NGPS
+007710         DISPLAY AU-NGP.
+007720 UAC-040.
+007730     CALL "SCHD01".
+007740     DISPLAY AU-NGP.
+007750     MOVE ZERO TO W-ND1.
+007760     IF W-ND2 >= DATE-NF1 AND <= DATE-NT1
+007770         ADD DATE-NC1 TO W-ND.
+007780     IF W-ND2 >= DATE-NF2 AND <= DATE-NT2
+007790         ADD DATE-NC2 TO W-ND.
+007800     IF W-NGD NOT = W-CNG
+007810         DISPLAY E-ME12 E-ME98
+007820         GO TO UAC-020.
+007830     IF W-PD < 1 OR > 31
+007840         GO TO UAC-020.
+007850     MOVE ZERO TO W-HNOD W-HNC W-CSCD.
+007860 UAC-060.
+007870     ACCEPT AU-HMN.
+007880     DISPLAY E-CL.
+007890     IF ESTAT = BTB
+007900         GO TO UAC-020.
+007910     IF ESTAT NOT = HTB AND SKP
+007920         GO TO UAC-060.
+007930     IF W-HMN = ZERO
+007940         DISPLAY SU-HMN
+007950         GO TO UAC-080.
+007960     MOVE SPACE TO HSMS-KEY.
+007970     MOVE W-HMN TO HSMS-01.
+007980     START HSMSF KEY NOT < HSMS-KEY INVALID KEY
+007990         DISPLAY E-ME21 E-ME98
+008000         MOVE 1 TO W-HNC                                          I.081222
+008010         MOVE W-HMN TO W-HNOD                                     I.081222
+008020         GO TO UAC-080.                                           I.081222
+008030*****    GO TO UAC-060.                                           D.081222
+008040     READ HSMSF NEXT RECORD AT END
+008050         DISPLAY E-ME21 E-ME98
+008060         MOVE 1 TO W-HNC                                          I.081222
+008070         MOVE W-HMN TO W-HNOD                                     I.081222
+008080         GO TO UAC-080.                                           I.081222
+008090*****    GO TO UAC-060.                                           D.081222
+008100     IF W-HMN NOT = HSMS-01
+008110         DISPLAY E-ME21 E-ME98
+008120         MOVE 1 TO W-HNC                                          I.081222
+008130         MOVE W-HMN TO W-HNOD                                     I.081222
+008140         GO TO UAC-080.                                           I.081222
+008150*****    GO TO UAC-060.                                           D.081222
+008160     IF HSMS-02 = 7
+008170         DISPLAY E-ME21 E-ME98
+008180         GO TO UAC-060.
+008190     PERFORM HMN-RTN THRU HMN-EX.
+008200     IF W-INV = 1                                                 I.001031
+008210         GO TO UAC-060.                                           I.001031
+008220     IF W-EC NOT = 0                                              I.020215
+008230         MOVE 0 TO W-EC                                           I.020215
+008240         GO TO UAC-060.                                           I.001031
+008250     IF T-BC NOT = ZERO                                           I.001031
+008260         DISPLAY E-ME1 E-ME98                                     I.001031
+008270         GO TO UAC-060.                                           I.001031
+008280*****IF T-KL < 1 OR > 5                                           D.010419
+008290*****    DISPLAY E-ME13 E-ME98                                    D.010419
+008300*****    GO TO UAC-060.                                           D.010419
+008310     MOVE 1 TO W-DSPC.                                            I.020404
+008320     PERFORM DSP-RTN THRU DSP-EX.
+008330     MOVE 0 TO W-RC.                                              I.020214
+008340     MOVE 1 TO W-L1.                                              I.020214
+008350     MOVE 2 TO W-L2.                                              I.020214
+008360     MOVE 3 TO W-L3.                                              I.020214
+008370 UAC-070.                                                         I.020214
+008380     ADD 1 TO W-RC.                                               I.020214
+008390     ADD 3 TO W-L1 W-L2 W-L3.                                     I.020214
+008400     IF W-RC > 6                                                  I.020214
+008410         GO TO UAC-800.                                           I.020214
+008420     MOVE W-AS(W-RC) TO W-SR.                                     I.020214
+008430     IF W-GNO = 0                                                 I.020404
+008440         GO TO UAC-360.                                           I.020404
+008450*****IF W-GNO NOT = 0                                             D.020404
+008460     IF W-RCB = ZERO                                              I.020404
+008470         GO TO UAC-070.                                           I.020214
+008480     IF W-RC NOT = W-RCB                                          I.020404
+008490         GO TO UAC-070.                                           I.020404
+008500     MOVE W-RCB TO W-RC.                                          I.020404
+008510     MOVE W-LB TO W-L.                                            I.020404
+008520     GO TO UAC-360.                                               I.020214
+008530 UAC-080.
+008540     MOVE W-SCD TO WK-SCD.
+008550     ACCEPT AU-SOK.
+008560     DISPLAY E-CL.
+008570     IF ESTAT = BTB
+008580         GO TO UAC-060.
+008590     IF W-HMN NOT = ZERO
+008600         IF W-HNC = 0                                             I.081222
+008610             IF ESTAT = ADV
+008620                 MOVE WK-SCD TO W-SCD
+008630                 MOVE 1 TO W-ADV
+008640                 GO TO UAC-090.
+008650     IF ESTAT NOT = HTB AND SKP
+008660         GO TO UAC-080.
+008670 UAC-090.
+008680     IF W-SCD = ZERO
+008690         MOVE W-SCD TO W-SOK
+008700         DISPLAY SU-SOK
+008710         GO TO UAC-100.
+008720     MOVE 3 TO JCON3-01.
+008730     MOVE W-SCD TO JCON3-02.
+008740     READ JCON UNLOCK INVALID
+008750         MOVE  SPACE TO JCON3-03
+008760         DISPLAY DU-SNA MG-03 E-ME98
+008770         GO TO UAC-080.
+008780     MOVE W-SCD TO W-SOK.
+008790     DISPLAY AU-SOK DU-SNA.
+008800 UAC-100.
+008810     IF W-HMN NOT = ZERO
+008820         IF W-HNC = 0                                             I.081222
+008830             IF ESTAT = ADV
+008840                 GO TO UAC-280.
+008850 UAC-120.
+008860     ACCEPT AU-TCD.
+008870     DISPLAY E-CL.
+008880     IF ESTAT = BTB
+008890         GO TO UAC-080.
+008900     IF ESTAT NOT = HTB AND SKP
+008910         GO TO UAC-120.
+008920     PERFORM TM-RTN THRU TM-EX.
+008930     IF W-INV = 1
+008940         DISPLAY E-ME1 E-ME98
+008950         GO TO UAC-120.
+008960     IF T-BC NOT = ZERO
+008970         DISPLAY E-ME1 E-ME98
+008980         GO TO UAC-120.
+008990*****IF T-KL < 1 OR > 5                                           D.010531
+009000*****    DISPLAY E-ME13 E-ME98                                    D.010531
+009010*****    GO TO UAC-120.                                           D.010531
+009020*UAC-140.                                                         D.081222
+009030*****ACCEPT AU-HN1.                                               D.081222
+009040*****IF ESTAT = BTB                                               D.081222
+009050*****    GO TO UAC-080.                                           D.081222
+009060*****IF ESTAT NOT = HTB AND SKP                                   D.081222
+009070*****    GO TO UAC-140.                                           D.081222
+009080*****IF W-HN1 = ZERO                                              D.081222
+009090*****    MOVE ZERO TO W-HNOD W-HNC                                D.081222
+009100*****    DISPLAY SU-HN1 SU-HN2 SU-HN3 SU-HN4 SU-HN5 SU-HN6        D.081222
+009110*****    GO TO UAC-260.                                           D.081222
+009120*UAC-160.                                                         D.081222
+009130*****ACCEPT AU-HN2.                                               D.081222
+009140*****IF ESTAT = BTB                                               D.081222
+009150*****    GO TO UAC-140.                                           D.081222
+009160*****IF ESTAT NOT = HTB AND SKP AND ADV                           D.081222
+009170*****    GO TO UAC-160.                                           D.081222
+009180*****IF ESTAT = ADV                                               D.081222
+009190*****    COMPUTE W-HN2 = W-HN1 + 1                                D.081222
+009200*****    DISPLAY AU-HN2.                                          D.081222
+009210*****IF W-HN2 = ZERO                                              D.081222
+009220*****    MOVE 1 TO W-HNC                                          D.081222
+009230*****    MOVE ZERO TO W-HN3 W-HN4 W-HN5 W-HN6                     D.081222
+009240*****    DISPLAY SU-HN2 SU-HN3 SU-HN4 SU-HN5 SU-HN6               D.081222
+009250*****    GO TO UAC-260.                                           D.081222
+009260*UAC-180.                                                         D.081222
+009270*****ACCEPT AU-HN3.                                               D.081222
+009280*****IF ESTAT = BTB                                               D.081222
+009290*****    GO TO UAC-160.                                           D.081222
+009300*****IF ESTAT NOT = HTB AND SKP AND ADV                           D.081222
+009310*****    GO TO UAC-180.                                           D.081222
+009320*****IF ESTAT = ADV                                               D.081222
+009330*****    COMPUTE W-HN3 = W-HN2 + 1                                D.081222
+009340*****    DISPLAY AU-HN3.                                          D.081222
+009350*****IF W-HN3 = ZERO                                              D.081222
+009360*****    MOVE 2 TO W-HNC                                          D.081222
+009370*****    MOVE ZERO TO W-HN4 W-HN5 W-HN6                           D.081222
+009380*****    DISPLAY SU-HN3 SU-HN4 SU-HN5 SU-HN6                      D.081222
+009390*****    GO TO UAC-260.                                           D.081222
+009400*UAC-200.                                                         D.081222
+009410*****ACCEPT AU-HN4.                                               D.081222
+009420*****IF ESTAT = BTB                                               D.081222
+009430*****    GO TO UAC-180.                                           D.081222
+009440*****IF ESTAT NOT = HTB AND SKP AND ADV                           D.081222
+009450*****    GO TO UAC-200.                                           D.081222
+009460*****IF ESTAT = ADV                                               D.081222
+009470*****    COMPUTE W-HN4 = W-HN3 + 1                                D.081222
+009480*****    DISPLAY AU-HN4.                                          D.081222
+009490*****IF W-HN4 = ZERO                                              D.081222
+009500*****    MOVE 3 TO W-HNC                                          D.081222
+009510*****    MOVE ZERO TO W-HN5 W-HN6                                 D.081222
+009520*****    DISPLAY SU-HN4 SU-HN5 SU-HN6                             D.081222
+009530*****    GO TO UAC-260.                                           D.081222
+009540*UAC-220.                                                         D.081222
+009550*****ACCEPT AU-HN5.                                               D.081222
+009560*****IF ESTAT = BTB                                               D.081222
+009570*****    GO TO UAC-200.                                           D.081222
+009580*****IF ESTAT NOT = HTB AND SKP AND ADV                           D.081222
+009590*****    GO TO UAC-220.                                           D.081222
+009600*****IF ESTAT = ADV                                               D.081222
+009610*****    COMPUTE W-HN5 = W-HN4 + 1                                D.081222
+009620*****    DISPLAY AU-HN5.                                          D.081222
+009630*****IF W-HN5 = ZERO                                              D.081222
+009640*****    MOVE 4 TO W-HNC                                          D.081222
+009650*****    MOVE ZERO TO W-HN6                                       D.081222
+009660*****    DISPLAY SU-HN5 SU-HN6                                    D.081222
+009670*****    GO TO UAC-260.                                           D.081222
+009680*UAC-240.                                                         D.081222
+009690*****ACCEPT AU-HN6.                                               D.081222
+009700*****IF ESTAT = BTB                                               D.081222
+009710*****    GO TO UAC-220.                                           D.081222
+009720*****IF ESTAT NOT = HTB AND SKP AND ADV                           D.081222
+009730*****    GO TO UAC-240.                                           D.081222
+009740*****IF ESTAT = ADV                                               D.081222
+009750*****    COMPUTE W-HN6 = W-HN5 + 1                                D.081222
+009760*****    DISPLAY AU-HN6.                                          D.081222
+009770*****IF W-HN6 = ZERO                                              D.081222
+009780*****    MOVE 5 TO W-HNC                                          D.081222
+009790*****    DISPLAY SU-HN6                                           D.081222
+009800*****  ELSE                                                       D.081222
+009810*****    MOVE 6 TO W-HNC.                                         D.081222
+009820 UAC-260.
+009830     ACCEPT AU-CCD.
+009840     DISPLAY E-CL.
+009850     IF ESTAT = BTB
+009860         GO TO UAC-120.                                           I.081222
+009870*****    IF W-HNC > 4                                             D.081222
+009880*****        GO TO UAC-240.                                       D.081222
+009890*****IF ESTAT = BTB                                               D.081222
+009900*****    IF W-HNC = 4                                             D.081222
+009910*****        GO TO UAC-220.                                       D.081222
+009920*****IF ESTAT = BTB                                               D.081222
+009930*****    IF W-HNC = 3                                             D.081222
+009940*****        GO TO UAC-200.                                       D.081222
+009950*****IF ESTAT = BTB                                               D.081222
+009960*****    IF W-HNC = 2                                             D.081222
+009970*****        GO TO UAC-180.                                       D.081222
+009980*****IF ESTAT = BTB                                               D.081222
+009990*****    IF W-HNC = 1                                             D.081222
+010000*****        GO TO UAC-160.                                       D.081222
+010010*****IF ESTAT = BTB                                               D.081222
+010020*****    GO TO UAC-140.                                           D.081222
+010030     IF ESTAT NOT = HTB AND SKP
+010040         GO TO UAC-260.
+010050     PERFORM TCM-RTN THRU TCM-EX.
+010060     IF W-INV = 1
+010070         DISPLAY E-ME2 E-ME98
+010080         GO TO UAC-260.
+010090     IF W-INV = 9
+010100         DISPLAY E-ME3 E-ME99
+010110         MOVE 1 TO W-END
+010120         GO TO UAC-EX.
+010130 UAC-280.
+010140     DISPLAY AU-CSC.
+010150     IF W-CSCD = ZERO
+010160         GO TO UAC-320.
+010170 UAC-300.
+010180     ACCEPT AU-CSC.
+010190     IF ESTAT = BTB
+010200         GO TO UAC-260.
+010210     IF ESTAT NOT = HTB AND SKP
+010220         GO TO UAC-300.
+010230     IF W-CSCD NOT = 0 AND 9
+010240         GO TO UAC-300.
+010250 UAC-320.
+010260     MOVE 1 TO W-L1.
+010270     MOVE 2 TO W-L2.
+010280     MOVE 3 TO W-L3.
+010290     MOVE ZERO TO W-RC W-DCD W-ZC.                                I.131228
+010300*****IF W-CNGS < 1404                                             D.140328
+010310*****    MOVE 5 TO W-HSCD                                         D.141328
+010320*****  ELSE                                                       D.141328
+010330     MOVE 8 TO W-HSCD.                                            I.131228
+010340*****MOVE ZERO TO W-RC W-DCD W-ZC W-HSCD.                         D.131228
+010350*****IF W-HMN = ZERO                                              D.081222
+010360     IF (W-HMN = ZERO) OR (W-HNC NOT = 0)                         I.081222
+010370         INITIALIZE W-ASR W-BR
+010380         MOVE ALL NX"2121" TO W-BI.
+010390 UAC-340.
+010400     MOVE 0 TO W-DEL.
+010410     ADD 1 TO W-RC.
+010420     ADD 3 TO W-L1 W-L2 W-L3.
+010430     IF W-RC > 6
+010440         GO TO UAC-760.
+010450     IF W-RC = 2
+010460         IF W-DC = 8
+010470             MOVE 5 TO W-ZC.
+010480     IF W-ZC = 5
+010490         GO TO UAC-420.
+010500 UAC-360.
+010510     MOVE W-AS(W-RC) TO W-SR.
+010520     MOVE W-SCD TO W-SOK.
+010530     MOVE W-NGP TO W-DATE.
+010540     MOVE W-TCDN TO W-TCD.
+010550     MOVE W-TCDD TO W-TCD2.
+010560     MOVE W-CSCD TO W-CSC.
+010570     MOVE T-TNC TO W-TC2.
+010580     MOVE T-FKC TO W-FKC.
+010590     MOVE W-CCDD TO W-CCD.
+010600 UAC-380.
+010610     IF W-DEL = 9
+010620         MOVE 0 TO W-DEL
+010630         GO TO UAC-400.
+010640     IF W-HMN NOT = ZERO
+010650         IF W-HNC = 0                                             I.081222
+010660             IF W-HCD NOT = ZERO
+010670                 GO TO UAC-400.
+010680     MOVE W-DCD TO W-DC.
+010690     DISPLAY AU-DC.
+010700 UAC-400.
+010710     MOVE W-DC TO WK-DC.
+010720     MOVE 0 TO W-ADV.
+010730     ACCEPT AU-DC.
+010740     DISPLAY E-CL.
+010750     IF ESTAT = PF21
+010760         MOVE W-RC TO W-RCD
+010770         MOVE W-L TO W-LD
+010780         GO TO UAC-430.
+010790*****IF ESTAT = C1                                                D.001205
+010800     IF ESTAT = C1 OR PF6                                         I.001205
+010810         MOVE 5 TO W-ZC
+010820         GO TO UAC-420.
+010830*****IF ESTAT = FUK                                               D.081222
+010840*****    GO TO UAC-760.                                           D.081222
+010850     IF ESTAT = ADV
+010860         IF W-HCD NOT = ZERO
+010870             MOVE WK-DC TO W-DC
+010880             DISPLAY AU-DC
+010890             MOVE 1 TO W-ADV
+010900             GO TO UAC-440.
+010910     IF ESTAT NOT = BTB
+010920         GO TO UAC-440.
+010930*****IF W-HMN = ZERO                                              D.081222
+010940     IF (W-HMN = ZERO) OR (W-HNC NOT = 0)                         I.081222
+010950         IF W-GNO = ZERO
+010960             MOVE ZERO TO W-SR
+010970                    W-SU(01) W-SU(02) W-SU(03) W-SU(04) W-SU(05)  I.000822
+010980                    W-SU(06) W-SU(07) W-SU(08) W-SU(09) W-SU(10)  I.000822
+010990             MOVE W-SR TO W-AS(W-RC)
+011000             DISPLAY SU-D1 SU-D2 SU-D3.
+011010 UAC-410.
+011020     SUBTRACT 1 FROM W-RC.
+011030     SUBTRACT 3 FROM W-L1 W-L2 W-L3.
+011040     IF W-RC = ZERO
+011050         GO TO UAC-300.
+011060     MOVE W-AS(W-RC) TO W-SR.
+011070     IF W-GNO = ZERO
+011080         GO TO UAC-410.
+011090     GO TO UAC-400.
+011100 UAC-420.
+011110     IF W-RC = 1
+011120*****    MOVE ZERO TO W-HCD W-SIZ W-SUS W-SUT W-BT W-KIN W-DC     D.000822
+011130         MOVE ZERO TO W-HCD W-SIZ W-SUT W-BT W-KIN W-DC           I.000822
+011140                      W-FT W-BC1 W-BC2 W-BC3 W-SOK
+011150                    W-SU(01) W-SU(02) W-SU(03) W-SU(04) W-SU(05)  I.000822
+011160                    W-SU(06) W-SU(07) W-SU(08) W-SU(09) W-SU(10)  I.000822
+011170         MOVE SPACE TO W-BIK
+011180         MOVE W-RC TO W-GNO
+011190         MOVE W-SR TO W-AS(W-RC)
+011200         DISPLAY SU-D1 SU-D2 SU-D3
+011210         GO TO UAC-340.
+011220     MOVE ZERO TO W-SR.
+011230     MOVE ZERO TO W-SU(01) W-SU(02) W-SU(03) W-SU(04) W-SU(05)    I.000822
+011240                  W-SU(06) W-SU(07) W-SU(08) W-SU(09) W-SU(10).   I.000822
+011250     MOVE SPACE TO W-BIK.
+011260     MOVE W-SR TO W-AS(W-RC).
+011270     DISPLAY SU-D1 SU-D2 SU-D3.
+011280     GO TO UAC-340.
+011290 UAC-430.
+011300     IF W-RC NOT = 6
+011310         COMPUTE CNT = W-RC + 1
+011320         MOVE W-AS(CNT) TO W-AS(W-RC)
+011330         ADD 1 TO W-RC
+011340         GO TO UAC-430.
+011350     MOVE ZERO TO W-AS(W-RC).
+011360     MOVE 0 TO W-DSPC.                                            I.020404
+011370     PERFORM DSP-RTN THRU DSP-EX.
+011380     MOVE W-RCD TO W-RC.
+011390     MOVE W-LD TO W-L.
+011400     MOVE 9 TO W-DEL.
+011410     GO TO UAC-360.
+011420 UAC-440.
+011430     IF ESTAT NOT = HTB AND SKP AND ADV
+011440         GO TO UAC-380.
+011450     IF W-CSCD = 9                                                I.131227
+011460         IF W-DC NOT = 8                                          I.131227
+011470             GO TO UAC-380.                                       I.070126
+011480     IF W-DC = 8                                                  I.131227
+011490         IF W-CSCD NOT = 9                                        I.131227
+011500             GO TO UAC-380.                                       I.070126
+011510     IF W-DC = 6 OR 9                                             I.070126
+011520         GO TO UAC-380.                                           I.070126
+011530     IF W-DC NOT = 2 AND 3 AND 6 AND 8 AND 9
+011540         IF W-SOK = 0
+011550             DISPLAY MG-05 E-ME98
+011560             GO  TO  UAC-380.
+011570     IF W-RC NOT = 1
+011580         IF W-DC = 8
+011590             DISPLAY E-ME4 E-ME98
+011600             GO TO UAC-380.
+011610     IF W-CCDD NOT = ZERO
+011620         IF W-DC = 3 OR  9
+011630             DISPLAY E-ME4 E-ME98
+011640             GO TO UAC-380.
+011650     IF W-CSC = 9
+011660         IF W-DC = 4
+011670             DISPLAY E-ME4 E-ME98
+011680             GO TO UAC-380.
+011690     IF W-RC NOT = 1
+011700         GO TO UAC-450.
+011710     IF W-DC = 1 OR 2                                             I.010327
+011720         MOVE ZERO TO W-HNOD W-HNC.                               I.020214
+011730*****    MOVE ZERO TO W-HNOD W-HNC                                D.020214
+011740*****    DISPLAY SU-HMN.                                          D.020214
+011750     MOVE W-DC TO W-DCD.
+011760     IF W-DC = 4  OR  7
+011770         MOVE ZERO TO W-DCD.
+011780 UAC-450.
+011790     MOVE W-DC TO W-DCC.
+011800     IF W-DC = 4  OR  7
+011810         MOVE ZERO TO W-DCC.
+011820     IF W-DCD NOT = W-DCC
+011830         DISPLAY E-ME4 E-ME98
+011840         GO TO UAC-380.
+011850     IF W-DC = 8
+011860         DISPLAY SU-D2 SU-D3
+011870*****    MOVE ZERO TO W-ZD1 W-ZD2 W-FT W-HSC                      D.131228
+011880         MOVE ZERO TO W-ZD1 W-ZD2 W-FT                            I.131228
+011890                     W-SU(01) W-SU(02) W-SU(03) W-SU(04) W-SU(05) I.000822
+011900                     W-SU(06) W-SU(07) W-SU(08) W-SU(09) W-SU(10) I.000822
+011910         DISPLAY DU-SZM
+011920*****    IF W-CNGS < 1404                                         D.140328
+011930*****        MOVE 5 TO W-HSC                                      D.140328
+011940*****        GO TO UAC-700                                        D.140328
+011950*****      ELSE                                                   D.140328
+011960         MOVE 8 TO W-HSC                                          I.131228
+011970         GO TO UAC-700.
+011980     MOVE W-HCD TO W-HCDO.                                        I.010419
+011990 UAC-480.
+012000     IF W-ADV NOT = 0
+012010         GO TO UAC-490.
+012020     ACCEPT AU-HCD.
+012030     DISPLAY E-CL.
+012040     IF ESTAT = BTB
+012050         GO TO UAC-400.
+012060*****IF ESTAT = C1                                                D.001205
+012070     IF ESTAT = C1 OR PF6                                         I.001205
+012080         MOVE 5 TO W-ZC
+012090         GO TO UAC-420.
+012100*****IF ESTAT = FUK                                               D.081222
+012110*****    GO TO UAC-760.                                           D.081222
+012120     IF ESTAT NOT = HTB AND SKP
+012130         GO TO UAC-480.
+012140     IF W-HCD = ZERO
+012150         MOVE W-HCDD TO W-HCD.
+012160     IF W-HCD NOT = W-HCDO                                        I.010419
+012170         MOVE ZERO TO W-BT.                                       I.010449
+012180 UAC-490.
+012190     MOVE 0 TO W-HIC.                                             I.020214
+012200     PERFORM HI-RTN THRU HI-EX.
+012210     IF W-EC NOT = ZERO
+012220         MOVE 0 TO W-EC W-ADV
+012230         GO TO UAC-480.
+012240     IF W-DC = 3 OR 4 OR 9
+012250        IF HI-S4(10) NOT = 1
+012260            DISPLAY E-ME8 E-ME98
+012270            MOVE 0 TO W-ADV
+012280            GO  TO    UAC-480.
+012290     IF W-HCD > 999899
+012300*****    MOVE ZERO TO W-SIZ W-SUS W-FT                            D.000822
+012310         MOVE ZERO TO W-SIZ W-FT                                  I.000822
+012320                    W-SU(01) W-SU(02) W-SU(03) W-SU(04) W-SU(05)  I.000822
+012330                    W-SU(06) W-SU(07) W-SU(08) W-SU(09) W-SU(10)  I.000822
+012340         DISPLAY SU-D2 SU-D31
+012350         GO TO UAC-520.
+012360     IF W-DC NOT = 3 AND 9
+012370         GO TO UAC-550.
+012380*****MOVE ZERO TO W-SIZ W-SUS.                                    D.000822
+012390     MOVE ZERO TO W-SIZ                                           I.000822
+012400                  W-SU(01) W-SU(02) W-SU(03) W-SU(04) W-SU(05)    I.000822
+012410                  W-SU(06) W-SU(07) W-SU(08) W-SU(09) W-SU(10).   I.000822
+012420     DISPLAY SU-D2 SU-D31.
+012430 UAC-520.
+012440     IF W-ADV NOT = 0
+012450         GO TO UAC-540.
+012460     ACCEPT AU-SUT.
+012470     DISPLAY E-CL.
+012480     IF ESTAT = BTB
+012490         MOVE 0 TO W-ADV
+012500         MOVE W-HCD TO W-HCDO                                     I.010419
+012510         GO TO UAC-480.
+012520     IF ESTAT NOT = HTB AND SKP
+012530         GO TO UAC-520.
+012540     IF W-HCD < 999900
+012550         MOVE HI-FT TO W-FT.
+012560 UAC-540.
+012570*****IF W-BT NOT = ZERO                                           D.020401
+012580     IF W-BT = ZERO                                               I.020401
+012590         PERFORM TAN-RTN THRU TAN-EX.                             I.010419
+012600*****IF WK-TAN   NOT = ZERO                                       D.010419
+012610*****    MOVE  WK-TAN  TO  W-BT.                                  D.010419
+012620*****    MOVE  WK-TAN  TO  W-BT                                   D.010419
+012630*****    GO  TO  UAC-660.                                         D.010419
+012640*****IF HI-SS4 NOT = ZERO                                         D.010419
+012650*****    MOVE HI-U4(T-KL) TO W-BT                                 D.010419
+012660*****    GO TO UAC-660.                                           D.010419
+012670*****IF HI-SS3 NOT = ZERO                                         D.010419
+012680*****    MOVE HI-U3(T-KL) TO W-BT                                 D.010419
+012690*****    GO TO UAC-660.                                           D.010419
+012700*****IF HI-SS2 NOT = ZERO                                         D.010419
+012710*****    MOVE HI-U2(T-KL) TO W-BT                                 D.010419
+012720*****    GO TO UAC-660.                                           D.010419
+012730*****MOVE HI-U1(T-KL) TO W-BT.                                    D.010419
+012740     GO TO UAC-660.
+012750 UAC-550.
+012760*****PERFORM TAZ-RTN THRU TAZ-EX.                                 D.070124
+012770*****IF W-DC NOT = 0                                              D.050805
+012780*****    GO TO UAC-555.                                           D.050805
+012790*****MOVE W-TCD TO TAZ-TCD.                                       D.050805
+012800*****MOVE W-HCD TO TAZ-HCD.                                       D.050805
+012810*****READ TAZ-M WITH UNLOCK INVALID KEY                           D.050805
+012820*****    GO TO UAC-555.                                           D.050805
+012830*****DISPLAY E-ME11 E-ME99.                                       D.050805
+012840*UAC-555.                                                         D.050805
+012850     IF W-ADV NOT = 0
+012860         GO TO UAC-570.
+012870 UAC-560.                                                         I.050420
+012880     ACCEPT AU-SIZ.
+012890     DISPLAY E-CL.
+012900     IF ESTAT = BTB
+012910         MOVE 0 TO W-ADV
+012920         GO TO UAC-440.
+012930 UAC-570.
+012940     IF W-SIZ < 1 OR > 4
+012950         MOVE 0 TO W-ADV
+012960         GO TO UAC-560.                                           I.050420
+012970*****    GO TO UAC-550.                                           D.050420
+012980     MOVE HI-FT TO W-FT.
+012990     IF W-SIZ = 1
+013000*****    MOVE HI-U1(T-KL) TO W-BT                                 D.010419
+013010         DISPLAY DU-S1
+013020         MOVE HI-SS1 TO W-ASD.
+013030     IF W-SIZ = 2
+013040*****    MOVE HI-U2(T-KL) TO W-BT                                 D.010419
+013050         DISPLAY DU-S2
+013060         MOVE HI-SS2 TO W-ASD.
+013070     IF W-SIZ = 3
+013080*****    MOVE HI-U3(T-KL) TO W-BT                                 D.010419
+013090         DISPLAY DU-S3
+013100         MOVE HI-SS3 TO W-ASD.
+013110     IF W-SIZ = 4
+013120*****    MOVE HI-U4(T-KL) TO W-BT                                 D.010419
+013130         DISPLAY DU-S4
+013140         MOVE HI-SS4 TO W-ASD.
+013150     IF W-ASD = ZERO OR SPACE
+013160         MOVE 0 TO W-ADV
+013170         DISPLAY E-ME9 E-ME98
+013180         GO TO UAC-560.                                           I.050420
+013190*****    GO TO UAC-550.                                           D.050420
+013200     IF W-SIZ = 4
+013210         IF W-ASD = "0000000001"
+013220             MOVE 0 TO W-ADV
+013230             DISPLAY E-ME9 E-ME98
+013240             GO TO UAC-560.                                       I.050420
+013250*****        GO TO UAC-550.                                       D.050420
+013260     IF W-DC = 2 OR 6
+013270         MOVE ZERO TO W-FT.
+013280     IF W-BT = ZERO                                               I.010419
+013290         PERFORM TAN-RTN THRU TAN-EX.
+013300*****IF WK-TAN   NOT = ZERO                                       D.010419
+013310*****    MOVE  WK-TAN  TO  W-BT.                                  D.010419
+013320     MOVE ZERO TO W-SC W-ZC.
+013330     MOVE -3 TO W-C.
+013340 UAC-580.
+013350     ADD 1 TO W-SC.
+013360     IF W-SC > 8
+013370         ADD 5 TO W-C
+013380       ELSE
+013390         ADD 6 TO W-C.
+013400     IF W-SC = 11
+013410         MOVE ZERO TO W-SC W-SUT
+013420         GO TO UAC-630.
+013430     IF (W-SD(W-SC) = ZERO) OR (W-ZC = 5)
+013440         MOVE ZERO TO W-SU(W-SC)
+013450         GO TO UAC-610.
+013460     IF W-SC = 10
+013470         IF W-SIZ = 4
+013480             MOVE ZERO TO W-SU(W-SC)
+013490             GO TO UAC-580.
+013500 UAC-600.
+013510     IF W-ADV NOT = 0
+013520         GO TO UAC-610.
+013530     IF W-SC > 7
+013540         ACCEPT AU-SU1
+013550       ELSE
+013560         ACCEPT AU-SU.
+013570     IF ESTAT = BTB
+013580         MOVE 0 TO W-ADV
+013590         GO TO UAC-620.
+013600*****IF ESTAT = C1                                                D.001205
+013610     IF ESTAT = C1 OR PF6                                         I.001205
+013620         MOVE 5 TO W-ZC
+013630         MOVE ZERO TO W-SU(W-SC)
+013640         MOVE 0 TO W-ADV
+013650         GO TO UAC-610.
+013660*****IF ESTAT = FUK                                               D.081222
+013670*****    MOVE ZERO TO W-SC W-SUT                                  D.081222
+013680*****    GO TO UAC-630.                                           D.081222
+013690     IF ESTAT NOT = HTB AND SKP
+013700         MOVE 0 TO W-ADV
+013710         GO TO UAC-600.
+013720     IF W-SC > 7
+013730         IF W-SU(W-SC) > 999 OR < -999
+013740             GO TO UAC-600.
+013750 UAC-610.
+013760     IF W-SC < 8
+013770         DISPLAY DU-SU
+013780       ELSE
+013790         DISPLAY DU-SU1.
+013800     GO TO UAC-580.
+013810 UAC-620.
+013820     IF W-ADV NOT = ZERO
+013830         MOVE 0 TO W-ADV.
+013840     SUBTRACT 1 FROM W-SC.
+013850     IF W-SC > 7
+013860         SUBTRACT 5 FROM W-C
+013870       ELSE
+013880         SUBTRACT 6 FROM W-C.
+013890     IF W-SC = ZERO
+013900         GO TO UAC-560.                                           I.050420
+013910*****    GO TO UAC-550.                                           D.050420
+013920     IF W-SD(W-SC) = ZERO
+013930         GO TO UAC-620.
+013940     IF W-SC = 10
+013950         IF W-SIZ = 4
+013960             GO TO UAC-620.
+013970     GO TO UAC-600.
+013980 UAC-630.
+013990     ADD 1 TO W-SC.
+014000     IF W-SC < 11
+014010         ADD W-SU(W-SC) TO W-SUT
+014020         GO TO UAC-630.
+014030     MOVE ZERO TO W-ZC.
+014040     IF W-SUT = ZERO
+014050         MOVE ZERO TO W-SC
+014060         MOVE -3 TO W-C
+014070         MOVE 0 TO W-ADV
+014080         GO TO UAC-580.
+014090 UAC-660.
+014100     DISPLAY DU-SUT DU-BT.
+014110     IF W-DC = 7
+014120         MOVE ZERO TO W-BT W-KIN
+014130         DISPLAY SU-BT SU-KIN
+014140         GO TO UAC-720.
+014150     IF W-DC = 4
+014160         COMPUTE W-KIN = W-SUT * W-BT
+014170         MOVE ZERO TO W-FT
+014180         DISPLAY SU-KIN SU-BT
+014190         GO TO UAC-720.
+014200     ACCEPT AU-BT.
+014210     DISPLAY E-CL.
+014220     IF ESTAT NOT = BTB
+014230         GO TO UAC-670.
+014240     MOVE 0 TO W-ADV.
+014250     IF W-HCD > 999899
+014260         GO TO UAC-520.
+014270     IF W-DC = 3 OR 9
+014280         GO TO UAC-520.
+014290     MOVE 11 TO W-SC.
+014300     MOVE 60 TO W-C.
+014310     GO TO UAC-620.
+014320 UAC-670.
+014330*****IF ESTAT NOT = HTB AND SKP                                   D.110407
+014340     IF ESTAT NOT = HTB AND SKP AND PF4                           I.110407
+014350         GO TO UAC-660.
+014360     IF ESTAT = PF4                                               I.110407
+014370         PERFORM TAO-RTN THRU TAO-EX.                             I.110407
+014380     DISPLAY DU-BT.
+014390     IF W-HCD < 999900
+014400         IF W-BT = ZERO
+014410*****        IF W-DC = 2                                          D.130703
+014420             DISPLAY E-ME15 E-ME99                                I.070403
+014430             DISPLAY E-CL.                                        I.130703
+014440*****            DISPLAY E-CL                                     D.130703
+014450*****          ELSE                                               D.130703
+014460*****            GO TO UAC-660.                                   D.130703
+014470     IF W-HCD > 999899
+014480         IF W-BT = ZERO
+014490             DISPLAY E-ME15 E-ME99
+014500             DISPLAY E-CL.
+014510     COMPUTE W-KIN = W-SUT * W-BT.
+014520     DISPLAY DU-KIN.
+014530     IF W-KIN = ZERO
+014540         IF W-HCD > 999899
+014550             GO TO UAC-700.
+014560     GO TO UAC-720.
+014570 UAC-700.
+014580     ACCEPT AU-KIN.
+014590     DISPLAY E-CL.
+014600     IF ESTAT = BTB
+014610         IF W-HCD > 999899
+014620             GO  TO  UAC-660
+014630           ELSE
+014640             GO TO UAC-400.
+014650     IF ESTAT NOT = HTB AND SKP
+014660         GO TO UAC-700.
+014670     DISPLAY DU-KIN.
+014680 UAC-720.
+014690     IF T-BIK = 0
+014700         MOVE SPACE TO W-BIK
+014710         DISPLAY SU-BIK
+014720         GO TO UAC-740.
+014730     ACCEPT AU-BIK.
+014740     DISPLAY E-CL.
+014750     IF ESTAT = BTB
+014760         IF W-DC = 4 OR 7
+014770             GO TO UAC-620
+014780           ELSE
+014790             GO TO UAC-660.
+014800 UAC-740.
+014810     MOVE W-RC TO W-GNO.
+014820     MOVE W-SR TO W-AS(W-RC).
+014830     GO TO UAC-340.
+014840 UAC-760.
+014850     MOVE ZERO TO W-GSUT W-RC W-ZC.
+014860 UAC-770.
+014870     ADD 1 TO W-RC.
+014880     IF W-RC = 7
+014890         DISPLAY DU-GSUT
+014900         IF W-ZC = 0                                              I.050706
+014910             DISPLAY E-ME30 E-ME99                                I.050706
+014920             GO TO UAC-780                                        I.050706
+014930           ELSE                                                   I.050706
+014940             GO TO UAC-780.
+014950     MOVE ZERO TO W-SR.
+014960     MOVE W-AS(W-RC) TO W-SR.
+014970     IF W-HCD < 999900
+014980        ADD W-SUT TO W-GSUT.
+014990     IF W-DATE NOT = ZERO
+015000         MOVE W-RC TO W-HNCD.
+015010     IF ZERO = W-SU(01) AND W-SU(02) AND W-SU(03) AND W-SU(04)    I.050706
+015020           AND W-SU(05) AND W-SU(06) AND W-SU(07) AND W-SU(08)    I.050706
+015030           AND W-SU(09) AND W-SU(10) AND W-SUT AND W-KIN          I.050706
+015040         GO TO UAC-770.                                           I.050706
+015050     MOVE 1 TO W-ZC.                                              I.050706
+015060     GO TO UAC-770.
+015070 UAC-780.
+015080     IF W-BI = SPACE
+015090         DISPLAY AU-BI.
+015100     IF W-HNCD < W-HNC
+015110         DISPLAY E-ME14 E-ME98.
+015120 UAC-800.
+015130     MOVE 0 TO W-ADV.
+015140     DISPLAY AU-BI.
+015150     MOVE W-BI TO WK-BI.
+015160     ACCEPT AU-BI.
+015170     DISPLAY E-CL.
+015180     IF ESTAT = BTB
+015190         MOVE 7 TO W-RC
+015200         MOVE 22 TO W-L1
+015210         MOVE 23 TO W-L2
+015220         MOVE 24 TO W-L3
+015230         GO TO UAC-410.
+015240     IF ESTAT = ADV
+015250         MOVE WK-BI TO W-BI
+015260         DISPLAY AU-BI
+015270         MOVE 1 TO W-ADV
+015280         GO TO UAC-810.
+015290     IF ESTAT NOT = HTB AND SKP
+015300         GO TO UAC-780.
+015310 UAC-810.
+015320     MOVE W-HNOD TO W-HANO.
+015330 UAC-840.
+015340     IF W-DCD = 3
+015350         MOVE ZERO TO W-KOSUR
+015360         GO TO UAC-850.
+015370     IF W-ADV NOT = 0
+015380         GO TO UAC-850.
+015390     ACCEPT AU-KOSU.
+015400     DISPLAY E-CL.
+015410     IF ESTAT = BTB
+015420         GO TO UAC-800.
+015430     IF ESTAT NOT = HTB AND SKP
+015440         GO TO UAC-840.
+015450 UAC-850.
+015460     DISPLAY DU-KOSU.
+015470*
+015480     IF W-DCD = 8
+015490*****    MOVE ZERO TO W-HSC                                       D.040708
+015500*****    MOVE ZERO TO W-HSCD                                      D.131228
+015510*****    IF W-CNGS < 1404                                         D.140328
+015520*****        MOVE 5 TO W-HSCD                                     D.140328
+015530*****        MOVE 0 TO W-FRCD                                     D.140328
+015540*****        DISPLAY AU-HSC SU-FRC                                D.140328
+015550*****        GO TO UAC-940                                        D.140328
+015560*****      ELSE                                                   D.140328
+015570         MOVE 8 TO W-HSCD                                         I.131228
+015580         MOVE 0 TO W-FRCD
+015590         DISPLAY AU-HSC SU-FRC
+015600         GO TO UAC-940.
+015610     IF T-ZEI = 1                                                 I.070319
+015620*****    MOVE 8 TO W-HSCD                                         D.131228
+015630         MOVE 0 TO W-HSCD                                         I.131228
+015640         DISPLAY AU-HSC                                           I.070319
+015650         GO TO UAC-920.                                           I.070319
+015660     IF T-FKC = 99                                                I.040705
+015670*****    MOVE 8 TO W-HSCD                                         D.131228
+015680         MOVE 0 TO W-HSCD                                         I.131228
+015690         DISPLAY AU-HSC                                           I.040705
+015700         GO TO UAC-920.                                           I.040705
+015710*****IF W-DCD = 0                                                 D.140415
+015720*****    MOVE ZERO TO W-HSC                                       D.040708
+015730*****    MOVE ZERO TO W-HSCD                                      D.131228
+015740*****    IF W-CNGS < 1404                                         D.140328
+015750*****        MOVE 5 TO W-HSCD                                     D.140328
+015760*****        DISPLAY AU-HSC                                       D.140328
+015770*****        GO TO UAC-920                                        D.140328
+015780*****      ELSE                                                   D.140328
+015790     IF W-DCD = 0 OR 1 OR 2 OR 5                                  I.140415
+015800         MOVE 8 TO W-HSCD                                         I.131228
+015810         DISPLAY AU-HSC
+015820         GO TO UAC-920.
+015830     IF W-DCD = 3
+015840*****    IF W-GSUT > ZERO                                         D.140408
+015850*****        MOVE ZERO TO W-HSC W-FRCD                            D.040708
+015860*****        MOVE ZERO TO W-HSCD W-FRCD                           D.131228
+015870             MOVE ZERO TO W-FRCD                                  I.131228
+015880*****        IF W-CNGS < 1404                                     D.140328
+015890*****            MOVE 5 TO W-HSCD                                 D.140328
+015900*****            DISPLAY AU-HSC SU-FRC                            D.140328
+015910*****            GO TO UAC-940                                    D.140328
+015920*****          ELSE                                               D.140328
+015930             MOVE 8 TO W-HSCD                                     I.131228
+015940             DISPLAY AU-HSC SU-FRC
+015950             GO TO UAC-940.
+015960 UAC-880.
+015970     IF  W-DCD = 9
+015980*****    MOVE 8 TO W-HSCD                                         D.131228
+015990         MOVE 0 TO W-HSCD                                         I.131228
+016000         MOVE 0 TO W-FRCD
+016010         DISPLAY AU-HSC SU-FRC
+016020         GO TO UAC-940.
+016030     IF  W-DCD = 7
+016040*****    MOVE 8 TO W-HSCD                                         D.131228
+016050         MOVE 0 TO W-HSCD                                         I.131228
+016060         GO TO UAC-920.
+016070     IF W-ADV NOT = 0
+016080         GO TO UAC-890.
+016090     ACCEPT AU-HSC.
+016100     IF ESTAT = BTB
+016110         MOVE 0 TO W-ADV
+016120         IF W-DCD = 3
+016130             GO TO UAC-800
+016140           ELSE
+016150             GO TO UAC-840.
+016160     IF ESTAT NOT = HTB AND SKP
+016170         GO TO UAC-880.
+016180 UAC-890.
+016190*****IF W-HSCD NOT = 0 AND 3 AND 8                                D.131228
+016200     IF W-HSCD NOT = 0 AND 1 AND 3 AND 5 AND 8                    I.131228
+016210         GO TO UAC-880.
+016220 UAC-920.
+016230*****IF W-DCD NOT = 5 AND 0 AND 4 AND 7                           D.030708
+016240     IF W-DCD NOT = 0 AND 1 AND 2 AND 4 AND 5 AND 7               I.030708
+016250         MOVE 0 TO W-FRCD
+016260         DISPLAY SU-FRC
+016270         GO TO UAC-940.
+016280     IF W-ADV NOT = 0
+016290         GO TO UAC-930.
+016300     ACCEPT AU-FRC.
+016310     IF ESTAT = BTB
+016320         IF W-DCD = 7
+016330             MOVE 0 TO W-ADV
+016340             GO TO UAC-840.
+016350     IF ESTAT = BTB
+016360         MOVE 0 TO W-ADV
+016370         GO TO UAC-880.
+016380     IF ESTAT NOT = HTB AND SKP
+016390         GO TO UAC-920.
+016400 UAC-930.
+016410     DISPLAY AU-FRC.
+016420     IF W-FRCD > 1
+016430         GO TO UAC-920.
+016440 UAC-940.
+016450     DISPLAY AU-SDT.
+016460     IF W-SDTD NOT = ZERO
+016470         GO TO UAC-980.                                           I.000922
+016480*****    GO TO UAC-990.                                           D.000922
+016490     IF T-SS = ZERO OR 99                                         I.000922
+016500         GO TO UAC-990.                                           I.000922
+016510 UAC-960.
+016520     ACCEPT AU-SDT.
+016530     IF ESTAT NOT = BTB
+016540         GO TO UAC-970.
+016550     MOVE 0 TO W-ADV.
+016560     IF W-DCD = 8
+016570         GO TO UAC-840.
+016580     IF W-DCD = 9
+016590         IF W-GSUT > ZERO
+016600             GO TO UAC-840.
+016610     IF W-DCD = 9
+016620         GO TO UAC-840.
+016630     IF W-DCD = 5 OR 0 OR 4 OR 7
+016640         GO TO UAC-920.
+016650     GO TO UAC-880.
+016660 UAC-970.
+016670     IF ESTAT NOT = HTB AND SKP
+016680         GO TO UAC-960.                                           I.000922
+016690*****    GO TO UAC-940.                                           D.000922
+016700     IF T-SS = ZERO OR 99                                         I.000818
+016710         IF W-SDTD NOT = ZERO                                     I.000922
+016720             GO TO UAC-960.                                       I.000922
+016730     IF W-DCD NOT = 3                                             I.020227
+016740         IF W-SDTD = 99999999                                     I.020227
+016750             GO TO UAC-960.                                       I.020227
+016760*****IF W-SDTD = ZERO                                             D.020227
+016770     IF W-SDTD = ZERO OR 99999999                                 I.020227
+016780         GO TO UAC-990.                                           I.001030
+016790*****    GO TO UAC-980.                                           D.001030
+016800     IF W-SDTG < 1 OR > 12
+016810         GO TO UAC-960.                                           I.000922
+016820*****    GO TO UAC-940.                                           D.000922
+016830     IF W-SDTP < 1 OR > 31
+016840         GO TO UAC-960.                                           I.000922
+016850*****    GO TO UAC-940.                                           D.000922
+016860     IF W-SDTN NOT = W-ND AND (W-ND + 1)
+016870         GO TO UAC-960.                                           I.000922
+016880*****    GO TO UAC-940.                                           D.000922
+016890*****IF W-NGP > W-SDTD                                            D.001025
+016900*****    GO TO UAC-960.                                           D.001025
+016910 UAC-980.                                                         I.000922
+016920*****IF W-SDATE NOT = ZERO                                        D.020205
+016930*****IF W-SDATE NOT = ZERO AND 99999999                           D.020227
+016940     IF W-SDATE NOT = ZERO                                        I.020227
+016950         IF W-SDATE >= W-SDTD                                     I.000922
+016960             DISPLAY E-ME25 E-ME99                                I.000922
+016970             DISPLAY E-CL                                         I.000922
+016980             GO TO UAC-960.                                       I.000922
+016990*****IF W-SDATE = 99999999                                        D.020227
+017000*****    IF W-NGD >= W-SDTNG                                      D.020227
+017010*****        DISPLAY E-ME25 E-ME99                                D.020227
+017020*****        DISPLAY E-CL                                         D.020227
+017030*****        GO TO UAC-960.                                       D.020227
+017040     IF W-NGP > W-SDTD                                            I.001025
+017050         GO TO UAC-960.                                           I.001025
+017060*****    GO TO UAC-940.                                           D.000922
+017070 UAC-990.
+017080     ACCEPT AU-DMM.
+017090     IF ESTAT = BTB
+017100         GO TO UAC-960.
+017110     IF ESTAT NOT = HTB AND SKP
+017120         GO TO UAC-990.
+017130     IF W-DMM = 9
+017140         DISPLAY E-ME90 E-ME98
+017150         GO TO UAC-040.
+017160     IF W-DMM NOT = 1
+017170         GO TO UAC-990.
+017180 UAC-EX.
+017190     EXIT.
+017200*---------------  値引入力  ----------------------------------------------
+017210 NAC-RTN.
+017220     IF W-NGP NOT = ZERO
+017230         GO TO NAC-040.
+017240     DISPLAY C-CLEAR.
+017250     CALL "SCHD11".
+017260 NAC-020.
+017270     ACCEPT AN-NGP.
+017280     DISPLAY E-CL.
+017290     IF ESTAT = C2 OR PF9
+017300         MOVE 1 TO W-END
+017310         GO TO NAC-EX.
+017320     IF ESTAT = BTB
+017330         GO TO NAC-EX.
+017340     IF ESTAT NOT = HTB AND SKP
+017350         GO TO NAC-020.
+017360     IF W-NGPS = ZERO
+017370         MOVE DATE-02R TO W-NGPS
+017380         DISPLAY AN-NGP.
+017390     IF W-GD > 12 OR < 1
+017400         GO TO NAC-020.
+017410     IF W-PD > 31 OR < 1
+017420         GO TO NAC-020.
+017430     MOVE ZERO TO W-ND1.
+017440     IF W-ND2 >= DATE-NF1 AND <= DATE-NT1
+017450         ADD DATE-NC1 TO W-ND.
+017460     IF W-ND2 >= DATE-NF2 AND <= DATE-NT2
+017470         ADD DATE-NC2 TO W-ND.
+017480     IF W-CNG NOT = W-NGD
+017490         DISPLAY E-ME12 E-ME98
+017500         GO TO NAC-020.
+017510 NAC-040.
+017520     CALL "SCHD11".
+017530     DISPLAY AN-NGP.
+017540     ACCEPT AN-TCD.
+017550     IF ESTAT = C2 OR PF9
+017560         MOVE 1 TO W-END
+017570         GO TO NAC-EX.
+017580     IF ESTAT = BTB
+017590         GO TO NAC-020.
+017600     IF ESTAT NOT = HTB AND SKP
+017610         GO TO NAC-040.
+017620     PERFORM TM-RTN THRU TM-EX.
+017630     IF W-INV = 1
+017640         DISPLAY E-ME1 E-ME98
+017650         GO TO NAC-040.
+017660     IF T-BC NOT = ZERO
+017670         DISPLAY E-ME1 E-ME98
+017680         GO TO NAC-040.
+017690 NAC-060.
+017700     ACCEPT AN-CSC.
+017710     IF ESTAT = BTB
+017720         GO TO NAC-040.
+017730     IF ESTAT NOT = HTB AND SKP
+017740         GO TO NAC-060.
+017750     IF W-CSCD NOT = 0 AND 9
+017760         GO TO NAC-060.
+017770*****MOVE SPACE TO W-CSN.                                         D.020405
+017780*****IF W-CSCD = 9                                                D.020405
+017790*****    MOVE NC"調整分" TO W-CSN.                                D.020405
+017800*****DISPLAY DN-CSN.                                              D.020405
+017810 NAC-080.
+017820     MOVE ZERO TO W-SR W-BR.
+017830     MOVE SPACE TO W-BI.
+017840*****MOVE ZERO TO W-RC W-ASR W-HSCD.                              D.131228
+017850     MOVE ZERO TO W-RC W-ASR.                                     I.131228
+017860*****IF W-CNGS < 1404                                             D.140328
+017870*****    MOVE 5 TO W-HSCD                                         D.140328
+017880*****  ELSE                                                       D.140328
+017890     MOVE 8 TO W-HSCD.                                            I.131228
+017900     MOVE 7 TO W-L1.
+017910     CALL "SCHD11".
+017920     DISPLAY AN-NGP AN-TCD DN-TNA AN-CSC.                         I.020405
+017930*****DISPLAY AN-NGP AN-TCD DN-TNA AN-CSC DN-CSN.                  D.020405
+017940 NAC-100.
+017950     ADD 1 TO W-RC W-L1.
+017960     IF W-RC = 7
+017970         GO TO NAC-260.
+017980     MOVE W-NGP TO W-DATE.
+017990     MOVE W-TCDN TO W-TCD.
+018000     MOVE W-CSCD TO W-CSC.
+018010 NAC-120.
+018020     ACCEPT AN-HCD.
+018030     DISPLAY E-CL.
+018040*****IF ESTAT = C1                                                D.001205
+018050     IF ESTAT = C1 OR PF6                                         I.001205
+018060         GO TO NAC-240.
+018070     IF ESTAT NOT = BTB
+018080         GO TO NAC-140.
+018090     IF W-RC = 1
+018100         GO TO NAC-040.
+018110     SUBTRACT 1 FROM W-RC W-L1.
+018120     MOVE W-AS(W-RC) TO W-SR.
+018130*****IF W-HCD = 999977                                            D.020204
+018140     IF W-HCD = 999977 OR 999991 OR 999992 OR 999993              I.020204
+018150         GO TO NAC-160.
+018160     GO TO NAC-200.
+018170 NAC-140.
+018180     IF ESTAT NOT = HTB AND SKP
+018190         GO TO NAC-120.
+018200     MOVE 0 TO W-HIC.                                             I.020214
+018210     PERFORM HI-RTN THRU HI-EX.
+018220     IF W-EC NOT = ZERO
+018230         MOVE 0 TO W-EC
+018240         GO TO NAC-120.
+018250     MOVE T-TNC TO W-TC2.
+018260     MOVE T-FKC TO W-FKC.
+018270 NAC-160.
+018280*****IF W-HCD NOT = 999977                                        D.020204
+018290     IF W-HCD NOT = 999977 AND 999991 AND 999992 AND 999993       I.020204
+018300         GO TO NAC-180.
+018310     ACCEPT AN-KIN.
+018320     IF ESTAT = BTB
+018330         GO TO NAC-120.
+018340     IF ESTAT NOT = HTB AND SKP
+018350         GO TO NAC-160.
+018360     MOVE ZERO TO W-SUT W-BT.
+018370     DISPLAY DN-SUT DN-BT DN-KIN.
+018380     GO TO NAC-220.
+018390 NAC-180.
+018400     ACCEPT AN-SUT.
+018410     IF ESTAT = BTB
+018420         GO TO NAC-120.
+018430     IF ESTAT NOT = HTB AND SKP
+018440         GO TO NAC-180.
+018450     DISPLAY DN-SUT.
+018460     IF W-SUT < 0                                                 I.001121
+018470         GO TO NAC-180.                                           I.001121
+018480 NAC-200.
+018490     ACCEPT AN-BT.
+018500     IF ESTAT = BTB
+018510         GO TO NAC-180.
+018520     IF ESTAT NOT = HTB AND SKP
+018530         GO TO NAC-200.
+018540     COMPUTE W-KIN = W-SUT * W-BT.
+018550     DISPLAY DN-BT DN-KIN.
+018560 NAC-220.
+018570     MOVE W-RC TO W-GNO.
+018580*****MOVE ZERO TO W-SUS.                                          D.000821
+018590     MOVE ZERO TO W-SU(01) W-SU(02) W-SU(03) W-SU(04) W-SU(05)    I.000822
+018600                  W-SU(06) W-SU(07) W-SU(08) W-SU(09) W-SU(10).   I.000822
+018610     MOVE W-SR TO W-AS(W-RC).
+018620     GO TO NAC-100.
+018630 NAC-240.
+018640     MOVE ZERO TO W-SR.
+018650     MOVE W-SR TO W-AS(W-RC).
+018660     DISPLAY SN-DS.
+018670     ADD 1 TO W-RC W-L1.
+018680     IF W-RC NOT = 7
+018690         GO TO NAC-240.
+018700 NAC-260.
+018710     MOVE ZERO TO W-DKIN CNT.
+018720 NAC-280.
+018730     ADD 1 TO CNT.
+018740     IF CNT = 7
+018750         DISPLAY DN-DKIN
+018760         GO TO NAC-300.
+018770     MOVE W-AS(CNT) TO W-SR.
+018780     ADD W-KIN TO W-DKIN.
+018790     GO TO NAC-280.
+018800 NAC-300.
+018810     DISPLAY AN-BI.
+018820     ACCEPT AN-BI.
+018830     IF ESTAT = BTB
+018840         GO TO NAC-360.
+018850     IF ESTAT NOT = HTB AND SKP
+018860         GO TO NAC-300.
+018870     IF T-ZEI = 1                                                 I.070319
+018880         MOVE 0 TO W-HSCD.                                        I.131228
+018890*****    MOVE 8 TO W-HSCD.                                        D.131228
+018900     IF T-FKC = 99                                                I.040708
+018910         MOVE 0 TO W-HSCD.                                        I.131228
+018920*****    MOVE 8 TO W-HSCD.                                        D.131228
+018930     DISPLAY AN-HSC AN-SDT.
+018940*****IF W-SDTD = ZERO                                             D.000922
+018950*****    GO TO NAC-330.                                           D.000922
+018960     GO TO NAC-340.
+018970 NAC-320.
+018980     ACCEPT AN-HSC.
+018990     IF ESTAT = BTB
+019000         GO TO NAC-300.
+019010     IF ESTAT NOT = HTB AND SKP
+019020         GO TO NAC-320.
+019030*****IF W-HSCD NOT = 0 AND 3 AND 8                                D.131228
+019040     IF W-HSCD NOT = 0 AND 1 AND 3 AND 5 AND 8                    I.131228
+019050         GO TO NAC-320.
+019060     IF T-SS = 00 OR 99                                           I.001030
+019070         MOVE ZERO TO W-SDTD                                      I.001030
+019080         DISPLAY AN-SDT                                           I.001030
+019090         GO TO NAC-340.                                           I.001030
+019100 NAC-330.
+019110     ACCEPT AN-SDT.
+019120     IF ESTAT = BTB
+019130         GO TO NAC-320.
+019140     IF ESTAT NOT = HTB AND SKP
+019150         GO TO NAC-330.
+019160*****IF T-SS = ZERO OR 99                                         D.001030
+019170     IF W-SDTD = ZERO                                             I.000818
+019180         GO TO NAC-340.                                           I.000818
+019190     IF W-SDTG < 1 OR > 12
+019200         GO TO NAC-330.
+019210     IF W-SDTP < 1 OR > 31
+019220         GO TO NAC-330.
+019230     IF W-SDTN NOT = W-ND AND (W-ND + 1)
+019240         GO TO NAC-330.
+019250     IF W-NGP > W-SDTD
+019260         GO TO NAC-330.
+019270     IF W-SDATE NOT = ZERO                                        I.000922
+019280         IF W-SDATE >= W-SDTD                                     I.000922
+019290             DISPLAY E-ME25 E-ME99                                I.000922
+019300             DISPLAY E-CL                                         I.000922
+019310             GO TO NAC-330.                                       I.000922
+019320 NAC-340.
+019330     ACCEPT AN-DMM.
+019340     IF ESTAT = BTB
+019350         IF T-SS = 00 OR 99                                       I.001030
+019360             GO TO NAC-320                                        I.001030
+019370           ELSE                                                   I.001030
+019380             GO TO NAC-330.
+019390     IF ESTAT NOT = HTB AND SKP
+019400         GO TO NAC-340.
+019410     IF W-DMM = 1
+019420         GO TO NAC-EX.
+019430     IF W-DMM = 9
+019440         GO TO NAC-040.
+019450     GO TO NAC-340.
+019460 NAC-360.
+019470     IF W-RC = 1
+019480         GO TO NAC-080.
+019490     SUBTRACT 1 FROM W-RC.
+019500     MOVE W-AS(W-RC) TO W-SR.
+019510     SUBTRACT 1 FROM W-L1.
+019520     IF W-HCD = ZERO
+019530         GO TO NAC-360.
+019540*****IF W-HCD = 999977                                            D.020204
+019550     IF W-HCD = 999977 OR 999991 OR 999992 OR 999993              I.020204
+019560         GO TO NAC-160.
+019570     GO TO NAC-200.
+019580 NAC-EX.
+019590     EXIT.
+019600*------------------------------------------------------------------------
+019610 TAN-RTN.
+019620     MOVE 0 TO WK-TAN.
+019630*****MOVE W-TCDD TO THTN-01.                                      D.010419
+019640*****MOVE W-HCD TO THTN-02.                                       D.010419
+019650*****MOVE W-SIZ TO THTN-03.                                       D.010419
+019660*****READ JT-THTN UNLOCK INVALID                                  D.010419
+019670     MOVE W-TCD TO THT-TCD.                                       I.010419
+019680     MOVE W-HCD TO THT-HCD.                                       I.010419
+019690     MOVE W-SIZ TO THT-SIZ.                                       I.010419
+019700     READ THTM UNLOCK INVALID                                     I.010419
+019710         MOVE ZERO TO THT-T.                                      I.020405
+019720*****    GO TO TAN-020.                                           D.020405
+019730     MOVE THT-T TO WK-TAN.                                        I.010419
+019740*****MOVE THTN-04 TO WK-TAN.                                      D.010419
+019750*TAN-020.                                                         D.020405
+019760     IF WK-TAN NOT = ZERO
+019770         GO TO TAN-090.                                           I.010419
+019780*****    GO TO TAN-EX.                                            D.010419
+019790*****MOVE W-TCDD TO THTN-01.                                      D.010419
+019800*****MOVE W-HCD TO THTN-02.                                       D.010419
+019810*****MOVE 9 TO THTN-03.                                           D.010419
+019820*****READ JT-THTN UNLOCK INVALID                                  D.010419
+019830     MOVE W-TCD TO THT-TCD.                                       I.010419
+019840     MOVE W-HCD TO THT-HCD.                                       I.010419
+019850     MOVE 9 TO THT-SIZ.                                           I.010419
+019860     READ THTM UNLOCK INVALID                                     I.010419
+019870         MOVE ZERO TO THT-T.                                      I.020405
+019880*****    GO TO TAN-040.                                           D.020405
+019890*****    GO TO TAN-EX.                                            D.010802
+019900     MOVE THT-T TO WK-TAN.                                        I.010419
+019910     IF WK-TAN NOT = ZERO                                         I.010802
+019920         GO TO TAN-090.                                           I.010802
+019930*****MOVE THTN-04 TO WK-TAN.                                      D.010419
+019940*TAN-040.                                                         D.020405
+019950     IF HI-MHCD = HI-HCD                                          I.010802
+019960         GO TO TAN-090.                                           I.020405
+019970*****    GO TO TAN-EX.                                            D.020405
+019980     MOVE W-TCD TO THT-TCD.                                       I.010802
+019990     MOVE HI-MHCD TO THT-HCD.                                     I.010802
+020000     MOVE W-SIZ TO THT-SIZ.                                       I.010802
+020010     READ THTM UNLOCK INVALID                                     I.010802
+020020         MOVE ZERO TO THT-T.                                      I.020405
+020030*****    GO TO TAN-060.                                           D.020405
+020040     MOVE THT-T TO WK-TAN.                                        I.010802
+020050*TAN-060.                                                         D.020405
+020060     IF WK-TAN NOT = ZERO                                         I.010802
+020070         GO TO TAN-090.                                           I.010802
+020080     MOVE W-TCD TO THT-TCD.                                       I.010802
+020090     MOVE HI-MHCD TO THT-HCD.                                     I.010802
+020100     MOVE 9 TO THT-SIZ.                                           I.010802
+020110     READ THTM UNLOCK INVALID                                     I.010802
+020120         MOVE ZERO TO THT-T.                                      I.020405
+020130*****    GO TO TAN-090.                                           D.020405
+020140*****    GO TO TAN-EX.                                            D.020215
+020150     MOVE THT-T TO WK-TAN.                                        I.010802
+020160 TAN-090.                                                         I.010419
+020170     IF WK-TAN NOT = ZERO                                         I.010419
+020180         MOVE WK-TAN TO W-BT                                      I.010802
+020190         GO TO TAN-EX.                                            I.010802
+020200*****IF HI-BC1 > 19 AND < 30                                      D.070305
+020210*****    MOVE HI-SB TO WK-TAN                                     D.070305
+020220*****    MOVE WK-TAN TO W-BT.                                     D.070305
+020230*****    MOVE HI-SB TO WK-TAN.                                    D.020401
+020240*****    MOVE WK-TAN TO W-BT.                                     D.010802
+020250 TAN-EX.
+020260     EXIT.
+020270*
+020280 TAO-RTN.                                                         I.110407
+020290     MOVE 0 TO WK-TAN.                                            I.110407
+020300     MOVE W-TCD TO OTHT-TCD.                                      I.110407
+020310     MOVE W-HCD TO OTHT-HCD.                                      I.110407
+020320     MOVE W-SIZ TO OTHT-SIZ.                                      I.110407
+020330     READ OTHTM UNLOCK INVALID                                    I.110407
+020340         MOVE ZERO TO OTHT-T.                                     I.110407
+020350     MOVE OTHT-T TO WK-TAN.                                       I.110407
+020360     IF WK-TAN NOT = ZERO                                         I.110407
+020370         GO TO TAO-090.                                           I.110407
+020380     MOVE W-TCD TO OTHT-TCD.                                      I.110407
+020390     MOVE W-HCD TO OTHT-HCD.                                      I.110407
+020400     MOVE 9 TO OTHT-SIZ.                                          I.110407
+020410     READ OTHTM UNLOCK INVALID                                    I.110407
+020420         MOVE ZERO TO OTHT-T.                                     I.110407
+020430     MOVE OTHT-T TO WK-TAN.                                       I.110407
+020440     IF WK-TAN NOT = ZERO                                         I.110407
+020450         GO TO TAO-090.                                           I.110407
+020460     IF HI-MHCD = HI-HCD                                          I.110407
+020470         GO TO TAO-090.                                           I.110407
+020480     MOVE W-TCD TO OTHT-TCD.                                      I.110407
+020490     MOVE HI-MHCD TO OTHT-HCD.                                    I.110407
+020500     MOVE W-SIZ TO OTHT-SIZ.                                      I.110407
+020510     READ OTHTM UNLOCK INVALID                                    I.110407
+020520         MOVE ZERO TO OTHT-T.                                     I.110407
+020530     MOVE OTHT-T TO WK-TAN.                                       I.110407
+020540     IF WK-TAN NOT = ZERO                                         I.110407
+020550         GO TO TAO-090.                                           I.110407
+020560     MOVE W-TCD TO OTHT-TCD.                                      I.110407
+020570     MOVE HI-MHCD TO OTHT-HCD.                                    I.110407
+020580     MOVE 9 TO OTHT-SIZ.                                          I.110407
+020590     READ OTHTM UNLOCK INVALID                                    I.110407
+020600         MOVE ZERO TO OTHT-T.                                     I.110407
+020610     MOVE OTHT-T TO WK-TAN.                                       I.110407
+020620 TAO-090.                                                         I.110407
+020630     IF WK-TAN NOT = ZERO                                         I.110407
+020640         MOVE WK-TAN TO W-BT                                      I.110407
+020650         GO TO TAO-EX.                                            I.110407
+020660 TAO-EX.                                                          I.110407
+020670     EXIT.                                                        I.110407
+020680*------------------------------------------------------------------------
+020690 SD-RTN.
+020700     CLOSE S-TRAN.
+020710     OPEN I-O S-TRAN.
+020720 SD-020.
+020730     READ S-TRAN AT END
+020740         GO TO SD-EX.
+020750     IF W-DNO NOT = S-DNO
+020760         GO TO SD-020.
+020770     MOVE ""FF"" TO S-R.
+020780     REWRITE S-R.
+020790     IF ERR-STAT NOT = "00"
+020800         DISPLAY E-STAT E-ME17 E-ME99.
+020810     GO TO SD-020.
+020820 SD-EX.
+020830     EXIT.
+020840*------------------------------------------------------------------------
+020850 HMN-RTN.
+020860     INITIALIZE W-ASR W-BR.
+020870     MOVE SPACE TO W-BI.
+020880     MOVE ZERO TO W-DCD.                                          I.010327
+020890     MOVE HSMS-061 TO W-TCDD.                                     I.020214
+020900     PERFORM TM-RTN THRU TM-EX.                                   I.020214
+020910     IF W-INV = 1                                                 I.020214
+020920         DISPLAY E-ME2 E-ME99                                     I.020214
+020930         GO TO HMN-EX.                                            I.020214
+020940 HMN-020.
+020950*****IF HSMS-02 NOT = 7                                           D.010419
+020960     IF HSMS-02 = 7                                               I.010419
+020970         MOVE HSMS-15 TO W-BI                                     I.010419
+020980         GO TO HMN-035.                                           I.010419
+020990     IF HSMS-13 = 4 OR 5
+021000         MOVE 4 TO HSMS-03.
+021010     MOVE ZERO TO W-SR.                                           I.010419
+021020     MOVE SPACE TO W-BIK.                                         I.010419
+021030     MOVE HSMS-02 TO W-GNO.                                       I.020214
+021040     MOVE W-NGP TO W-DATE.                                        I.010419
+021050     MOVE HSMS-03 TO W-DC.                                        I.010419
+021060     MOVE W-TCDN TO W-TCD.                                        I.020205
+021070     MOVE W-TCDD TO W-TCD2.                                       I.020205
+021080*****MOVE HSMS-061 TO W-TCD W-TCD2.                               D.020205
+021090     MOVE HSMS-09 TO W-HCD.                                       I.010419
+021100     MOVE HSMS-10 TO W-SIZ.                                       I.010419
+021110     MOVE HSMS-1211(01) TO W-SU(01).                              I.010419
+021120     MOVE HSMS-1211(02) TO W-SU(02).                              I.010419
+021130     MOVE HSMS-1211(03) TO W-SU(03).                              I.010419
+021140     MOVE HSMS-1211(04) TO W-SU(04).                              I.010419
+021150     MOVE HSMS-1211(05) TO W-SU(05).                              I.010419
+021160     MOVE HSMS-1211(06) TO W-SU(06).                              I.010419
+021170     MOVE HSMS-1211(07) TO W-SU(07).                              I.010419
+021180     MOVE HSMS-1211(08) TO W-SU(08).                              I.010419
+021190     MOVE HSMS-1211(09) TO W-SU(09).                              I.010419
+021200     MOVE HSMS-1211(10) TO W-SU(10).                              I.010419
+021210     MOVE HSMS-122 TO W-SUT.                                      I.010419
+021220     MOVE HSMS-07 TO W-SOK.                                       I.010419
+021230     MOVE HSMS-14 TO W-KOSU.                                      I.010419
+021240     MOVE HSMS-062 TO W-CCD.                                      I.010419
+021250     MOVE HSMS-22 TO W-BIK.                                       I.010419
+021260     MOVE HSMS-24 TO W-USC.                                       I.040324
+021270     MOVE 1 TO W-HIC.                                             I.020214
+021280     PERFORM HI-RTN THRU HI-EX.                                   I.020214
+021290     PERFORM TAN-RTN THRU TAN-EX.                                 I.010419
+021300     COMPUTE W-KIN = W-SUT * W-BT.                                I.010419
+021310     IF W-DC = 2 OR 6                                             I.020221
+021320         MOVE ZERO TO W-FT                                        I.020221
+021330       ELSE                                                       I.020221
+021340         MOVE HI-FT TO W-FT.                                      I.020214
+021350     MOVE T-TNC TO W-TC2.                                         I.020214
+021360     MOVE T-FKC TO W-FKC.                                         I.020214
+021370     MOVE W-SR TO W-AS(HSMS-02).                                  I.010419
+021380*****IF HSMS-02 NOT = 7                                           D.010314
+021390*****    IF HSMS-03 NOT = 0 AND 4                                 D.010314
+021400*****        MOVE 0 TO HSMS-03.                                   D.010314
+021410*****IF HSMS-02 NOT = 7                                           D.010419
+021420*****    MOVE ZERO TO W-SR                                        D.010419
+021430*****    MOVE SPACE TO W-BIK                                      D.010419
+021440*****    MOVE W-NGP TO W-DATE                                     D.010419
+021450*****    MOVE HSMS-03 TO W-DC                                     D.010419
+021460*****    MOVE HSMS-061 TO W-TCD W-TCD2                            D.010419
+021470*****    MOVE HSMS-09 TO W-HCD                                    D.010419
+021480*****    MOVE HSMS-10 TO W-SIZ                                    D.010419
+021490*****    MOVE HSMS-1211(01) TO W-SU(01)                           D.010419
+021500*****    MOVE HSMS-1211(02) TO W-SU(02)                           D.010419
+021510*****    MOVE HSMS-1211(03) TO W-SU(03)                           D.010419
+021520*****    MOVE HSMS-1211(04) TO W-SU(04)                           D.010419
+021530*****    MOVE HSMS-1211(05) TO W-SU(05)                           D.010419
+021540*****    MOVE HSMS-1211(06) TO W-SU(06)                           D.010419
+021550*****    MOVE HSMS-1211(07) TO W-SU(07)                           D.010419
+021560*****    MOVE HSMS-1211(08) TO W-SU(08)                           D.010419
+021570*****    MOVE HSMS-1211(09) TO W-SU(09)                           D.010419
+021580*****    MOVE HSMS-1211(10) TO W-SU(10)                           D.010419
+021590*****    MOVE HSMS-122 TO W-SUT                                   D.010419
+021600*****    MOVE HSMS-07 TO W-SOK                                    D.010419
+021610*****    MOVE HSMS-14 TO W-KOSU                                   D.010419
+021620*****    MOVE HSMS-062 TO W-CCD                                   D.010419
+021630*****    MOVE HSMS-22 TO W-BIK                                    D.010419
+021640*****    MOVE W-SR TO W-AS(HSMS-02)                               D.010419
+021650*****  ELSE                                                       D.010419
+021660*****    MOVE HSMS-15 TO W-BI.                                    D.010419
+021670 HMN-035.                                                         I.010419
+021680     READ HSMSF NEXT RECORD AT END
+021690         GO TO HMN-040.
+021700     IF W-HMN = HSMS-01
+021710         GO TO HMN-020.
+021720 HMN-040.
+021730     MOVE W-SOK TO W-SCD.
+021740*****MOVE W-DATE TO W-NGP.                                        D.020214
+021750*****MOVE W-TCD TO W-TCDN W-TCDD.                                 D.020214
+021760     MOVE W-CCD TO W-CCDD.
+021770     MOVE W-KOSU TO W-KOSUR.
+021780*****MOVE ZERO TO W-HSCD W-FRCD.                                  D.131228
+021790     MOVE ZERO TO W-FRCD.                                         I.131228
+021800*****IF W-CNGS < 1404                                             D.140328
+021810*****    MOVE 5 TO W-HSCD                                         D.140328
+021820*****  ELSE                                                       D.140328
+021830     MOVE 8 TO W-HSCD.                                            I.131228
+021840 HMN-060.
+021850     MOVE 3 TO JCON3-01.
+021860     MOVE W-SCD TO JCON3-02.
+021870     READ JCON UNLOCK INVALID
+021880         MOVE  SPACE TO JCON3-03.
+021890     MOVE W-SCD TO W-SOK.
+021900     DISPLAY AU-SOK DU-SNA.
+021910*
+021920*****PERFORM TM-RTN THRU TM-EX.                                   D.020214
+021930*****IF W-INV = 1                                                 D.020214
+021940*****    DISPLAY E-ME2 E-ME99                                     D.020214
+021950*****    GO TO HMN-EX.                                            D.020214
+021960*****MOVE W-HMN TO W-HN1.                                         D.010327
+021970*****DISPLAY AU-HN1.                                              D.010327
+021980*****MOVE 1 TO W-HNC.                                             D.010327
+021990*****MOVE ZERO TO W-HN3 W-HN4 W-HN5 W-HN6                         D.010327
+022000     IF W-DC = 1 OR 2                                             I.010327
+022010         MOVE W-DC TO W-DCD                                       I.020320
+022020         MOVE ZERO TO W-HNOD                                      I.081222
+022030*****    MOVE ZERO TO W-HNOD W-HNC                                D.081222
+022040*****    DISPLAY SU-HMN                                           D.020214
+022050       ELSE                                                       I.010327
+022060         MOVE W-HMN TO W-HNOD.                                    I.081222
+022070*****    MOVE W-HMN TO W-HN1                                      D.081222
+022080*****    DISPLAY AU-HN1                                           D.081222
+022090*****    MOVE 1 TO W-HNC                                          D.081222
+022100*****    MOVE ZERO TO W-HN2 W-HN3 W-HN4 W-HN5 W-HN6               D.081222
+022110*****    DISPLAY SU-HN2 SU-HN3 SU-HN4 SU-HN5 SU-HN6.              D.081222
+022120     PERFORM TCM-RTN THRU TCM-EX.
+022130     IF W-INV = 1                                                 I.001031
+022140         DISPLAY E-ME1 E-ME99                                     I.001031
+022150         GO TO HMN-EX.                                            I.001031
+022160*****MOVE ZERO TO W-HSCD W-FRCD.                                  D.131228
+022170     MOVE ZERO TO W-FRCD.                                         I.131228
+022180*****IF W-CNGS < 1404                                             D.140328
+022190*****    MOVE 5 TO W-HSCD                                         D.140328
+022200*****  ELSE                                                       D.140328
+022210     MOVE 8 TO W-HSCD.                                            I.131228
+022220     DISPLAY AU-BI DU-KOSU AU-HSC AU-FRC.
+022230 HMN-EX.
+022240     EXIT.
+022250*------------------------------------------------------------------------
+022260 DSP-RTN.
+022270     MOVE 1 TO W-L1.
+022280     MOVE 2 TO W-L2.
+022290     MOVE 3 TO W-L3.
+022300     MOVE ZERO TO W-RC W-ZC W-GSUT W-RCB W-LB.                    I.020409
+022310*****MOVE ZERO TO W-RC W-DCD W-ZC W-GSUT W-RCB W-LB.              D.020409
+022320*****MOVE ZERO TO W-RC W-DCD W-ZC W-GSUT.                         D.020403
+022330 DSP-020.
+022340     ADD 1 TO W-RC.
+022350     ADD 3 TO W-L1 W-L2 W-L3.
+022360     IF W-RC > 6
+022370         GO TO DSP-080.
+022380*
+022390     INITIALIZE W-SR.
+022400     MOVE W-AS(W-RC) TO W-SR.
+022410     IF W-HCD = ZERO
+022420         DISPLAY SU-D1 SU-D2 SU-D3
+022430         GO TO DSP-020.
+022440*****PERFORM TAZ-RTN THRU TAZ-EX.                                 D.070124
+022450     MOVE W-HCD TO HI-KEY.
+022460     READ HI-M WITH UNLOCK INVALID KEY
+022470         MOVE SPACE TO HI-NAME.
+022480     DISPLAY AU-DC AU-HCD DU-HNA.
+022490     IF W-HCD >= 999900
+022500         DISPLAY SU-D2 SU-D31
+022510         GO TO DSP-060.
+022520     DISPLAY AU-SIZ.
+022530     IF W-SIZ = 1
+022540         DISPLAY DU-S1.
+022550     IF W-SIZ = 2
+022560         DISPLAY DU-S2.
+022570     IF W-SIZ = 3
+022580         DISPLAY DU-S3.
+022590     IF W-SIZ = 4
+022600         DISPLAY DU-S4.
+022610     MOVE ZERO TO W-SC.
+022620     MOVE -3 TO W-C.
+022630 DSP-040.
+022640     ADD 1 TO W-SC.
+022650     IF W-SC > 8
+022660         ADD 5 TO W-C
+022670       ELSE
+022680         ADD 6 TO W-C.
+022690     IF W-SC = 11
+022700         GO TO DSP-060.
+022710     IF W-SC < 8
+022720         DISPLAY DU-SU
+022730       ELSE
+022740         DISPLAY DU-SU1.
+022750     GO TO DSP-040.
+022760 DSP-060.
+022770     DISPLAY DU-SUT DU-BT DU-KIN AU-BIK.
+022780     IF W-DC = 4
+022790         MOVE ZERO TO W-FT
+022800         DISPLAY SU-KIN SU-BT.
+022810     IF W-HCD < 999900                                            I.090120
+022820         ADD W-SUT TO W-GSUT.
+022830     IF W-DC NOT = 7                                              I.020401
+022840         IF W-BT = ZERO                                           I.020401
+022850             DISPLAY E-ME15 E-ME99                                I.020401
+022860             DISPLAY E-CL                                         I.020404
+022870             IF W-DSPC = 1                                        I.020404
+022880                 IF W-RCB = ZERO                                  I.020404
+022890                     MOVE W-RC TO W-RCB                           I.020404
+022900                     MOVE W-L TO W-LB.                            I.020404
+022910*****        DISPLAY E-CL.                                        D.020404
+022920     GO TO DSP-020.
+022930 DSP-080.
+022940     DISPLAY DU-GSUT.
+022950 DSP-EX.
+022960     EXIT.
+022970*------------------------------------------------------------------------
+022980 TM-RTN.
+022990     MOVE 0 TO W-INV.
+023000     MOVE W-TCDD TO W-TCDN.
+023010     IF W-TCDN = 0460
+023020         MOVE 0458 TO W-TCDN.                                     I.010206
+023030*****    MOVE 0459 TO W-TCDN.                                     D.010206
+023040     MOVE W-TCDN TO T-KEY.
+023050     READ T-M WITH UNLOCK INVALID KEY
+023060         MOVE SPACE TO T-NAME
+023070         MOVE 1 TO W-INV.
+023080     IF W-UNCD = 0
+023090         DISPLAY AU-TCD DU-TNA
+023100       ELSE
+023110         DISPLAY AN-TCD DN-TNA.
+023120*
+023130     MOVE W-TCDN TO TSK-KEY.                                      I.000922
+023140     READ TSKF WITH UNLOCK INVALID KEY                            I.000922
+023150         MOVE ZERO TO TSK-R.                                      I.000922
+023160     MOVE TSK-ZNGP(4) TO W-SDATE.                                 I.000922
+023170     IF TSK-ZNGP(5) NOT = ZERO                                    I.000922
+023180         MOVE TSK-ZNGP(5) TO W-SDATE.                             I.020207
+023190*****    MOVE 99999999 TO W-SDATE.                                D.020207
+023200*
+023210     MOVE ZERO TO W-SDTD.
+023220*****IF W-SDATE = 99999999                                        D.020207
+023230*****    GO TO TM-EX.                                             D.020207
+023240     MOVE W-NGP TO W-SDTD.
+023250 TM-020.
+023260     MOVE T-SS TO W-SDTP.
+023270     IF W-SDTP = 00 OR 99
+023280         MOVE ZERO TO W-SDTD
+023290         GO TO TM-EX.
+023300     IF W-SDTP = 30 OR 31
+023310         IF W-SDTG = 1 OR 3 OR 5 OR 7 OR 8 OR 10 OR 12
+023320             MOVE 31 TO W-SDTP
+023330           ELSE
+023340             IF W-SDTG = 4 OR 6 OR 9 OR 11
+023350                 MOVE 30 TO W-SDTP
+023360               ELSE
+023370                 DIVIDE 4 INTO W-SDTN GIVING W-DTW1
+023380                                           REMAINDER W-DTW2
+023390                 IF W-DTW2 = 0
+023400                     MOVE 29 TO W-SDTP
+023410                   ELSE
+023420                     MOVE 28 TO W-SDTP.
+023430     IF W-NGP > W-SDTD
+023440         IF W-GD NOT = W-SDTG
+023450             MOVE ZERO TO W-SDTD
+023460             GO TO TM-EX                                          I.001102
+023470*****        MOVE T-SS TO W-SDTP                                  D.001102
+023480           ELSE
+023490             ADD 1 TO W-SDTG
+023500             GO TO TM-040.                                        I.001102
+023510*****        GO TO TM-020.                                        D.001102
+023520     IF W-SDATE NOT = ZERO                                        I.000922
+023530         IF W-SDATE >= W-SDTD                                     I.000922
+023540             ADD 1 TO W-SDTG
+023550             GO TO TM-040.                                        I.001102
+023560     GO TO TM-EX.                                                 I.001102
+023570*****        GO TO TM-020.                                        D.001102
+023580 TM-040.                                                          I.001102
+023590     IF W-SDTG = 13                                               I.001102
+023600         MOVE 1 TO W-SDTG                                         I.001102
+023610         ADD 1 TO W-SDTN.                                         I.001102
+023620     GO TO TM-020.                                                I.001102
+023630 TM-EX.
+023640     EXIT.
+023650*------------------------------------------------------------------------
+023660*TAZ-RTN.                                                         D.070124
+023670*****IF W-DC NOT = 0                                              D.070124
+023680*****    GO TO TAZ-EX.                                            D.070124
+023690*****MOVE W-TCD TO TAZ-TCD.                                       D.070124
+023700*****MOVE W-HCD TO TAZ-HCD.                                       D.070124
+023710*****READ TAZ-M WITH UNLOCK INVALID KEY                           D.070124
+023720*****    GO TO TAZ-EX.                                            D.070124
+023730*****DISPLAY E-ME11 E-ME99.                                       D.070124
+023740*TAZ-EX.                                                          D.070124
+023750*****EXIT.                                                        D.070124
+023760*------------------------------------------------------------------------
+023770 TCM-RTN.
+023780     IF W-CCDD = ZERO
+023790         DISPLAY SU-CNA
+023800*****    MOVE SPACE TO W-CNA                                      D.020425
+023810         GO TO TCM-EX.
+023820     MOVE 0 TO W-INV.
+023830     MOVE W-TCDD TO TC-TCD.
+023840     MOVE W-CCDD TO TC-CCD.
+023850     READ TC-M WITH UNLOCK INVALID KEY
+023860         MOVE SPACE TO TC-NAME
+023870         MOVE 1 TO W-INV.
+023880     DISPLAY AU-CCD DU-CNA.
+023890*****MOVE TC-NAME TO W-CNA.                                       D.020425
+023900*****IF W-CCDD = 001                                              D.020425
+023910*****    MOVE SPACE TO W-CNA.                                     D.020425
+023920     MOVE 9999999 TO TC-KEY.
+023930     READ TC-M WITH UNLOCK INVALID KEY
+023940         MOVE 9 TO W-INV.
+023950 TCM-EX.
+023960     EXIT.
+023970*------------------------------------------------------------------------
+023980 HI-RTN.
+023990     MOVE W-HCD TO W-HCDD.
+024000     IF W-HIC = 0                                                 I.020214
+024010         IF W-UNCD = 0
+024020             DISPLAY AU-HCD
+024030           ELSE
+024040             DISPLAY AN-HCD.
+024050     IF W-HCD = ZERO
+024060         MOVE 9 TO W-EC
+024070         GO TO HI-EX.
+024080     MOVE W-HCD TO HI-KEY.
+024090     READ HI-M WITH UNLOCK INVALID KEY
+024100         MOVE 9 TO W-EC
+024110         GO TO HI-EX.
+024120     IF W-HIC = 0                                                 I.020214
+024130         IF W-UNCD = 0
+024140             DISPLAY DU-HNA
+024150           ELSE
+024160             DISPLAY DN-HNA.
+024170     MOVE HI-BC1 TO W-BC1.
+024180     MOVE HI-BC2 TO W-BC2.
+024190     MOVE HI-BC3 TO W-BC3.
+024200     MOVE HI-BMC TO W-BMC.                                        I.020511
+024210     MOVE HI-BMNO TO W-BMNO.                                      I.020511
+024220     IF W-UNCD NOT = 0
+024230         GO TO HI-EX.
+024240     IF W-HCD < 999900
+024250        IF HI-FT = ZERO
+024260           DISPLAY E-ME7 E-ME98.
+024270     IF W-DC NOT = 0 AND 3 AND 4 AND 5 AND 7
+024280         IF W-HCD < 999900
+024290            IF HI-FT = 1
+024300                DISPLAY E-ME7 E-ME98.                             I.020418
+024310*****           DISPLAY E-ME7 E-ME98                              D.020418
+024320*****           MOVE 9 TO W-EC.                                   D.020418
+024330*
+024340     MOVE W-HCD TO HUH-KEY.                                       I.020215
+024350     READ HUH-M WITH UNLOCK INVALID KEY                           I.020215
+024360         DISPLAY E-ME28 E-ME99                                    I.020215
+024370         DISPLAY E-CL                                             I.020215
+024380         GO TO HI-EX.                                             I.020215
+024390     IF (HUH-ZK NOT = ZERO) AND (HUH-ZS NOT = ZERO)               I.020215
+024400         COMPUTE W-FTD = HUH-ZK / HUH-ZS                          I.020215
+024410         IF HI-FT NOT = W-FTD                                     I.020215
+024420             MOVE 9 TO W-EC                                       I.020215
+024430             DISPLAY E-ME29 E-ME99                                I.020215
+024440             DISPLAY E-CL                                         I.020215
+024450             GO TO HI-EX.                                         I.020215
+024460     IF (HUH-NK NOT = ZERO) AND (HUH-NS NOT = ZERO)               I.020215
+024470         COMPUTE W-FTD = HUH-NK / HUH-NS                          I.020215
+024480         IF HI-FT NOT = W-FTD                                     I.020215
+024490             MOVE 9 TO W-EC                                       I.020215
+024500             DISPLAY E-ME29 E-ME99                                I.020215
+024510             DISPLAY E-CL                                         I.020215
+024520             GO TO HI-EX.                                         I.020215
+024530     IF (HUH-UG NOT = ZERO) AND (HUH-SS NOT = ZERO)               I.020215
+024540         COMPUTE W-FTD = HUH-UG / HUH-SS                          I.020215
+024550         IF HI-FT NOT = W-FTD                                     I.020215
+024560             MOVE 9 TO W-EC                                       I.020215
+024570             DISPLAY E-ME29 E-ME99                                I.020215
+024580             DISPLAY E-CL                                         I.020215
+024590             GO TO HI-EX.                                         I.020215
+024600     IF (HUH-YK NOT = ZERO) AND (HUH-YS NOT = ZERO)               I.020215
+024610         COMPUTE W-FTD = HUH-YK / HUH-YS                          I.020215
+024620         IF HI-FT NOT = W-FTD                                     I.020215
+024630             MOVE 9 TO W-EC                                       I.020215
+024640             DISPLAY E-ME29 E-ME99                                I.020215
+024650             DISPLAY E-CL.                                        I.020215
+024660 HI-EX.
+024670     EXIT.
+024680*------------------------------------------------------------------------
+024690 UPD-RTN.
+024700     ADD 1 TO W-DNOD.
+024710     MOVE ZERO TO W-RC.
+024720 UPD-020.
+024730     ADD 1 TO W-RC.
+024740     IF W-RC > 6
+024750         GO TO UPD-180.
+024760     MOVE W-AS(W-RC) TO W-SR.
+024770     IF W-DATE = ZERO
+024780         GO TO UPD-180.
+024790     MOVE W-DNOD TO W-DNO.
+024800     MOVE W-SDTD TO W-SDT.
+024810     MOVE W-HSCD TO W-HSC.
+024820     IF W-UNCD = 0
+024830         MOVE W-KOSUR TO W-KOSU
+024840         MOVE W-FRCD TO W-FRC.
+024850     MOVE W-UNCD TO W-UNC.
+024860     MOVE W-SR TO S-R.
+024870     WRITE S-R.
+024880     IF ERR-STAT = "00"
+024890         CALL "CBLTCLS" USING S-TRAN
+024900         GO TO UPD-040.
+024910     DISPLAY E-STAT E-ME16 E-ME99.
+024920     GO TO UPD-900.
+024930 UPD-040.
+024940     IF W-UNCD = 1
+024950         GO TO UPD-020.                                           I.000821
+024960*****    GO TO UPD-180.                                           D.000821
+024970     IF W-HCD = ZERO
+024980         GO TO UPD-180.
+024990*****IF W-DC NOT = 3 AND 4 AND 9                                  D.070124
+025000*****    GO TO UPD-100.                                           D.070124
+025010*****    GO TO UPD-020.                                           D.010419
+025020*****MOVE W-TCD TO TAZ-TCD.                                       D.070124
+025030*****MOVE W-HCD TO TAZ-HCD.                                       D.070124
+025040*****READ TAZ-M WITH UNLOCK INVALID KEY                           D.070124
+025050*****    GO TO UPD-060.                                           D.070124
+025060*****GO TO UPD-100.                                               D.070124
+025070*****GO TO UPD-020.                                               D.010419
+025080*UPD-060.                                                         D.070124
+025090*****MOVE ZERO TO TAZ-R                                           D.070124
+025100*****MOVE W-TCD TO TAZ-TCD.                                       D.070124
+025110*****MOVE W-HCD TO TAZ-HCD.                                       D.070124
+025120*****MOVE W-CNG TO TAZ-NG.                                        D.070124
+025130*****WRITE TAZ-R INVALID KEY                                      D.070124
+025140*****    DISPLAY E-STAT E-ME10 E-ME99                             D.070124
+025150*****    GO TO UPD-080.                                           D.070124
+025160*****CALL "CBLTCLS" USING TAZ-M.                                  D.070124
+025170*****GO TO UPD-100.                                               D.070124
+025180*****GO TO UPD-020.                                               D.010419
+025190*UPD-080.                                                         D.070124
+025200*****IF ERR-STAT NOT = "24"                                       D.070124
+025210*****    DISPLAY E-ME78 E-ME99                                    D.070124
+025220*****    DISPLAY E-CL                                             D.070124
+025230*****    GO TO UPD-100.                                           D.070124
+025240*****    GO TO UPD-020.                                           D.010419
+025250*****DISPLAY E-CL.                                                D.070124
+025260*****CLOSE TAZ-M.                                                 D.070124
+025270*****MOVE "TAZM         " TO W-FILE.                              D.070124
+025280*****DISPLAY E-ME71 E-ME98 STOP " ".                              D.070124
+025290*****DISPLAY E-CL.                                                D.070124
+025300*****OPEN I-O TAZ-M.                                              D.070124
+025310*****GO TO UPD-060.                                               D.070124
+025320*UPD-100.                                                         D.070124
+025330     IF W-DC NOT = 0 AND 3                                        I.010419
+025340         GO TO UPD-020.                                           I.010419
+025350     IF ZERO = W-TCD OR W-HCD                                     I.010419
+025360         GO TO UPD-020.                                           I.010419
+025370     IF W-BT = ZERO                                               I.060629
+025380         GO TO UPD-020.                                           I.060629
+025390     MOVE SPACE TO THT-KEY.                                       I.010419
+025400     MOVE W-TCD TO THT-TCD.                                       I.010419
+025410     MOVE W-HCD TO THT-HCD.                                       I.010419
+025420     MOVE 9 TO THT-SIZ.                                           I.010419
+025430     READ THTM INVALID KEY                                        I.010419
+025440         GO TO UPD-120.                                           I.010419
+025450     GO TO UPD-160.                                               I.010419
+025460 UPD-120.                                                         I.010419
+025470     MOVE SPACE TO THT-KEY.                                       I.010419
+025480     MOVE W-TCD TO THT-TCD.                                       I.010419
+025490     MOVE W-HCD TO THT-HCD.                                       I.010419
+025500     MOVE W-SIZ TO THT-SIZ.                                       I.010419
+025510     READ THTM INVALID KEY                                        I.010419
+025520         GO TO UPD-140.                                           I.010419
+025530     GO TO UPD-160.                                               I.010419
+025540 UPD-140.                                                         I.010419
+025550     MOVE ZERO TO THT-R.                                          I.010419
+025560     MOVE W-TCD TO THT-TCD THT-TCD2.                              I.010419
+025570     MOVE W-HCD TO THT-HCD.                                       I.010419
+025580     MOVE 9 TO THT-SIZ.                                           I.010419
+025590     MOVE W-BT TO THT-T.                                          I.010419
+025600     MOVE W-TC2 TO THT-TNC.                                       I.010419
+025610     MOVE W-NGD TO THT-NG.                                        I.010419
+025620     WRITE THT-R INVALID KEY                                      I.010419
+025630         DISPLAY E-STAT E-ME26 E-ME99                             I.010419
+025640         DISPLAY E-CL                                             I.010419
+025650         GO TO UPD-020.                                           I.010419
+025660     CALL "CBLTCLS" USING THTM.                                   I.010419
+025670     GO TO UPD-020.                                               I.010419
+025680 UPD-160.                                                         I.010419
+025690     IF W-NGD NOT = THT-NG                                        I.010419
+025700         MOVE W-NGD TO THT-NG                                     I.010419
+025710         REWRITE THT-R INVALID KEY                                I.010419
+025720             DISPLAY E-STAT E-ME27 E-ME99                         I.010419
+025730             DISPLAY E-CL.                                        I.010419
+025740     GO TO UPD-020.                                               I.010419
+025750 UPD-180.
+025760     INITIALIZE W-SR.
+025770     MOVE W-BR TO W-DT1.
+025780     MOVE W-DNOD TO W-DNO.
+025790     MOVE 9 TO W-GNO.
+025800     MOVE W-NGP TO W-DATE.
+025810     MOVE W-TCDN TO W-TCD.
+025820     MOVE W-UNCD TO W-UNC.
+025830     MOVE W-SR TO S-R.
+025840     WRITE S-R.
+025850     IF ERR-STAT = "00"
+025860         CALL "CBLTCLS" USING S-TRAN
+025870         GO TO UPD-200.
+025880     DISPLAY E-STAT E-ME16 E-ME99.
+025890     GO TO UPD-900.
+025900 UPD-200.
+025910     OPEN I-O HKBM.
+025920     MOVE SPACE TO HKB-KEY.
+025930     MOVE "05" TO HKB-NO.
+025940     READ HKBM INVALID KEY
+025950         CLOSE HKBM
+025960         MOVE 1 TO W-END
+025970         DISPLAY E-ME78 E-ME23 E-ME99
+025980         MOVE 255 TO COMPLETION-CODE
+025990         GO TO UPD-EX.
+026000     MOVE W-DNOD TO HKB-UNN.
+026010     IF HKB-UNN = ZERO                                            I.010314
+026020         MOVE 1 TO HKB-UNN.                                       I.010314
+026030     REWRITE HKB-R INVALID KEY
+026040         CLOSE HKBM
+026050         MOVE 1 TO W-END
+026060         DISPLAY E-STAT E-ME78 E-ME24 E-ME99
+026070         MOVE 255 TO COMPLETION-CODE
+026080         GO TO UPD-EX.
+026090     CLOSE HKBM.
+026100*
+026110     IF (W-HMN = ZERO) OR (W-HNC = 1)                             I.081222
+026120         GO TO UPD-EX.                                            I.081222
+026130*****IF W-HMN = ZERO                                              D.011012
+026140*****MOVE 0 TO W-HC.                                              D.081222
+026150 UPD-220.                                                         I.011012
+026160*****ADD 1 TO W-HC.                                               D.081222
+026170*****IF W-HC > 6                                                  D.081222
+026180*****    GO TO UPD-EX.                                            D.081222
+026190*****IF W-HC = 1                                                  D.081222
+026200*****    IF W-HMN NOT = ZERO                                      D.081222
+026210*****        MOVE W-HMN TO HSMS-01                                D.081222
+026220*****        GO TO UPD-230.                                       D.081222
+026230*****IF W-HA(W-HC) = ZERO                                         D.081222
+026240*****    GO TO UPD-EX.                                            D.081222
+026250     MOVE SPACE TO HSMS-KEY.
+026260     MOVE W-HMN TO HSMS-01.                                       I.011012
+026270*****MOVE W-HMN TO HSMS-01.                                       D.011012
+026280*****MOVE W-HA(W-HC) TO HSMS-01.                                  D.081222
+026290 UPD-230.                                                         I.030418
+026300     START HSMSF KEY NOT < HSMS-KEY INVALID KEY
+026310         GO TO UPD-EX.                                            I.081222
+026320*****    GO TO UPD-220.                                           D.081222
+026330*****    GO TO UPD-EX.                                            D.011012
+026340 UPD-240.
+026350     READ HSMSF NEXT RECORD AT END
+026360         GO TO UPD-EX.                                            I.081222
+026370*****    GO TO UPD-220.                                           D.081222
+026380*****IF W-HC = 1                                                  D.081222
+026390     IF W-HMN NOT = HSMS-01                                       I.030418
+026400         GO TO UPD-EX.                                            I.081222
+026410*****        GO TO UPD-220.                                       D.081222
+026420*****IF W-HC NOT = 1                                              D.081222
+026430*****    IF W-HA(W-HC) NOT = HSMS-01                              D.081222
+026440*****        GO TO UPD-220.                                       D.081222
+026450*****    GO TO UPD-EX.                                            D.011012
+026460*****IF W-HMN NOT = HSMS-01                                       D.011012
+026470*****    GO TO UPD-EX.                                            D.011012
+026480     IF HSMS-19 = 9
+026490         GO TO UPD-EX.                                            I.081222
+026500*****    GO TO UPD-220.                                           D.081222
+026510*****    GO TO UPD-EX.                                            D.011012
+026520     ADD 1 TO HSMS-19.
+026530     REWRITE HSMS-R1 INVALID KEY
+026540         DISPLAY E-STAT E-ME22 E-ME99
+026550         DISPLAY E-CL.
+026560     GO TO UPD-240.
+026570 UPD-900.
+026580     PERFORM SD-RTN THRU SD-EX.
+026590     MOVE 1 TO W-END.
+026600 UPD-EX.
+026610     EXIT.
+

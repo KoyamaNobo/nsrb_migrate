@@ -1,0 +1,435 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. TSG980.
+000030********************************************************
+000040*****     手形・領収書・買掛支払　未変換リスト     *****
+000050********************************************************
+000060 ENVIRONMENT DIVISION.
+000070 CONFIGURATION SECTION.
+000080 SOURCE-COMPUTER. SYSTEM3100.
+000090 OBJECT-COMPUTER. SYSTEM3100.
+000100 INPUT-OUTPUT SECTION.
+000110 FILE-CONTROL.
+000120     COPY LIBCSE.
+000130*****SELECT T-M ASSIGN TO T-MSD                                   D.000225
+000140     SELECT T-M ASSIGN TO T1-MSD T2-MSD                           I.000225
+000150         ORGANIZATION INDEXED
+000160         ACCESS MODE RANDOM
+000170         RECORD KEY T-KEY                                         I.000225
+000180         ALTERNATE RECORD KEY T-KEY2.                             I.000225
+000190*****    RECORD KEY T-KEY.                                        D.000225
+000200     SELECT S-M ASSIGN TO S-MSD
+000210         ORGANIZATION INDEXED
+000220         ACCESS MODE RANDOM
+000230         RECORD KEY S-KEY.
+000240     SELECT BANK-M ASSIGN TO BANK-MSD
+000250         ORGANIZATION INDEXED
+000260         ACCESS MODE RANDOM
+000270         RECORD KEY B-KEY.
+000280     SELECT TDT-M ASSIGN TO TDTM-MSD
+000290         ORGANIZATION INDEXED
+000300         ACCESS MODE DYNAMIC
+000310         RECORD KEY TD-KEY
+000320         FILE STATUS ERR-STAT.
+000330     SELECT SP-F ASSIGN TO P-PRN999.
+000340 I-O-CONTROL.
+000350     APPLY SHARED-MODE ON M-DATE
+000360     APPLY SHARED-MODE ON BANK-M
+000370     APPLY SHARED-MODE ON TDT-M
+000380     APPLY SHARED-MODE ON S-M
+000390     APPLY SHARED-MODE ON T-M
+000400     APPLY SHIFT-CODE  ON SP-F.
+000410 DATA DIVISION.
+000420 FILE SECTION.
+000430     COPY LIBFDD.
+000440     COPY LISM.
+000450     COPY LITM.
+000460     COPY LIBANK.
+000470     COPY LSPF.
+000480 FD  TDT-M
+000490     BLOCK  3 RECORDS
+000500     LABEL RECORD IS STANDARD
+000510     VALUE OF IDENTIFICATION "TDTM".
+000520 01  TDT-R.
+000530     02  TD-KEY.
+000540       03  TD-KBN       PIC  X(002).
+000550       03  TD-NO        PIC  X(004).
+000560     02  TD-TCD         PIC  9(004).
+000570     02  TD-DAT         PIC  9(006).
+000580     02  TD-NGP   REDEFINES TD-DAT.
+000590       03  TD-NEN       PIC  9(002).
+000600       03  TD-GET       PIC  9(002).
+000610       03  TD-PEY       PIC  9(002).
+000620     02  TD-MAN         PIC  9(006).
+000630     02  TD-KIN         PIC S9(010).
+000640     02  TD-BK          PIC  9(004).
+000650     02  TD-HAC         PIC  N(024).
+000660     02  TD-ZR          PIC S9(008).
+000670     02  TD-SS          PIC S9(008).
+000680     02  TD-SB          PIC  9(008).
+000690     02  TD-GC          PIC  9(008).
+000700     02  TD-SZ          PIC  9(008).
+000710     02  TD-EG          PIC  9(008).
+000720     02  TD-ST          PIC  9(008).
+000730     02  TD-ZSHZ        PIC S9(007).
+000740     02  TD-SSHZ        PIC S9(007).
+000750     02  F              PIC  X(006).
+000760     02  TD-SNEN        PIC  9(004).
+000770     02  TD-HCR         PIC  9(001).
+000780     02  TD-HCT         PIC  9(001).
+000790     02  TD-HCK         PIC  9(001).
+000800     02  TD-HCZ         PIC  9(001).
+000810     02  TD-PCHK        PIC  9(001).
+000820     02  TD-RSC         PIC  9(001).
+000830 WORKING-STORAGE SECTION.
+000840 01  HEAD1.
+000850     02  W-20K          PIC  X(005) VALUE ""3FE04FE080"".
+000860     02  F              PIC  X(035) VALUE SPACE.
+000870     02  F              PIC  N(023) VALUE
+000880          NC"＊＊＊　　手形・領収書・買掛支払　未変換リスト".
+000890     02  F              PIC  N(005) VALUE NC"　　＊＊＊".
+000900     02  F              PIC  X(023) VALUE SPACE.
+000910     02  F              PIC  X(005) VALUE "DATE ".
+000920     02  H-DATE         PIC 99B99B99.
+000930     02  F              PIC  X(007) VALUE "     P.".
+000940     02  H-PAGE         PIC Z9.
+000950 01  HEAD2.
+000960     02  W-15K          PIC  X(005) VALUE ""3FE04F40A0"".
+000970     02  F              PIC  X(001) VALUE SPACE.
+000980     02  F              PIC  N(004) VALUE NC"日　　付".
+000990*****02  F              PIC  X(003) VALUE SPACE.                  D.020423
+001000     02  F              PIC  X(002) VALUE SPACE.                  I.020423
+001010     02  F              PIC  N(002) VALUE NC"種類".
+001020     02  F              PIC  X(001) VALUE SPACE.
+001030     02  F              PIC  N(004) VALUE NC"手形他№".
+001040*****02  F              PIC  X(006) VALUE " ｺｰﾄﾞ ".               D.020423
+001050     02  F              PIC  X(007) VALUE "  ｺｰﾄﾞ ".              I.020423
+001060     02  F              PIC  N(018) VALUE
+001070          NC"取　引　先　名　（　振　出　人　）　".
+001080*****02  F              PIC  X(010) VALUE SPACE.                  D.020423
+001090     02  F              PIC  X(014) VALUE SPACE.                  I.020423
+001100     02  F              PIC  N(004) VALUE NC"　満期日".
+001110*****02  F              PIC  X(009) VALUE "    ｺｰﾄﾞ ".            D.020423
+001120     02  F              PIC  X(008) VALUE "   ｺｰﾄﾞ ".             I.020423
+001130     02  F              PIC  N(006) VALUE NC"銀　行　名　".
+001140     02  F              PIC  X(004) VALUE SPACE.
+001150     02  F              PIC  N(008) VALUE NC"本　支　店　名　".
+001160*****02  F              PIC  X(007) VALUE SPACE.                  D.020423
+001170     02  F              PIC  X(006) VALUE SPACE.                  I.020423
+001180     02  F              PIC  N(004) VALUE NC"金　　額".
+001190     02  F              PIC  N(004) VALUE NC"　領収書".
+001200     02  F              PIC  X(001) VALUE SPACE.
+001210     02  F              PIC  N(002) VALUE NC"領収".
+001220     02  F              PIC  X(001) VALUE SPACE.
+001230     02  F              PIC  N(002) VALUE NC"手形".
+001240     02  F              PIC  X(001) VALUE SPACE.
+001250     02  F              PIC  N(002) VALUE NC"購買".
+001260*****02  F              PIC  X(002) VALUE SPACE.                  D.020423
+001270 01  HEAD3.
+001280     02  F              PIC  X(041) VALUE SPACE.
+001290     02  F              PIC  N(006) VALUE NC"相手科目１２".
+001300     02  F              PIC  X(004) VALUE SPACE.
+001310     02  F              PIC  N(004) VALUE NC"　消費税".
+001320     02  F              PIC  X(008) VALUE SPACE.
+001330     02  F              PIC  N(002) VALUE NC"１４".
+001340     02  F              PIC  X(004) VALUE SPACE.
+001350     02  F              PIC  N(004) VALUE NC"　消費税".
+001360     02  F              PIC  X(008) VALUE SPACE.
+001370     02  F              PIC  N(002) VALUE NC"４６".
+001380     02  F              PIC  X(008) VALUE SPACE.
+001390     02  F              PIC  N(002) VALUE NC"２０".
+001400     02  F              PIC  X(008) VALUE SPACE.
+001410     02  F              PIC  N(002) VALUE NC"２２".
+001420     02  F              PIC  X(008) VALUE SPACE.
+001430     02  F              PIC  N(002) VALUE NC"３４".
+001440     02  F              PIC  X(008) VALUE SPACE.
+001450     02  F              PIC  N(002) VALUE NC"５２".
+001460 01  W-P1.
+001470     02  P-DAT          PIC 99/99/99.
+001480*****02  F              PIC  X(003).                              D.020423
+001490     02  F              PIC  X(002).                              I.020423
+001500     02  P-KBN          PIC  9(002).
+001510     02  F              PIC  X(003).                              I.020423
+001520*****02  F              PIC  X(002).                              D.020423
+001530     02  P-NO           PIC  9(004).
+001540     02  F              PIC  X(002).
+001550     02  P-TCD          PIC  9(004).
+001560     02  P-K1           PIC  X(001).
+001570*****02  P-TNA          PIC  N(024).                              D.020423
+001580     02  P-TNA          PIC  N(026).                              I.020423
+001590     02  P-K2           PIC  X(001).
+001600     02  P-MAN          PIC 99/99/99.
+001610     02  F              PIC  X(002).
+001620     02  P-BK           PIC  9(004).
+001630     02  F              PIC  X(001).
+001640     02  P-BNA          PIC  N(008).
+001650     02  F              PIC  X(001).
+001660     02  P-SNA          PIC  N(008).
+001670     02  P-KIN          PIC ----,---,--9.                         I.020423
+001680*****02  P-KIN          PIC -----,---,--9.                        D.020423
+001690*****02  F              PIC  X(004).                              D.020423
+001700     02  F              PIC  X(005).                              I.020423
+001710     02  P-RSC          PIC  9(001).
+001720*****02  F              PIC  X(002).                              D.020423
+001730     02  F              PIC  X(001).                              I.020423
+001740     02  P-HCR          PIC  N(002).
+001750     02  F              PIC  X(001).
+001760     02  P-HCT          PIC  N(002).
+001770     02  F              PIC  X(001).
+001780     02  P-HCK          PIC  N(002).
+001790*****02  F              PIC  X(002).                              D.020423
+001800 01  W-P2.
+001810     02  F              PIC  X(039).
+001820     02  P-ZR           PIC ---,---,--9.
+001830     02  P-ZSHZ         PIC --,---,--9.
+001840     02  P-SS           PIC ---,---,--9.
+001850     02  P-SSHZ         PIC --,---,--9.
+001860     02  P-SB           PIC ---,---,--9.
+001870     02  P-GC           PIC ---,---,--9.
+001880     02  P-SZ           PIC ---,---,--9.
+001890     02  P-EG           PIC ---,---,--9.
+001900     02  P-ST           PIC ---,---,--9.
+001910 01  W-DATA.
+001920     02  W-NG.
+001930       03  W-NEN        PIC  9(004).
+001940       03  W-GET        PIC  9(002).
+001950     02  W-NGD.
+001960       03  W-NEND       PIC  9(004).
+001970       03  W-NENL  REDEFINES W-NEND.
+001980         04  W-NEN1     PIC  9(002).
+001990         04  W-NEN2     PIC  9(002).
+002000       03  W-GETD       PIC  9(002).
+002010     02  W-NGL   REDEFINES W-NGD.
+002020       03  F            PIC  9(002).
+002030       03  W-NGS        PIC  9(004).
+002040     02  W-DMM          PIC  9(001).
+002050     02  W-ACT          PIC  9(001).
+002060     02  W-PAGE         PIC  9(002).
+002070     02  W-DAT          PIC  9(006).
+002080     02  CHK            PIC  9(001).
+002090*****02  W-TNA          PIC  N(024).                              D.020423
+002100     02  W-TNA          PIC  N(026).                              I.020423
+002110     02  W-BNA          PIC  N(008).
+002120     02  W-SNA          PIC  N(008).
+002130 01  ERR-STAT           PIC  X(002).
+002140     COPY LSTAT.
+002150 SCREEN SECTION.
+002160 SD  C-CRT
+002170     END STATUS IS ESTAT.
+002180 01  C-CLEAR.
+002190     02  LINE   1  CLEAR SCREEN.
+002200 01  C-MID.
+002210     02  LINE   3  COLUMN  10  PIC  N(026) VALUE
+002220        NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002230     02  LINE   4  COLUMN  10  PIC  N(026) VALUE
+002240        NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002250     02  LINE   5  COLUMN  10  PIC  N(026) VALUE
+002260        NC"＊＊＊　　　　　　　　　　　　　　　　　　　　＊＊＊".
+002270     02  LINE   6  COLUMN  10  PIC  N(026) VALUE
+002280        NC"＊＊＊　手形・領収書・買掛支払　未変換リスト　＊＊＊".
+002290     02  LINE   7  COLUMN  10  PIC  N(026) VALUE
+002300        NC"＊＊＊　　　　　　　　　　　　　　　　　　　　＊＊＊".
+002310     02  LINE   8  COLUMN  10  PIC  N(026) VALUE
+002320        NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002330     02  LINE   9  COLUMN  10  PIC  N(026) VALUE
+002340        NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+002350     02  LINE  13  COLUMN  22  PIC  X(027) VALUE
+002360          "全件作表=1  未変換分=5 ... ".
+002370     02  LINE  20  COLUMN  30  PIC  X(022) VALUE
+002380          "確認  OK=1 NO=9   ﾘﾀｰﾝ".
+002390 01  C-ACP.
+002400     02  A-ACT   LINE  13  COLUMN  48  PIC  9(001)
+002410          USING W-ACT   CHECK OVERFLOW NO IFC.
+002420     02  A-DMM   LINE  20  COLUMN  47  PIC  9(001)
+002430          USING W-DMM   CHECK OVERFLOW NO IFC.
+002440 01  C-ERR.
+002450     02  LINE  24.
+002460       03  E-STAT  COLUMN  10  PIC  X(002) FROM  ERR-STAT.
+002470       03  E-ME1   COLUMN  15  PIC  X(017) VALUE
+002480            "***  DATA ﾅｼ  ***".
+002490       03  E-ME98  COLUMN  75  PIC  X(005) VALUE ""27"J"05"".
+002500       03  E-ME99  COLUMN  75  PIC  X(005) VALUE ""27"B"05"".
+002510       03  E-CL    COLUMN  10  PIC  X(050) VALUE
+002520            "                                                  ".
+002530     COPY LIBSCR.
+002540 PROCEDURE DIVISION.
+002550 M-05.
+002560     DISPLAY C-CLEAR.
+002570     DISPLAY C-MID.
+002580     ACCEPT H-DATE FROM DATE.
+002590     MOVE ZERO TO W-NGD.
+002600     COPY LIBCPR.
+002610     MOVE D-NTNG TO W-NGS.
+002620     IF W-NEN2 >= DATE-NF1 AND <= DATE-NT1
+002630         ADD DATE-NC1 TO W-NEND.
+002640     IF W-NEN2 >= DATE-NF2 AND <= DATE-NT2
+002650         ADD DATE-NC2 TO W-NEND.
+002660 M-10.
+002670     ACCEPT A-ACT.
+002680     IF ESTAT = PF9
+002690         DISPLAY C-CLEAR
+002700         STOP RUN.
+002710     IF ESTAT NOT = HTB AND SKP
+002720         GO TO M-10.
+002730     IF W-ACT NOT = 1 AND 5
+002740         GO TO M-10.
+002750 M-15.
+002760     ACCEPT A-DMM.
+002770     IF ESTAT = BTB
+002780         GO TO M-10.
+002790     IF ESTAT NOT = HTB AND SKP
+002800         GO TO M-15.
+002810     IF W-DMM = 9
+002820         GO TO M-10.
+002830     IF W-DMM NOT = 1
+002840         GO TO M-15.
+002850     IF W-ACT = 9
+002860         DISPLAY C-CLEAR
+002870         STOP RUN.
+002880*
+002890     OPEN INPUT TDT-M.
+002900 M-20.
+002910     READ TDT-M NEXT RECORD WITH UNLOCK AT END
+002920         DISPLAY E-ME1 E-ME99
+002930         CLOSE TDT-M
+002940         DISPLAY C-CLEAR
+002950         STOP RUN.
+002960     IF W-ACT = 5
+002970         IF (TD-HCR NOT = 0) AND (TD-HCT NOT = 0)
+002980                             AND (TD-HCK NOT = 0)
+002990             GO TO M-20.
+003000     MOVE TD-SNEN TO W-NEN.
+003010     MOVE TD-GET TO W-GET.
+003020     IF W-NG > W-NGD
+003030         GO TO M-20.
+003040*
+003050     OPEN OUTPUT SP-F.
+003060     PERFORM S-10 THRU S-15.
+003070     OPEN INPUT T-M S-M.
+003080     OPEN INPUT BANK-M.
+003090 M-25.
+003100     MOVE TD-DAT TO W-DAT.
+003110     MOVE ZERO TO CHK.
+003120 M-30.
+003130     MOVE SPACE TO W-TNA W-BNA W-SNA.
+003140     IF TD-KBN > 19
+003150         GO TO M-35.
+003160     MOVE TD-TCD TO T-KEY.
+003170     READ T-M WITH UNLOCK INVALID KEY
+003180         MOVE NC"　＊＊　　得意先　なし　　＊＊" TO T-NAME.
+003190     MOVE T-NAME TO W-TNA.
+003200     GO TO M-40.
+003210 M-35.
+003220     MOVE TD-TCD TO S-KEY.
+003230     READ S-M WITH UNLOCK INVALID KEY
+003240         MOVE NC"　＊＊　　仕入先　なし　　＊＊" TO S-NAME.
+003250     MOVE S-NAME TO W-TNA.
+003260 M-40.
+003270     IF TD-BK = ZERO
+003280         GO TO M-45.
+003290     MOVE TD-BK TO B-KEY.
+003300     READ BANK-M WITH UNLOCK INVALID KEY
+003310         MOVE NC"ＢＡＮＫＭ　無し" TO B-BNA
+003320         MOVE SPACE TO B-SNA.
+003330     MOVE B-BNA TO W-BNA.
+003340     MOVE B-SNA TO W-SNA.
+003350 M-45.
+003360     MOVE SPACE TO W-P1.
+003370     MOVE SPACE TO P-TNA P-BNA P-SNA P-HCR P-HCT P-HCK.
+003380     IF CHK = 0
+003390         MOVE 5 TO CHK
+003400         MOVE TD-DAT TO P-DAT.
+003410     MOVE TD-KBN TO P-KBN.
+003420     MOVE TD-NO TO P-NO.
+003430     MOVE TD-TCD TO P-TCD.
+003440     MOVE W-TNA TO P-TNA.
+003450     IF TD-MAN NOT = ZERO
+003460         MOVE TD-MAN TO P-MAN.
+003470     MOVE TD-KIN TO P-KIN.
+003480     IF TD-BK NOT = ZERO
+003490         MOVE TD-BK TO P-BK
+003500         MOVE W-BNA TO P-BNA
+003510         MOVE W-SNA TO P-SNA.
+003520     IF TD-KBN = 20 OR 21 OR 22
+003530         MOVE SPACE TO P-SNA.
+003540     IF TD-KBN < 20
+003550         MOVE TD-RSC TO P-RSC.
+003560     IF TD-HCR = 0
+003570         MOVE NC"　未" TO P-HCR.
+003580     IF TD-HCT = 0
+003590         MOVE NC"　未" TO P-HCT.
+003600     IF TD-HCK = 0
+003610         MOVE NC"　未" TO P-HCK.
+003620     IF LINAGE-COUNTER > 60
+003630         MOVE TD-DAT TO P-DAT
+003640         PERFORM S-05 THRU S-15.
+003650     MOVE SPACE TO SP-R.
+003660     MOVE W-P1 TO SP-R.
+003670     WRITE SP-R.
+003680     MOVE SPACE TO SP-R.
+003690     IF TD-KBN > 19
+003700         GO TO M-50.
+003710     IF TD-HAC NOT = SPACE
+003720         MOVE SPACE TO W-P1
+003730         MOVE SPACE TO P-TNA P-BNA P-SNA
+003740         MOVE TD-HAC TO P-TNA
+003750         MOVE "(" TO P-K1
+003760         MOVE ")" TO P-K2
+003770         MOVE W-P1 TO SP-R
+003780         WRITE SP-R
+003790         MOVE SPACE TO SP-R
+003800         WRITE SP-R.
+003810     GO TO M-55.
+003820 M-50.
+003830     MOVE SPACE TO W-P2.
+003840     MOVE TD-ZR TO P-ZR.
+003850     MOVE TD-ZSHZ TO P-ZSHZ.
+003860     MOVE TD-SS TO P-SS.
+003870     MOVE TD-SSHZ TO P-SSHZ.
+003880     MOVE TD-SB TO P-SB.
+003890     MOVE TD-GC TO P-GC.
+003900     MOVE TD-SZ TO P-SZ.
+003910     MOVE TD-EG TO P-EG.
+003920     MOVE TD-ST TO P-ST.
+003930     MOVE SPACE TO SP-R.
+003940     MOVE W-P2 TO SP-R.
+003950     WRITE SP-R.
+003960     MOVE SPACE TO SP-R.
+003970 M-55.
+003980     READ TDT-M NEXT RECORD WITH UNLOCK AT END
+003990         GO TO M-95.
+004000     IF W-ACT = 5
+004010         IF (TD-HCR NOT = 0) AND (TD-HCT NOT = 0)
+004020                             AND (TD-HCK NOT = 0)
+004030             GO TO M-55.
+004040     MOVE TD-SNEN TO W-NEN.
+004050     MOVE TD-GET TO W-GET.
+004060     IF W-NG > W-NGD
+004070         GO TO M-55.
+004080     IF TD-DAT = W-DAT
+004090         GO TO M-30.
+004100     GO TO M-25.
+004110 M-95.
+004120     CLOSE SP-F.
+004130     CLOSE T-M S-M.
+004140     CLOSE BANK-M.
+004150     CLOSE TDT-M.
+004160     DISPLAY C-CLEAR.
+004170     STOP RUN.
+004180 S-05.
+004190     MOVE SPACE TO SP-R.
+004200     WRITE SP-R AFTER PAGE.
+004210 S-10.
+004220     ADD 1 TO W-PAGE.
+004230     MOVE W-PAGE TO H-PAGE.
+004240     MOVE SPACE TO SP-R.
+004250     MOVE HEAD1 TO SP-R.
+004260     WRITE SP-R.
+004270     MOVE SPACE TO SP-R.
+004280     MOVE HEAD2 TO SP-R.
+004290     WRITE SP-R AFTER 2.
+004300     MOVE SPACE TO SP-R.
+004310     MOVE HEAD3 TO SP-R.
+004320     WRITE SP-R.
+004330     MOVE SPACE TO SP-R.
+004340 S-15.
+004350     EXIT.

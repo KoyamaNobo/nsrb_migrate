@@ -1,0 +1,962 @@
+000010 IDENTIFICATION              DIVISION.
+000020 PROGRAM-ID.                 JT370U.
+000030**************************************************************************
+000040*    PROGRAM  :  月次繰越                                                *
+000050*    COMPILE  :  CBL85(74MODE)                                           *
+000060**************************************************************************
+000070 ENVIRONMENT                 DIVISION.
+000080 CONFIGURATION               SECTION.
+000090 SOURCE-COMPUTER.            SYSTEM3100.
+000100 OBJECT-COMPUTER.            SYSTEM3100.
+000110 INPUT-OUTPUT                SECTION.
+000120 FILE-CONTROL.
+000130     SELECT   JMST1          ASSIGN    TO   F1-MSD
+000140                             ORGANIZATION   INDEXED
+000150                             ACCESS  MODE   DYNAMIC
+000160                             RECORD   KEY   JMST1-KEY1
+000170                             FILE  STATUS   ERR-STAT.
+000180*****SELECT   JT-DNKN        ASSIGN    TO   F3-MSD                D.971009
+000190*****                        ORGANIZATION   INDEXED               D.971009
+000200*****                        ACCESS  MODE   DYNAMIC               D.971009
+000210*****                        RECORD   KEY   DNKN-KEY              D.971009
+000220*****                        FILE  STATUS   ERR-STAT.             D.971009
+000230*****SELECT   JT-KW02        ASSIGN    TO   F4-MSD                D.960902
+000240*****                        ORGANIZATION   INDEXED               D.960902
+000250*****                        ACCESS  MODE   DYNAMIC               D.960902
+000260*****                        RECORD   KEY   KW02-KEY              D.960902
+000270*****                        FILE  STATUS   ERR-STAT.             D.960902
+000280*****SELECT   JSRU           ASSIGN    TO   F51-MSD               D.971208
+000290*****                                       F52-MSD               D.971208
+000300*****                        ORGANIZATION   INDEXED               D.971208
+000310*****                        ACCESS  MODE   DYNAMIC               D.971208
+000320*****                        RECORD   KEY   JSRU-KEY1             D.971208
+000330*****            ALTERNATE   RECORD   KEY   JSRU-KEY2             D.971208
+000340*****                        FILE  STATUS   ERR-STAT.             D.971208
+000350*****SELECT   JSTF           ASSIGN    TO   F6-MSD                D.950404
+000360*****                        ORGANIZATION   INDEXED               D.950404
+000370*****                        ACCESS  MODE   DYNAMIC               D.950404
+000380*****                        RECORD   KEY   JSTF-KEY              D.950404
+000390*****                        FILE  STATUS   ERR-STAT.             D.950404
+000400*****SELECT   JNSRD          ASSIGN    TO   F7-MSD                D.971208
+000410*****                        ORGANIZATION   INDEXED               D.971208
+000420*****                        ACCESS  MODE   DYNAMIC               D.971208
+000430*****                        RECORD   KEY   JNSRD-KEY             D.971208
+000440*****                        FILE  STATUS   ERR-STAT.             D.971208
+000450     SELECT   JNSR           ASSIGN    TO   F51-MSD               I.971208
+000460                                            F52-MSD               I.971208
+000470                                            F53-MSD               I.971208
+000480                             ORGANIZATION   INDEXED               I.971208
+000490                             ACCESS  MODE   DYNAMIC               I.971208
+000500                             RECORD   KEY   JNSR-KEY1             I.971208
+000510                 ALTERNATE   RECORD   KEY   JNSR-KEY2             I.971208
+000520                 ALTERNATE   RECORD   KEY   JNSR-KEY3             I.971208
+000530                             FILE  STATUS   ERR-STAT.             I.971208
+000540     SELECT   NJZAI          ASSIGN    TO   F8-MSD                I.940915
+000550                             ORGANIZATION   INDEXED               I.940915
+000560                             ACCESS  MODE   DYNAMIC               I.940915
+000570                             RECORD   KEY   NJZAI-KEY             I.940915
+000580                             FILE  STATUS   ERR-STAT.             I.940915
+000590     SELECT   JCON           ASSIGN    TO   F9-MSD                I.941116
+000600                             ORGANIZATION   INDEXED               I.941116
+000610                             ACCESS  MODE   RANDOM                I.941116
+000620                             RECORD   KEY   JCON6-KEY             I.941116
+000630                             FILE  STATUS   ERR-STAT.             I.941116
+000640     SELECT   JNYZ           ASSIGN    TO   F10-MSD               I.960201
+000650                             ORGANIZATION   INDEXED               I.960201
+000660                             ACCESS  MODE   DYNAMIC               I.960201
+000670                             RECORD   KEY   JNYZ-KEY              I.960201
+000680                             FILE  STATUS   ERR-STAT.             I.960201
+000690     SELECT   NJZAIYR        ASSIGN    TO   F11-MSD               I.030111
+000700                             FILE  STATUS   ERR-STAT.             I.030111
+000710     SELECT   HSKIF          ASSIGN    TO   HSKIF-MSD             I.060620
+000720                             FILE  STATUS   ERR-STAT.             I.060620
+000730     SELECT   JNSRRF         ASSIGN    TO   F59-MSD               I.101027
+000740                             FILE  STATUS   ERR-STAT.             I.101029
+000750     SELECT   JMSTYF         ASSIGN    TO   F60-MSD               I.110824
+000760                             FILE  STATUS   ERR-STAT.             I.110824
+000770     SELECT   J-DATE         ASSIGN    TO   F61-MSD               I.160630
+000780                             FILE  STATUS   ERR-STAT.             I.160630
+000790 I-O-CONTROL.                                                     I.941116
+000800     APPLY   SHARED-MODE     ON  JCON.                            I.941116
+000810 DATA                        DIVISION.
+000820 FILE                        SECTION.
+000830     COPY    LJMST1.
+000840*****COPY    LTDNKN.                                              D.971009
+000850*****COPY    LTKW02.                                              D.960902
+000860*****COPY    L-JSRU.                                              D.971208
+000870*****COPY    L-JSTF.                                              D.950404
+000880*****COPY    LNJNSR.                                              D.971208
+000890     COPY    L-JNSR.                                              I.971208
+000900     COPY    LNJZAI.                                              I.940915
+000910     COPY    L-JCON.                                              I.941116
+000920     COPY    LJNYZ.                                               I.960201
+000930 FD  NJZAIYR                                                      I.030111
+000940     BLOCK    3     RECORDS                                       I.030111
+000950     LABEL    RECORD   STANDARD                                   I.030111
+000960     VALUE    OF  IDENTIFICATION  "NJZAIYR".                      I.030111
+000970 01  NJZAIY-R.                                                    I.030111
+000980*****02   F                 PIC X(334).                           D.030320
+000990     02   NJZAIY-KEY        PIC 9(08).                            I.030320
+001000     02   F                 PIC X(326).                           I.030320
+001010     02   NJZAIY-NG         PIC 9(06).                            I.030111
+001020     02   F                 PIC X(01).                            I.030111
+001030 FD  HSKIF                                                        I.060620
+001040     BLOCK  3 RECORDS                                             I.060620
+001050     LABEL RECORD IS STANDARD                                     I.060620
+001060     VALUE OF IDENTIFICATION "HSKIF".                             I.060620
+001070 01  HSKI-R.                                                      I.060620
+001080     02  HSKI-NO        PIC  9(007).                              I.060620
+001090     02  HSKI-NOD   REDEFINES HSKI-NO.                            I.060620
+001100       03  HSKI-UNO     PIC  9(006).                              I.060620
+001110       03  HSKI-GYO     PIC  9(001).                              I.060620
+001120     02  HSKI-DATE      PIC  9(008).                              I.060620
+001130     02  HSKI-NGPD  REDEFINES HSKI-DATE.                          I.060620
+001140       03  HSKI-NG      PIC  9(006).                              I.060620
+001150       03  F            PIC  9(002).                              I.060620
+001160     02  HSKI-NGP   REDEFINES HSKI-DATE.                          I.060620
+001170       03  F            PIC  9(002).                              I.060620
+001180       03  HSKI-NGPS    PIC  9(006).                              I.060620
+001190     02  HSKI-HCD       PIC  9(006).                              I.060620
+001200     02  HSKI-SIZ       PIC  9(001).                              I.060620
+001210     02  HSKI-SUD.                                                I.060620
+001220       03  HSKI-SU      PIC S9(005)  OCCURS  10.                  I.060620
+001230     02  HSKI-SKC       PIC  9(001).                              I.060620
+001240     02  HSKI-IDC       PIC  9(001).                              I.060620
+001250     02  F              PIC  X(009).                              I.060620
+001260     02  HSKI-PRN       PIC  9(001).                              I.060620
+001270     02  HSKI-UPD       PIC  9(001).                              I.060620
+001280 FD  JNSRRF                                                       I.101027
+001290     BLOCK    4     RECORDS                                       I.101027
+001300     LABEL    RECORD   STANDARD                                   I.101027
+001310     VALUE     OF  IDENTIFICATION  "JNSRRF".                      I.101027
+001320 01  JNSRR-R.                                                     I.101027
+001330     02  JNSRR-D        PIC  X(170).                              I.101027
+001340     02  F              PIC  X(16).                               I.101027
+001350     02  JNSRR-NG       PIC  9(06).                               I.101027
+001360 FD  JMSTYF                                                       I.110824
+001370     BLOCK    3     RECORDS                                       I.110824
+001380     LABEL    RECORD   STANDARD                                   I.110824
+001390     VALUE     OF  IDENTIFICATION  "JMSTYF".                      I.110824
+001400 01  JMSTY-R.                                                     I.110824
+001410     02  F              PIC  X(323).                              I.110824
+001420     02  JMSTY-NG       PIC  9(06).                               I.110824
+001430     02  F              PIC  X(12).                               I.110824
+001440 FD  J-DATE                                                       I.160630
+001450     BLOCK 10 RECORDS                                             I.160630
+001460     LABEL RECORD IS STANDARD                                     I.160630
+001470     VALUE OF IDENTIFICATION "J-DATE".                            I.160630
+001480 01  JDT-R.                                                       I.160630
+001490     02  JDT-NGP            PIC 9(06).                            I.160630
+001500     02  JDT-TIME           PIC 9(06).                            I.160630
+001510     02  JDT-STN            PIC 9(03).                            I.160630
+001520     02  JDT-DNO            PIC 9(06).                            I.160630
+001530     02  JDT-ACT            PIC 9(01).                            I.160630
+001540     02  JDT-NC             PIC 9(01).                            I.160630
+001550     02  F                  PIC X(02).                            I.160630
+001560 WORKING-STORAGE             SECTION.
+001570 01  ERR-STAT                PIC  X(02).
+001580 01  W-FILE                  PIC  X(13).                          I.030111
+001590 01  WORK-AREA.
+001600     03  W-SSU               PIC S9(07).                          出 荷 数
+001610     03  W-JSU               PIC S9(07).                          受 注 数
+001620*****03  KW02-FLG            PIC  X(03).                          D.960902
+001630*****03  HIZUKE              PIC  9(06).                          D.941116
+001640*****03  W-DATE              PIC  9(06).                          D.980527
+001650*****03  W-NG                PIC  9(06).                          D.030320
+001660     03  W-NGD.                                                   I.030320
+001670       04  W-NEND            PIC  9(04).                          I.030320
+001680       04  W-NENL  REDEFINES W-NEND.                              I.030320
+001690         05  W-NEND1         PIC  9(02).                          I.030320
+001700         05  W-NEND2         PIC  9(02).                          I.030320
+001710       04  W-GETD            PIC  9(02).                          I.030320
+001720     03  W-DATE              PIC  9(08).                          I.980527
+001730     03  W-NGP   REDEFINES W-DATE.                                I.940907
+001740       04  W-NG.                                                  I.101027
+001750*****    05  W-NEN           PIC  9(02).                          D.980527
+001760         05  W-NEN           PIC  9(04).                          I.980527
+001770*****    05  W-NENL  REDEFINES  W-NEN.                            D.030320
+001780*****        06  W-NEN1      PIC  9(02).                          D.030320
+001790*****        06  W-NEN2      PIC  9(02).                          D.030320
+001800         05  W-GET           PIC  9(02).                          I.940907
+001810       04  W-PEY             PIC  9(02).                          I.101027
+001820     03  W-JNGP.                                                  I.160630
+001830       04  W-NEN1            PIC  9(02).                          I.160630
+001840       04  W-NGPS            PIC  9(06).                          I.160630
+001850*****    05  W-PEY           PIC  9(02).                          D.101027
+001860*****03  W-GETD              PIC  9(02).                          D.030320
+001870*****03  W-DNG.                                                   D.030320
+001880*****    05  W-DNEN          PIC  9(02).                          D.030320
+001890*****    05  W-DGET          PIC  9(02).                          D.030320
+001900     03  OKC                 PIC  9(01).                          I.940907
+001910     03  CNT                 PIC  9(02).                          I.940915
+001920     03  W-ZC                PIC  9(01).                          I.940916
+001930     03  W-MSG               PIC  N(05).                          I.941206
+001940     COPY    LWMSG.
+001950 SCREEN                      SECTION.
+001960 SD  CRT-X
+001970     END  STATUS  IS  ESTAT.
+001980 01  DSP-AREA.
+001990     03  LINE 01.
+002000         05  CLEAR  SCREEN.
+002010         05  COLUMN 25 PIC X(22) VALUE   "                      "
+002020                                                   REVERSE.
+002030         05  COLUMN 26 PIC N(10) VALUE NC"月　　次　　繰　　越".
+002040     03  LINE 12.
+002050*****    05  COLUMN 29 PIC X(21) VALUE   "（  '  年   月 分  ）". D.060703
+002060         05  COLUMN 29 PIC X(21) VALUE   "（  '  年   月 分  ）"  I.060703
+002070                                                         REVERSE. I.060703
+002080     03  LINE 24.                                                 I.940907
+002090         05  COLUMN 41 PIC X(26) VALUE                            I.940907
+002100                           "確認(OK=1,NO=9)-->    ﾘﾀｰﾝ".          I.940907
+002110 01  ACP-AREA.                                                    I.940907
+002120*****02  ACP-NEN  LINE  12  COLUMN  34  PIC  9(02)                D.941116
+002130*****             USING  W-NEN    CHECK  OVERFLOW  NO IFC.        D.941116
+002140*****02  ACP-NEN  LINE  12  COLUMN  34  PIC  9(02) FROM  W-NEN.   D.980527
+002150*****02  ACP-GET  LINE  12  COLUMN  39  PIC  9(02)                D.941116
+002160*****             USING  W-GET    CHECK  OVERFLOW  NO IFC.        D.941116
+002170*****02  ACP-NEN  LINE  12  COLUMN  34  PIC  9(02) FROM  W-NEN2.  D.981201
+002180*****02  ACP-GET  LINE  12  COLUMN  39  PIC  9(02) FROM  W-GET.   D.981201
+002190*****02  ACP-NEN  LINE  12  COLUMN  34  PIC  9(02) FROM  W-DNEN.  D.030320
+002200*****02  ACP-GET  LINE  12  COLUMN  39  PIC  9(02) FROM  W-DGET.  D.030320
+002210     02  ACP-NEN  LINE  12  COLUMN  34  PIC  9(02) FROM  W-NEND2. I.030320
+002220     02  ACP-GET  LINE  12  COLUMN  39  PIC  9(02) FROM  W-GETD.  I.030320
+002230     02  ACP-OKC  LINE  24  COLUMN  61  PIC  9(01)                I.940907
+002240                  USING  OKC      CHECK  OVERFLOW  NO IFC.        I.940907
+002250 01  DSP-MSG   LINE  16.                                          I.941206
+002260     02  COLUMN  32   PIC  N(05) FROM  W-MSG.                     I.941206
+002270 01  DSP-ERR   LINE  24.                                          I.941116
+002280     02  ERR-MSG1   COLUMN   1   PIC  N(07) VALUE                 I.941116
+002290         NC"ＪＣＯＮ　なし".                                      I.941116
+002300     02  ERR-MSG2   COLUMN   15  PIC  X(27) VALUE                 I.030111
+002310           "***  NJZAIYR WRITE ｴﾗｰ  ***".                         I.030111
+002320     02  ERR-MSG3   COLUMN   15  PIC  X(26) VALUE                 I.101027
+002330           "***  JNSRRF WRITE ｴﾗｰ  ***".                          I.101027
+002340     02  ERR-MSG4   COLUMN   15  PIC  X(26) VALUE                 I.110824
+002350           "***  JMSTYR WRITE ｴﾗｰ  ***".                          I.110824
+002360     COPY LSSEM.
+002370 COPY    LSMSG.
+002380***************************************
+002390 PROCEDURE                   DIVISION.
+002400***************************************
+002410 HAJIME.
+002420     PERFORM   INI-RTN   THRU   INI-EX.
+002430     IF  COMPLETION-CODE  =  255                                  I.940907
+002440         STOP RUN.                                                I.940907
+002450*****PERFORM   UP0-RTN   THRU   UP0-EX.                           D.971208
+002460     MOVE    NC"１　／　５"     TO   W-MSG.                       I.941206
+002470     DISPLAY   DSP-MSG.                                           I.941206
+002480     PERFORM   UP0-RTN   THRU   UP0-EX.                           I.971208
+002490*****PERFORM   UP1-RTN   THRU   UP1-EX.                           D.960902
+002500     MOVE    NC"２　／　５"     TO   W-MSG.                       I.941206
+002510     DISPLAY   DSP-MSG.                                           I.941206
+002520     PERFORM   UP2-RTN   THRU   UP2-EX.
+002530     MOVE    NC"３　／　５"     TO   W-MSG.                       I.941206
+002540     DISPLAY   DSP-MSG.                                           I.941206
+002550*****PERFORM   UP3-RTN   THRU   UP3-EX.                           D.971208
+002560     PERFORM   UP7-RTN   THRU   UP7-EX.                           I.971208
+002570     MOVE    NC"４　／　５"     TO   W-MSG.                       I.941206
+002580     DISPLAY   DSP-MSG.                                           I.941206
+002590*****PERFORM   UP4-RTN   THRU   UP4-EX.                           D.971208
+002600*****MOVE    NC"５　／　５"     TO   W-MSG.                       D.971208
+002610*****DISPLAY   DSP-MSG.                                           D.971208
+002620     PERFORM   UP5-RTN   THRU   UP5-EX.                           I.940916
+002630     MOVE    NC"５　／　５"     TO   W-MSG.                       I.971208
+002640     DISPLAY   DSP-MSG.                                           I.971208
+002650     PERFORM   UP6-RTN   THRU   UP6-EX.                           I.941116
+002660*****OPEN      OUTPUT    JSRU   JSTF.                             D.940907
+002670*****CLOSE               JSRU   JSTF.                             D.940907
+002680*****OPEN      OUTPUT    JSTF.                                    D.950404
+002690*****CLOSE               JSTF.                                    D.950404
+002700 OWARI.
+002710     PERFORM   END-RTN   THRU   END-EX.
+002720     STOP      RUN.
+002730***************************************
+002740*    初期処理                         *
+002750***************************************
+002760 INI-RTN.
+002770     DISPLAY   DSP-AREA.
+002780*****ACCEPT    HIZUKE   FROM  DATE.                               D.941116
+002790*****MOVE  HIZUKE       TO    W-DATE.                             D.941116
+002800*****SUBTRACT  1      FROM  W-GET.                                D.941116
+002810*****IF  W-GET        =  ZERO                                     D.941116
+002820*****                    MOVE     12       TO    W-GET            D.941116
+002830*****                    SUBTRACT  1       FROM  W-NEN.           D.941116
+002840     OPEN  INPUT   JCON.                                          I.941116
+002850     MOVE    SPACE          TO  JCON6-KEY.                        I.941116
+002860     MOVE    6              TO  JCON6-01.                         I.941116
+002870     READ    JCON       UNLOCK   INVALID  KEY                     I.941116
+002880             DISPLAY   ERR-MSG1  DISP-BUZ-B                       I.941116
+002890             MOVE   255       TO  COMPLETION-CODE                 I.941116
+002900             GO  TO  INI-EX.                                      I.941116
+002910*****MOVE    JCON6-0312         TO  W-NEN.                        D.980527
+002920*****MOVE    JCON6-032          TO  W-GET.                        D.941228
+002930     MOVE    JCON6-031          TO  W-NEN.                        I.980527
+002940     MOVE    JCON6-032          TO  W-GET.                        I.030320
+002950     MOVE    JCON6-03           TO  W-NGD.                        I.030320
+002960*****MOVE    JCON6-032          TO  W-GET  W-GETD.                D.981201
+002970*****MOVE    JCON6-032          TO  W-GET  W-DGET  W-GETD.        D.030320
+002980*****MOVE    W-NEN2             TO  W-DNEN.                       D.030320
+002990*****MOVE    JCON6-03           TO  W-NG.                         D.030320
+003000     CLOSE   JCON.                                                I.941116
+003010     DISPLAY   ACP-NEN  ACP-GET.                                  I.940907
+003020*INI-010.                                                         D.941116
+003030*****ACCEPT    ACP-NEN.                                           D.941116
+003040*****IF  ESTAT           =  "P9"                                  D.941116
+003050*****                    MOVE   255       TO  COMPLETION-CODE     D.941116
+003060*****                    GO  TO  INI-EX.                          D.941116
+003070*****IF  ESTAT      NOT  =  "01"  AND  "06"                       D.941116
+003080*****                    GO  TO  INI-010.                         D.941116
+003090*INI-020.                                                         D.941116
+003100*****ACCEPT    ACP-GET.                                           D.941116
+003110*****IF  ESTAT           =  "09"                                  D.941116
+003120*****                    GO  TO  INI-010.                         D.941116
+003130*****IF  ESTAT      NOT  =  "01"  AND  "06"                       D.941116
+003140*****                    GO  TO  INI-020.                         D.941116
+003150*****IF  W-GET           <  1  OR  > 12                           D.941116
+003160*****                    GO  TO  INI-020.                         D.941116
+003170*****IF  W-DATE          >  HIZUKE                                D.941116
+003180*****                    GO  TO  INI-010.                         D.941116
+003190 INI-030.                                                         I.940907
+003200     ACCEPT    ACP-OKC.                                           I.940907
+003210*****IF  ESTAT           =  "09"                                  D.941116
+003220*****                    GO  TO  INI-020.                         D.941116
+003230     IF  ESTAT      NOT  =  "01"  AND  "06"                       I.940907
+003240                         GO  TO  INI-030.                         I.940907
+003250     IF  OKC             =  9                                     I.940907
+003260                         MOVE   255       TO  COMPLETION-CODE     I.941116
+003270                         GO  TO  INI-EX.                          I.941116
+003280*****                    GO  TO  INI-010.                         D.941116
+003290     IF  OKC        NOT  =  1                                     I.940907
+003300                         GO  TO  INI-030.                         I.940907
+003310*
+003320     SUBTRACT  1      FROM  W-GET.                                I.940907
+003330     IF  W-GET        =  ZERO                                     I.940907
+003340                         MOVE     12       TO    W-GET            I.940907
+003350                         SUBTRACT  1       FROM  W-NEN.           I.940907
+003360     SUBTRACT  1      FROM  W-GET.                                I.000731
+003370     IF  W-GET        =  ZERO                                     I.000731
+003380                         MOVE     12       TO    W-GET            I.000731
+003390                         SUBTRACT  1       FROM  W-NEN.           I.000731
+003400     MOVE      ZERO   TO  W-PEY.                                  I.940907
+003410*
+003420     DISPLAY   DSP-AREA.                                          I.971103
+003430     DISPLAY   ACP-NEN  ACP-GET.                                  I.971103
+003440     DISPLAY   ACP-OKC.                                           I.971103
+003450     OPEN      I-O      JMST1   JNSR   NJZAI  JCON  JNYZ.         I.971208
+003460     OPEN      EXTEND   NJZAIYR  JNSRRF  JMSTYF.                  I.110824
+003470*****OPEN      EXTEND   NJZAIYR  JNSRRF.                          D.110824
+003480*****OPEN      EXTEND   NJZAIYR.                                  D.101027
+003490*****OPEN      I-O      JMST1   JSRU   JNSRD  NJZAI  JCON  JNYZ.  D.971208
+003500*****OPEN      OUTPUT   JT-KW02.                                  D.960902
+003510*****CLOSE              JT-KW02.                                  D.960902
+003520*****OPEN      I-O      JMST1                                     D.940907
+003530*****OPEN      I-O      JMST1   JSRU                              D.940912
+003540*****OPEN      I-O      JMST1   JSRU   JNSRD                      D.940915
+003550*****OPEN      I-O      JMST1   JSRU   JNSRD  NJZAI               D.941116
+003560*****OPEN      I-O      JMST1   JSRU   JNSRD  NJZAI  JCON         D.960201
+003570*****OPEN      I-O      JMST1   JSRU   JNSRD  NJZAI  JCON  JNYZ   D.971009
+003580*****                   JT-DNKN                                   D.960902
+003590*****                   JT-DNKN.                                  D.971009
+003600*****                   JT-KW02.                                  D.960902
+003610 INI-EX.
+003620     EXIT.
+003630***************************************
+003640*    終了処理                         *
+003650***************************************
+003660 END-RTN.
+003670     CLOSE              JMST1   JNSR   NJZAI  JCON  JNYZ.         I.971208
+003680     CLOSE              NJZAIYR  JNSRRF  JMSTYF.                  I.110824
+003690*****CLOSE              NJZAIYR  JNSRRF.                          D.110824
+003700*****CLOSE              NJZAIYR.                                  D.101027
+003710*****CLOSE              JMST1   JSRU   JNSRD  NJZAI  JCON  JNYZ.  D.971208
+003720*****CLOSE              JMST1                                     D.940907
+003730*****CLOSE              JMST1   JSRU                              D.940912
+003740*****CLOSE              JMST1   JSRU   JNSRD                      D.940915
+003750*****CLOSE              JMST1   JSRU   JNSRD  NJZAI               D.941116
+003760*****CLOSE              JMST1   JSRU   JNSRD  NJZAI  JCON         D.960201
+003770*****CLOSE              JMST1   JSRU   JNSRD  NJZAI  JCON  JNYZ   D.971009
+003780*****                   JT-DNKN                                   D.960902
+003790*****                   JT-DNKN.                                  D.971009
+003800*****                   JT-KW02.                                  D.960902
+003810 END-EX.
+003820     EXIT.
+003830***************************************
+003840*    入庫予定残ファイル更新・削除     *
+003850***************************************
+003860 UP0-RTN.                                                         I.960201
+003870     READ      JNYZ   NEXT AT END           GO  TO  UP0-EX.       I.960201
+003880     MOVE      9            TO  NJZAI-01.                         I.960201
+003890     MOVE      JNYZ-01      TO  NJZAI-02.                         I.960201
+003900     MOVE      JNYZ-02      TO  NJZAI-03.                         I.960201
+003910     READ      NJZAI       INVALID          GO  TO  UP0-RTN.      I.960201
+003920     COMPUTE   JNYZ-0311(01)  =  JNYZ-0311(01) - NJZAI-0711(01).  I.960201
+003930     COMPUTE   JNYZ-0311(02)  =  JNYZ-0311(02) - NJZAI-0711(02).  I.960201
+003940     COMPUTE   JNYZ-0311(03)  =  JNYZ-0311(03) - NJZAI-0711(03).  I.960201
+003950     COMPUTE   JNYZ-0311(04)  =  JNYZ-0311(04) - NJZAI-0711(04).  I.960201
+003960     COMPUTE   JNYZ-0311(05)  =  JNYZ-0311(05) - NJZAI-0711(05).  I.960201
+003970     COMPUTE   JNYZ-0311(06)  =  JNYZ-0311(06) - NJZAI-0711(06).  I.960201
+003980     COMPUTE   JNYZ-0311(07)  =  JNYZ-0311(07) - NJZAI-0711(07).  I.960201
+003990     COMPUTE   JNYZ-0311(08)  =  JNYZ-0311(08) - NJZAI-0711(08).  I.960201
+004000     COMPUTE   JNYZ-0311(09)  =  JNYZ-0311(09) - NJZAI-0711(09).  I.960201
+004010     COMPUTE   JNYZ-0311(10)  =  JNYZ-0311(10) - NJZAI-0711(10).  I.960201
+004020     IF  ZERO              =  JNYZ-0311(01)  AND  JNYZ-0311(02)   I.960201
+004030                         AND  JNYZ-0311(03)  AND  JNYZ-0311(04)   I.960201
+004040                         AND  JNYZ-0311(05)  AND  JNYZ-0311(06)   I.960201
+004050                         AND  JNYZ-0311(07)  AND  JNYZ-0311(08)   I.960201
+004060                         AND  JNYZ-0311(09)  AND  JNYZ-0311(10)   I.960201
+004070         PERFORM  JNYZ-DEL-RTN  THRU  JNYZ-DEL-EX                 I.960201
+004080       ELSE                                                       I.960201
+004090         PERFORM  JNYZ-REW-RTN  THRU  JNYZ-REW-EX.                I.960201
+004100     GO  TO  UP0-RTN.                                             I.960312
+004110 UP0-EX.                                                          I.960201
+004120     EXIT.                                                        I.960201
+004130***************************************
+004140*    キーワーク（０２）の生成         *
+004150***************************************
+004160*UP1-RTN.                                                         D.960902
+004170*****MOVE      SPACE  TO  JMST1-KEY1.                             D.960902
+004180*****START     JMST1  KEY NOT < JMST1-KEY1  INVALID               D.960902
+004190*****                                       GO  TO  UP1-EX.       D.960902
+004200*UP1-010.                                                         D.960902
+004210*****READ      JMST1  NEXT AT END           GO  TO  UP1-EX.       D.960902
+004220*****IF        JMST1-01      NOT  =  2      GO  TO  UP1-010.      D.960902
+004230*****PERFORM   COM-RTN   THRU   COM-EX.                           D.960902
+004240*****
+004250*****IF        JMST1-01      NOT  =  2      GO  TO  UP1-010.      D.930728
+004260*****IF       (JMST1-151(01)      =  ZERO )                       D.960902
+004270*****    AND  (JMST1-151(02)      =  ZERO )                       D.960902
+004280*****    AND  (JMST1-151(03)      =  ZERO )                       D.960902
+004290*****    AND  (JMST1-151(04)      =  ZERO )                       D.960902
+004300*****    AND  (JMST1-151(05)      =  ZERO )                       D.960902
+004310*****    AND  (JMST1-151(06)      =  ZERO )                       D.960902
+004320*****    AND  (JMST1-151(07)      =  ZERO )                       D.960902
+004330*****    AND  (JMST1-151(08)      =  ZERO )                       D.960902
+004340*****    AND  (JMST1-151(09)      =  ZERO )                       D.960902
+004350*****    AND  (JMST1-151(10)      =  ZERO )                       D.960902
+004360*****    AND  (W-JSU              =  W-SSU) GO  TO  UP1-010.      D.960902
+004370*****
+004380*****MOVE      SPACE        TO  KW02-R.                           D.960902
+004390*****INITIALIZE                 KW02-R.                           D.960902
+004400*****MOVE      1            TO  KW02-01.                          D.960902
+004410*****MOVE      JMST1-191    TO  KW02-021.                         D.960902
+004420*****MOVE      JMST1-192    TO  KW02-022.                         D.960902
+004430*****WRITE     KW02-R  INVALID              GO  TO  UP1-100.      D.960902
+004440*****GO   TO   UP1-200.                                           D.960902
+004450*UP1-100.                                                         D.960902
+004460*****IF        ERR-STAT  NOT =  "00" AND "22"                     D.960902
+004470*****          MOVE    "JT-KW02"   TO  ERR-F                      D.960902
+004480*****          MOVE    "W"         TO  ERR-M                      D.960902
+004490*****          MOVE     KW02-KEY   TO  ERR-K                      D.960902
+004500*****          PERFORM  ERR-RTN  THRU  ERR-EX.                    D.960902
+004510*UP1-200.                                                         D.960902
+004520*****GO   TO   UP1-010.                                           D.960902
+004530*UP1-EX.                                                          D.960902
+004540*****EXIT.                                                        D.960902
+004550***************************************
+004560*    受注マスタの繰り越し             *
+004570***************************************
+004580 UP2-RTN.
+004590     MOVE      SPACE  TO  JMST1-KEY1.
+004600     START     JMST1  KEY NOT < JMST1-KEY1  INVALID
+004610                                            GO  TO  UP2-EX.
+004620 UP2-010.
+004630     READ      JMST1  NEXT AT END           GO  TO  UP2-EX.
+004640     PERFORM   JMSTY-WRI-RTN THRU   JMSTY-WRI-EX.                 I.110824
+004650     PERFORM   COM-RTN   THRU   COM-EX.
+004660*****PERFORM   RED-RTN   THRU   RED-EX.                           D.960902
+004670*****
+004680*****IF        JMST1-01   NOT =  0          GO  TO  UP2-020.      D.960902
+004690     IF        JMST1-21   NOT =  1          GO  TO  UP2-020.      I.930728
+004700     IF       (JMST1-151(01)      =  ZERO )                       I.930728
+004710         AND  (JMST1-151(02)      =  ZERO )                       I.930728
+004720         AND  (JMST1-151(03)      =  ZERO )                       I.930728
+004730         AND  (JMST1-151(04)      =  ZERO )                       I.930728
+004740         AND  (JMST1-151(05)      =  ZERO )                       I.930728
+004750         AND  (JMST1-151(06)      =  ZERO )                       I.930728
+004760         AND  (JMST1-151(07)      =  ZERO )                       I.930728
+004770         AND  (JMST1-151(08)      =  ZERO )                       I.930728
+004780         AND  (JMST1-151(09)      =  ZERO )                       I.930728
+004790         AND  (JMST1-151(10)      =  ZERO )                       I.930728
+004800         AND  (W-JSU              =  W-SSU) GO  TO  UP2-020.      I.930728
+004810     MOVE  0  TO  JMST1-21.                                       I.930728
+004820     PERFORM   JMST-REW-RTN   THRU   JMST-REW-EX.                 I.930728
+004830 UP2-020.
+004840*****IF       (JMST1-01       =  1 OR 2)                          D.930728
+004850*****     AND (JMST1-21       =  1     )                          D.930728
+004860     IF        JMST1-21       =  1                                I.930728
+004870*****          PERFORM  DNKN-DEL-RTN  THRU  DNKN-DEL-EX           D.971009
+004880               PERFORM  JMST-DEL-RTN  THRU  JMST-DEL-EX
+004890               GO   TO  UP2-010.
+004900*****
+004910*****IF       (JMST1-01       =  1     )                          D.960902
+004920*****     AND (W-JSU          =  W-SSU )                          D.960902
+004930*****     AND (KW02-FLG       =  "INV" )                          D.960902
+004940*****          MOVE  1  TO  JMST1-21.                             D.960902
+004950*****
+004960*****IF       (JMST1-01       =  2     )                          D.930728
+004970*****IF       (JMST1-01       =  0  OR  2   )                     D.960902
+004980*****     AND (W-JSU          =  W-SSU )                          D.960902
+004990     IF       (W-JSU          =  W-SSU )                          I.960902
+005000          AND (JMST1-151(01)  =  ZERO  )
+005010          AND (JMST1-151(02)  =  ZERO  )
+005020          AND (JMST1-151(03)  =  ZERO  )
+005030          AND (JMST1-151(04)  =  ZERO  )
+005040          AND (JMST1-151(05)  =  ZERO  )
+005050          AND (JMST1-151(06)  =  ZERO  )
+005060          AND (JMST1-151(07)  =  ZERO  )
+005070          AND (JMST1-151(08)  =  ZERO  )
+005080          AND (JMST1-151(09)  =  ZERO  )
+005090          AND (JMST1-151(10)  =  ZERO  )
+005100               MOVE  1  TO  JMST1-21.
+005110*****
+005120     COMPUTE  JMST1-141(01)  =  JMST1-141(01)  +  JMST1-1211(01).
+005130     COMPUTE  JMST1-141(02)  =  JMST1-141(02)  +  JMST1-1211(02).
+005140     COMPUTE  JMST1-141(03)  =  JMST1-141(03)  +  JMST1-1211(03).
+005150     COMPUTE  JMST1-141(04)  =  JMST1-141(04)  +  JMST1-1211(04).
+005160     COMPUTE  JMST1-141(05)  =  JMST1-141(05)  +  JMST1-1211(05).
+005170     COMPUTE  JMST1-141(06)  =  JMST1-141(06)  +  JMST1-1211(06).
+005180     COMPUTE  JMST1-141(07)  =  JMST1-141(07)  +  JMST1-1211(07).
+005190     COMPUTE  JMST1-141(08)  =  JMST1-141(08)  +  JMST1-1211(08).
+005200     COMPUTE  JMST1-141(09)  =  JMST1-141(09)  +  JMST1-1211(09).
+005210     COMPUTE  JMST1-141(10)  =  JMST1-141(10)  +  JMST1-1211(10).
+005220     MOVE     ZERO   TO   JMST1-1211(01)  JMST1-1211(06)
+005230                          JMST1-1211(02)  JMST1-1211(07)
+005240                          JMST1-1211(03)  JMST1-1211(08)
+005250                          JMST1-1211(04)  JMST1-1211(09)
+005260                          JMST1-1211(05)  JMST1-1211(10).
+005270     PERFORM   JMST-REW-RTN   THRU   JMST-REW-EX.
+005280     GO   TO   UP2-010.
+005290 UP2-EX.
+005300     EXIT.
+005310***************************************
+005320*    入出庫累積ファイル更新・削除     *
+005330***************************************
+005340*UP3-RTN.                                                         D.971208
+005350*****READ      JSRU   NEXT AT END           GO  TO  UP3-EX.       D.971208
+005360*****IF        JSRU-03        >  W-DATE     GO  TO  UP3-RTN.      D.941228
+005370*****IF        JSRU-03        >  W-DATE     GO  TO  UP3-010.      D.971208
+005380*****PERFORM   JSRU-DEL-RTN   THRU   JSRU-DEL-EX.                 D.971208
+005390*****GO   TO   UP3-RTN.                                           D.971208
+005400*UP3-010.                                                         D.971208
+005410*****IF        JSRU-16        =  ZERO  OR  SPACE                  D.971208
+005420*****          MOVE      W-GETD      TO  JSRU-16                  D.971208
+005430*****          PERFORM   JSRU-REW-RTN   THRU   JSRU-REW-EX.       D.971208
+005440*****GO   TO   UP3-RTN.                                           D.971208
+005450*UP3-EX.                                                          D.971208
+005460*****EXIT.                                                        D.971208
+005470***************************************
+005480*    入出庫累積ファイル更新・削除     *
+005490***************************************
+005500*UP4-RTN.                                                         D.971208
+005510*****READ      JNSRD  NEXT AT END           GO  TO  UP4-EX.       D.971208
+005520*****IF        JNSRD-02       >  W-DATE     GO  TO  UP4-RTN.      D.950412
+005530*****IF        JNSRD-02       >  W-DATE     GO  TO  UP4-010.      D.971208
+005540*****PERFORM   JNSRD-DEL-RTN  THRU   JNSRD-DEL-EX.                D.971208
+005550*****GO   TO   UP4-RTN.                                           D.971208
+005560*UP4-010.                                                         D.971208
+005570*****IF        JNSRD-90       =  ZERO  OR  SPACE                  D.971208
+005580*****          MOVE      W-GETD      TO  JNSRD-90                 D.971208
+005590*****          PERFORM   JNSRD-REW-RTN  THRU   JNSRD-REW-EX.      D.971208
+005600*****GO   TO   UP4-RTN.                                           D.971208
+005610*UP4-EX.                                                          D.971208
+005620*****EXIT.                                                        D.971208
+005630***************************************
+005640*    倉別在庫マスタ　繰越  (NJZAI)    *
+005650***************************************
+005660 UP5-RTN.                                                         I.940916
+005670     MOVE      SPACE  TO  NJZAI-KEY.                              I.940916
+005680     START     NJZAI  KEY NOT < NJZAI-KEY  INVALID                I.940916
+005690                                            GO  TO  UP5-EX.       I.940916
+005700 UP5-010.                                                         I.940916
+005710     READ      NJZAI  NEXT AT END           GO  TO  UP5-EX.       I.940916
+005720     PERFORM   NJZAIY-WRI-RTN THRU   NJZAIY-WRI-EX.               I.030111
+005730     MOVE      ZERO   TO  CNT  W-ZC.                              I.940916
+005740     IF  NJZAI-01      =  9            MOVE   1         TO  W-ZC. I.941206
+005750 UP5-020.                                                         I.940916
+005760     ADD       1      TO  CNT.                                    I.940916
+005770     IF  CNT           >  10                GO  TO  UP5-030.      I.940916
+005780*****COMPUTE   NJZAI-0411(CNT)  =  NJZAI-0411(CNT)  +             D.941004
+005790*****                        NJZAI-0511(CNT)  -  NJZAI-0611(CNT). D.941004
+005800*****MOVE  ZERO          TO  NJZAI-0511(CNT)  NJZAI-0611(CNT).    D.941004
+005810     COMPUTE  NJZAI-0611(CNT)  =  NJZAI-0611(CNT)                 I.941004
+005820                          +  NJZAI-0411(CNT)  -  NJZAI-0511(CNT)  I.941004
+005830                          +  NJZAI-0711(CNT)  -  NJZAI-0811(CNT). I.941004
+005840     MOVE  ZERO          TO  NJZAI-0411(CNT)  NJZAI-0511(CNT)     I.941004
+005850                             NJZAI-0711(CNT)  NJZAI-0811(CNT).    I.941004
+005860     IF  W-ZC                   =  1        GO  TO  UP5-020.      I.940916
+005870*****IF  NJZAI-0411(CNT)   NOT  =  ZERO                           D.941004
+005880     IF  NJZAI-0611(CNT)   NOT  =  ZERO                           I.941004
+005890                           MOVE  1             TO  W-ZC.          I.940916
+005900     IF  NJZAI-0911(CNT)   NOT  =  ZERO                           I.940916
+005910                           MOVE  1             TO  W-ZC.          I.940916
+005920*****IF  NJZAI-1011(CNT)   NOT  =  ZERO                           D.941004
+005930     IF  NJZAI-1111(CNT)   NOT  =  ZERO                           I.941004
+005940                           MOVE  1             TO  W-ZC.          I.940916
+005950     GO  TO  UP5-020.                                             I.940916
+005960 UP5-030.                                                         I.940916
+005970     IF  W-ZC          =  0                                       I.940916
+005980                 PERFORM   NJZAI-DEL-RTN   THRU   NJZAI-DEL-EX    I.940916
+005990          ELSE   PERFORM   NJZAI-REW-RTN   THRU   NJZAI-REW-EX.   I.940916
+006000     GO  TO  UP5-010.                                             I.941201
+006010 UP5-EX.                                                          I.940916
+006020     EXIT.                                                        I.940916
+006030***************************************
+006040*    コントロールＦ　日付更新　　　　 *
+006050***************************************
+006060 UP6-RTN.                                                         I.941116
+006070     MOVE    SPACE          TO  JCON6-KEY.                        I.941116
+006080     MOVE    6              TO  JCON6-01.                         I.941116
+006090     READ    JCON       INVALID  KEY                              I.941116
+006100             DISPLAY   ERR-MSG1  DISP-BUZ-B                       I.941116
+006110             MOVE   255       TO  COMPLETION-CODE                 I.941116
+006120             PERFORM  ERR-RTN  THRU  ERR-EX.                      I.941116
+006130     ADD     1              TO  JCON6-032.                        I.941116
+006140     IF  JCON6-032     =  13                                      I.941116
+006150             MOVE   1         TO  JCON6-032                       I.941116
+006160             ADD    1         TO  JCON6-031.                      I.941116
+006170     REWRITE   JCON6-R INVALID                                    I.941116
+006180               MOVE    "JCON"      TO  ERR-F                      I.941116
+006190               MOVE    "R"         TO  ERR-M                      I.941116
+006200               MOVE     JCON6-KEY  TO  ERR-K                      I.941116
+006210               PERFORM  ERR-RTN  THRU  ERR-EX.                    I.941116
+006220*****IF W-GETD NOT = 5                                            D.101027
+006230*****    GO TO UP6-100.                                           D.101027
+006240*****    GO TO UP6-EX.                                            D.060620
+006250*****SUBTRACT 1 FROM W-NEND.                                      D.101027
+006260*****CLOSE NJZAIYR.                                               D.101027
+006270*****OPEN I-O NJZAIYR.                                            D.101027
+006280*UP6-010.                                                         D.101027
+006290*****READ NJZAIYR AT END                                          D.101027
+006300*****    GO TO UP6-100.                                           D.101027
+006310*****    GO TO UP6-EX.                                            D.060620
+006320*****IF NJZAIY-NG >= W-NGD                                        D.101027
+006330*****    GO TO UP6-010.                                           D.101027
+006340*****MOVE ""FF"" TO NJZAIY-R.                                     D.101027
+006350*****REWRITE NJZAIY-R.                                            D.101027
+006360*****IF ERR-STAT NOT = "00"                                       D.101027
+006370*****    MOVE    "NJZAIYR"   TO  ERR-F                            D.101027
+006380*****    MOVE    "R"         TO  ERR-M                            D.101027
+006390*****    MOVE     NJZAIY-KEY TO  ERR-K                            D.101027
+006400*****    PERFORM  ERR-RTN  THRU  ERR-EX.                          D.101027
+006410*****IF COMPLETION-CODE NOT = 100                                 D.101027
+006420*****    MOVE 100 TO COMPLETION-CODE.                             D.101027
+006430*****GO TO UP6-010.                                               D.101027
+006440 UP6-100.                                                         I.060620
+006450     OPEN I-O HSKIF.                                              I.060620
+006460 UP6-110.                                                         I.060620
+006470     READ HSKIF AT END                                            I.060620
+006480         GO TO UP6-120.                                           I.060620
+006490     IF HSKI-DATE  >  W-DATE                                      I.060620
+006500         GO TO UP6-110.                                           I.060620
+006510     MOVE ""FF"" TO HSKI-R.                                       I.060620
+006520     REWRITE HSKI-R.                                              I.060620
+006530     IF ERR-STAT NOT = "00"                                       I.060620
+006540         MOVE    "HSKIF"     TO  ERR-F                            I.060620
+006550         MOVE    "R"         TO  ERR-M                            I.060620
+006560         MOVE     HSKI-NO    TO  ERR-K                            I.030320
+006570         PERFORM  ERR-RTN  THRU  ERR-EX.                          I.060620
+006580     GO TO UP6-110.                                               I.030320
+006590 UP6-120.                                                         I.060620
+006600     CLOSE HSKIF.                                                 I.060620
+006610*
+006620     OPEN I-O J-DATE.                                             I.160630
+006630     MOVE 20 TO W-NEN1.                                           I.160630
+006640 UP6-210.                                                         I.160630
+006650     READ J-DATE AT END                                           I.160630
+006660         GO TO UP6-220.                                           I.160630
+006670     MOVE JDT-NGP TO W-NGPS.                                      I.160630
+006680     IF W-JNGP     >  W-DATE                                      I.160630
+006690         GO TO UP6-210.                                           I.160630
+006700     MOVE ""FF"" TO JDT-R.                                        I.160630
+006710     REWRITE JDT-R.                                               I.160630
+006720     IF ERR-STAT NOT = "00"                                       I.160630
+006730         MOVE    "J-DATE"    TO  ERR-F                            I.160630
+006740         MOVE    "R"         TO  ERR-M                            I.160630
+006750         MOVE     JDT-R      TO  ERR-K                            I.160630
+006760         PERFORM  ERR-RTN  THRU  ERR-EX.                          I.160630
+006770     GO TO UP6-210.                                               I.160630
+006780 UP6-220.                                                         I.160630
+006790     CLOSE J-DATE.                                                I.160630
+006800 UP6-EX.                                                          I.941116
+006810     EXIT.                                                        I.941116
+006820***************************************
+006830*    入出庫累積ファイル更新・削除     *
+006840***************************************
+006850 UP7-RTN.                                                         I.971208
+006860     READ      JNSR   NEXT AT END           GO  TO  UP7-EX.       I.971208
+006870     IF        JNSR-02        >  W-DATE     GO  TO  UP7-010.      I.971208
+006880     PERFORM   JNSRR-WRI-RTN  THRU   JNSRR-WRI-EX.                I.101027
+006890     PERFORM   JNSR-DEL-RTN   THRU   JNSR-DEL-EX.                 I.971208
+006900     GO   TO   UP7-RTN.                                           I.971208
+006910 UP7-010.                                                         I.971208
+006920     IF        JNSR-92        =  ZERO  OR  SPACE                  I.971208
+006930               MOVE      W-GETD      TO  JNSR-92                  I.971208
+006940               PERFORM   JNSR-REW-RTN   THRU   JNSR-REW-EX.       I.971208
+006950     GO   TO   UP7-RTN.                                           I.971208
+006960 UP7-EX.                                                          I.971208
+006970     EXIT.                                                        I.971208
+006980***************************************
+006990*    入庫予定残ファイル　 更新　　    *
+007000***************************************
+007010 JNYZ-REW-RTN.                                                    I.960201
+007020     REWRITE   JNYZ-R  INVALID                                    I.960201
+007030               MOVE    "JNYZ"      TO  ERR-F                      I.960201
+007040               MOVE    "R"         TO  ERR-M                      I.960201
+007050               MOVE     JNYZ-KEY   TO  ERR-K                      I.960201
+007060               PERFORM  ERR-RTN  THRU  ERR-EX.                    I.960201
+007070 JNYZ-REW-EX.                                                     I.960201
+007080     EXIT.                                                        I.960201
+007090***************************************
+007100*    入庫予定残ファイル　削除         *
+007110***************************************
+007120 JNYZ-DEL-RTN.                                                    I.960201
+007130     DELETE    JNYZ    INVALID                                    I.960201
+007140               MOVE    "JNYZ"      TO  ERR-F                      I.960201
+007150               MOVE    "D"         TO  ERR-M                      I.960201
+007160               MOVE     JNYZ-KEY   TO  ERR-K                      I.960201
+007170               PERFORM  ERR-RTN  THRU  ERR-EX.                    I.960201
+007180 JNYZ-DEL-EX.                                                     I.960201
+007190     EXIT.                                                        I.960201
+007200***************************************
+007210*    伝票№検索ファイルの削除         *
+007220***************************************
+007230*DNKN-DEL-RTN.                                                    D.971009
+007240*****MOVE      1            TO  DNKN-01.                          D.971009
+007250*****MOVE      JMST1-05     TO  DNKN-02.                          D.971009
+007260*****MOVE      2            TO  DNKN-03.                          D.971009
+007270*****MOVE      JMST1-07     TO  DNKN-041.                         D.971009
+007280*****MOVE      JMST1-08     TO  DNKN-042.                         D.971009
+007290*****READ      JT-DNKN INVALID              GO  TO  DNKN-DEL-EX.  D.971009
+007300*****DELETE    JT-DNKN INVALID                                    D.971009
+007310*****          MOVE    "JT-DNKN"   TO  ERR-F                      D.971009
+007320*****          MOVE    "D"         TO  ERR-M                      D.971009
+007330*****          MOVE     DNKN-KEY   TO  ERR-K                      D.971009
+007340*****          PERFORM  ERR-RTN  THRU  ERR-EX.                    D.971009
+007350*****CALL      "CBLTCLS"  USING  JT-DNKN.                         D.941201
+007360*DNKN-DEL-EX.                                                     D.971009
+007370*****EXIT.                                                        D.971009
+007380***************************************
+007390*    受注マスタ.完了区分のセット      *
+007400***************************************
+007410 JMST-REW-RTN.
+007420     REWRITE   JMST1-R INVALID
+007430               MOVE    "JMST1"     TO  ERR-F
+007440               MOVE    "R"         TO  ERR-M
+007450               MOVE     JMST1-KEY1 TO  ERR-K
+007460               PERFORM  ERR-RTN  THRU  ERR-EX.
+007470 JMST-REW-EX.
+007480     EXIT.
+007490***************************************
+007500*    受注マスタの削除                 *
+007510***************************************
+007520 JMST-DEL-RTN.
+007530     DELETE    JMST1   INVALID
+007540               MOVE    "JMST1"     TO  ERR-F
+007550               MOVE    "D"         TO  ERR-M
+007560               MOVE     JMST1-KEY1 TO  ERR-K
+007570               PERFORM  ERR-RTN  THRU  ERR-EX.
+007580*****CALL      "CBLTCLS"  USING  JMST1.                           D.941201
+007590 JMST-DEL-EX.
+007600     EXIT.
+007610***************************************
+007620*    出荷累積ファイルの更新           *
+007630***************************************
+007640*JSRU-REW-RTN.                                                    D.971208
+007650*****REWRITE   JSRU-R  INVALID                                    D.971208
+007660*****          MOVE    "JSRU"      TO  ERR-F                      D.971208
+007670*****          MOVE    "R"         TO  ERR-M                      D.971208
+007680*****          MOVE     JSRU-KEY1 TO  ERR-K                       D.971208
+007690*****          PERFORM  ERR-RTN  THRU  ERR-EX.                    D.971208
+007700*JSRU-REW-EX.                                                     D.971208
+007710*****EXIT.                                                        D.971208
+007720***************************************
+007730*    出荷累積ファイルの削除           *
+007740***************************************
+007750*JSRU-DEL-RTN.                                                    D.971208
+007760*****DELETE    JSRU    INVALID                                    D.971208
+007770*****          MOVE    "JSRU"      TO  ERR-F                      D.971208
+007780*****          MOVE    "D"         TO  ERR-M                      D.971208
+007790*****          MOVE     JSRU-KEY1 TO  ERR-K                       D.971208
+007800*****          PERFORM  ERR-RTN  THRU  ERR-EX.                    D.971208
+007810*****CALL      "CBLTCLS"  USING  JSRU.                            D.941201
+007820*JSRU-DEL-EX.                                                     D.971208
+007830*****EXIT.                                                        D.971208
+007840***************************************
+007850*    入出庫累積ファイルの更新         *
+007860***************************************
+007870*JNSRD-REW-RTN.                                                   D.971208
+007880*****REWRITE   JNSRD-R INVALID                                    D.971208
+007890*****          MOVE    "JNSRD"     TO  ERR-F                      D.971208
+007900*****          MOVE    "R"         TO  ERR-M                      D.971208
+007910*****          MOVE     JNSRD-KEY  TO  ERR-K                      D.971208
+007920*****          PERFORM  ERR-RTN  THRU  ERR-EX.                    D.971208
+007930*JNSRD-REW-EX.                                                    D.971208
+007940*****EXIT.                                                        D.971208
+007950***************************************
+007960*    入出庫累積ファイルの削除         *
+007970***************************************
+007980*JNSRD-DEL-RTN.                                                   D.971208
+007990*****DELETE    JNSRD   INVALID                                    D.971208
+008000*****          MOVE    "JNSRD"     TO  ERR-F                      D.971208
+008010*****          MOVE    "D"         TO  ERR-M                      D.971208
+008020*****          MOVE     JNSRD-KEY  TO  ERR-K                      D.971208
+008030*****          PERFORM  ERR-RTN  THRU  ERR-EX.                    D.971208
+008040*****CALL      "CBLTCLS"  USING  JNSRD.                           D.941201
+008050*JNSRD-DEL-EX.                                                    D.971208
+008060*****EXIT.                                                        D.971208
+008070***************************************
+008080*    入出庫累積ファイルの更新         *
+008090***************************************
+008100 JNSR-REW-RTN.                                                    I.971208
+008110     REWRITE   JNSR-R INVALID                                     I.971208
+008120               MOVE    "JNSR"      TO  ERR-F                      I.971208
+008130               MOVE    "R"         TO  ERR-M                      I.971208
+008140               MOVE     JNSR-KEY1  TO  ERR-K                      I.971208
+008150               PERFORM  ERR-RTN  THRU  ERR-EX.                    I.971208
+008160 JNSR-REW-EX.                                                     I.971208
+008170     EXIT.                                                        I.971208
+008180***************************************
+008190*    入出庫累積ファイルの削除         *
+008200***************************************
+008210 JNSR-DEL-RTN.                                                    I.971208
+008220     DELETE    JNSR    INVALID                                    I.971208
+008230               MOVE    "JNSR"      TO  ERR-F                      I.971208
+008240               MOVE    "D"         TO  ERR-M                      I.971208
+008250               MOVE     JNSR-KEY1  TO  ERR-K                      I.971208
+008260               PERFORM  ERR-RTN  THRU  ERR-EX.                    I.971208
+008270 JNSR-DEL-EX.                                                     I.971208
+008280     EXIT.                                                        I.971208
+008290***************************************
+008300*    倉別在庫マスタの累積             *
+008310***************************************
+008320 NJZAIY-WRI-RTN.                                                  I.030111
+008330     MOVE NJZAI-R TO NJZAIY-R.                                    I.030111
+008340     MOVE W-NGD TO NJZAIY-NG.                                     I.030320
+008350*****MOVE W-NG TO NJZAIY-NG.                                      D.030320
+008360     WRITE   NJZAIY-R.                                            I.030111
+008370     IF ERR-STAT = "00"                                           I.030111
+008380         GO TO NJZAIY-WRI-EX.                                     I.030111
+008390     DISPLAY E-CL.                                                I.030111
+008400     DISPLAY E-STAT ERR-MSG2 E-ME98.                              I.030111
+008410     IF ERR-STAT NOT = "34"                                       I.030111
+008420             DISPLAY E-ME78 E-ME99.                               I.101027
+008430*****        DISPLAY E-ME78 E-ME99                                D.101027
+008440*****        PERFORM  ERR-RTN  THRU  ERR-EX.                      D.101027
+008450     DISPLAY E-CL.                                                I.030111
+008460     CLOSE NJZAIYR.                                               I.030111
+008470     MOVE "NJZAIYR      " TO W-FILE.                              I.030111
+008480     DISPLAY E-ME71 E-ME98 STOP " ".                              I.030111
+008490     DISPLAY E-CL.                                                I.030111
+008500     OPEN EXTEND NJZAIYR.                                         I.030111
+008510     GO TO NJZAIY-WRI-RTN.                                        I.030111
+008520 NJZAIY-WRI-EX.                                                   I.030111
+008530     EXIT.                                                        I.030111
+008540***************************************
+008550*    倉別在庫マスタの更新  (NEW)      *
+008560***************************************
+008570 NJZAI-REW-RTN.                                                   I.940916
+008580     REWRITE   NJZAI-R INVALID                                    I.940916
+008590               MOVE    "NJZAI"     TO  ERR-F                      I.940916
+008600               MOVE    "R"         TO  ERR-M                      I.940916
+008610               MOVE     NJZAI-KEY  TO  ERR-K                      I.940916
+008620               PERFORM  ERR-RTN  THRU  ERR-EX.                    I.940916
+008630 NJZAI-REW-EX.                                                    I.940916
+008640     EXIT.                                                        I.940916
+008650***************************************
+008660*    倉別在庫マスタの削除  (NEW)      *
+008670***************************************
+008680 NJZAI-DEL-RTN.                                                   I.940915
+008690     DELETE    NJZAI   INVALID                                    I.940915
+008700               MOVE    "NJZAI"     TO  ERR-F                      I.940915
+008710               MOVE    "D"         TO  ERR-M                      I.940915
+008720               MOVE     NJZAI-KEY  TO  ERR-K                      I.940915
+008730               PERFORM  ERR-RTN  THRU  ERR-EX.                    I.940915
+008740*****CALL      "CBLTCLS"  USING  NJZAI.                           D.941201
+008750 NJZAI-DEL-EX.                                                    I.940915
+008760     EXIT.                                                        I.940915
+008770***************************************
+008780*    受注数／出荷数の計算             *
+008790***************************************
+008800 COM-RTN.
+008810     COMPUTE   W-JSU   =    JMST1-1111(01)
+008820                       +    JMST1-1111(02)
+008830                       +    JMST1-1111(03)
+008840                       +    JMST1-1111(04)
+008850                       +    JMST1-1111(05)
+008860                       +    JMST1-1111(06)
+008870                       +    JMST1-1111(07)
+008880                       +    JMST1-1111(08)
+008890                       +    JMST1-1111(09)
+008900                       +    JMST1-1111(10).
+008910     COMPUTE   W-SSU   =    JMST1-1211(01)   +   JMST1-141(01)
+008920                       +    JMST1-1211(02)   +   JMST1-141(02)
+008930                       +    JMST1-1211(03)   +   JMST1-141(03)
+008940                       +    JMST1-1211(04)   +   JMST1-141(04)
+008950                       +    JMST1-1211(05)   +   JMST1-141(05)
+008960                       +    JMST1-1211(06)   +   JMST1-141(06)
+008970                       +    JMST1-1211(07)   +   JMST1-141(07)
+008980                       +    JMST1-1211(08)   +   JMST1-141(08)
+008990                       +    JMST1-1211(09)   +   JMST1-141(09)
+009000                       +    JMST1-1211(10)   +   JMST1-141(10).
+009010 COM-EX.
+009020     EXIT.
+009030***************************************
+009040*    受注マスタの累積                 *
+009050***************************************
+009060 JMSTY-WRI-RTN.                                                   I.110824
+009070     MOVE JMST1-R TO JMSTY-R.                                     I.110824
+009080     MOVE W-NGD TO JMSTY-NG.                                      I.110824
+009090     WRITE   JMSTY-R.                                             I.110824
+009100     IF ERR-STAT = "00"                                           I.110824
+009110         GO TO JMSTY-WRI-EX.                                      I.110824
+009120     DISPLAY E-CL.                                                I.110824
+009130     DISPLAY E-STAT ERR-MSG4 E-ME98.                              I.110824
+009140     IF ERR-STAT NOT = "34"                                       I.110824
+009150             DISPLAY E-ME78 E-ME99.                               I.110824
+009160     DISPLAY E-CL.                                                I.110824
+009170     CLOSE JMSTYF.                                                I.110824
+009180     MOVE "JMSTYF       " TO W-FILE.                              I.110824
+009190     DISPLAY E-ME71 E-ME98 STOP " ".                              I.110824
+009200     DISPLAY E-CL.                                                I.110824
+009210     OPEN EXTEND JMSTYF.                                          I.110824
+009220     GO TO JMSTY-WRI-RTN.                                         I.110824
+009230 JMSTY-WRI-EX.                                                    I.110824
+009240     EXIT.                                                        I.110824
+009250***************************************
+009260*    入出庫累積Ｆの累積               *
+009270***************************************
+009280 JNSRR-WRI-RTN.                                                   I.101027
+009290     INITIALIZE JNSRR-R.                                          I.101027
+009300     MOVE JNSR-R TO JNSRR-R.                                      I.101027
+009310     MOVE W-NG TO JNSRR-NG.                                       I.101027
+009320     WRITE   JNSRR-R.                                             I.101027
+009330     IF ERR-STAT = "00"                                           I.101027
+009340         GO TO JNSRR-WRI-EX.                                      I.101027
+009350     DISPLAY E-CL.                                                I.101027
+009360     DISPLAY E-STAT ERR-MSG3 E-ME98.                              I.101027
+009370     IF ERR-STAT NOT = "34"                                       I.101027
+009380             DISPLAY E-ME78 E-ME99.                               I.101027
+009390     DISPLAY E-CL.                                                I.101027
+009400     CLOSE JNSRRF.                                                I.101027
+009410     MOVE "JNSRRF       " TO W-FILE.                              I.101027
+009420     DISPLAY E-ME71 E-ME98 STOP " ".                              I.101027
+009430     DISPLAY E-CL.                                                I.101027
+009440     OPEN EXTEND JNSRRF.                                          I.101027
+009450     GO TO JNSRR-WRI-RTN.                                         I.101027
+009460 JNSRR-WRI-EX.                                                    I.101027
+009470     EXIT.                                                        I.101027
+009480***************************************
+009490*    キーワーク(02)の存在チェック     *
+009500***************************************
+009510*RED-RTN.                                                         D.960902
+009520*****MOVE      SPACE        TO  KW02-FLG.                         D.960902
+009530*****MOVE      JMST1-07  TO  KW02-021.                            D.960902
+009540*****MOVE      JMST1-08  TO  KW02-022.                            D.960902
+009550*****READ      JT-KW02 INVALID                                    D.960902
+009560*****          MOVE    "INV"    TO    KW02-FLG.                   D.960902
+009570*RED-EX.                                                          D.960902
+009580*****EXIT.                                                        D.960902
+009590*****
+009600     COPY    LPMSG.
+009610*******************    E N D    O F    P R O G R A M    ******************
+

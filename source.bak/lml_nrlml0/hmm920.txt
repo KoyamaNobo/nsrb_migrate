@@ -1,0 +1,130 @@
+000010 IDENTIFICATION      DIVISION.
+000020 PROGRAM-ID.         HMM920.
+000030**************************************
+000040******    担当コード　問合せ    ******
+000050**************************************
+000060 ENVIRONMENT         DIVISION.
+000070 CONFIGURATION       SECTION.
+000080 SOURCE-COMPUTER.    SYSTEM3100.
+000090 OBJECT-COMPUTER.    SYSTEM3100.
+000100 INPUT-OUTPUT        SECTION.
+000110 FILE-CONTROL.
+000120     SELECT HKBM  ASSIGN  TO HKB-MSD
+000130             ORGANIZATION   INDEXED
+000140             ACCESS  MODE   DYNAMIC
+000150             RECORD  KEY  HKB-KEY
+000160             FILE   STATUS  IS  ERR-STAT.
+000170 I-O-CONTROL.
+000180     APPLY  SHARED-MODE  ON  HKBM.
+000190 DATA                DIVISION.
+000200 FILE                SECTION.
+000210     COPY LIHKBM.
+000220 WORKING-STORAGE      SECTION.
+000230 01  ERR-STAT                PIC  X(002).
+000240 01  W-DATA.
+000250     02  W-ACT               PIC  9(001).
+000260     02  W-KEYD.
+000270       03  F                 PIC  X(002) VALUE "04".
+000280       03  W-KEY             PIC  9(002).
+000290       03  F                 PIC  X(003) VALUE SPACE.
+000300     02  W-L                 PIC  9(002).
+000310     02  W-C1                PIC  9(002).
+000320     02  W-C2                PIC  9(002).
+000330     COPY LSTAT.
+000340 SCREEN              SECTION.
+000350 SD  C-CRT
+000360     END  STATUS  IS  ESTAT.
+000370 01  C-CLEAR.
+000380     02  C-CL    LINE   1    CLEAR  SCREEN.
+000390 01  C-MID.
+000400     02  LINE   1    COLUMN  21    PIC  N(019)    VALUE
+000410          NC"＊＊＊　　担当コード　問合せ　　＊＊＊" REVERSE.
+000420     02  LINE   3.
+000430*****  03  COLUMN  21  PIC  X(004) VALUE "ｺｰﾄﾞ" REVERSE.          D.030107
+000440*****  03  COLUMN  27  PIC  N(014) VALUE                          D.030107
+000450       03  COLUMN   6  PIC  X(004) VALUE "ｺｰﾄﾞ" REVERSE.          I.030107
+000460       03  COLUMN  11  PIC  N(014) VALUE                          I.030107
+000470            NC"担　当　者　名　　　　　　　" REVERSE.
+000480       03  COLUMN  42  PIC  X(004) VALUE "ｺｰﾄﾞ" REVERSE.          I.030107
+000490       03  COLUMN  47  PIC  N(014) VALUE                          I.030107
+000500            NC"担　当　者　名　　　　　　　" REVERSE.             I.030107
+000510     02  LINE  23    COLUMN  30    PIC  X(034)    VALUE
+000520          "NEXT=ﾘﾀｰﾝ , 入力=ｆ･10 , 終了=ｆ･9".
+000530 01  C-ACP.
+000540*****02  A-KEY   LINE   4  COLUMN  22  PIC  9(002)                D.030107
+000550     02  A-KEY   LINE   4  COLUMN   7  PIC  9(002)                I.030107
+000560          USING W-KEY   CHECK OVERFLOW NO IFC.
+000570     02  A-ACT   LINE  23  COLUMN  67  PIC  9(001)
+000580          USING W-ACT   CHECK OVERFLOW NO IFC.
+000590 01  C-DSP.
+000600     02  LINE  W-L.
+000610         03  D-KEY    COLUMN W-C1 PIC 9(002) FROM  HKB-TNC.       I.030107
+000620         03  D-NAME   COLUMN W-C2 PIC N(014) FROM  HKB-TNNA.      I.030107
+000630*****    03  D-KEY    COLUMN  22  PIC 9(002) FROM  HKB-TNC.       D.030107
+000640*****    03  D-NAME   COLUMN  27  PIC N(014) FROM  HKB-TNNA.      D.030107
+000650 01  C-ERR.
+000660     02  LINE  24.
+000670         03  E-STAT   COLUMN 10   PIC X(010)   FROM  ERR-STAT.
+000680         03  E-ME98   COLUMN 75   PIC X(005)   VALUE ""27"J"05"".
+000690         03  E-ME99   COLUMN 75   PIC X(005)   VALUE ""27"B"05"".
+000700 PROCEDURE           DIVISION.
+000710 M-05.
+000720     DISPLAY  C-CLEAR.
+000730     DISPLAY  C-MID.
+000740     OPEN  INPUT HKBM.
+000750 M-10.
+000760     ACCEPT  A-ACT.
+000770     IF  ESTAT = PF9
+000780         CLOSE  HKBM
+000790         GO  TO  M-99.
+000800     IF  ESTAT = HTB
+000810         DISPLAY  C-CLEAR
+000820         DISPLAY  C-MID
+000830         GO  TO  M-20.
+000840     IF  ESTAT NOT = ADV AND SKP
+000850         GO  TO  M-10.
+000860 M-15.
+000870     ACCEPT  A-KEY.
+000880     IF  ESTAT = BTB
+000890         GO  TO  M-10.
+000900     IF  ESTAT = PF9
+000910         GO  TO  M-99.
+000920     IF  ESTAT NOT = HTB AND SKP
+000930         GO  TO  M-15.
+000940     MOVE  W-KEYD  TO HKB-KEY.
+000950 M-20.
+000960     MOVE  3      TO  W-L.
+000970     MOVE 7 TO W-C1.                                              I.030107
+000980     MOVE 11 TO W-C2.                                             I.030107
+000990 M-25.
+001000     START HKBM  KEY NOT < HKB-KEY  INVALID  KEY
+001010         CLOSE  HKBM
+001020         GO  TO  M-15.
+001030 M-27.
+001040     READ HKBM  NEXT  RECORD  WITH  UNLOCK  AT  END
+001050         CLOSE  HKBM
+001060         GO  TO  M-15.
+001070     IF HKB-NO NOT = "04"
+001080         GO TO M-15.
+001090 M-30.
+001100     ADD  1  TO  W-L.
+001110     IF  W-L = 23
+001120         IF W-C1 NOT = 43                                         I.030107
+001130             MOVE 4 TO W-L                                        I.030107
+001140             MOVE 43 TO W-C1                                      I.030107
+001150             MOVE 47 TO W-C2                                      I.030107
+001160           ELSE                                                   I.030107
+001170             GO  TO  M-10.
+001180     DISPLAY  D-KEY  D-NAME.
+001190 M-35.
+001200     READ HKBM  NEXT  RECORD  WITH  UNLOCK  AT  END
+001210         CLOSE  HKBM
+001220         OPEN  INPUT  HKBM
+001230         MOVE  ZERO  TO HKB-KEY
+001240         GO  TO  M-25.
+001250     IF HKB-NO NOT = "04"
+001260         GO TO M-35.
+001270     GO  TO  M-30.
+001280 M-99.
+001290     DISPLAY  C-CLEAR.
+001300     STOP  RUN.

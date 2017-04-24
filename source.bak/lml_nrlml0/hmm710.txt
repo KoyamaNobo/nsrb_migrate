@@ -1,0 +1,955 @@
+000010 IDENTIFICATION   DIVISION.
+000020 PROGRAM-ID.      HMM710.
+000030*********************************************************
+000040*    PROGRAM         :  履物振替単価修正入力            *
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :  SCHM71                          *
+000070*    DATA WRITTN     :  00/05/31                        *
+000080*    COMPILE TYPE    :  COBOL                           *
+000090*********************************************************
+000100 ENVIRONMENT      DIVISION.
+000110 CONFIGURATION    SECTION.
+000120 SOURCE-COMPUTER. SYSTEM3100.
+000130 OBJECT-COMPUTER. SYSTEM3100.
+000140 INPUT-OUTPUT     SECTION.
+000150 FILE-CONTROL.
+000160     SELECT HFTSF ASSIGN TO HFTS-MSD
+000170         ORGANIZATION IS INDEXED
+000180         ACCESS MODE IS DYNAMIC
+000190         RECORD KEY IS HFTS-KEY
+000200         FILE STATUS IS ERR-STAT.
+000210*****SELECT HI-M ASSIGN TO HI-MSD                                 D.010803
+000220     SELECT HI-M ASSIGN TO HI1-MSD HI2-MSD                        I.010803
+000230         ORGANIZATION IS INDEXED
+000240         ACCESS MODE IS DYNAMIC
+000250         RECORD KEY IS HI-KEY
+000260         ALTERNATE RECORD KEY IS HI-KEY2                          I.010803
+000270         FILE STATUS IS ERR-STAT.
+000280     SELECT HUH-M ASSIGN TO HUH-MSD
+000290         ORGANIZATION IS INDEXED
+000300         ACCESS MODE IS RANDOM
+000310         RECORD KEY IS HUH-KEY
+000320         FILE STATUS IS ERR-STAT.
+000330*****SELECT HKBM ASSIGN TO HKB-MSD                                D.141105
+000340*****    ORGANIZATION IS INDEXED                                  D.141105
+000350*****    ACCESS MODE IS RANDOM                                    D.141105
+000360*****    RECORD KEY IS HKB-KEY                                    D.141105
+000370*****    FILE STATUS IS ERR-STAT.                                 D.141105
+000380     SELECT SP-F ASSIGN TO P-PRN999.
+000390 I-O-CONTROL.
+000400     APPLY SHARED-MODE ON HI-M
+000410     APPLY SHARED-MODE ON HUH-M
+000420*****APPLY SHARED-MODE ON HKBM                                    D.141105
+000430     APPLY SHIFT-CODE  ON SP-F.
+000440 DATA DIVISION.
+000450 FILE SECTION.
+000460     COPY LIHIM.
+000470     COPY LIHUHM.
+000480*****COPY LIHKBM.                                                 D.141105
+000490     COPY LSPF.
+000500 FD  HFTSF
+000510     BLOCK  4 RECORDS
+000520     LABEL RECORD IS STANDARD
+000530     VALUE OF IDENTIFICATION "HFTSF".
+000540 01  HFTS-R.
+000550     02  HFTS-KEY.
+000560       03  HFTS-NC      PIC  9(001).                              I.010318
+000570       03  HFTS-HCD     PIC  9(006).
+000580       03  HFTS-HCDD  REDEFINES HFTS-HCD.
+000590         04  HFTS-HCD1  PIC  9(004).
+000600         04  HFTS-HCD2  PIC  9(002).
+000610     02  HFTS-OLD.
+000620       03  HFTS-FTO     PIC  9(005).
+000630       03  F            PIC  X(019).                              I.141105
+000640*****  03  HFTS-ZRGO    PIC  9(005).                              D.141105
+000650*****  03  HFTS-SKGO    PIC  9(005).                              D.141105
+000660*****  03  HFTS-GKGO    PIC  9(005).                              D.141105
+000670*****  03  HFTS-KNCO    PIC  9(001).                              D.010803
+000680*****  03  HFTS-KNGO    PIC  9(004).                              D.141105
+000690     02  HFTS-NEW.
+000700       03  HFTS-FT      PIC  9(005).
+000710       03  F            PIC  X(019).                              I.141105
+000720*****  03  HFTS-ZRG     PIC  9(005).                              D.141105
+000730*****  03  HFTS-SKG     PIC  9(005).                              D.141105
+000740*****  03  HFTS-GKG     PIC  9(005).                              D.141105
+000750*****  03  HFTS-KNC     PIC  9(001).                              D.010803
+000760*****  03  HFTS-KNG     PIC  9(004).                              D.141105
+000770     02 HFTS-BC.
+000780       03  HFTS-BC1     PIC  9(002).
+000790       03  HFTS-BC2.
+000800         04  HFTS-BC21  PIC  9(001).
+000810         04  HFTS-BC22  PIC  9(001).
+000820       03  HFTS-BC3     PIC  9(002).
+000830     02  F              PIC  X(003).                              I.010803
+000840*****02  F              PIC  X(001).                              D.010803
+000850*****02  HFTS-NC        PIC  9(001).                              D.010318
+000860 WORKING-STORAGE  SECTION.
+000870 77  ERR-STAT           PIC  X(002).
+000880 77  W-FILE             PIC  X(013).
+000890 77  W-DN               PIC  N(004) VALUE SPACE.
+000900 01  HEAD1.
+000910     02  W-20K          PIC  X(005) VALUE ""3FE04FE080"".
+000920     02  F              PIC  X(006) VALUE SPACE.                  I.141105
+000930*****02  F              PIC  X(036) VALUE SPACE.                  D.141105
+000940*****02  F              PIC  N(023) VALUE                         D.141105
+000950*****     NC"＊＊＊　　履物　振替単価　修正リスト　　＊＊＊".     D.141105
+000960     02  F              PIC  N(019) VALUE                         I.141105
+000970          NC"【　　履物　振替単価　修正リスト　　】".             I.141105
+000980*****02  F              PIC  X(025) VALUE SPACE.                  D.010803
+000990*****02  F              PIC  X(023) VALUE SPACE.                  D.141105
+001000     02  F              PIC  X(005) VALUE SPACE.                  I.141105
+001010     02  F              PIC  X(005) VALUE "DATE ".
+001020     02  H-DATE         PIC 99B99B99.
+001030*****02  F              PIC  X(007) VALUE "     P.".              D.141105
+001040     02  F              PIC  X(005) VALUE "   P.".                I.141105
+001050     02  H-PAGE         PIC Z9.
+001060 01  HEAD2.
+001070     02  W-15K          PIC  X(005) VALUE ""3FE04F40A0"".
+001080*****02  F              PIC  X(044) VALUE SPACE.                  D.141105
+001090*****02  F              PIC  X(016) VALUE "--------------  ".     D.141105
+001100*****02  F              PIC  N(006) VALUE NC"修　正　後　".       D.141105
+001110*****02  F              PIC  X(020) VALUE " --------------  :  ". D.010803
+001120*****02  F              PIC  X(019) VALUE "--------------  :  ".  D.141105
+001130*****02  F              PIC  X(016) VALUE "--------------  ".     D.141105
+001140*****02  F              PIC  N(006) VALUE NC"修　正　前　".       D.141105
+001150*****02  F              PIC  X(014) VALUE "--------------".       D.141105
+001160*****02  F              PIC  X(015) VALUE " --------------".      D.010803
+001170*01  HEAD3.                                                       D.141105
+001180     02  F              PIC  X(007) VALUE " ｺｰﾄﾞ  ".
+001190     02  F              PIC  N(008) VALUE NC"品　　　　　名　".
+001200     02  F              PIC  X(023) VALUE SPACE.                  I.141105
+001210*****02  F              PIC  X(025) VALUE SPACE.                  D.141105
+001220*****02  F              PIC  N(004) VALUE NC"　材料費".           D.141105
+001230*****02  F              PIC  N(006) VALUE NC"　社内加工費".       D.141105
+001240*****02  F              PIC  N(006) VALUE NC"　社外加工費".       D.141105
+001250*****02  F              PIC  X(002) VALUE SPACE.                  D.010803
+001260*****02  F              PIC  X(001) VALUE SPACE.                  D.141105
+001270*****02  F              PIC  N(004) VALUE NC"　間接費".           D.141105
+001280*****02  F              PIC  X(002) VALUE SPACE.                  D.141105
+001290     02  F              PIC  N(004) VALUE NC"　修正後".           I.141105
+001300     02  F              PIC  N(004) VALUE NC"振替単価".
+001310     02  F              PIC  X(003) VALUE "  :".                  I.141105
+001320*****02  F              PIC  X(005) VALUE "  :  ".                D.141105
+001330*****02  F              PIC  N(004) VALUE NC"　材料費".           D.141105
+001340*****02  F              PIC  N(006) VALUE NC"　社内加工費".       D.141105
+001350*****02  F              PIC  N(006) VALUE NC"　社外加工費".       D.141105
+001360*****02  F              PIC  X(002) VALUE SPACE.                  D.010803
+001370*****02  F              PIC  X(001) VALUE SPACE.                  D.141105
+001380*****02  F              PIC  N(004) VALUE NC"　間接費".           D.141105
+001390*****02  F              PIC  X(002) VALUE SPACE.                  D.141105
+001400     02  F              PIC  N(004) VALUE NC"　修正前".           I.141105
+001410     02  F              PIC  N(004) VALUE NC"振替単価".
+001420 01  W-P.
+001430     02  P-HCD          PIC  9(006).
+001440     02  F              PIC  X(001).
+001450     02  P-NAME         PIC  N(024).
+001460*****02  P-NZRG         PIC ZZZ,ZZ9.                              D.141105
+001470*****02  P-NSKG         PIC ZZZZZ,ZZ9.                            D.141105
+001480*****02  P-NGKG         PIC ZZZZZ,ZZ9.                            D.141105
+001490*****02  F              PIC  X(001).                              D.141105
+001500*****02  P-NKNC         PIC  9(001).                              D.010803
+001510*****02  P-NKNG         PIC ZZ,ZZ9.                               D.141105
+001520     02  F              PIC  X(003).                              I.141105
+001530     02  P-NFT          PIC ZZZZ,ZZ9.
+001540     02  F              PIC  X(002).
+001550     02  P-X            PIC  X(001).
+001560     02  F              PIC  X(001).
+001570*****02  P-OZRG         PIC ZZZ,ZZ9.                              D.141105
+001580*****02  P-OSKG         PIC ZZZZZ,ZZ9.                            D.141105
+001590*****02  P-OGKG         PIC ZZZZZ,ZZ9.                            D.141105
+001600*****02  F              PIC  X(001).                              D.141105
+001610*****02  P-OKNC         PIC  9(001).                              D.010803
+001620*****02  P-OKNG         PIC ZZ,ZZ9.                               D.141105
+001630     02  F              PIC  X(003).                              I.141105
+001640     02  P-OFT          PIC ZZZZ,ZZ9.
+001650 01  W-DATA.
+001660     02  W-POC          PIC  9(001).
+001670     02  W-NC           PIC  9(001).
+001680     02  W-CC           PIC  9(001).
+001690     02  W-DC           PIC  9(001).                              I.010318
+001700     02  W-ACT          PIC  9(001).
+001710     02  W-DMM          PIC  9(001).
+001720     02  W-PAGE         PIC  9(002) VALUE ZERO.
+001730*****02  W-FTW.                                                   D.141105
+001740*****  03  W-FTW1       PIC  9(005)V9(02).                        D.141105
+001750*****  03  W-FTW2       PIC  9(005).                              D.141105
+001760*****  03  W-FTW3       PIC  9(005).                              D.141105
+001770*****  03  W-FTW4       PIC  9(005).                              D.010803
+001780     02  W-D.
+001790       03  W-HCD        PIC  9(006).
+001800       03  W-HCDD  REDEFINES W-HCD.
+001810         04  W-HCD1     PIC  9(004).
+001820         04  W-HCD2     PIC  9(002).
+001830       03  W-FT         PIC  9(005).                              I.141105
+001840*****  03  W-GEN.                                                 D.141105
+001850*****    04  W-FT       PIC  9(005).                              D.141105
+001860*****    04  W-ZRG      PIC  9(005).                              D.141105
+001870*****    04  W-SKG      PIC  9(005).                              D.141105
+001880*****    04  W-GKG      PIC  9(005).                              D.141105
+001890*****    04  W-KNC      PIC  9(001).                              D.010803
+001900*****    04  W-KNG      PIC  9(004).                              D.141105
+001910       03  W-BC.
+001920         04  W-BC1      PIC  9(002).
+001930         04  W-BC2.
+001940           05  W-BC21   PIC  9(001).
+001950           05  W-BC22   PIC  9(001).
+001960         04  W-BC3      PIC  9(002).
+001970     02  W-FTO          PIC  9(005).                              I.141105
+001980     02  W-FTD          PIC  9(005).                              I.141105
+001990*****02  W-GENO.                                                  D.141105
+002000*****  03  W-FTO        PIC  9(005).                              D.141105
+002010*****  03  W-ZRGO       PIC  9(005).                              D.141105
+002020*****  03  W-SKGO       PIC  9(005).                              D.141105
+002030*****  03  W-GKGO       PIC  9(005).                              D.141105
+002040*****  03  W-KNCO       PIC  9(001).                              D.010803
+002050*****  03  W-KNGO       PIC  9(004).                              D.141105
+002060*****02  W-GEND.                                                  D.141105
+002070*****  03  W-FTD        PIC  9(005).                              D.141105
+002080*****  03  W-ZRGD       PIC  9(005).                              D.141105
+002090*****  03  W-SKGD       PIC  9(005).                              D.141105
+002100*****  03  W-GKGD       PIC  9(005).                              D.141105
+002110*****  03  W-KNGD       PIC  9(004).                              D.141105
+002120*****02  W-KHR.                                                   D.141105
+002130*****  03  W-CKR        PIC  9(001)V9(03).                        D.141105
+002140*****  03  W-KKR        PIC  9(001)V9(03).                        D.010803
+002150     02  W-HUH          PIC  9(001).
+002160     COPY LSTAT.
+002170 SCREEN      SECTION.
+002180 SD  C-CRT
+002190     END  STATUS IS  ESTAT.
+002200 01  C-CLEAR.
+002210     02  C-CL    LINE   1  CLEAR SCREEN.
+002220 01  C-ACP.
+002230     02  A-ACT   LINE  3  COLUMN  55  PIC  9(001)
+002240          USING W-ACT   CHECK OVERFLOW NO IFC.
+002250     02  A-HCD   LINE  5  COLUMN  12  PIC  9(006)
+002260          USING W-HCD   CHECK OVERFLOW NO IFC.
+002270*
+002280     02  A-HCD1  LINE  5  COLUMN  12  PIC  9(004)
+002290          USING W-HCD1  CHECK OVERFLOW NO IFC.
+002300*
+002310     02  LINE  13.
+002320*****  03  A-ZRG   COLUMN   9  PIC  9(005)                        D.141105
+002330*****       USING W-ZRG   CHECK OVERFLOW NO IFC.                  D.141105
+002340*****  03  A-SKG   COLUMN  15  PIC  9(005)                        D.141105
+002350*****       USING W-SKG   CHECK OVERFLOW NO IFC.                  D.141105
+002360*****  03  A-GKG   COLUMN  21  PIC  9(005)                        D.141105
+002370*****       USING W-GKG   CHECK OVERFLOW NO IFC.                  D.141105
+002380*****  03  A-KNC   COLUMN  27  PIC  9(001)                        D.010803
+002390*****       USING W-KNC   CHECK OVERFLOW NO IFC.                  D.010803
+002400*****  03  A-KNG   COLUMN  29  PIC  9(004)                        D.010803
+002410*****  03  A-KNG   COLUMN  27  PIC  9(004)                        D.141105
+002420*****       USING W-KNG   CHECK OVERFLOW NO IFC.                  D.141105
+002430*****  03  A-FT    COLUMN  37  PIC  9(005)                        D.010803
+002440       03  A-FT    COLUMN  35  PIC  9(005)                        I.010803
+002450            USING W-FT    CHECK OVERFLOW NO IFC.
+002460*
+002470*****02  A-CC    LINE   8  COLUMN  59  PIC  9(001)                D.010318
+002480*****     USING W-CC    CHECK OVERFLOW NO IFC.                    D.010318
+002490*****02  A-NC    LINE  12  COLUMN  44  PIC  9(001)                D.010318
+002500     02  A-NC    LINE   8  COLUMN  44  PIC  9(001)                I.010318
+002510          USING W-NC    CHECK OVERFLOW NO IFC.
+002520     02  A-CC    LINE  12  COLUMN  59  PIC  9(001)                I.010318
+002530          USING W-CC    CHECK OVERFLOW NO IFC.                    I.010318
+002540*
+002550     02  A-DMM   LINE  20  COLUMN  53  PIC  9(001)
+002560          USING W-DMM   CHECK OVERFLOW NO IFC.
+002570 01  C-DSP.
+002580     02  D-DN    LINE   2  COLUMN  66  PIC  N(004) FROM  W-DN
+002590                                                         REVERSE.
+002600     02  D-NAME  LINE   5  COLUMN  25  PIC  N(024) FROM  HI-NAME.
+002610     02  LINE   9.
+002620       03  D-OLD.
+002630*****    04  COLUMN   9  PIC  Z(005) FROM  W-ZRGO.                D.141105
+002640*****    04  COLUMN  15  PIC  Z(005) FROM  W-SKGO.                D.141105
+002650*****    04  COLUMN  21  PIC  Z(005) FROM  W-GKGO.                D.141105
+002660*****    04  COLUMN  27  PIC  Z(004) FROM  W-KNGO.                D.141105
+002670         04  COLUMN  35  PIC  Z(005) FROM  W-FTO.                 I.010803
+002680*****    04  COLUMN  27  PIC  9(001) FROM  W-KNCO.                D.010803
+002690*****    04  COLUMN  29  PIC  Z(004) FROM  W-KNGO.                D.010803
+002700*****    04  COLUMN  37  PIC  Z(005) FROM  W-FTO.                 D.010803
+002710         04  COLUMN  49  PIC  9(002) FROM  HI-BC1.
+002720         04  COLUMN  52  PIC  9(002) FROM  HI-BC2.
+002730         04  COLUMN  55  PIC  9(002) FROM  HI-BC3.
+002740         04  COLUMN  58  PIC  9(004) FROM  HI-SNG.
+002750       03  D-OCL.
+002760         04  D-SNGC  COLUMN  58  PIC  X(004) VALUE "    ".
+002770     02  LINE  13.
+002780       03  D-NEW.
+002790*****    04  D-ZRG   COLUMN   9  PIC  Z(005) FROM  W-ZRG.         D.141105
+002800*****    04  D-SKG   COLUMN  15  PIC  Z(005) FROM  W-SKG.         D.141105
+002810*****    04  D-GKG   COLUMN  21  PIC  Z(005) FROM  W-GKG.         D.141105
+002820*****    04  D-KNG   COLUMN  27  PIC  Z(004) FROM  W-KNG.         D.141105
+002830         04  D-FT    COLUMN  35  PIC  Z(005) FROM  W-FT.          I.010803
+002840*****    04  D-KNC   COLUMN  27  PIC  9(001) FROM  W-KNC.         D.010803
+002850*****    04  D-KNG   COLUMN  29  PIC  Z(004) FROM  W-KNG.         D.010803
+002860*****    04  D-FT    COLUMN  37  PIC  Z(005) FROM  W-FT.          D.010803
+002870 01  C-MID.
+002880     02  LINE   1  COLUMN  12  PIC  N(022) VALUE
+002890          NC"＊＊＊　　履物　振替単価　修正入力　　＊＊＊".
+002900     02  LINE  08  COLUMN  19  PIC  X(030) VALUE                  I.010318
+002910          "評価替え=1 , 単発修正=2   ﾘﾀｰﾝ".                       I.010318
+002920     02  LINE  20  COLUMN  36  PIC  X(022) VALUE
+002930          "確認  OK=1 NO=9   ﾘﾀｰﾝ".
+002940*01  C-MID1.                                                      D.010318
+002950*****02  LINE  08.                                                D.010318
+002960 01  C-MID1  LINE  12.                                            I.010318
+002970     02  D-MID1.                                                  I.010318
+002980       03  COLUMN  08  PIC  N(003) VALUE NC"前回の".
+002990       03  COLUMN  14  PIC  N(004) FROM  W-DN.
+003000       03  COLUMN  22  PIC  N(011) VALUE
+003010            NC"データ　クリア　　する".
+003020       03  COLUMN  44  PIC  X(013) VALUE "=1 , しない=5".         I.010318
+003030       03  COLUMN  60  PIC  X(004) VALUE "ﾘﾀｰﾝ".                  I.010318
+003040*****  03  COLUMN  44  PIC  X(020) VALUE                          D.010318
+003050*****       "=1 , しない=5   ﾘﾀｰﾝ".                               D.010318
+003060     02  D-MID1C.                                                 I.010318
+003070       03  COLUMN   8  PIC  X(036) VALUE                          I.010318
+003080            "                                    ".               I.010318
+003090       03  COLUMN  44  PIC  X(020) VALUE                          I.010318
+003100            "                    ".                               I.010318
+003110*01  C-MID2.                                                      D.010318
+003120*****02  LINE  12  COLUMN  19  PIC  X(030) VALUE                  D.010318
+003130*****     "評価替え=1 , 単発修正=2   ﾘﾀｰﾝ".                       D.010318
+003140*01  C-MID2C.                                                     D.010318
+003150*****02  LINE  12  COLUMN  19  PIC  X(030) VALUE                  D.010318
+003160*****     "                              ".                       D.010318
+003170 01  C-ERR.
+003180     02  LINE  24.
+003190       03  E-ME1   COLUMN  15  PIC  N(014) VALUE
+003200            NC"前回データエラー　更新済み？".
+003210       03  E-ME2   COLUMN  15  PIC  X(026) VALUE
+003220            "***  ｻﾞｲｺ ｱﾘ ｼｭｳｾｲ ﾌｶ  ***".
+003230       03  E-ME3   COLUMN  15  PIC  X(018) VALUE
+003240            "***  ﾄｳﾛｸ ｽﾞﾐ  ***".
+003250       03  E-ME4   COLUMN  15  PIC  X(015) VALUE
+003260            "***  ﾐﾄｳﾛｸ  ***".
+003270       03  E-ME5   COLUMN  15  PIC  X(021) VALUE
+003280            "***  PROGRAM ｴﾗｰ  ***".
+003290       03  E-ME6   COLUMN  15  PIC  X(021) VALUE
+003300            "***  ﾀﾝｶ ｶﾞ ﾁｶﾞｳ  ***".
+003310       03  E-ME7   COLUMN  15  PIC  X(021) VALUE
+003320            "***  ﾋﾝﾒｲﾏｽﾀｰ ﾅｼ  ***".
+003330       03  E-ME8   COLUMN  15  PIC  X(017) VALUE
+003340            "***  HKBM ﾅｼ  ***".
+003350       03  E-ME9   COLUMN  15  PIC  X(022) VALUE
+003360            "***  ﾌﾘｶｴﾀﾝｶ ZERO  ***".
+003370       03  E-ME10  COLUMN  15  PIC  X(020) VALUE
+003380            "***  新旧  同じ  ***".
+003390       03  E-ME11  COLUMN  15  PIC  X(019) VALUE
+003400            "***  WRITE ｴﾗｰ  ***".
+003410       03  E-ME12  COLUMN  15  PIC  X(021) VALUE
+003420            "***  REWRITE ｴﾗｰ  ***".
+003430       03  E-ME13  COLUMN  15  PIC  X(020) VALUE
+003440            "***  DELETE ｴﾗｰ  ***".
+003450       03  E-KEY   COLUMN  45  PIC  9(006) FROM  HI-HCD.
+003460     COPY LSSEM.
+003470 PROCEDURE DIVISION.
+003480 M-020.
+003490     DISPLAY C-CLEAR.
+003500     DISPLAY C-MID.
+003510     MOVE ZERO TO W-DATA.
+003520*****OPEN INPUT HFTSF.                                            D.010318
+003530*****READ HFTSF NEXT RECORD AT END                                D.010318
+003540*****    CLOSE HFTSF                                              D.010318
+003550*****    MOVE 2 TO W-CC                                           D.010318
+003560*****    DISPLAY C-MID2 A-NC                                      D.010318
+003570*****    GO TO M-040.                                             D.010318
+003580*****MOVE HFTS-NC TO W-NC.                                        D.010318
+003590*****CLOSE HFTSF.                                                 D.010318
+003600*****IF W-NC = 1                                                  D.010318
+003610*****    MOVE NC"評価替え" TO W-DN.                               D.010318
+003620*****IF W-NC = 2                                                  D.010318
+003630*****    MOVE NC"単発修正" TO W-DN.                               D.010318
+003640*****DISPLAY C-MID1.                                              D.010318
+003650*M-021.                                                           D.010318
+003660*****ACCEPT A-CC.                                                 D.010318
+003670*****IF ESTAT = PF9                                               D.010318
+003680*****    GO TO M-980.                                             D.010318
+003690*****IF ESTAT NOT = HTB AND SKP                                   D.010318
+003700*****    GO TO M-021.                                             D.010318
+003710*****IF W-CC = 5                                                  D.010318
+003720*****    IF W-NC = 1 OR 2                                         D.010318
+003730*****        DISPLAY C-MID2C                                      D.010318
+003740*****        GO TO M-080.                                         D.010318
+003750*****IF W-CC NOT = 1                                              D.010318
+003760*****    GO TO M-021.                                             D.010318
+003770*****DISPLAY C-MID2 A-NC.                                         D.010318
+003780 M-040.
+003790     ACCEPT A-NC.
+003800     IF ESTAT = PF9
+003810         GO TO M-980.
+003820*****IF ESTAT = BTB                                               D.010318
+003830*****    IF W-CC = 1                                              D.010318
+003840*****        GO TO M-021.                                         D.010318
+003850     IF ESTAT NOT = HTB AND SKP
+003860         GO TO M-040.
+003870     IF W-NC NOT = 1 AND 2
+003880         GO TO M-040.
+003890     IF W-NC = 1
+003900         MOVE NC"評価替え" TO W-DN.
+003910     IF W-NC = 2
+003920         MOVE NC"単発修正" TO W-DN.
+003930*
+003940     OPEN INPUT HFTSF.                                            I.010318
+003950     MOVE SPACE TO HFTS-KEY.                                      I.010318
+003960     MOVE W-NC TO HFTS-NC.                                        I.010318
+003970     START HFTSF KEY NOT < HFTS-KEY INVALID KEY                   I.010318
+003980         CLOSE HFTSF                                              I.010318
+003990         DISPLAY D-MID1C                                          I.010318
+004000         GO TO M-080.                                             I.010318
+004010     READ HFTSF NEXT RECORD AT END                                I.010318
+004020         CLOSE HFTSF                                              I.010318
+004030         DISPLAY D-MID1C                                          I.010318
+004040         GO TO M-080.                                             I.010318
+004050     IF HFTS-NC NOT = W-NC                                        I.010318
+004060         CLOSE HFTSF                                              I.010318
+004070         DISPLAY D-MID1C                                          I.010318
+004080         GO TO M-080.                                             I.010318
+004090     CLOSE HFTSF.                                                 I.010318
+004100     MOVE 1 TO W-DC.                                              I.010318
+004110     DISPLAY D-MID1.                                              I.010318
+004120 M-060.                                                           I.010318
+004130     ACCEPT A-CC.                                                 I.010318
+004140     IF ESTAT = BTB                                               I.010318
+004150         GO TO M-040.                                             I.010318
+004160     IF ESTAT NOT = HTB AND SKP                                   I.010318
+004170         GO TO M-060.                                             I.010318
+004180     IF W-CC NOT = 1 AND 5                                        I.010318
+004190         GO TO M-080.                                             I.010318
+004200 M-080.
+004210     ACCEPT A-DMM.
+004220     IF ESTAT = BTB
+004230*****    IF W-CC = 5                                              D.010318
+004240*****        GO TO M-021                                          D.010318
+004250         IF W-DC = 1                                              I.010318
+004260             GO TO M-060                                          I.010318
+004270           ELSE
+004280             GO TO M-040.
+004290     IF ESTAT NOT = HTB AND SKP
+004300         GO TO M-080.
+004310     IF W-DMM = 9
+004320         GO TO M-040.                                             I.010318
+004330*****    IF W-CC = 2                                              D.010318
+004340*****        GO TO M-040                                          D.010318
+004350*****      ELSE                                                   D.010318
+004360*****        GO TO M-021.                                         D.010318
+004370     IF W-DMM NOT = 1
+004380         GO TO M-080.
+004390*
+004400*****OPEN INPUT HKBM.                                             D.141105
+004410*****MOVE SPACE TO HKB-KEY.                                       D.141105
+004420*****MOVE "19" TO HKB-NO.                                         D.141105
+004430*****READ HKBM WITH UNLOCK INVALID KEY                            D.141105
+004440*****    CLOSE HKBM                                               D.141105
+004450*****    DISPLAY E-ME8 E-ME99                                     D.141105
+004460*****    GO TO M-980.                                             D.141105
+004470*****MOVE HKB-CKR TO W-CKR.                                       D.141105
+004480*****MOVE HKB-KKR TO W-KKR.                                       D.010803
+004490*****CLOSE HKBM.                                                  D.141105
+004500*
+004510*****IF W-CC = 1 OR 2                                             D.010318
+004520*****    OPEN OUTPUT HFTSF                                        D.010318
+004530*****    CLOSE HFTSF                                              D.010318
+004540*****    GO TO M-200.                                             D.010318
+004550     IF W-DC = 0                                                  I.010318
+004560         GO TO M-200.                                             I.010318
+004570     IF W-CC NOT = 1                                              I.010318
+004580         GO TO M-095.                                             I.010318
+004590*
+004600     OPEN I-O HFTSF.                                              I.010318
+004610     MOVE SPACE TO HFTS-KEY.                                      I.010318
+004620     MOVE W-NC TO HFTS-NC.                                        I.010318
+004630     START HFTSF KEY NOT < HFTS-KEY INVALID KEY                   I.010318
+004640         CLOSE HFTSF                                              I.010318
+004650         GO TO M-200.                                             I.010318
+004660 M-090.                                                           I.010318
+004670     READ HFTSF NEXT RECORD AT END                                I.010318
+004680         CLOSE HFTSF                                              I.010318
+004690         GO TO M-200.                                             I.010318
+004700     IF HFTS-NC NOT = W-NC                                        I.010318
+004710         CLOSE HFTSF                                              I.010318
+004720         GO TO M-200.                                             I.010318
+004730     DELETE HFTSF INVALID KEY                                     I.010318
+004740         CLOSE HFTSF                                              I.010318
+004750         DISPLAY E-STAT E-ME13 E-ME99                             I.010318
+004760         GO TO M-980.                                             I.010318
+004770     GO TO M-090.                                                 I.010318
+004780 M-095.                                                           I.010318
+004790     OPEN INPUT HFTSF.
+004800     OPEN INPUT HI-M.
+004810 M-100.
+004820     READ HFTSF NEXT RECORD AT END
+004830         CLOSE HFTSF
+004840         CLOSE HI-M
+004850         GO TO M-200.
+004860     IF HFTS-NC NOT = W-NC                                        I.010318
+004870         GO TO M-100.                                             I.010318
+004880     MOVE HFTS-HCD TO HI-KEY.
+004890     READ HI-M WITH UNLOCK INVALID KEY
+004900         CLOSE HFTSF
+004910         CLOSE HI-M
+004920         DISPLAY E-ME7 E-KEY E-ME99
+004930         GO TO M-980.
+004940*****IF (HI-FT = HFTS-FTO)   AND (HI-ZRG = HFTS-ZRGO) AND         D.140808
+004950*****   (HI-SKG = HFTS-SKGO) AND (HI-GKG = HFTS-GKGO) AND         D.140808
+004960*****   (HI-KNG = HFTS-KNGO)                                      D.140808
+004970*****   (HI-KNC = HFTS-KNCO) AND (HI-KNG = HFTS-KNGO)             D.010803
+004980     IF  HI-FT = HFTS-FTO                                         I.140808
+004990         GO TO M-100.
+005000     CLOSE HFTSF.
+005010     CLOSE HI-M.
+005020     DISPLAY E-ME1 E-KEY E-ME99.
+005030     GO TO M-980.
+005040 M-200.
+005050     OPEN I-O HFTSF.
+005060     OPEN INPUT HI-M.
+005070     IF W-NC = 2
+005080         OPEN INPUT HUH-M.
+005090 M-220.
+005100     DISPLAY C-CLEAR.
+005110     CALL "SCHM71".
+005120     DISPLAY D-DN.
+005130     ACCEPT A-ACT.
+005140     IF ESTAT NOT = HTB AND SKP
+005150         GO TO M-220.
+005160     IF W-ACT = 9
+005170         GO TO M-900.
+005180     IF W-ACT = 4
+005190         GO TO M-700.
+005200     IF W-ACT NOT = 1 AND 2 AND 3 AND 6
+005210         GO TO M-220.
+005220 M-240.
+005230     DISPLAY C-CLEAR.
+005240     CALL "SCHM71".
+005250     DISPLAY D-DN A-ACT.
+005260     MOVE ZERO TO W-D.
+005270 M-250.                                                           I.010803
+005280     IF W-ACT = 6
+005290         GO TO M-300.
+005300 M-260.
+005310     ACCEPT A-HCD.
+005320     DISPLAY E-CL.
+005330     IF ESTAT = BTB
+005340         GO TO M-220.
+005350     IF ESTAT NOT = HTB AND SKP
+005360         GO TO M-260.
+005370*
+005380     MOVE W-HCD TO HI-KEY.
+005390     READ HI-M WITH UNLOCK INVALID KEY
+005400         DISPLAY E-ME7 E-ME98
+005410         GO TO M-260.
+005420     DISPLAY D-NAME.
+005430     MOVE HI-BC TO W-BC.
+005440*
+005450*****MOVE W-HCD TO HFTS-KEY.                                      D.010318
+005460     MOVE W-NC TO HFTS-NC.                                        I.010318
+005470     MOVE W-HCD TO HFTS-HCD.                                      I.010318
+005480     READ HFTSF INVALID KEY
+005490         GO TO M-280.
+005500     IF W-ACT = 1
+005510         DISPLAY E-ME3 E-ME98
+005520         GO TO M-260.
+005530*****MOVE ZERO TO W-GENO W-GEN.                                   D.141105
+005540     MOVE ZERO TO W-FTD W-FT.                                     I.141105
+005550     MOVE HFTS-FTO TO W-FTO.                                      I.141105
+005560     MOVE HFTS-FT TO W-FT W-FTD.                                  D.141105
+005570*****MOVE HFTS-OLD TO W-GENO.                                     D.141105
+005580*****MOVE HFTS-NEW TO W-GEN.                                      D.010806
+005590*****MOVE HFTS-NEW TO W-GEN W-GEND.                               D.141105
+005600     DISPLAY D-OLD D-NEW.
+005610     IF HI-SNG = ZERO
+005620         DISPLAY D-SNGC.
+005630     IF W-ACT = 3
+005640         GO TO M-520.
+005650     IF W-NC = 2
+005660         MOVE W-HCD TO HUH-KEY
+005670         PERFORM S-20 THRU S-25.
+005680     IF W-HUH = 9
+005690         GO TO M-260.
+005700     GO TO M-380.
+005710 M-280.
+005720     IF W-ACT NOT = 1
+005730         DISPLAY E-ME4 E-ME98
+005740         GO TO M-260.
+005750     IF HI-FT = ZERO
+005760         DISPLAY E-ME9 E-ME98
+005770         GO TO M-260.
+005780*
+005790     IF W-NC = 2
+005800         MOVE W-HCD TO HUH-KEY
+005810         PERFORM S-20 THRU S-25.
+005820     IF W-HUH = 9
+005830         GO TO M-260.
+005840*
+005850     PERFORM S-30 THRU S-35.
+005860     GO TO M-380.
+005870 M-300.
+005880     ACCEPT A-HCD1.
+005890     DISPLAY E-CL.
+005900     IF ESTAT = BTB
+005910         GO TO M-220.
+005920     IF ESTAT NOT = HTB AND SKP
+005930         GO TO M-300.
+005940*
+005950     MOVE ZERO TO W-HCD2.
+005960     MOVE W-HCD TO HI-KEY.
+005970     START HI-M KEY NOT < HI-KEY INVALID KEY
+005980         DISPLAY E-ME7 E-ME98
+005990         GO TO M-300.
+006000     READ HI-M NEXT RECORD WITH UNLOCK AT END
+006010         DISPLAY E-ME7 E-ME98
+006020         GO TO M-300.
+006030*****IF HI-KEY1 NOT = W-HCD1                                      D.010803
+006040     IF HI-HCD1 NOT = W-HCD1                                      I.010803
+006050         DISPLAY E-ME7 E-ME98
+006060         GO TO M-300.
+006070     DISPLAY D-NAME.
+006080*
+006090     MOVE HI-HCD TO W-HCD.
+006100     MOVE HI-BC TO W-BC.
+006110     PERFORM S-30 THRU S-35.
+006120*
+006130*****MOVE HI-KEY TO HFTS-KEY.                                     D.010318
+006140     MOVE W-NC TO HFTS-NC.                                        I.010318
+006150     MOVE HI-KEY TO HFTS-HCD.                                     I.010318
+006160     READ HFTSF INVALID KEY
+006170         GO TO M-320.
+006180     DISPLAY E-ME3 E-KEY E-ME98.
+006190     GO TO M-300.
+006200 M-320.
+006210     IF HI-FT = ZERO
+006220         DISPLAY E-ME9 E-ME98
+006230         GO TO M-300.
+006240     IF W-NC = 2
+006250         MOVE HI-HCD TO HUH-KEY
+006260         PERFORM S-20 THRU S-25.
+006270     IF W-HUH = 9
+006280         GO TO M-300.
+006290 M-340.
+006300     READ HI-M NEXT RECORD WITH UNLOCK AT END
+006310         GO TO M-380.
+006320*****IF HI-KEY1 NOT = W-HCD1                                      D.010803
+006330     IF HI-HCD1 NOT = W-HCD1                                      I.010803
+006340         GO TO M-380.
+006350*****MOVE HI-KEY TO HFTS-KEY.                                     D.010308
+006360     MOVE W-NC TO HFTS-NC.                                        I.010318
+006370     MOVE HI-KEY TO HFTS-HCD.                                     I.010308
+006380     READ HFTSF INVALID KEY
+006390         GO TO M-360.
+006400     DISPLAY E-ME3 E-KEY E-ME98.
+006410     GO TO M-300.
+006420 M-360.
+006430     IF HI-FT = ZERO
+006440         DISPLAY E-ME9 E-ME98
+006450         GO TO M-300.
+006460     IF W-NC = 2
+006470         MOVE HI-HCD TO HUH-KEY
+006480         PERFORM S-20 THRU S-25.
+006490     IF W-HUH = 9
+006500         GO TO M-300.
+006510*****IF (HI-FT = W-FTO)   AND (HI-ZRG = W-ZRGO) AND               D.140808
+006520*****   (HI-SKG = W-SKGO) AND (HI-GKG = W-GKGO) AND               D.140808
+006530*****   (HI-KNG = W-KNGO)                                         D.140808
+006540*****   (HI-KNC = W-KNCO) AND (HI-KNG = W-KNGO)                   D.010803
+006550     IF  HI-FT = W-FTO                                            I.140808
+006560         GO TO M-340.
+006570     DISPLAY E-ME6 E-ME98.
+006580     GO TO M-300.
+006590 M-380.
+006600*****IF HFTS-BC22 = 2 OR 3                                        D.010404
+006610*****IF HI-BC22 = 2 OR 3                                          D.010426
+006620*****IF W-BC22 = 2 OR 3                                           D.141105
+006630*****    MOVE ZERO TO W-ZRG W-SKG W-GKG W-KNC W-KNG               D.010803
+006640*****    DISPLAY D-ZRG D-SKG D-GKG A-KNC D-KNG                    D.010803
+006650*****    MOVE ZERO TO W-ZRG W-SKG W-GKG W-KNG                     D.141105
+006660*****    DISPLAY D-ZRG D-SKG D-GKG D-KNG                          D.141105
+006670*****    GO TO M-500.                                             D.141105
+006680*****ACCEPT A-ZRG.                                                D.141105
+006690*****IF ESTAT = BTB                                               D.141105
+006700*****    IF W-ACT = 6                                             D.141105
+006710*****        GO TO M-300                                          D.141105
+006720*****      ELSE                                                   D.141105
+006730*****        GO TO M-260.                                         D.141105
+006740*****IF ESTAT NOT = HTB AND SKP                                   D.141105
+006750*****    GO TO M-380.                                             D.141105
+006760*****DISPLAY D-ZRG.                                               D.141105
+006770*M-400.                                                           D.141105
+006780*****ACCEPT A-SKG.                                                D.141105
+006790*****IF ESTAT = BTB                                               D.141105
+006800*****    GO TO M-380.                                             D.141105
+006810*****IF ESTAT NOT = HTB AND SKP                                   D.141105
+006820*****    GO TO M-400.                                             D.141105
+006830*****DISPLAY D-SKG.                                               D.141105
+006840*M-420.                                                           D.141105
+006850*****ACCEPT A-GKG.                                                D.141105
+006860*****IF ESTAT = BTB                                               D.141105
+006870*****    GO TO M-400.                                             D.141105
+006880*****IF ESTAT NOT = HTB AND SKP                                   D.141105
+006890*****    GO TO M-420.                                             D.141105
+006900*****DISPLAY D-GKG.                                               D.141105
+006910*M-421.                                                           D.010803
+006920*****ACCEPT A-KNC.                                                D.010803
+006930*****DISPLAY E-CL.                                                D.010803
+006940*****IF ESTAT = BTB                                               D.010803
+006950*****    GO TO M-420.                                             D.010803
+006960*****IF ESTAT NOT = HTB AND SKP                                   D.010803
+006970*****    GO TO M-421.                                             D.010803
+006980*****IF W-KNC = 0                                                 D.010803
+006990*****    MOVE ZERO TO W-KNG                                       D.010803
+007000*****    DISPLAY D-KNG                                            D.010803
+007010*****    GO TO M-441.                                             D.010803
+007020*****IF W-KNC > 1                                                 D.010803
+007030*****    GO TO M-421.                                             D.010803
+007040*M-440.                                                           D.141105
+007050*****ACCEPT A-KNG.                                                D.141105
+007060*****DISPLAY E-CL.                                                D.141105
+007070*****IF ESTAT = BTB                                               D.141105
+007080*****    GO TO M-420.                                             D.141105
+007090*****    GO TO M-421.                                             D.010803
+007100*****IF ESTAT NOT = HTB AND SKP                                   D.141105
+007110*****    GO TO M-440.                                             D.141105
+007120*****DISPLAY D-KNG.                                               D.141105
+007130*M-441.                                                           D.010803
+007140*****IF ZERO = W-ZRG AND W-SKG AND W-GKG AND W-KNC                D.010803
+007150*****IF ZERO = W-ZRG AND W-SKG AND W-GKG AND W-KNG                D.141105
+007160*****    GO TO M-500.                                             D.141105
+007170*****IF W-ACT = 2                                                 D.141105
+007180*****    IF (W-ZRG = W-ZRGD) AND (W-SKG = W-SKGD) AND             D.141105
+007190*****       (W-GKG = W-GKGD) AND (W-KNG = W-KNGD)                 D.141105
+007200*****        MOVE W-FTD TO W-FT                                   D.141105
+007210*****        GO TO M-460.                                         D.141105
+007220*****COMPUTE W-FTW1 ROUNDED = W-SKG * W-CKR.                      D.141105
+007230*****COMPUTE W-FTW2 = W-FTW1 + 0.99.                              D.141105
+007240*****IF W-KNC = 0                                                 D.010803
+007250*****    COMPUTE W-FTW1 ROUNDED =                                 D.010803
+007260*****                   (W-ZRG + W-SKG + W-GKG + W-FTW2) * W-KKR  D.010803
+007270*****  ELSE                                                       D.010803
+007280*****    MOVE W-KNG TO W-FTW1.                                    D.010803
+007290*****COMPUTE W-FTW3 = W-FTW1 + 0.99.                              D.010803
+007300*****COMPUTE W-FTW4 = W-ZRG + W-SKG + W-GKG + W-FTW2 + W-FTW3.    D.010803
+007310*****MOVE W-FTW4 TO W-FT.                                         D.010803
+007320*****COMPUTE W-FTW3 = W-ZRG + W-SKG + W-GKG + W-KNG + W-FTW2.     D.141105
+007330*****MOVE W-FTW3 TO W-FT.                                         D.141105
+007340*M-460.                                                           D.141105
+007350*****DISPLAY D-FT.                                                D.141105
+007360 M-500.
+007370     ACCEPT A-FT.
+007380     IF ESTAT = BTB
+007390         GO TO M-250.                                             I.141105
+007400*****    IF W-BC22 = 2 OR 3                                       D.141105
+007410*****        GO TO M-250                                          D.141105
+007420*****      ELSE                                                   D.141105
+007430*****        GO TO M-440.                                         D.141105
+007440*****        IF W-ACT = 6                                         D.010803
+007450*****            GO TO M-300                                      D.010803
+007460*****          ELSE                                               D.010803
+007470*****            GO TO M-260.                                     D.010803
+007480*****IF ESTAT = BTB                                               D.010803
+007490*****    IF W-BC22 NOT = 2 AND 3                                  D.010803
+007500*****        IF W-KNC = 1                                         D.010803
+007510*****            GO TO M-440                                      D.010803
+007520*****          ELSE                                               D.010803
+007530*****            GO TO M-421.                                     D.010803
+007540     IF ESTAT NOT = HTB AND SKP
+007550         GO TO M-500.
+007560     DISPLAY D-FT.
+007570*****IF W-GENO = W-GEN                                            D.141105
+007580     IF W-FTO = W-FT                                              I.141105
+007590         DISPLAY E-ME10 E-ME98
+007600         GO TO M-500.
+007610 M-520.
+007620     ACCEPT A-DMM.
+007630     IF ESTAT = BTB
+007640         IF W-ACT = 3
+007650             GO TO M-260
+007660           ELSE
+007670             GO TO M-500.
+007680     IF ESTAT NOT = HTB AND SKP
+007690         GO TO M-520.
+007700     IF W-DMM = 9
+007710         GO TO M-250.                                             I.010803
+007720*****    IF W-ACT = 6                                             D.010803
+007730*****        GO TO M-300                                          D.010803
+007740*****      ELSE                                                   D.010803
+007750*****        GO TO M-260.                                         D.010803
+007760     IF W-DMM NOT = 1
+007770         GO TO M-520.
+007780 M-540.
+007790     IF W-ACT NOT = 1
+007800         GO TO M-580.
+007810     MOVE ZERO TO HFTS-R.
+007820*****MOVE W-HCD TO HFTS-KEY.                                      D.010318
+007830     MOVE W-HCD TO HFTS-HCD.                                      I.010318
+007840*****MOVE W-GENO TO HFTS-OLD.                                     D.141105
+007850*****MOVE W-GEN TO HFTS-NEW.                                      D.141105
+007860     MOVE W-FTO TO HFTS-FTO                                       I.141105
+007870     MOVE W-FT TO HFTS-FT.                                        I.141105
+007880     MOVE W-BC TO HFTS-BC.
+007890     MOVE W-NC TO HFTS-NC.
+007900     WRITE HFTS-R INVALID KEY
+007910         DISPLAY E-STAT E-ME11 E-ME99
+007920         GO TO M-560.
+007930     GO TO M-240.
+007940 M-560.
+007950     IF ERR-STAT NOT = "24"
+007960         GO TO M-900.
+007970     DISPLAY E-CL.
+007980     CLOSE HFTSF.
+007990     MOVE "HFTSF        " TO W-FILE.
+008000     DISPLAY E-ME71 E-ME98 STOP " ".
+008010     DISPLAY E-CL.
+008020     OPEN I-O HFTSF.
+008030     GO TO M-540.
+008040 M-580.
+008050     IF W-ACT NOT = 2
+008060         GO TO M-600.
+008070*****MOVE W-GEN TO HFTS-NEW.                                      D.141105
+008080     MOVE W-FT TO HFTS-FT.                                        D.141105
+008090     MOVE W-NC TO HFTS-NC.
+008100     REWRITE HFTS-R INVALID KEY
+008110         DISPLAY E-STAT E-ME12 E-ME99
+008120         GO TO M-900.
+008130     GO TO M-240.
+008140 M-600.
+008150     IF W-ACT NOT = 3
+008160         GO TO M-620.
+008170     DELETE HFTSF INVALID KEY
+008180         DISPLAY E-STAT E-ME13 E-ME99
+008190         GO TO M-900.
+008200     GO TO M-240.
+008210 M-620.
+008220     IF W-ACT NOT = 6
+008230         GO TO M-240.
+008240     MOVE ZERO TO W-HCD2.
+008250     MOVE W-HCD TO HI-KEY.
+008260     START HI-M KEY NOT < HI-KEY INVALID KEY
+008270         DISPLAY E-ME5 E-ME99
+008280         GO TO M-900.
+008290 M-640.
+008300     READ HI-M NEXT RECORD WITH UNLOCK AT END
+008310         GO TO M-240.
+008320*****IF HI-KEY1 NOT = W-HCD1                                      D.010803
+008330     IF HI-HCD1 NOT = W-HCD1                                      I.010803
+008340         GO TO M-240.
+008350*
+008360     MOVE ZERO TO HFTS-R.
+008370*****MOVE HI-HCD TO HFTS-KEY.                                     D.010318
+008380     MOVE HI-HCD TO HFTS-HCD.                                     I.010318
+008390*****MOVE W-GENO TO HFTS-OLD.                                     D.141105
+008400*****MOVE W-GEN TO HFTS-NEW.                                      D.141105
+008410     MOVE W-FTO TO HFTS-FTO.                                      I.141105
+008420     MOVE W-FT TO HFTS-FT.                                        I.141105
+008430     MOVE HI-BC TO HFTS-BC.
+008440     MOVE W-NC TO HFTS-NC.
+008450     WRITE HFTS-R INVALID KEY
+008460         DISPLAY E-STAT E-ME11 E-ME99
+008470         GO TO M-660.
+008480     GO TO M-640.
+008490 M-660.
+008500     IF ERR-STAT NOT = "24"
+008510         GO TO M-900.
+008520     DISPLAY E-CL.
+008530     CLOSE HFTSF.
+008540     MOVE "HFTSF        " TO W-FILE.
+008550     DISPLAY E-ME71 E-ME98 STOP " ".
+008560     DISPLAY E-CL.
+008570     OPEN I-O HFTSF.
+008580     GO TO M-640.
+008590 M-700.
+008600     CLOSE HFTSF.
+008610     OPEN INPUT HFTSF.
+008620 M-720.
+008630     READ HFTSF NEXT RECORD AT END
+008640         GO TO M-740.
+008650     IF W-NC NOT = HFTS-NC                                        I.010318
+008660         GO TO M-720.                                             I.010318
+008670     IF W-POC = 0
+008680         MOVE 9 TO W-POC
+008690         ACCEPT H-DATE FROM DATE
+008700         OPEN OUTPUT SP-F
+008710         PERFORM S-10 THRU S-15.
+008720     MOVE HFTS-HCD TO HI-KEY.
+008730     READ HI-M WITH UNLOCK INVALID KEY
+008740         MOVE SPACE TO HI-NAME.
+008750     MOVE SPACE TO W-P.
+008760     MOVE HFTS-HCD TO P-HCD.
+008770     MOVE HI-NAME TO P-NAME.
+008780     MOVE ":" TO P-X.
+008790     MOVE HFTS-FTO TO P-OFT.
+008800     MOVE HFTS-FT TO P-NFT.
+008810*****IF HFTS-BC22 NOT = 2 AND 3                                   D.141105
+008820*****    MOVE HFTS-ZRGO TO P-OZRG                                 D.141105
+008830*****    MOVE HFTS-SKGO TO P-OSKG                                 D.141105
+008840*****    MOVE HFTS-GKGO TO P-OGKG                                 D.141105
+008850******   MOVE HFTS-KNCO TO P-OKNC                                 D.010803
+008860*****    MOVE HFTS-KNGO TO P-OKNG                                 D.141105
+008870*****    MOVE HFTS-ZRG TO P-NZRG                                  D.141105
+008880*****    MOVE HFTS-SKG TO P-NSKG                                  D.141105
+008890*****    MOVE HFTS-GKG TO P-NGKG                                  D.141105
+008900*****    MOVE HFTS-KNC TO P-NKNC                                  D.010803
+008910*****    MOVE HFTS-KNG TO P-NKNG.                                 D.141105
+008920     IF LINAGE-COUNTER > 60
+008930         PERFORM S-05 THRU S-15.
+008940     MOVE SPACE TO SP-R.
+008950     MOVE W-P TO SP-R.
+008960     WRITE SP-R.
+008970     MOVE SPACE TO SP-R.
+008980     GO TO M-720.
+008990 M-740.
+009000     CLOSE HFTSF.
+009010     OPEN I-O HFTSF.
+009020     GO TO M-220.
+009030 M-900.
+009040     CLOSE HFTSF.
+009050     CLOSE HI-M.
+009060     IF W-NC = 2
+009070         CLOSE HUH-M.
+009080     IF W-POC = 5
+009090         CLOSE SP-F.
+009100 M-980.
+009110     DISPLAY C-CLEAR.
+009120     STOP RUN.
+009130 S-05.
+009140     MOVE SPACE TO SP-R.
+009150     WRITE SP-R AFTER PAGE.
+009160 S-10.
+009170     ADD 1 TO W-PAGE.
+009180     MOVE W-PAGE TO H-PAGE.
+009190     MOVE HEAD1 TO SP-R.
+009200     WRITE SP-R.
+009210     MOVE SPACE TO SP-R.
+009220     MOVE HEAD2 TO SP-R.
+009230     WRITE SP-R AFTER 2.
+009240     MOVE SPACE TO SP-R.
+009250*****MOVE HEAD3 TO SP-R.                                          D.141105
+009260*****WRITE SP-R.                                                  D.141105
+009270*****MOVE SPACE TO SP-R.                                          D.141105
+009280 S-15.
+009290     EXIT.
+009300 S-20.
+009310     MOVE ZERO TO W-HUH.
+009320     READ HUH-M WITH UNLOCK INVALID KEY
+009330         DISPLAY E-ME7 E-ME99
+009340         DISPLAY E-CL
+009350         MOVE ZERO TO HUH-ZS.
+009360     IF HUH-ZS NOT = ZERO
+009370         DISPLAY E-ME2 E-ME99
+009380         MOVE 9 TO W-HUH.
+009390 S-25.
+009400     EXIT.
+009410 S-30.
+009420*****MOVE ZERO TO W-GENO.                                         D.141105
+009430     MOVE ZERO TO W-FTO.                                          I.141105
+009440     MOVE HI-FT TO W-FTO.
+009450*****MOVE HI-ZRG TO W-ZRGO.                                       D.140808
+009460*****MOVE HI-SKG TO W-SKGO.                                       D.140808
+009470*****MOVE HI-GKG TO W-GKGO.                                       D.140808
+009480*****MOVE HI-KNC TO W-KNCO.                                       D.010803
+009490*****MOVE HI-KNG TO W-KNGO.                                       D.140808
+009500     DISPLAY D-OLD.
+009510     IF HI-SNG = ZERO
+009520         DISPLAY D-SNGC.
+009530 S-35.
+009540     EXIT.
+

@@ -1,0 +1,330 @@
+000010 IDENTIFICATION   DIVISION.
+000020 PROGRAM-ID. JHS42U.
+000030*********************************************************
+000040*    PROGRAM         :  ナフコＥＯＳ自動指図            *
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :  ******                          *
+000070*    COMPILE TYPE    :  COBOL                           *
+000080*********************************************************
+000090 ENVIRONMENT DIVISION.
+000100 CONFIGURATION SECTION.
+000110 SOURCE-COMPUTER. SYSTEM3100.
+000120 OBJECT-COMPUTER. SYSTEM3100.
+000130 INPUT-OUTPUT SECTION.
+000140 FILE-CONTROL.
+000150     SELECT SHNW  ASSIGN TO SHNW-MSD.
+000160     SELECT TDNNF ASSIGN TO TDNN-MSD
+000170         ORGANIZATION INDEXED
+000180         ACCESS MODE DYNAMIC
+000190         RECORD KEY TDNN1-KEY
+000200         FILE STATUS IS ERR-STAT.
+000210*****SELECT CODEF ASSIGN TO CODE-MSD                              D.100716
+000220     SELECT CODEF ASSIGN TO CODE-MSD CODE2-MSD                    I.100716
+000230         ORGANIZATION INDEXED
+000240         ACCESS MODE DYNAMIC
+000250         RECORD KEY CODE-KEY
+000260         ALTERNATE RECORD KEY CODE-KEY2                           I.100716
+000270         FILE STATUS IS ERR-STAT.
+000280     SELECT HI2-M ASSIGN TO HI2-MSD
+000290         ORGANIZATION INDEXED
+000300         ACCESS MODE RANDOM
+000310         RECORD KEY HI-KEY2.
+000320     SELECT TC-M ASSIGN TO TC-MSD
+000330         ORGANIZATION INDEXED
+000340         ACCESS MODE RANDOM
+000350         RECORD KEY TC-KEY.
+000360 I-O-CONTROL.
+000370     APPLY SHARED-MODE ON TDNNF
+000380     APPLY SHARED-MODE ON CODEF
+000390     APPLY SHARED-MODE ON HI2-M
+000400     APPLY SHARED-MODE ON TC-M.
+000410 DATA DIVISION.
+000420 FILE SECTION.
+000430     COPY LITDNN.
+000440     COPY LICODE.
+000450     COPY LIHIM2.
+000460     COPY LITCM.
+000470 FD  SHNW
+000480     BLOCK  4 RECORDS
+000490     LABEL RECORD IS STANDARD
+000500     VALUE OF IDENTIFICATION WK0064ID.
+000510 01  SHNW-R.
+000520     02  SHNW-HJC       PIC  9(002).
+000530     02  SHNW-CCD       PIC  9(003).
+000540     02  SHNW-DNO       PIC  9(007).
+000550     02  SHNW-HCD       PIC  9(006).
+000560     02  SHNW-SIZ       PIC  9(001).
+000570     02  SHNW-ASU.
+000580       03  SHNW-SUD   OCCURS  10.
+000590         04  SHNW-SU    PIC S9(004).
+000600     02  SHNW-ISU       PIC  9(003).
+000610     02  SHNW-NHB       PIC  9(001).                              I.080115
+000620     02  SHNW-NFN       PIC  9(001).                              I.151217
+000630*****02  F              PIC  X(001).                              D.151217
+000640*****02  F              PIC  X(002).                              D.080115
+000650 WORKING-STORAGE  SECTION.
+000660 77  ERR-STAT           PIC  X(002).
+000670 77  W-FILE             PIC  X(013).
+000680 77  W-ERR              PIC  9(001) VALUE 0.
+000690 77  WK0064ID           PIC  X(009) VALUE SPACE.
+000700 01  STN-NO.
+000710     02  STN-NO1        PIC  X(003).
+000720     02  STN-NO2        PIC  X(003).
+000730 01  W-FID.
+000740     02  W-FID1         PIC  X(006) VALUE "WK0064".
+000750     02  W-FID2         PIC  X(003).
+000760 01  W-DATA.
+000770     02  W-L            PIC  9(002).
+000780     02  W-DC           PIC  9(001).                              I.150713
+000790     02  W-EC           PIC  9(001).
+000800     02  W-OKC          PIC  9(001).
+000810     02  W-D.
+000820       03  W-DNO        PIC  9(007).
+000830       03  W-HJC        PIC  9(002).
+000840       03  W-CCD        PIC  9(003).
+000850       03  W-NHB        PIC  9(001).                              I.080115
+000860     02  W-DUR.                                                   I.080115
+000870       03  W-DURD       PIC  X(010).                              I.080115
+000880       03  F            PIC  X(016).                              I.080115
+000890     COPY LSTAT.
+000900 SCREEN SECTION.
+000910 SD  C-CRT
+000920     END STATUS IS ESTAT.
+000930 01  C-CLEAR.
+000940     02  C-CL    LINE   1  CLEAR SCREEN.
+000950 01  C-MID.
+000960     02  LINE   1  COLUMN  15  PIC  N(022) VALUE
+000970          NC"＊＊＊　　ナフコ指図変換ワーク作成　　＊＊＊".
+000980     02  LINE   22     COLUMN  43        PIC  X(22)
+000990             VALUE "確認  OK=1 NO=9   ﾘﾀｰﾝ".
+001000 01  ACP-AREA.
+001010     02  ACP-OKC     LINE   22     COLUMN  60        PIC  9(01)   確認
+001020                     USING  W-OKC  CHECK   OVERFLOW  NO  IFC.
+001030 01  DSP-AREA.
+001040     02  LINE  W-L.
+001050       03  DSP-CCS.
+001060         04  COLUMN   4  PIC  N(004) VALUE NC"直送なし".
+001070         04  COLUMN  13  PIC  9(003) FROM  TDNN1-TCD.
+001080         04  COLUMN  17  PIC  X(015) FROM  TDNN1-SNA.
+001090         04  COLUMN  33  PIC  X(015) FROM  TDNN1-TNA.
+001100       03  DSP-HNM.
+001110         04  COLUMN   4  PIC  N(004) VALUE NC"品名なし".
+001120         04  COLUMN  13  PIC  X(013) FROM  TDNN2-JAN.
+001130         04  COLUMN  27  PIC  X(025) FROM  TDNN2-SHN.
+001140         04  COLUMN  53  PIC  X(025) FROM  TDNN2-KKK.
+001150       03  DSP-SIZ.
+001160         04  COLUMN   4  PIC  X(008) VALUE "ｻｲｽﾞなし".
+001170         04  COLUMN  13  PIC  X(013) FROM  TDNN2-JAN.
+001180         04  COLUMN  27  PIC  X(025) FROM  TDNN2-SHN.
+001190         04  COLUMN  53  PIC  X(025) FROM  TDNN2-KKK.
+001200       03  DSP-ISU.
+001210         04  COLUMN   4  PIC  N(004) VALUE NC"入数なし".
+001220         04  COLUMN  13  PIC  9(006) FROM  HI-MHCD.
+001230         04  COLUMN  20  PIC  N(024) FROM  HI-NAME.
+001240       03  DSP-CLE.
+001250         04  COLUMN   2  PIC  X(042) VALUE
+001260              "                                        ".
+001270         04  COLUMN  44  PIC  X(034) VALUE
+001280              "                                  ".
+001290 01  C-ERR.
+001300     02  LINE  24.
+001310       03  E-ME1   COLUMN  15  PIC  X(017) VALUE
+001320            "***  DATA ﾅｼ  ***".
+001330       03  E-ME2   COLUMN  15  PIC  X(018) VALUE
+001340            "***  DATA ｴﾗｰ  ***".
+001350     COPY LSSEM.
+001360 PROCEDURE DIVISION.
+001370 M-05.
+001380     DISPLAY C-CLEAR.
+001390     DISPLAY C-MID.
+001400 M-10.
+001410     ACCEPT ACP-OKC.
+001420     IF ESTAT NOT = HTB AND SKP
+001430         GO TO M-10.
+001440     IF W-OKC = 9
+001450         MOVE 255 TO COMPLETION-CODE
+001460         GO TO M-95.
+001470     IF W-OKC NOT = 1
+001480         GO TO M-10.
+001490*
+001500     CALL "CBLSTNNO" USING STN-NO.
+001510     MOVE STN-NO2 TO W-FID2.
+001520     MOVE W-FID TO WK0064ID.
+001530     OPEN OUTPUT SHNW.
+001540     OPEN INPUT TDNNF.
+001550     OPEN INPUT CODEF.
+001560     OPEN INPUT TC-M.
+001570     OPEN INPUT HI2-M.
+001580*****MOVE ZERO TO W-D.                                            D.150713
+001590     MOVE ZERO TO W-D W-DC.                                       I.150713
+001600     MOVE 3 TO W-L.
+001610 M-15.
+001620     READ TDNNF NEXT RECORD AT END
+001630         MOVE 255 TO COMPLETION-CODE
+001640         DISPLAY E-ME1 E-ME99
+001650         GO TO M-90.
+001660     IF TDNN1-HC NOT = 0
+001670         GO TO M-15.
+001680     IF TDNN1-DGN NOT = ZERO
+001690         MOVE 255 TO COMPLETION-CODE
+001700         DISPLAY E-ME2 E-ME99
+001710         GO TO M-90.
+001720 M-20.
+001730     MOVE TDNN1-DNOD TO W-DNO.
+001740     MOVE TDNN1-SCD TO W-HJC.
+001750     MOVE TDNN1-TCD TO W-CCD.
+001760*****IF W-CCD NOT = 115                                           D.080805
+001770*****IF W-CCD NOT = 115 AND 196                                   D.090610
+001780     IF W-CCD NOT = 196                                           I.090610
+001790         MOVE 0 TO W-NHB                                          I.080115
+001800       ELSE                                                       I.080115
+001810         MOVE TDNN1-DUR TO W-DUR                                  I.080115
+001820         IF W-DURD = "ﾉｳﾋﾝﾊﾞｼｮ:0"                                 I.080115
+001830             MOVE 1 TO W-NHB                                      I.080115
+001840           ELSE                                                   I.080115
+001850             IF W-DURD = "ﾉｳﾋﾝﾊﾞｼｮ:1" OR "ﾉｳﾋﾝﾊﾞｼｮ:2"             I.080115
+001860                 MOVE 2 TO W-NHB                                  I.080115
+001870               ELSE                                               I.080115
+001880                 MOVE 0 TO W-NHB.                                 I.080115
+001890     IF W-CCD = 081                                               I.140903
+001900*****    MOVE TDNN1-DUR TO W-DUR                                  D.150120
+001910*****    IF W-DURD = "ﾉｳﾋﾝﾊﾞｼｮ:1"                                 D.150120
+001920         IF TDNN1-NHB = 1                                         I.150120
+001930             MOVE 1 TO W-NHB                                      I.140903
+001940             MOVE 981 TO W-CCD.                                   I.140903
+001950     MOVE 5000 TO TC-TCD.
+001960     MOVE W-CCD TO TC-CCD.
+001970     READ TC-M UNLOCK INVALID
+001980         MOVE 255 TO COMPLETION-CODE
+001990         MOVE 1 TO W-EC
+002000         MOVE 1 TO TC-NFN                                         I.151217
+002010         PERFORM MSG-RTN THRU MSG-EX.
+002020 M-25.
+002030     READ TDNNF NEXT RECORD AT END
+002040         GO TO M-50.
+002050     IF TDNN1-HC NOT = 0
+002060         GO TO M-25.
+002070     IF TDNN1-DGN = ZERO
+002080         MOVE 255 TO COMPLETION-CODE
+002090         DISPLAY E-ME2 E-ME99
+002100         GO TO M-50.
+002110 M-30.
+002120     IF TDNN2-TSU = ZERO                                          I.150713
+002130         GO TO M-35.                                              I.150713
+002140     MOVE SPACE TO CODE-KEY.
+002150     MOVE ZERO TO CODE-TCD.
+002160     MOVE TDNN2-JAN TO CODE-JAN.
+002170     START CODEF KEY NOT < CODE-KEY INVALID KEY
+002180         MOVE 255 TO COMPLETION-CODE
+002190         MOVE 2 TO W-EC
+002200         PERFORM MSG-RTN THRU MSG-EX
+002210         GO TO M-35.
+002220 M-32.                                                            I.080821
+002230     READ CODEF NEXT RECORD WITH UNLOCK AT END
+002240         MOVE 255 TO COMPLETION-CODE
+002250         MOVE 2 TO W-EC
+002260         PERFORM MSG-RTN THRU MSG-EX
+002270         GO TO M-35.
+002280     IF (CODE-TCD NOT = ZERO) OR (TDNN2-JAN NOT = CODE-JAN)
+002290         MOVE 255 TO COMPLETION-CODE
+002300         MOVE 2 TO W-EC
+002310         PERFORM MSG-RTN THRU MSG-EX
+002320         GO TO M-35.
+002330*****IF CODE-HCD = 100800 OR 100991 OR 101000 OR 101100 OR 101200 D.140930
+002340*****           OR 101300 OR 101500 OR 101690 OR 101700 OR 104900 D.140930
+002350*****           OR 154110 OR 154190 OR 154410 OR 154490 OR 171120 D.140930
+002360*****           OR 154110 OR 154190 OR 154410 OR 154490           D.110113
+002370*****           OR 101300 OR 101500 OR 101700 OR 104900           D.080919
+002380*****    GO TO M-32.                                              D.140930
+002390     MOVE CODE-HCD TO HI-MHCD HI-HCD.
+002400     READ HI2-M UNLOCK INVALID
+002410         MOVE 255 TO COMPLETION-CODE
+002420         MOVE 2 TO W-EC
+002430         PERFORM MSG-RTN THRU MSG-EX
+002440         GO TO M-35.
+002450     IF HI-ISU = ZERO
+002460         MOVE 255 TO COMPLETION-CODE
+002470         MOVE 3 TO W-EC
+002480         PERFORM MSG-RTN THRU MSG-EX.
+002490     MOVE 0 TO HI-S(4,10).
+002500     IF HI-S(CODE-SIZ,CODE-SNO) = 0
+002510         MOVE 255 TO COMPLETION-CODE
+002520         MOVE 4 TO W-EC
+002530         PERFORM MSG-RTN THRU MSG-EX.
+002540*
+002550     IF W-ERR NOT = 0
+002560         GO TO M-35.
+002570     MOVE ZERO TO SHNW-R.
+002580     MOVE W-HJC TO SHNW-HJC.
+002590     MOVE W-CCD TO SHNW-CCD.
+002600     MOVE W-DNO TO SHNW-DNO.
+002610     MOVE CODE-HCD TO SHNW-HCD.
+002620     MOVE CODE-SIZ TO SHNW-SIZ.
+002630     MOVE TDNN2-SU TO SHNW-SU(CODE-SNO).
+002640     MOVE HI-ISU TO SHNW-ISU.
+002650     MOVE W-NHB TO SHNW-NHB.                                      I.080115
+002660     MOVE TC-NFN TO SHNW-NFN.                                     I.151217
+002670     WRITE SHNW-R.
+002680     IF W-DC = ZERO                                               I.150713
+002690         MOVE 1 TO W-DC.                                          I.150713
+002700 M-35.
+002710     READ TDNNF NEXT RECORD AT END
+002720         GO TO M-50.
+002730     IF TDNN1-HC NOT = 0
+002740         GO TO M-35.
+002750     IF TDNN1-DGN = ZERO
+002760         GO TO M-20.
+002770     GO TO M-30.
+002780 M-50.
+002790     IF W-DC = 0                                                  I.150713
+002800         MOVE 255 TO COMPLETION-CODE                              I.150713
+002810         DISPLAY E-ME1 E-ME99                                     I.150713
+002820         GO TO M-90.                                              I.150713
+002830     IF W-EC = 0
+002840         GO TO M-90.
+002850     ACCEPT ACP-OKC.
+002860     IF ESTAT NOT = HTB AND SKP
+002870         GO TO M-50.
+002880     IF W-OKC NOT = 1
+002890         GO TO M-50.
+002900 M-90.
+002910     CLOSE SHNW.
+002920     CLOSE TDNNF.
+002930     CLOSE CODEF.
+002940     CLOSE TC-M.
+002950     CLOSE HI2-M.
+002960 M-95.
+002970     DISPLAY C-CLEAR.
+002980     STOP RUN.
+002990 MSG-RTN.
+003000     ADD 1 TO W-L.
+003010     IF W-L = 20
+003020         GO TO MSG-010.
+003030     IF W-EC = 1
+003040         DISPLAY DSP-CCS.
+003050     IF W-EC = 2
+003060         DISPLAY DSP-HNM.
+003070     IF W-EC = 3
+003080         DISPLAY DSP-ISU.
+003090     IF W-EC = 4
+003100         DISPLAY DSP-SIZ.
+003110     IF W-EC = 0
+003120         MOVE 1 TO W-EC.
+003130     GO TO MSG-EX.
+003140 MSG-010.
+003150     ACCEPT ACP-OKC.
+003160     IF ESTAT NOT = HTB AND SKP
+003170         GO TO MSG-010.
+003180     IF W-OKC NOT = 1
+003190         GO TO MSG-010.
+003200     MOVE 3 TO W-L.
+003210 MSG-020.
+003220     ADD 1 TO W-L.
+003230     IF W-L < 21
+003240         DISPLAY DSP-CLE
+003250         GO TO MSG-020.
+003260     MOVE 3 TO W-L
+003270     GO TO MSG-RTN.
+003280 MSG-EX.
+003290     EXIT.
+

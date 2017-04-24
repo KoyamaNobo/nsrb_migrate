@@ -1,0 +1,326 @@
+000010 IDENTIFICATION DIVISION.
+000020 PROGRAM-ID. KBY300.
+000030*********************************************************
+000040*    PROGRAM         :  製品仕入年間累積ワーク　作成    *
+000050*    PRINTER TYPE    :  JIPS                            *
+000060*    SCREEN          :  ******                          *
+000070*        変更　　　  :  99/05/20                        *
+000080*    COMPILE TYPE    :  COBOL                           *
+000090*********************************************************
+000100 ENVIRONMENT DIVISION.
+000110 CONFIGURATION SECTION.
+000120 SOURCE-COMPUTER. SYSTEM3100.
+000130 OBJECT-COMPUTER. SYSTEM3100.
+000140 INPUT-OUTPUT SECTION.
+000150 FILE-CONTROL.
+000160     COPY LIBCSE.
+000170     SELECT KBNO-M ASSIGN TO KBNO-MSD
+000180         ORGANIZATION INDEXED
+000190         ACCESS MODE RANDOM
+000200         RECORD KEY BNO-KEY
+000210         FILE STATUS IS ERR-STAT.
+000220     SELECT JSSRYR ASSIGN TO JSSRY-MSD.
+000230     SELECT JSSR-F ASSIGN TO JSSR-MSD.
+000240 I-O-CONTROL.
+000250     APPLY SHARED-MODE ON M-DATE
+000260     APPLY SHARED-MODE ON KBNO-M.
+000270 DATA DIVISION.
+000280 FILE SECTION.
+000290     COPY LIBFDD.
+000300     COPY LIKBNO.
+000310     COPY LSJSSW.
+000320 FD  JSSRYR
+000330     BLOCK  5 RECORDS
+000340     LABEL RECORD IS STANDARD
+000350     VALUE OF IDENTIFICATION "JSSRYR".
+000360 01  JSSRY-R.
+000370     02  JRY-DC.                                                  伝区
+000380       03  JRY-DC1      PIC  9(001).
+000390       03  JRY-DC2      PIC  9(001).
+000400     02  JRY-NGP.                                                 日付
+000410       03  JRY-NG.
+000420         04  JRY-NEN    PIC  9(004).
+000430         04  JRY-GET    PIC  9(002).
+000440       03  JRY-PEY      PIC  9(002).
+000450     02  JRY-SCD        PIC  9(004).
+000460     02  JRY-JCD.                                                 材料C
+000470       03  JRY-JCD12.
+000480         04  JRY-JCD1   PIC  9(001).
+000490         04  JRY-JCD2   PIC  9(002).
+000500       03  JRY-JCD3     PIC  9(003).
+000510     02  JRY-SU         PIC S9(007)V9(02).                        数量
+000520     02  JRY-T          PIC S9(006)V9(02).                        単価
+000530     02  JRY-KIN        PIC S9(008).
+000540     02  JRY-SHZ        PIC S9(007).                              I.990531
+000550*****02  JRY-SHZ        PIC S9(006).                              D.990531
+000560     02  JRY-SNGP.                                                修正日
+000570       03  JRY-SNG.
+000580         04  JRY-SNEN   PIC  9(002).
+000590         04  JRY-SGET   PIC  9(002).
+000600       03  JRY-SPEY     PIC  9(002).
+000610     02  JRY-SJCD       PIC  9(006).
+000620     02  JRY-NHN        PIC  9(006).
+000630     02  JRY-FC         PIC  9(001).
+000640     02  JRY-YC         PIC  9(001).                              用途C
+000650     02  JRY-TC         PIC  9(001).                              単位C
+000660     02  JRY-HC         PIC  9(001).                              製品C
+000670     02  JRY-SC         PIC  9(001).                              支払C
+000680     02  JRY-BSC        PIC  9(001).
+000690     02  JRY-BKC        PIC  9(002).
+000700     02  F              PIC  X(016).                              I.990531
+000710*****02  F              PIC  X(017).                              D.990531
+000720     02  JRY-KEY        PIC  X(007).
+000730     02  JRY-CR         PIC  9(001).                              ﾁｪﾂｸﾘｽﾄC
+000740 WORKING-STORAGE SECTION.
+000750 77  WK0128ID           PIC  X(009) VALUE SPACE.
+000760 01  STN-NO.
+000770     02  STN-NO1        PIC  X(003).
+000780     02  STN-NO2        PIC  X(003).
+000790 01  W-FID.
+000800     02  W-FID1         PIC  X(006) VALUE "WK0128".
+000810     02  W-FID2         PIC  X(003).
+000820 01  W-DATA.
+000830     02  W-SNGM         PIC  9(006).
+000840     02  W-ENGM         PIC  9(006).
+000850     02  W-SNG          PIC  9(006).
+000860     02  W-ENG          PIC  9(006).
+000870     02  W-NG           PIC  9(006).
+000880     02  W-NGD   REDEFINES W-NG.
+000890       03  W-NEN        PIC  9(004).
+000900       03  W-NENL  REDEFINES W-NEN.
+000910         04  W-NEN1     PIC  9(002).
+000920         04  W-NEN2     PIC  9(002).
+000930       03  W-GET        PIC  9(002).
+000940     02  W-NGL   REDEFINES W-NG.
+000950       03  F            PIC  9(002).
+000960       03  W-NGS        PIC  9(004).
+000970     02  W-DATE.
+000980       03  W-SNGD.
+000990         04  W-SNEN     PIC  9(002).
+001000         04  W-SGET     PIC  9(002).
+001010       03  W-ENGD.
+001020         04  W-ENEN     PIC  9(002).
+001030         04  W-EGET     PIC  9(002).
+001040     02  W-SSCD         PIC  9(004).                              I.121017
+001050     02  W-ESCD         PIC  9(004).                              I.121017
+001060     02  W-DMM          PIC  9(001).
+001070     02  W-DC           PIC  9(001).
+001080     02  W-FILE         PIC  X(013).
+001090 01  ERR-STAT           PIC  X(002).
+001100     COPY LSTAT.
+001110 SCREEN SECTION.
+001120 SD  C-CRT
+001130     END STATUS IS ESTAT.
+001140 01  C-CLEAR.
+001150     02  C-CL    LINE   1  CLEAR SCREEN.
+001160 01  C-MID.
+001170     02  LINE   3  COLUMN  10  PIC  N(024) VALUE
+001180          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001190     02  LINE   4  COLUMN  10  PIC  N(024) VALUE
+001200          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001210     02  LINE   5  COLUMN  10  PIC  N(024) VALUE
+001220          NC"＊＊＊　　　　　　　　　　　　　　　　　　＊＊＊".
+001230     02  LINE   6  COLUMN  10  PIC  N(024) VALUE
+001240          NC"＊＊＊　　製品仕入年間累積ワーク　作成　　＊＊＊".
+001250     02  LINE   7  COLUMN  10  PIC  N(024) VALUE
+001260          NC"＊＊＊　　　　　　　　　　　　　　　　　　＊＊＊".
+001270     02  LINE   8  COLUMN  10  PIC  N(024) VALUE
+001280          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001290     02  LINE   9  COLUMN  10  PIC  N(024) VALUE
+001300          NC"＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
+001310     02  LINE  14  COLUMN  16  PIC  X(036) VALUE
+001320          "データ年月  '  年  月  ～  '  年  月".
+001330     02  LINE  16  COLUMN  16  PIC  X(036) VALUE
+001340          "作表年月    '  年  月　～　'  年  月".
+001350     02  LINE  18  COLUMN  22  PIC  X(024) VALUE                  I.121017
+001360          "仕入先ｺｰﾄﾞ  0000 ～ 9999".                             I.121017
+001370*****02  LINE  20  COLUMN  23  PIC  X(022) VALUE                  D.121017
+001380     02  LINE  22  COLUMN  23  PIC  X(022) VALUE                  I.121017
+001390          "確認  OK=1 NO=9   ﾘﾀｰﾝ".
+001400 01  C-ACP.
+001410     02  LINE  16.
+001420       03  A-SNEN  COLUMN  29  PIC  9(002)
+001430            USING W-SNEN  CHECK OVERFLOW NO IFC.
+001440       03  A-SGET  COLUMN  33  PIC  9(002)
+001450            USING W-SGET  CHECK OVERFLOW NO IFC.
+001460       03  A-ENEN  COLUMN  44  PIC  9(002)
+001470            USING W-ENEN  CHECK OVERFLOW NO IFC.
+001480       03  A-EGET  COLUMN  48  PIC  9(002)
+001490            USING W-EGET  CHECK OVERFLOW NO IFC.
+001500     02  LINE  18.                                                I.121017
+001510       03  A-SSCD  COLUMN  34  PIC  9(004)                        I.121017
+001520            USING W-SSCD  CHECK OVERFLOW NO IFC.                  I.121017
+001530       03  A-ESCD  COLUMN  42  PIC  9(004)                        I.121017
+001540            USING W-ESCD  CHECK OVERFLOW NO IFC.                  I.121017
+001550*****02  A-DMM   LINE  20  COLUMN  40  PIC  9(001)                D.121017
+001560     02  A-DMM   LINE  22  COLUMN  40  PIC  9(001)                I.121017
+001570          USING W-DMM   CHECK OVERFLOW NO IFC.
+001580 01  C-DSP.
+001590     02  D-NGM   LINE  14.
+001600         03  COLUMN  29  PIC  9(002) FROM  W-SNEN.
+001610         03  COLUMN  33  PIC Z9      FROM  W-SGET.
+001620         03  COLUMN  44  PIC  9(002) FROM  W-ENEN.
+001630         03  COLUMN  48  PIC Z9      FROM  W-EGET.
+001640 01  C-ERR.
+001650     02  LINE  24.
+001660       03  E-ME1   COLUMN  15  PIC  X(017) VALUE
+001670            "***  DATA ﾅｼ  ***".
+001680       03  E-ME2   COLUMN  15  PIC  X(018) VALUE
+001690            "***  KBNOM ﾅｼ  ***".
+001700       03  E-ME3   COLUMN  15  PIC  X(027) VALUE
+001710            "***  KBNOM REWRITE ｴﾗｰ  ***".
+001720     COPY LSSEM.
+001730     COPY LIBSCR.
+001740 PROCEDURE DIVISION.
+001750 M-05.
+001760     DISPLAY C-CLEAR.
+001770     DISPLAY C-MID.
+001780     COPY LIBCPR.
+001790     INITIALIZE W-DATA.
+001800     MOVE 9999 TO W-ESCD.                                         I.151106
+001810     MOVE D-NBNG TO W-NGS.
+001820     IF W-NEN2 >= DATE-NF1 AND <= DATE-NT1
+001830         ADD DATE-NC1 TO W-NEN.
+001840     IF W-NEN2 >= DATE-NF2 AND <= DATE-NT2
+001850         ADD DATE-NC2 TO W-NEN.
+001860     SUBTRACT 1 FROM W-GET.
+001870     IF W-GET = ZERO
+001880         SUBTRACT 1 FROM W-NEN
+001890         MOVE 12 TO W-GET.
+001900     MOVE W-NG TO W-ENGM.
+001910     MOVE W-NGS TO W-ENGD.
+001920*
+001930     OPEN INPUT JSSRYR.
+001940     READ JSSRYR AT END
+001950         MOVE 255 TO COMPLETION-CODE
+001960         CLOSE JSSRYR
+001970         GO TO M-95.
+001980     MOVE JRY-NG TO W-NG W-SNGM.
+001990     CLOSE JSSRYR.
+002000     MOVE W-NGS TO W-SNGD.
+002010     DISPLAY D-NGM.
+002020 M-10.
+002030     ACCEPT A-SNEN.
+002040     IF ESTAT = PF9
+002050         MOVE 255 TO COMPLETION-CODE
+002060         GO TO M-95.
+002070     IF ESTAT NOT = HTB AND SKP
+002080         GO TO M-10.
+002090 M-15.
+002100     ACCEPT A-SGET.
+002110     IF ESTAT = BTB
+002120         GO TO M-10.
+002130     IF ESTAT NOT = HTB AND SKP
+002140         GO TO M-15.
+002150     IF W-SGET < 1 OR > 12
+002160         GO TO M-15.
+002170     MOVE ZERO TO W-NG.
+002180     MOVE W-SNGD TO W-NGS.
+002190     IF W-NEN2 >= DATE-NF1 AND <= DATE-NT1
+002200         ADD DATE-NC1 TO W-NEN.
+002210     IF W-NEN2 >= DATE-NF2 AND <= DATE-NT2
+002220         ADD DATE-NC2 TO W-NEN.
+002230     MOVE W-NG TO W-SNG.
+002240     IF W-SNG < W-SNGM OR > W-ENGM
+002250         GO TO M-10.
+002260 M-20.
+002270     ACCEPT A-ENEN.
+002280     IF ESTAT = BTB
+002290         GO TO M-15.
+002300     IF ESTAT NOT = HTB AND SKP
+002310         GO TO M-20.
+002320 M-25.
+002330     ACCEPT A-EGET.
+002340     IF ESTAT = BTB
+002350         GO TO M-20.
+002360     IF ESTAT NOT = HTB AND SKP
+002370         GO TO M-25.
+002380     IF W-EGET < 1 OR > 12
+002390         GO TO M-25.
+002400     MOVE ZERO TO W-NG.
+002410     MOVE W-ENGD TO W-NGS.
+002420     IF W-NEN2 >= DATE-NF1 AND <= DATE-NT1
+002430         ADD DATE-NC1 TO W-NEN.
+002440     IF W-NEN2 >= DATE-NF2 AND <= DATE-NT2
+002450         ADD DATE-NC2 TO W-NEN.
+002460     MOVE W-NG TO W-ENG.
+002470     IF W-ENG < W-SNGM OR > W-ENGM OR < W-SNG
+002480         GO TO M-20.
+002490 M-30.                                                            I.121017
+002500     ACCEPT A-SSCD.                                               I.121017
+002510     IF ESTAT = BTB                                               I.121017
+002520         GO TO M-25.                                              I.121017
+002530     IF ESTAT NOT = HTB AND SKP                                   I.121017
+002540         GO TO M-30.                                              I.121017
+002550 M-35.                                                            I.121017
+002560     ACCEPT A-ESCD.                                               I.121017
+002570     IF ESTAT = BTB                                               I.121017
+002580         GO TO M-30.                                              I.121017
+002590     IF ESTAT NOT = HTB AND SKP                                   I.121017
+002600         GO TO M-35.                                              I.121017
+002610     IF W-SSCD > W-ESCD                                           I.121017
+002620         GO TO M-35.                                              I.121017
+002630 M-50.
+002640     ACCEPT A-DMM.
+002650     IF ESTAT = BTB
+002660         GO TO M-35.                                              I.121017
+002670*****    GO TO M-25.                                              D.121017
+002680     IF ESTAT NOT = HTB AND SKP
+002690         GO TO M-50.
+002700     IF W-DMM = 9
+002710         GO TO M-10.
+002720     IF W-DMM NOT = 1
+002730         GO TO M-50.
+002740*
+002750     CALL "CBLSTNNO" USING STN-NO.
+002760     MOVE STN-NO2 TO W-FID2.
+002770     MOVE W-FID TO WK0128ID.
+002780     OPEN INPUT JSSRYR.
+002790     OPEN OUTPUT JSSR-F.
+002800 M-60.
+002810     READ JSSRYR AT END
+002820         GO TO M-90.
+002830     IF JRY-SCD < W-SSCD OR > W-ESCD                              I.121017
+002840         GO TO M-60.                                              I.121017
+002850     IF JRY-NG > W-ENG
+002860         GO TO M-60.                                              I.060301
+002870*****    GO TO M-90.                                              D.060301
+002880     IF JRY-NG < W-SNG
+002890         GO TO M-60.
+002900     IF JRY-JCD2 < 90
+002910         GO TO M-60.
+002920     IF JRY-JCD = 999000
+002930         GO TO M-60.
+002940*
+002950     INITIALIZE JSSR-R.
+002960     MOVE JSSRY-R TO JSSR-R.
+002970     WRITE JSSR-R.
+002980     IF W-DC = 0
+002990         MOVE 1 TO W-DC.
+003000     GO TO M-60.
+003010 M-90.
+003020     CLOSE JSSRYR.
+003030     CLOSE JSSR-F.
+003040     IF W-DC = 0
+003050         MOVE 255 TO COMPLETION-CODE
+003060         DISPLAY E-ME1 E-ME99
+003070         GO TO M-95.
+003080*
+003090     OPEN I-O KBNO-M.
+003100     MOVE SPACE TO BNO-KEY.
+003110     MOVE "01" TO BNO-KEYD.
+003120     READ KBNO-M INVALID KEY
+003130         CLOSE KBNO-M
+003140         MOVE 255 TO COMPLETION-CODE
+003150         DISPLAY E-ME2 E-ME99
+003160         GO TO M-95.
+003170     MOVE W-SNG TO BNO-SNG.
+003180     MOVE W-ENG TO BNO-ENG.
+003190     REWRITE KBNO-R INVALID KEY
+003200         MOVE 255 TO COMPLETION-CODE
+003210         DISPLAY E-ME3 E-ME99.
+003220     CLOSE KBNO-M.
+003230 M-95.
+003240     DISPLAY C-CLEAR.
+003250     STOP RUN.
+
