@@ -19,7 +19,7 @@
 17 JJ645RJS品名別入出庫明細問合せ          CHAINN  A   job
 18 JJ640RJS得意先別出荷問合せ              CHAINN  A   job
 19 JJ642RJS得意先直送先別出荷問合せ        CHAINN  A   job
-20 ******                                  CHAINN  ANO
+20 JTN55RLM送り状送り先明細問合せ          CHAINN  ANO exec
 21 HT73  JS分類 販売計画・実績対比 問合せ  CHAINN  A   job
 22 HT25  JS分類別販売実績・在庫　問合せ    CHAINN  A   job
 23 HT60  JS部門担当得意先別　売上問合せ    CHAINN  A   job

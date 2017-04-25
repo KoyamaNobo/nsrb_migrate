@@ -11,7 +11,7 @@
 09 HMY150LM売上他得意先月別対比　修正入力  CHAINN  ANO exec
 10 MDATEMSM日付マスター(DATEM)             CHAINN  ANO exec
 11 ******                                  CHAINN  ANO
-12 ******                                  CHAINN  ANO
+12 HG33  JS年間不良返品 廃棄用(HFURYO.CSV  CHAINN  ANO job
 13 ******                                  CHAINN  ANO
 14 HMM112LM品名マスタ　予定原価クリア      CHAINN  ANO exec
 15 ******  ******************************  CHAINN  ANO

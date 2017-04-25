@@ -179,6 +179,12 @@ source ../job/CRC_LIBRARY.sh
 if($ABORT == 1) then
   goto ENDJOB
 endif
+set ABORT=0;
 ../exec/JTN51U $USER_ID $JRCODE 1
+source ../job/CRC_LIBRARY.sh
+if($ABORT == 1) then
+  goto ENDJOB
+endif
+../exec/CSRT50 $USER_ID $JRCODE '55' 'JSTRRF' 'OSMF' '((142,6,N),(17,8,N),(25,7,N),(32,1,N),(138,1,N))' '((142,6),(17,8),(25,7),(32,1),(138,1),(224,3),(244,1),(@ @))' '' '(244,1)' '' '((17,6,N,GE,@201605@)A(142,6,N,NE,@000000@))' '' '      ëóÇËèÛëóÇËêÊñæç◊Å@ñ‚çáÇπ          '
 source ../job/CRC_LIBRARY.sh
 ENDJOB:

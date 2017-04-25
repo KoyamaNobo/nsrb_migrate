@@ -35,6 +35,8 @@
            02  W-EDAT.
              03  W-E20               PIC 9(02).
              03  W-ENGP              PIC 9(06).
+           02  W-TFR                 PIC 9(04).
+           02  W-TTO                 PIC 9(04).
            02  W-OK                  PIC 9(01).
            02  W-SEN                 PIC 9(01).
            02  W-JMST                PIC X(222).
@@ -62,7 +64,10 @@
            02  FILLER    PIC  X(01) VALUE " ".
            02  FILLER    PIC  X(06) VALUE "      ".
            02  FILLER    PIC  X(06) VALUE "      ".
-           02  FILLER    PIC  X(01) VALUE " ".
+           02  FILLER    PIC  X(06) VALUE "      ".
+           02  FILLER    PIC  X(06) VALUE "      ".
+           02  FILLER    PIC  X(04) VALUE "    ".
+           02  FILLER    PIC  X(04) VALUE "    ".
            02  FILLER    PIC  X(01) VALUE " ".
            02  FILLER    PIC  X(01) VALUE " ".
        01  DSP-AREA1.
@@ -96,6 +101,8 @@
                03  FILLER    PIC  X(04) VALUE  "•i–¼".
                03  FILLER    PIC  X(04) VALUE  "º°ÄÞ".
                03  FILLER    PIC  X(06) VALUE  "Žó’“ú".
+               03  FILLER    PIC  X(06) VALUE  "“¾ˆÓæ".
+               03  FILLER    PIC  X(04) VALUE  "º°ÄÞ".
            02  DSP-03.
                03  FILLER    PIC  X(08) VALUE  "‚e‚q‚n‚l".
            02  DSP-04.
@@ -117,6 +124,8 @@
            02  ACP-TO      PIC 9(06).
            02  ACP-SNGP    PIC 9(06).
            02  ACP-ENGP    PIC 9(06).
+           02  ACP-TFR     PIC 9(04).
+           02  ACP-TTO     PIC 9(04).
            02  ACP-OK      PIC 9(01).
            02  ACP-SEN     PIC 9(01).
        COPY    LSMSG.
@@ -133,24 +142,30 @@
            "01CLE-01" "X" "1" "0" "12" " " "CLE-01" RETURNING RESU.
       *CLE-02
        CALL "SD_Init" USING 
-            "CLE-02" " " "0" "0" "16" " " " "  RETURNING RESU.
+            "CLE-02" " " "0" "0" "35" " " " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "01CLE-02" "X" "6" "54" "1" " " "CLE-02"  RETURNING RESU.
+            "01CLE-02" "X" "6" "54" "1" " " "CLE-02" RETURNING RESU.
        CALL "SD_Init" USING 
-            "02CLE-02" "X" "11" "33" "6" "01CLE-02" " " RETURNING RESU.
+            "02CLE-02" "X" "11" "22" "6" "01CLE-02" " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "03CLE-02" "X" "13" "33" "6" "02CLE-02" " " RETURNING RESU.
+            "03CLE-02" "X" "13" "22" "6" "02CLE-02" " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "04CLE-02" "X" "17" "62" "1" "03CLE-02" " " RETURNING RESU.
+            "04CLE-02" "X" "11" "31" "6" "03CLE-02" " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "05CLE-02" "X" "18" "47" "1" "04CLE-02" " " RETURNING RESU.
+            "05CLE-02" "X" "13" "31" "6" "04CLE-02" " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "06CLE-02" "X" "23" "61" "1" "05CLE-02" " " RETURNING RESU.
+            "06CLE-02" "X" "11" "42" "4" "05CLE-02" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "07CLE-02" "X" "13" "42" "4" "06CLE-02" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "08CLE-02" "X" "17" "62" "1" "07CLE-02" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "09CLE-02" "X" "23" "61" "1" "08CLE-02" " " RETURNING RESU.
       *DSP-AREA1
        CALL "SD_Init" USING 
-            "DSP-AREA1" " " "0" "0" "82" " " " "  RETURNING RESU.
+            "DSP-AREA1" " " "0" "0" "82" " " " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "DSP-00" " " "1" "0" "41" " " "DSP-AREA1"  RETURNING RESU.
+            "DSP-00" " " "1" "0" "41" " " "DSP-AREA1" RETURNING RESU.
        CALL "SD_Init" USING 
             "01DSP-00" "RX" "1" "23" "25" " " "DSP-00" RETURNING RESU.
        CALL "SD_Init" USING 
@@ -170,7 +185,7 @@
        CALL "SD_Init" USING 
             "09DSP-00" "X" "1" "45" "2" "08DSP-00" " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "DSP-01" " " "1" "0" "41" "DSP-00" " "  RETURNING RESU.
+            "DSP-01" " " "1" "0" "41" "DSP-00" " " RETURNING RESU.
        CALL "SD_Init" USING 
             "01DSP-01" "RX" "1" "23" "25" " " "DSP-01" RETURNING RESU.
        CALL "SD_Init" USING 
@@ -191,27 +206,31 @@
             "09DSP-01" "X" "1" "45" "2" "08DSP-01" " " RETURNING RESU.
       *DSP-AREA2
        CALL "SD_Init" USING 
-            "DSP-AREA2" " " "0" "0" "124" " " " " RETURNING RESU.
+            "DSP-AREA2" " " "0" "0" "134" " " " " RETURNING RESU.
        CALL "SD_Init" USING 
             "DSP-12" " " "6" "0" "38" " " "DSP-AREA2" RETURNING RESU.
        CALL "SD_Init" USING 
             "01DSP-12" "X" "6" "17" "38" " " "DSP-12" RETURNING RESU.
        CALL "SD_Init" USING 
-            "DSP-02" " " "9" "0" "14" "DSP-12" " " RETURNING RESU.
+            "DSP-02" " " "9" "0" "24" "DSP-12" " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "01DSP-02" "X" "9" "27" "4" " " "DSP-02" RETURNING RESU.
+            "01DSP-02" "X" "9" "22" "4" " " "DSP-02" RETURNING RESU.
        CALL "SD_Init" USING 
-            "02DSP-02" "X" "9" "31" "4" "01DSP-02" " " RETURNING RESU.
+            "02DSP-02" "X" "9" "26" "4" "01DSP-02" " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "03DSP-02" "X" "9" "36" "6" "02DSP-02" " " RETURNING RESU.
+            "03DSP-02" "X" "9" "31" "6" "02DSP-02" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "04DSP-02" "X" "9" "38" "6" "03DSP-02" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "05DSP-02" "X" "9" "44" "4" "04DSP-02" " " RETURNING RESU.
        CALL "SD_Init" USING 
             "DSP-03" " " "11" "0" "8" "DSP-02" " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "01DSP-03" "X" "11" "18" "8" " " "DSP-03" RETURNING RESU.
+            "01DSP-03" "X" "11" "12" "8" " " "DSP-03" RETURNING RESU.
        CALL "SD_Init" USING 
             "DSP-04" " " "13" "0" "4" "DSP-03" " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "01DSP-04" "X" "13" "18" "4" " " "DSP-04" RETURNING RESU.
+            "01DSP-04" "X" "13" "12" "4" " " "DSP-04" RETURNING RESU.
        CALL "SD_Init" USING 
             "DSP-07" " " "23" "0" "25" "DSP-04" " " RETURNING RESU.
        CALL "SD_Init" USING 
@@ -232,36 +251,43 @@
             "DSP-11" "X" "17" "56" "8" "DSP-10" " " RETURNING RESU.
       *DSP-AREA3
        CALL "SD_Init" USING 
-            "DSP-AREA3" " " "0" "0" "8" " " " "  RETURNING RESU.
+            "DSP-AREA3" " " "0" "0" "8" " " " " RETURNING RESU.
        CALL "SD_Init" USING 
             "01DSP-AREA3" "X" "1" "49" "8" " " "DSP-AREA3"
             RETURNING RESU.
       *ACP-AREA
        CALL "SD_Init" USING 
-            "ACP-AREA" " " "0" "0" "27" " " " " RETURNING RESU.
+            "ACP-AREA" " " "0" "0" "35" " " " " RETURNING RESU.
        CALL "SD_Init" USING 
             "ACP-KBN" "9" "6" "54" "1" " " "ACP-AREA" RETURNING RESU.
        CALL "SD_Using" USING 
             "ACP-KBN" BY REFERENCE W-KBN "1" "0" RETURNING RESU.
        CALL "SD_Init" USING 
-            "ACP-FROM" "9" "11" "27" "6" "ACP-KBN" " " RETURNING RESU.
+            "ACP-FROM" "9" "11" "22" "6" "ACP-KBN" " " RETURNING RESU.
        CALL "SD_Using" USING 
             "ACP-FROM" BY REFERENCE W-FROM "6" "0" RETURNING RESU.
        CALL "SD_Init" USING 
-            "ACP-TO" "9" "13" "27" "6" "ACP-FROM" " " RETURNING RESU.
+            "ACP-TO" "9" "13" "22" "6" "ACP-FROM" " " RETURNING RESU.
        CALL "SD_Using" USING 
             "ACP-TO" BY REFERENCE W-TO "6" "0" RETURNING RESU.
        CALL "SD_Init" USING 
-            "ACP-SNGP" "9" "11" "36" "6" "ACP-TO" " " RETURNING RESU.
+            "ACP-SNGP" "9" "11" "31" "6" "ACP-TO" " " RETURNING RESU.
        CALL "SD_Using" USING 
             "ACP-SNGP" BY REFERENCE W-SNGP "6" "0" RETURNING RESU.
        CALL "SD_Init" USING 
-            "ACP-ENGP" "9" "13" "36" "6" "ACP-SNGP" " "
-            RETURNING RESU.
+            "ACP-ENGP" "9" "13" "31" "6" "ACP-SNGP" " " RETURNING RESU.
        CALL "SD_Using" USING 
             "ACP-ENGP" BY REFERENCE W-ENGP "6" "0" RETURNING RESU.
        CALL "SD_Init" USING 
-            "ACP-OK" "9" "23" "61" "1" "ACP-ENGP" " " RETURNING RESU.
+            "ACP-TFR" "9" "11" "42" "4" "ACP-ENGP" " " RETURNING RESU.
+       CALL "SD_Using" USING 
+            "ACP-TFR" BY REFERENCE W-TFR "4" "0" RETURNING RESU.
+       CALL "SD_Init" USING 
+            "ACP-TTO" "9" "13" "42" "4" "ACP-TFR" " " RETURNING RESU.
+       CALL "SD_Using" USING 
+            "ACP-TTO" BY REFERENCE W-TTO "4" "0" RETURNING RESU.
+       CALL "SD_Init" USING 
+            "ACP-OK" "9" "23" "61" "1" "ACP-TTO" " " RETURNING RESU.
        CALL "SD_Into" USING 
             "ACP-OK" BY REFERENCE W-OK "1" "0" RETURNING RESU.
        CALL "SD_Init" USING 
@@ -280,12 +306,12 @@
            PERFORM   INT-RTN   THRU  INT-EX.
            IF  JS-CHK > 2
                CALL "C3_Set_Jrcode" USING 
-                USER_ID BY REFERENCE COMPLETION_CODE  255
+                USER_ID BY REFERENCE COMPLETION_CODE 255
                GO TO MR999
            END-IF
            IF  JS-SIGN > 1
                CALL "C3_Set_Jrcode" USING 
-                USER_ID BY REFERENCE COMPLETION_CODE  255
+                USER_ID BY REFERENCE COMPLETION_CODE 255
                GO TO MR999
            END-IF.
        MR000.
@@ -295,7 +321,7 @@
             "DISP-MSG-SPACE" DISP-MSG-SPACE "p" RETURNING RESU.
            IF  ESTAT        =  "P9"
                CALL "C3_Set_Jrcode" USING 
-                USER_ID BY REFERENCE COMPLETION_CODE  255
+                USER_ID BY REFERENCE COMPLETION_CODE 255
                GO  TO  MR999
            END-IF
            IF  ESTAT   NOT  =  "01"   AND    "06"
@@ -362,13 +388,40 @@
            IF  W-SNGP   >  W-ENGP
                GO  TO  MR024
            END-IF.
+       MR026.
+           CALL "SD_Accept" USING BY REFERENCE ACP-TFR "ACP-TFR" "9"
+            "4" BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Output" USING
+            "DISP-MSG-SPACE" DISP-MSG-SPACE "p" RETURNING RESU.
+           IF  ESTAT  =  "09"
+               GO  TO  MR024
+           END-IF
+           IF  ESTAT  NOT  =  "01"   AND    "06"
+               GO  TO  MR026
+           END-IF
+           CALL "SD_Output" USING "ACP-TFR" ACP-TFR "p" RETURNING RESU.
+       MR028.
+           CALL "SD_Accept" USING BY REFERENCE ACP-TTO "ACP-TTO" "9"
+            "4" BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Output" USING
+            "DISP-MSG-SPACE" DISP-MSG-SPACE "p" RETURNING RESU.
+           IF  ESTAT  =  "09"
+               GO  TO  MR026
+           END-IF
+           IF  ESTAT  NOT  =  "01"   AND    "06"
+               GO  TO  MR028
+           END-IF
+           CALL "SD_Output" USING "ACP-TTO" ACP-TTO "p" RETURNING RESU.
+           IF  W-TFR    >  W-TTO
+               GO  TO  MR028
+           END-IF.
        MR035.
            CALL "SD_Accept" USING BY REFERENCE ACP-SEN "ACP-SEN" "9" "1"
             BY REFERENCE ESTAT RETURNING RESU.
            CALL "SD_Output" USING
             "DISP-MSG-SPACE" DISP-MSG-SPACE "p" RETURNING RESU.
            IF  ESTAT  =  "09"
-               GO  TO  MR024
+               GO  TO  MR028
            END-IF
            IF  ESTAT  NOT  =  "01"  AND  "06"
                GO  TO  MR035
@@ -397,7 +450,7 @@
            END-IF
       *
            MOVE    W-FROM      TO     JMST3-03.
-           MOVE    0           TO     JMST3-04.
+           MOVE    W-TFR       TO     JMST3-04.
            MOVE    0           TO     JMST3-05.
            MOVE    0           TO     JMST3-06.
            MOVE    0           TO     JMST3-07.
@@ -409,7 +462,7 @@
             JMST3_PNAME1 "JMST3-KEY" " NOT < " JMST3-KEY RETURNING RET.
            IF  RET = 1
                CALL "C3_Set_Jrcode" USING 
-                USER_ID BY REFERENCE COMPLETION_CODE  255
+                USER_ID BY REFERENCE COMPLETION_CODE 255
                GO  TO  MR999
            END-IF
            MOVE    20          TO     W-S20  W-E20.
@@ -424,6 +477,9 @@
            END-IF
            IF  W-TO              < JMST3-03
                GO   TO   MR999
+           END-IF
+           IF  JMST3-04     <  W-TFR   OR  >  W-TTO
+               GO  TO  MR050
            END-IF
            IF  W-KBN        =  0
                IF  JMST3-01   NOT  =  0  AND  2
@@ -489,8 +545,8 @@
            END-IF
            INITIALIZE     ACT-WORK.
            CALL "SD_Output" USING "CLE-01" CLE-01 "p" RETURNING RESU.
-           IF  JS-CHK      NOT  =   2
-               CALL "SD_Output" USING
+           IF    JS-CHK      NOT  =   2
+                 CALL "SD_Output" USING
                 "DSP-00" DSP-00 "p" RETURNING RESU
                CALL "SD_Output" USING
                 "DSP-AREA2" DSP-AREA2 "p" RETURNING RESU

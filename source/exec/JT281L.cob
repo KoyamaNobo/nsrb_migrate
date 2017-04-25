@@ -362,9 +362,11 @@
                   OR  (W-HCD1    >=   1507  AND  <=  1507)
                   OR  (W-HCD1    >=   1544  AND  <=  1544)
                   OR  (W-HCD1    >=   1546  AND  <=  1546)
+                  OR  (W-HCD1    >=   1549  AND  <=  1549)
                   OR  (W-HCD1    >=   1738  AND  <=  1738)
                   OR  (W-HCD1    >=   1740  AND  <=  1740)
                   OR  (W-HCD1    >=   1743  AND  <=  1744)
+                  OR  (W-HCD1    >=   1846  AND  <=  1846)
                   OR  (W-HCD1    >=   9652  AND  <=  9653)
                   OR  (W-HCD1    >=   9656  AND  <=  9656)
                    GO TO  MR025
@@ -474,9 +476,11 @@
                   OR  (W-HCD1    >=   1507  AND  <=  1507)
                   OR  (W-HCD1    >=   1544  AND  <=  1544)
                   OR  (W-HCD1    >=   1546  AND  <=  1546)
+                  OR  (W-HCD1    >=   1549  AND  <=  1549)
                   OR  (W-HCD1    >=   1738  AND  <=  1738)
                   OR  (W-HCD1    >=   1740  AND  <=  1740)
                   OR  (W-HCD1    >=   1743  AND  <=  1744)
+                  OR  (W-HCD1    >=   1846  AND  <=  1846)
                   OR  (W-HCD1    >=   9652  AND  <=  9653)
                   OR  (W-HCD1    >=   9656  AND  <=  9656)
                    GO TO  PRN-035

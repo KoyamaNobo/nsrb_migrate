@@ -65,6 +65,7 @@
            02  W-NBNG.
              03  W-NBN        PIC  9(002).
              03  W-NBG        PIC  9(002).
+           02  W-OKD          PIC  9(006).
            COPY LSTAT.
       *
            COPY LIBFDD.
@@ -715,6 +716,7 @@
                GO TO S-140
            END-IF
            IF  CL-SJ = 0
+               MOVE CL-NGPS TO UT-OKD
                GO TO S-140
            END-IF.
        S-120.
@@ -737,10 +739,56 @@
                MOVE UT-SNM TO CL-NEN
                MOVE UT-MKG TO CL-GET
                MOVE UT-MKP TO CL-PEY
+               MOVE CL-NGPS TO UT-OKD
                GO TO S-140
            END-IF
            IF  CL-SJ = 1
                GO TO S-120
+           END-IF
+           IF  UT-MKG = CL-GET
+               MOVE CL-NGPS TO UT-OKD
+               GO TO S-140
+           END-IF
+           MOVE ZERO TO CL-KEY.
+           MOVE UT-SNM TO CL-NEN.
+           MOVE UT-MKG TO CL-GET.
+           MOVE UT-MKP TO CL-PEY.
+      *           START CALNM KEY NOT < CL-KEY INVALID KEY
+      *///////////////
+           CALL "DB_Start" USING
+            CALNM_PNAME1 "CL-KEY" " NOT < " CL-KEY RETURNING RET.
+           IF  RET = 1
+               CALL "SD_Output" USING
+                "E-ME9" E-ME9 "p" RETURNING RESU
+               CALL "SD_Output" USING
+                "E-ME99" E-ME99 "p" RETURNING RESU
+               MOVE CL-NGPS TO UT-OKD
+               GO TO S-140
+           END-IF.
+       S-130.
+      *           READ CALNM NEXT RECORD WITH UNLOCK AT END
+      *//////////////////////
+           CALL "DB_Read" USING
+            "NEXT RECORD AT END" CALNM_PNAME1 BY REFERENCE CALN-R
+            "UNLOCK" RETURNING RET.
+           IF  RET = 1
+               CALL "SD_Output" USING
+                "E-ME78" E-ME78 "p" RETURNING RESU
+               CALL "SD_Output" USING
+                "E-ME8" E-ME8 "p" RETURNING RESU
+               CALL "SD_Output" USING
+                "E-NGP" E-NGP "p" RETURNING RESU
+               CALL "SD_Output" USING
+                "E-ME99" E-ME99 "p" RETURNING RESU
+               MOVE UT-SNM TO CL-NEN
+               MOVE UT-MKG TO CL-GET
+               MOVE UT-MKP TO CL-PEY
+               MOVE CL-NGPS TO UT-OKD
+               GO TO S-140
+           END-IF
+           IF  UT-MKG = CL-GET
+               MOVE CL-NGPS TO UT-OKD
+               GO TO S-130
            END-IF.
        S-140.
            EXIT.
@@ -797,7 +845,7 @@
                END-IF
            END-IF
            PERFORM S-100 THRU S-140.
-           MOVE CL-NGPS TO UT-OKD.
+           MOVE W-OKD TO UT-OKD..
       *           WRITE UKET-R INVALID KEY
       *//////////////
            CALL "DB_Insert" USING

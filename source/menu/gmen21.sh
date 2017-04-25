@@ -10,7 +10,7 @@
 08 JT240RLM得意先別受注残他問合せ          CHAINN  ANO exec
 09 JT631RLM受注№問合せ                    CHAINN  ANO exec
 10 JT650RLM受注台帳問合せ                  CHAINN  ANO exec
-11 ******                                  CHAINN  ANO
+11 JTN55RLM送り状送り先明細問合せ          CHAINN  ANO exec
 12 ******                                  CHAINN  ANO
 13 HM21  JS直送先マスタメンテ              CHAINN  A   job
 14 HMM240LM直送先問合せ                    CHAINN  ANO exec

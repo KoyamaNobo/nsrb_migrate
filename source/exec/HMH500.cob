@@ -260,8 +260,8 @@
            END-IF
            COMPUTE HUH-YS = HUH-YS - W-SU.
            COMPUTE HUH-YK = HUH-YS * HI-FT.
-           MOVE HUH-YS TO HUH-ZS.
-           MOVE HUH-YK TO HUH-ZK.
+           COMPUTE HUH-ZS = HUH-ZS - W-SU.
+           COMPUTE HUH-ZK = HUH-ZS * HI-FT.
       *           REWRITE HUH-R INVALID KEY
       *///////////////
            CALL "DB_Update" USING
