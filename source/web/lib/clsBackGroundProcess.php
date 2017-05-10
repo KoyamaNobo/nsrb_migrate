@@ -31,7 +31,7 @@ class BackgroundProcess{
 		}
 
 		//前のエラーが残っていたら消す。ファイルが開けないか丸めに失敗したらエラー
-		$truncateFp = fopen($error_path,'w');
+		$truncateFp = fopen($error_path . $id,'w');
 		if(!$truncateFp && !ftruncate( $truncateFp , 0 )){
 			$this->oLog->error(__FILE__.':'.__LINE__.':tempOut File cant Created');
 		}
