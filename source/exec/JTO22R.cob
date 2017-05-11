@@ -360,7 +360,7 @@
            END-IF
            MOVE  "　　"   TO W-AITN(NA).
            IF  JOJF-07      =   001
-               MOVE  "玉島"   TO W-AITN(NA)
+               MOVE  "藤田"   TO W-AITN(NA)
            END-IF
            IF  JOJF-07      =   002
                MOVE  "津山"   TO W-AITN(NA)

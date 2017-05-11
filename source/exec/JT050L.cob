@@ -8,7 +8,7 @@
       *    FORM   USED    : UNUSED                             *
       *    PRINTER TYPE   : JIPS                               *
       *    COMPILE TYPE   : COBOL                              *
-      *    JS-W           : 0=本社 , 1=選択 , 2=玉島 , 3=早島  *
+      *    JS-W           : 0=本社 , 1=選択 , 2=藤田 , 3=早島  *
       **********************************************************
        ENVIRONMENT                    DIVISION.
        CONFIGURATION                  SECTION.
@@ -252,7 +252,7 @@
                03  FILLER  PIC  X(09) VALUE  "---> ﾘﾀｰﾝ".
        01  DSP-AREA1.
            02  DISP-15  PIC  X(39)  VALUE
-                "本社=0 , 玉島=1 , 津山=2 , 早島=3 ...  ".
+                "本社=0 , 藤田=1 , 津山=2 , 早島=3 ...  ".
            02  DSP-DNOM.
              03  FILLER  PIC  X(06) VALUE  "伝票№".
              03  FILLER  PIC  X(08) VALUE  "        ".
@@ -1053,11 +1053,11 @@
                MOVE  "日進ゴム株式会社　　" TO  M4-NA
            ELSE
                IF  JS-SIGN         =  1
-                   MOVE  "713-8103"       TO  M2A-UNO
-                   MOVE  "岡山県倉敷市" TO  M2A-JSO
-                   MOVE  "玉島乙島字新湊８２６２－１　" TO  M2-JSN
-                   MOVE  "　　水島港国際物流センター内" TO  M3-JS
-                   MOVE  "日進ゴム㈱　玉島物流センター" TO  M4-NA
+                   MOVE  "701-0221"       TO  M2A-UNO
+                     MOVE  "岡山市南区　" TO  M2A-JSO
+                     MOVE  "　　　藤田錦５６４－１８９　" TO  M2-JSN
+                     MOVE  "日本通運㈱岡山支店藤田倉庫内" TO  M3-JS
+                     MOVE  "日進ゴム㈱　藤田配送センター" TO  M4-NA
                ELSE
                    IF  JS-SIGN         =  2
                        MOVE  "709-3717"       TO  M2A-UNO

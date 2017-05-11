@@ -1377,6 +1377,30 @@ int margeInputValueConditionSkip(struct screenObject *temporaryObj,char *inArgPo
 	return 0;
 }
 
+//画面からの受け取った値を既存の値と混ぜる(statusがPF5のとき)
+//in : temporaryObj 混ぜる画面オブジェクト,inArgPos 入力時のデフォルト,input_term入力
+//author : koyama 20170314
+int margeInputValueConditionPF5(struct screenObject *temporaryObj,char *inArgPos,char *input_term){
+	int varLength = 0;
+	int relationFlg = 0;
+	//using,fromがあるときはその値を使う
+	if(temporaryObj->fromVar.iVarSize != 0){
+		// inArgPos = SD_getFromVarPnt(temporaryObj->fromVar,temporaryObj->length);
+		relationFlg=1;
+		varLength = temporaryObj->fromVar.iVarSize;
+	}else if(temporaryObj->usingVar.iVarSize != 0){
+		// inArgPos = SD_getInputVarPnt(temporaryObj->usingVar,temporaryObj->length);
+		relationFlg=1;
+		varLength = temporaryObj->usingVar.iVarSize;
+	}
+	// PF5のときはrelationの値を
+	if(relationFlg != 0){
+		strncpy(input_term,inArgPos,varLength);
+	}
+
+	return 0;
+}
+
 //画面からの受け取った値を既存の値と混ぜる(statusがEnterのとき)
 //in : temporaryObj 混ぜる画面オブジェクト,inArgPos 入力時のデフォルト,input_term入力
 //author : koyama 20170314
@@ -1430,16 +1454,23 @@ void getDataRecursive(char *buff,struct screenObject *targObj,char *status,char 
 					//using,fromがあるときはその値を使う
 					//20170314 処理の簡略化のため関数化
 					margeInputValueConditionSkip(temporaryObj,inArgPos,term_buff);
-				}else{
-					//usingやinputがあるときには引用しない TODO::koyama 20161116
+					setDataRecursive(term_buff,temporaryObj,inArgPos,status);
+				}else if(strncmp(status,"P5",strlen("P5")) == 0){
+					//PF5）(F5)のときは値を持ってくる
+					margeInputValueConditionPF5(temporaryObj,inArgPos,term_buff);
+					//データを移さないパターン
+					setDataRecursive(term_buff,temporaryObj,inArgPos,status);
+				//usingやinputがあるときには引用しない TODO::koyama 20161116
 					//20170314 処理の簡略化のため関数化
-					margeInputValueConditionEnter(temporaryObj,inArgPos,term_buff);
+					// margeInputValueConditionEnter(temporaryObj,inArgPos,term_buff);
+					//
 				}
 			}else{
 				//01(Enterの場合はからで送る)入力を拒否
 //					strncpy(term_buff,inArgPos,temporaryObj->length);
+				setDataRecursive(term_buff,temporaryObj,inArgPos,status);
 			}
-			setDataRecursive(term_buff,temporaryObj,inArgPos,status);
+			// setDataRecursive(term_buff,temporaryObj,inArgPos,status);
 		}
 		strncat(buff,term_buff,strlen(term_buff));
 

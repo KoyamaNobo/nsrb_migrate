@@ -11,7 +11,7 @@
       **        PROGRAM-ID : JT058L                   **
       **        SCREEN-ID  : ------.                  **
       **        AUTHOR     : HAJIME  MIZUNO           **
-      **        JS-SIGN    : 0=本社 , 1=選択 , 2=玉島 , 3=早島 **
+      **        JS-SIGN    : 0=本社 , 1=選択 , 2=藤田 , 3=早島 **
       *****     JS-SIGN2   : 0=通常(5) , 1=代引(6)    **
       **************************************************
       **************************************************
@@ -210,7 +210,7 @@
                                              "--> ﾘﾀｰﾝ".
        01  DISP-AREA2.
            03  DISP-15  PIC  X(39)  VALUE
-                "本社=0 , 玉島=1 , 津山=2 , 早島=3 ...  ".
+                "本社=0 , 藤田=1 , 津山=2 , 早島=3 ...  ".
            03  DISP-21  PIC  X(09)  VALUE
                                              "送り状NO:".
            03  DSP-DATM.
@@ -1273,7 +1273,7 @@
                                    MOVE  "709-3717"   TO  R6-UNO
                                ELSE
                                    IF  OKJF-04      =  6
-                                       MOVE  "713-8103"   TO  R6-UNO
+                                       MOVE  "701-0221"   TO  R6-UNO
                                    ELSE
                                        MOVE  "700-0975"   TO  R6-UNO
                                    END-IF
@@ -1300,7 +1300,7 @@
            AND  (OKJF-05      <  4054000  OR      >  4054999)
            AND  (OKJF-05      <  4056000  OR      >  4057999)
              IF  OKJF-04      =  6
-                 MOVE  "岡山県倉敷市玉島乙島字新湊　　　" TO   R2-JS
+                 MOVE  "岡山市南区藤田錦５６４－１８９　" TO   R2-JS
              ELSE
                  IF  OKJF-04      =  4
                  MOVE  "岡山県都窪郡早島町早島　　　　　" TO   R2-JS
@@ -1326,7 +1326,7 @@
                  MOVE  "岡山県久米郡　　　　　　　　　　" TO   R2-JS
              ELSE
                  IF  OKJF-04      =  6
-                     MOVE  "　　　　　　　　　８２６２－１　" TO   R2-JS
+                     MOVE  "　日本通運㈱岡山支店　　　　　　" TO   R2-JS
                  ELSE
                      IF  OKJF-04      =  4
                      MOVE  "　　　　　　　　４５０７－３７　" TO   R2-JS
@@ -1366,7 +1366,7 @@
                    MOVE  "　　　　美咲町原田３２２７－１　"   TO  R2-JS
                                ELSE
                                    IF  OKJF-04      =  6
-                   MOVE  "　　　水島港国際物流センター内　"   TO  R2-JS
+                   MOVE  "　　　岡山中央事業所藤田倉庫内　"   TO  R2-JS
                                    ELSE
                    MOVE  "岡山市北区今８丁目１６番１７号　"   TO  R2-JS
                                    END-IF
@@ -1411,7 +1411,7 @@
                        MOVE  "日進ゴム㈱　津山物流センター"   TO  R3-NA
                                ELSE
                                    IF  OKJF-04      =  6
-                       MOVE  "日進ゴム㈱　玉島物流センター"   TO  R3-NA
+                       MOVE  "日進ゴム㈱　藤田配送センター"   TO  R3-NA
                                    ELSE
                        MOVE  "　　日進ゴム株式会社　　　　"  TO  R3-NA
                                    END-IF

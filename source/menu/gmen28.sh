@@ -7,7 +7,7 @@
 05 ******                                  CHAINN  ANO
 06 ******  　                              CHAINN  ANO
 07 JTT510JSバーコード分セット              CHAINN  A   job
-08 JTT710JSバーコードなし分セット（玉島他  CHAINN  A   job
+08 JTT710JSバーコードなし分セット（藤田他  CHAINN  A   job
 09 ******  ------------------------------  CHAINN  ANO
 10 HN05  JS品名統計ファイル　棚卸セット    CHAINN  A   job
 11 ******                                  CHAINN  ANO
@@ -20,7 +20,7 @@
 18 HN30  JS履物分類別・品種別 棚卸誤差表   CHAINN  A   job
 19 HN65  JS品名サイズ別　棚卸誤差表        CHAINN  A   job
 20 ******                                  CHAINN  ANO
-21 ******  ○○　玉島Ｗチェック用　○○    CHAINN  ANO
+21 ******  ○○　藤田Ｗチェック用　○○    CHAINN  ANO
 22 HMN115LM履物棚卸伝票　入力              CHAINN  ANO exec
 23 ******                                  CHAINN  ANO
 24 HN12  JS品名別棚卸チェックリスト        CHAINN  A   job

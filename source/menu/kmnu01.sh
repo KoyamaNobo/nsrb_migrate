@@ -17,11 +17,11 @@
 15 ******                                  CHAINN  ANO
 16 ******  ------------------------------  CHAINN  ANO
 17 HJO11NJS送信データ生成（両備）          CHAINN  A   job
-18 HJO12NJS　　　〃　　　（玉島）          CHAINN  A   job
+18 HJO12NJS　　　〃　　　（藤田）          CHAINN  A   job
 19 ******                                  CHAINN  ANO
 20 ******                                  CHAINN  ANO
 21 HJO16NJS再送用送信データ生成（両備）    CHAINN  A   job
-22 HJO15NJS　　　　 〃 　　　　（玉島）    CHAINN  A   job
+22 HJO15NJS　　　　 〃 　　　　（藤田）    CHAINN  A   job
 23 JK900MLMＯ／Ｌ状況Ｆ　クリア            CHAINN  ANO exec
 24 ******  ------------------------------  CHAINN  ANO
 25 JJN289JS有効在庫抽出 <全件>    (SYZDF)  CHAINN  A   job

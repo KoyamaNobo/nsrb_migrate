@@ -11,7 +11,7 @@
       **        PROGRAM-ID : JT058L                   **
       **        SCREEN-ID  : ------.                  **
       **        AUTHOR     : HAJIME  MIZUNO           **
-      **        JS-SIGN    : 0=本社 , 1=選択 , 2=玉島 , 3=早島 **
+      **        JS-SIGN    : 0=本社 , 1=選択 , 2=藤田 , 3=早島 **
       *****     JS-SIGN2   : 0=通常(5) , 1=代引(6)    **
       **************************************************
       **************************************************
@@ -210,7 +210,7 @@
                                              "--> ﾘﾀｰﾝ".
        01  DISP-AREA2.
            03  DISP-15  PIC  X(39)  VALUE
-                "本社=0 , 玉島=1 , 津山=2 , 早島=3 ...  ".
+                "本社=0 , 藤田=1 , 津山=2 , 早島=3 ...  ".
            03  DISP-21  PIC  X(09)  VALUE
                                              "送り状NO:".
            03  DSP-DATM.
@@ -1251,36 +1251,36 @@
                 OR   (OKJF-05  NOT <  2656000  AND NOT >  2657999)
                MOVE  "520-2132"   TO  R6-UNO
            ELSE
-               IF   (OKJF-05  NOT <  4038000  AND NOT >  4038999)
+               IF  (OKJF-05  NOT <  4038000  AND NOT >  4038999)
                  OR (OKJF-05  NOT <  4054000  AND NOT >  4054999)
                  OR (OKJF-05  NOT <  4056000  AND NOT >  4057999)
-               MOVE  "542-0081"   TO  R6-UNO
+                   MOVE  "542-0081"   TO  R6-UNO
                ELSE
                    IF  (OKJF-05  NOT <  0459002  AND NOT >  0459999)
-                   OR  (OKJF-05  NOT <  0460002  AND NOT >  0460999)
+                   OR   (OKJF-05  NOT <  0460002  AND NOT >  0460999)
                        MOVE  "663-8033"   TO  R6-UNO
                    ELSE
-                     IF  (OKJF-05  NOT <  3966002  AND NOT >  3966999)
-                         MOVE  "165-0021"   TO  R6-UNO
-                     ELSE
-                     IF  (OKJF-05  NOT <  3015001  AND NOT >  3015999)
-                         MOVE  "114-0034"   TO  R6-UNO
-                     ELSE
-                         IF  OKJF-04      =  4
-                             MOVE  "701-0304"   TO  R6-UNO
-                         ELSE
-                             IF  OKJF-04      =  7
-                                 MOVE  "709-3717"   TO  R6-UNO
-                             ELSE
-                                 IF  OKJF-04      =  6
-                                     MOVE  "713-8103"   TO  R6-UNO
-                                 ELSE
-                                     MOVE  "700-0975"   TO  R6-UNO
-                                 END-IF
-                             END-IF
-                         END-IF
-                     END-IF
-                     END-IF
+                       IF  (OKJF-05  NOT <  3966002  AND NOT >  3966999)
+                           MOVE  "165-0021"   TO  R6-UNO
+                       ELSE
+                       IF  (OKJF-05  NOT <  3015001  AND NOT >  3015999)
+                           MOVE  "114-0034"   TO  R6-UNO
+                       ELSE
+                           IF  OKJF-04      =  4
+                               MOVE  "701-0304"   TO  R6-UNO
+                           ELSE
+                               IF  OKJF-04      =  7
+                                   MOVE  "709-3717"   TO  R6-UNO
+                               ELSE
+                                   IF  OKJF-04      =  6
+                                       MOVE  "701-0221"   TO  R6-UNO
+                                   ELSE
+                                       MOVE  "700-0975"   TO  R6-UNO
+                                   END-IF
+                               END-IF
+                           END-IF
+                       END-IF
+                       END-IF
                    END-IF
                END-IF
            END-IF
@@ -1299,10 +1299,10 @@
            AND  (OKJF-05      <  4038000  OR      >  4038999)
            AND  (OKJF-05      <  4054000  OR      >  4054999)
            AND  (OKJF-05      <  4056000  OR      >  4057999)
-             IF    OKJF-04      =  6
-                 MOVE  "岡山県倉敷市玉島乙島字新湊　　　" TO   R2-JS
+             IF  OKJF-04      =  6
+                 MOVE  "岡山市南区藤田錦５６４－１８９　" TO   R2-JS
              ELSE
-                 IF    OKJF-04      =  4
+                 IF  OKJF-04      =  4
                  MOVE  "岡山県都窪郡早島町早島　　　　　" TO   R2-JS
                  END-IF
              END-IF
@@ -1326,7 +1326,7 @@
                  MOVE  "岡山県久米郡　　　　　　　　　　" TO   R2-JS
              ELSE
                  IF  OKJF-04      =  6
-                     MOVE  "　　　　　　　　　８２６２－１　" TO   R2-JS
+                     MOVE  "　日本通運㈱岡山支店　　　　　　" TO   R2-JS
                  ELSE
                      IF  OKJF-04      =  4
                      MOVE  "　　　　　　　　４５０７－３７　" TO   R2-JS
@@ -1344,36 +1344,36 @@
                 OR   (OKJF-05  NOT <  2656000  AND NOT >  2657999)
                MOVE  "滋賀県大津市神領１－９－３　　　"   TO  R2-JS
            ELSE
-               IF   (OKJF-05  NOT <  4038000  AND NOT >  4038999)
+               IF  (OKJF-05  NOT <  4038000  AND NOT >  4038999)
                    OR (OKJF-05  NOT <  4054000  AND NOT >  4054999)
                    OR (OKJF-05  NOT <  4056000  AND NOT >  4057999)
                MOVE  "大阪市中央区南船場１丁目１１－９"   TO  R2-JS
                ELSE
-                   IF   (OKJF-05  NOT <  0459002  AND NOT >  0459999)
-                   OR   (OKJF-05  NOT <  0460002  AND NOT >  0460999)
+                   IF  (OKJF-05  NOT <  0459002  AND NOT >  0459999)
+                   OR  (OKJF-05  NOT <  0460002  AND NOT >  0460999)
                    MOVE  "兵庫県西宮市　高木東町１５－１　"   TO  R2-JS
                    ELSE
-                   IF   (OKJF-05  NOT <  3966002  AND NOT >  3966999)
+                       IF  (OKJF-05  NOT <  3966002  AND NOT >  3966999)
                    MOVE  "東京都中野区丸山２－５－１９　　"   TO  R2-JS
-                   ELSE
-                   IF   (OKJF-05  NOT <  3015001  AND NOT >  3015999)
-                   MOVE  "東京都北区上十条４－１－５　　　"   TO  R2-JS
-                   ELSE
-                       IF  OKJF-04      =  4
-                   MOVE  "　両備ＨＤ中四国物流センター内　"   TO  R2-JS
                        ELSE
-                           IF  OKJF-04      =  7
-                   MOVE  "　　　　美咲町原田３２２７－１　"   TO  R2-JS
+                       IF  (OKJF-05  NOT <  3015001  AND NOT >  3015999)
+                   MOVE  "東京都北区上十条４－１－５　　　"   TO  R2-JS
+                       ELSE
+                           IF  OKJF-04      =  4
+                   MOVE  "　両備ＨＤ中四国物流センター内　"   TO  R2-JS
                            ELSE
-                               IF  OKJF-04      =  6
-                   MOVE  "　　　水島港国際物流センター内　"   TO  R2-JS
+                               IF  OKJF-04      =  7
+                   MOVE  "　　　　美咲町原田３２２７－１　"   TO  R2-JS
                                ELSE
+                                   IF  OKJF-04      =  6
+                   MOVE  "　　　岡山中央事業所藤田倉庫内　"   TO  R2-JS
+                                   ELSE
                    MOVE  "岡山市北区今８丁目１６番１７号　"   TO  R2-JS
+                                   END-IF
                                END-IF
                            END-IF
                        END-IF
-                   END-IF
-                   END-IF
+                       END-IF
                    END-IF
                END-IF
            END-IF
@@ -1383,43 +1383,43 @@
       *
            MOVE       W-15K    TO  R3-15K.
            MOVE  ALL "　"    TO        R3-NA  R3-SOK.
-           IF  (OKJF-05  NOT <  2654000  AND NOT >  2654999)
-               OR   (OKJF-05  NOT <  2656000  AND NOT >  2657999)
+           IF   (OKJF-05  NOT <  2654000  AND NOT >  2654999)
+                OR   (OKJF-05  NOT <  2656000  AND NOT >  2657999)
                MOVE  "株式会社新日本教育シューズ　"   TO  R3-NA
            ELSE
-               IF   (OKJF-05  NOT <  4038000  AND NOT >  4038999)
+               IF  (OKJF-05  NOT <  4038000  AND NOT >  4038999)
                    OR (OKJF-05  NOT <  4054000  AND NOT >  4054999)
                    OR (OKJF-05  NOT <  4056000  AND NOT >  4057999)
                    MOVE  "千曲産業株式会社　　　　　　"   TO  R3-NA
                ELSE
                    IF  (OKJF-05  NOT <  0459002  AND NOT >  0459999)
-                   MOVE  "　　株式会社上山實業　　　　"   TO  R3-NA
+                       MOVE  "　　株式会社上山實業　　　　"   TO  R3-NA
                    ELSE
-                   IF  (OKJF-05  NOT <  0460002  AND NOT >  0460999)
+                       IF  (OKJF-05  NOT <  0460002  AND NOT >  0460999)
                        MOVE  "　　株式会社ウエヤマ　　　　"   TO  R3-NA
-                   ELSE
-                     IF   (OKJF-05  NOT <  3966002  AND NOT >  3966999)
-                     MOVE  "　　多比良株式会社　　　　　"   TO  R3-NA
-                     ELSE
-                     IF   (OKJF-05  NOT <  3015001  AND NOT >  3015999)
-                     MOVE  "　　株式会社スギヤマ　　　　"   TO  R3-NA
-                     ELSE
-                         IF  OKJF-04      =  4
-                     MOVE  "日進ゴム　早島配送センター　"   TO  R3-NA
-                         ELSE
-                             IF  OKJF-04      =  7
-                     MOVE  "日進ゴム㈱　津山物流センター"   TO  R3-NA
-                             ELSE
-                                 IF  OKJF-04      =  6
-                     MOVE  "日進ゴム㈱　玉島物流センター"   TO  R3-NA
-                                 ELSE
-                     MOVE  "　　日進ゴム株式会社　　　　"  TO  R3-NA
-                                 END-IF
-                             END-IF
-                         END-IF
-                     END-IF
-                     END-IF
-                   END-IF
+                       ELSE
+                       IF  (OKJF-05  NOT <  3966002  AND NOT >  3966999)
+                       MOVE  "　　多比良株式会社　　　　　"   TO  R3-NA
+                       ELSE
+                       IF  (OKJF-05  NOT <  3015001  AND NOT >  3015999)
+                       MOVE  "　　株式会社スギヤマ　　　　"   TO  R3-NA
+                       ELSE
+                           IF  OKJF-04      =  4
+                       MOVE  "日進ゴム　早島配送センター　"   TO  R3-NA
+                           ELSE
+                               IF  OKJF-04      =  7
+                       MOVE  "日進ゴム㈱　津山物流センター"   TO  R3-NA
+                               ELSE
+                                   IF  OKJF-04      =  6
+                       MOVE  "日進ゴム㈱　藤田配送センター"   TO  R3-NA
+                                   ELSE
+                       MOVE  "　　日進ゴム株式会社　　　　"  TO  R3-NA
+                                   END-IF
+                               END-IF
+                           END-IF
+                       END-IF
+                       END-IF
+                       END-IF
                    END-IF
                END-IF
            END-IF
@@ -1430,20 +1430,20 @@
            MOVE       W-15K    TO  R5-15K.
            MOVE  ALL "　"    TO        R5-TEL.
            IF  (OKJF-05  NOT <  2654000  AND NOT >  2654999)
-               OR   (OKJF-05  NOT <  2656000  AND NOT >  2657999)
+                OR   (OKJF-05  NOT <  2656000  AND NOT >  2657999)
                MOVE  "０７７－５４３－１３１１　　"  TO     R5-TEL
            ELSE
                IF  (OKJF-05  NOT <  4038000  AND NOT >  4038999)
-                  OR (OKJF-05  NOT <  4054000  AND NOT >  4054999)
-                  OR (OKJF-05  NOT <  4056000  AND NOT >  4057999)
+                   OR (OKJF-05  NOT <  4054000  AND NOT >  4054999)
+                   OR (OKJF-05  NOT <  4056000  AND NOT >  4057999)
                MOVE  "０６－６２６８－４５６１　　"  TO     R5-TEL
                ELSE
                    IF  (OKJF-05  NOT <  0459002  AND NOT >  0459999)
                    MOVE  "０７９８－６４－５１１１　　"  TO     R5-TEL
                    ELSE
-                       IF  (OKJF-05  NOT <  0460002  AND NOT >  0460999)
+                   IF  (OKJF-05  NOT <  0460002  AND NOT >  0460999)
                    MOVE  "０７９８－６７－０８１０　　"  TO     R5-TEL
-                       ELSE
+                   ELSE
                        IF  (OKJF-05  NOT <  3966002  AND NOT >  3966999)
                    MOVE  "０３－５３７３－６７１１　　"  TO     R5-TEL
                        ELSE
@@ -1453,7 +1453,7 @@
                    MOVE  "０８６－２４３－２４５６　　"  TO     R5-TEL
                        END-IF
                        END-IF
-                       END-IF
+                   END-IF
                    END-IF
                END-IF
            END-IF

@@ -3,7 +3,7 @@
       ******************************************************************
       *    日進  出荷指図書　（返品伝票）                              *
       *    ＮＯ．１９４  梅垣        Ｈ０１．０８．１６                *
-      *    JS-W     : 0=本社 , 1=選択 , 2=玉島 , 3=早島 , 9=返品       *
+      *    JS-W     : 0=本社 , 1=選択 , 2=藤田 , 3=早島 , 9=返品       *
       *****JS-SIGN3 : 0=指図 , 1=返品                                  *
       ******************************************************************
 
@@ -307,7 +307,7 @@
        01  DSP-GAMEN1.
            02  DSP-SOK.
              03  FILLER  PIC X(39)    VALUE
-                  "本社=0 , 玉島=1 , 津山=2 , 早島=3 ...  ".
+                  "本社=0 , 藤田=1 , 津山=2 , 早島=3 ...  ".
            02  DSP-DNOM  PIC X(06)    VALUE  "伝票№".
            02  DSP-DATM.
              03  FILLER  PIC X(06)    VALUE  "日　付".
@@ -653,7 +653,7 @@
                MOVE  "本　　社"  TO  W-SOUKO
            END-IF
            IF  JS-SIGN       =  1
-               MOVE  "玉　　島"  TO  W-SOUKO
+               MOVE  "藤　　田"  TO  W-SOUKO
            END-IF
            IF  JS-SIGN       =  2
                MOVE  "津　　山"  TO  W-SOUKO
@@ -1374,12 +1374,12 @@
                GO  TO  HEAD-070
            END-IF
            IF  JSTR-07       =  6
-               MOVE  "日進ゴム株式会社　玉島物流センター　"  TO
+               MOVE  "日進ゴム株式会社　藤田配送センター　"  TO
                                                             WORK-NAG
-               MOVE  "713-8103"      TO  WORK-UNOG
-               MOVE  "岡山県倉敷市玉島乙島字新湊８２６２－１　"  TO
+               MOVE  "701-0221"      TO  WORK-UNOG
+               MOVE  "岡山市南区藤田錦５６４－１８９　　　　　"  TO
                                                             WORK-JSG
-               MOVE  "　　　　水島港国際物流センター内" TO  WORK-JSSG
+               MOVE  "　　日本通運㈱岡山支店藤田倉庫内" TO  WORK-JSSG
                MOVE  "086-243-2456"                     TO  WORK-TELG
            ELSE
              IF  JSTR-07       =  7

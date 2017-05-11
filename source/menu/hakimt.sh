@@ -19,7 +19,7 @@
 17 ******  ･･････････････････････････････  CHAINN  ANO
 18 HMN120LM品名一括変更入力（親子）        CHAINN  ANO exec
 19 JTT510JSバーコード分セット              CHAINN  A   job
-20 JTT710JSバーコードなし分セット（玉島他  CHAINN  A   job
+20 JTT710JSバーコードなし分セット（藤田他  CHAINN  A   job
 21 HN60  JS◎　履物前月残高　棚卸更新　◎  CHAINN  A   job
 22 ******                                  CHAINN  ANO
 23 ******  ======  決算単価処理  ========  CHAINN  ANO

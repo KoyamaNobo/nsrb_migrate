@@ -5,7 +5,7 @@
       *    PRINTER TYPE    :  JIPS                               *
       *    SCREEN          :  ______                             *
       *    COMPILE TYPE    :  COBOL                              *
-      *    JS-W            :  0=本社 , 2=玉島 , 3=早島           *
+      *    JS-W            :  0=本社 , 2=藤田 , 3=早島           *
       ************************************************************
        ENVIRONMENT DIVISION.
        CONFIGURATION SECTION.
@@ -815,12 +815,12 @@
                MOVE    "日進ゴム株式会社　　" TO  WJNIF-MNA
            ELSE
                IF  JS-SIGN         =  1
-                   MOVE  "713-8103"       TO  WJNIF-MUNO
-                   MOVE    "岡山県倉敷市玉島乙島字新湊８２６２－１"
+                   MOVE  "701-0221"       TO  WJNIF-MUNO
+                   MOVE  "岡山市南区藤田錦５６４－１８９　　　　"
                                                       TO  WJNIF-MJSU
-                   MOVE    "　　　　　水島港国際物流センター内"
+                   MOVE    "　　日本通運㈱岡山支店藤田倉庫内　"
                                                       TO  WJNIF-MJSS
-                   MOVE    "日進ゴム㈱　玉島物流センター"
+                   MOVE    "日進ゴム㈱　藤田配送センター"
                                                       TO  WJNIF-MNA
                ELSE
                    IF  JS-SIGN         =  2

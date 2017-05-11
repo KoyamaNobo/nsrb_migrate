@@ -1,5 +1,5 @@
 /RUN #MENUP,TYP=LM,FIL=SYS@LML;
-00 ＊ 玉島倉庫出荷処理(Ⅱ)         JIP
+00 ＊ 藤田倉庫出荷処理(Ⅱ)         JIP
 01 TJJ050JS荷札・入日記発行                CHAINN  A   job
 02 ******                                  CHAINN  ANO
 03 ******                                  CHAINN  ANO

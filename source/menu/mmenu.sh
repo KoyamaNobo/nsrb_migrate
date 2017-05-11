@@ -15,9 +15,9 @@
 13 JHS69LLMナフコ　ＦＡＸ分統一伝票　発行  CHAINN  ANO exec
 14 JHS71LLMトラスコ他ＦＡＸ統一伝票再発行  CHAINN  ANO exec
 15 JTO00ULMＪＣＯＮ　伝送中区分　訂正      CHAINN  ANO exec
-16 JJN001JS 　〃 　　玉島受信更新区分訂正  CHAINN  A   job
+16 JJN001JS 　〃 　　藤田受信更新区分訂正  CHAINN  A   job
 17 JJN002JS 　〃 　　早島受信更新区分訂正  CHAINN  A   job
-18 JJN004JS   〃     玉島送信更新区分訂正  CHAINN  A   job
+18 JJN004JS   〃     藤田送信更新区分訂正  CHAINN  A   job
 19 JJN005JS   〃     早島送信更新区分訂正  CHAINN  A   job
 20 JJN003JS 　〃 　 FAX入力・更新区分訂正  CHAINN  A   job
 21 JAN010JSＪＡＮコード　再セット          CHAINN  A   job

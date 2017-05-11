@@ -1,7 +1,7 @@
        IDENTIFICATION    DIVISION.
        PROGRAM-ID.       JK036L.
       ******************************************************************
-      *    玉島　ワークマン出荷指図　品名集計表                        *
+      *    藤田　ワークマン出荷指図　品名集計表                        *
       *    JS-SIGN : 全部=0 , ﾜｰｸﾏﾝ=1 , ﾅﾌｺ=2                          *
       ******************************************************************
       *
@@ -338,7 +338,7 @@
                03  FILLER  PIC  X(01) VALUE   " ".
        01  DSP-GAMEN1.
            02  DSP-MID0   PIC  X(10) VALUE
-               "　玉　島　".
+               "　藤　田　".
            02  DSP-MID1   PIC  X(10) VALUE
                "ワークマン".
            02  DSP-MID2   PIC  X(10) VALUE
@@ -609,7 +609,7 @@
                GO TO INIT-RTN-EXIT
            END-IF
            IF  JS-SIGN       =  0
-               MOVE  "玉　島　　"  TO  M1-MID
+               MOVE  "藤　田　　"  TO  M1-MID
            ELSE
                IF  JS-SIGN       =  2
                    MOVE  "ナ　フ　コ"  TO  M1-MID

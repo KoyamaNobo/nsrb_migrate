@@ -16,11 +16,11 @@
 14 JJ031UJS送り状データ自動生成【一　般】  CHAINN  A   job
 15 ******                                  CHAINN  ANO
 16 ******  ------------------------------  CHAINN  ANO
-17 HJO10NJS送信データ生成（玉島）          CHAINN  A   job
+17 HJO10NJS送信データ生成（藤田）          CHAINN  A   job
 18 ******                                  CHAINN  ANO
 19 ******  ------------------------------  CHAINN  ANO
 20 JT012ILM受注ファイル　摘要修正入力      CHAINN  ANO exec
-21 HJO15NJS再送用送信データ生成（玉島）    CHAINN  A   job
+21 HJO15NJS再送用送信データ生成（藤田）    CHAINN  A   job
 22 ******                                  CHAINN  ANO
 23 JK900MLMＯ／Ｌ状況Ｆ　クリア            CHAINN  ANO exec
 24 ******  ------------------------------  CHAINN  ANO

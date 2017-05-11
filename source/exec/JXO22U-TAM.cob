@@ -5,7 +5,7 @@
       *            [JXO22U]      T.ISHISHITA                           *
       *    CALL   "SJXO22".                                            *
       *    JS-SIGN  :  0=ì`ëó , 1=ê∂ê¨(NEW)                            *
-      *    W-JS     :  1=ã ìá , 2=í√éR , 3=ëÅìá                        *
+      *    W-JS     :  1=ì°ìc , 2=í√éR , 3=ëÅìá                        *
       ******************************************************************
        PROGRAM-ID.            JTO22U.
        ENVIRONMENT            DIVISION.

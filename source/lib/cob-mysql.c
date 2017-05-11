@@ -2303,6 +2303,7 @@ int setViewSort(char* strSql,DB_TABLE_OBJ *targetTable){
 			}
 			strcat( Query,targetTable->strWhere->data);
 		}
+		strcat( Query," CHARACTER SET sjis;");
 		//テーブル
 		targetTable->key1Use = 1;
 		targetTable->key2Use = 1;

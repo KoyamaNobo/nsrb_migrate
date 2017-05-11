@@ -1,6 +1,6 @@
 /RUN #MENUP,TYP=LM,FIL=SYS@LML;
 00 一般日次処理(受信・更新他)      JIP
-01 HJO30NJS出荷実績データ受信（玉島）      CHAINN  A   job
+01 HJO30NJS出荷実績データ受信（藤田）      CHAINN  A   job
 02 ******                                  CHAINN  ANO
 03 ******                                  CHAINN  ANO
 04 JTO33LLM受信分出荷指図書　（実績）      CHAINN  ANO exec
@@ -22,9 +22,9 @@
 20 JJ8000JS出荷指図残リスト                CHAINN  A   job
 21 JJ200 JS　◎日次更新◎                  CHAINN  A   job
 22 ******                                  CHAINN  ANO
-23 JJN510JS玉島出荷　品名別出荷数合計表    CHAINN  A   job
+23 JJN510JS藤田出荷　品名別出荷数合計表    CHAINN  A   job
 24 ******                                  CHAINN  ANO
-25 JJN550JS玉島入荷　品名別入荷数合計表    CHAINN  A   job
+25 JJN550JS藤田入荷　品名別入荷数合計表    CHAINN  A   job
 26 ******                                  CHAINN  ANO
 27 ******                                  CHAINN  ANO
 28 JJN400JS得意先別・品名別　出荷日報      CHAINN  A   job

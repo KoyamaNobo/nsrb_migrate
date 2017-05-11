@@ -1,5 +1,5 @@
 /RUN #MENUP,TYP=LM,FIL=SYS@LML;
-00 ＊ 玉島倉庫出荷処理(Ⅲ)　＊     JIP
+00 ＊ 藤田倉庫出荷処理(Ⅲ)　＊     JIP
 01 TJK036JSワークマン出荷指図品名集計表    CHAINN  A   job
 02 TJK037JSナ　フ　コ        〃            CHAINN  A   job
 03 ******                                  CHAINN  ANO

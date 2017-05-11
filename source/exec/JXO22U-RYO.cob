@@ -5,7 +5,7 @@
       *            [JXO22U]      T.ISHISHITA                           *
       *    CALL   "SJXO22".                                            *
       *    JS-SIGN  :  0=ì`ëó , 1=ê∂ê¨(NEW)                            *
-      *    W-JS     :  1=ã ìá , 2=í√éR , 3=ëÅìá                        *
+      *    W-JS     :  1=ì°ìc , 2=í√éR , 3=ëÅìá                        *
       ******************************************************************
        PROGRAM-ID.            JTO22U.
        ENVIRONMENT            DIVISION.
@@ -178,8 +178,8 @@
             "03DSP-DKS" "N" "LIN-W" "44" "4" "02DSP-DKS" " "
             RETURNING RESU.
        CALL "SD_From" USING 
-            "03DSP-DKS" BY REFERENCE KEN-W(1) "2" "1" 
-            BY REFERENCE NN 46 RETURNING RESU.
+            "03DSP-DKS" BY REFERENCE KEN-W(1) "2" "1" BY REFERENCE NN 46
+            RETURNING RESU.
        CALL "SD_Init" USING 
             "DSP-SNM" "N" "1" "59" "12" "DSP-DKS" " " RETURNING RESU.
        CALL "SD_From" USING 

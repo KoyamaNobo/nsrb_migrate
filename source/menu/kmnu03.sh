@@ -22,8 +22,8 @@
 20 JJ8000JS出荷指図残リスト                CHAINN  A   job
 21 JJ200 JS　◎日次更新◎                  CHAINN  A   job
 22 ******                                  CHAINN  ANO
-23 JJN510JS玉島出荷　品名別出荷集計表      CHAINN  A   job
-24 JJN550JS玉島入荷　品名別出荷数集計表    CHAINN  A   job
+23 JJN510JS藤田出荷　品名別出荷集計表      CHAINN  A   job
+24 JJN550JS藤田入荷　品名別出荷数集計表    CHAINN  A   job
 25 ******                                  CHAINN  ANO
 26 ******                                  CHAINN  ANO
 27 JJN400JS得意先別・品名別　出荷日報      CHAINN  A   job
@@ -31,7 +31,7 @@
 29 JJN460JS日付倉庫品名別　出荷数明細表    CHAINN  A   job
 30 ******                                  CHAINN  ANO
 31 ******  ******************************  CHAINN  ANO
-32 ******  ○　ベルネージュダイレクト　○  CHAINN  ANO
+32 ******  □　統一伝票処理　□            CHAINN  ANO
 33 JSS10ILM発注書入力                      CHAINN  ANO exec
 34 ******                                  CHAINN  ANO
 35 JSS229JS納品書発行（統一伝票）          CHAINN  A   job
