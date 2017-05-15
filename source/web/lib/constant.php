@@ -243,7 +243,7 @@ function sessionCheck(&$message){
 	,'font_color','bg_color','reverse_font_color'
 	,'reverse_bg_color');
 	foreach($checkKeyArray as $key){
-		if(!isset($_SESSION[$key])){
+		if(!array_key_exists($key,$_SESSION)){
 			return false;
 		}
 

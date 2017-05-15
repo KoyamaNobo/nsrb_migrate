@@ -8,7 +8,7 @@ var menuShortcut = function () {
 		if (!e){
 			var e = window.event;
 		}
-		
+
 		if(e.keyCode == 13){
 			var targElements = $('.menuURL');
 			var inputElements = $('#menuno');
@@ -22,39 +22,46 @@ var menuShortcut = function () {
 			var regRPStr = new RegExp( "^(RP|rp)$", "g");  //root permission
 			var regDVStr = new RegExp( "^(DV|dv)$", "g");  //Data View
 			var regFEStr = new RegExp( "^(FE|fe)$", "g");  //File Explorer
-			
+			var regSTStr = new RegExp( "^(ST|st)$", "g");  //status_view add koyama 20170510
+
 			//UserSettingに遷移
 			if(inputElements[0].value.match(regUSStr)){
 				document.location = './UserMaster.php';
 			}
-			
+
 			//DataExchangeに遷移
 			if(inputElements[0].value.match(regDEStr)){
 				document.location = './DataExchange.php';
 			}
-			
+
 			//FileExplorer.phpに遷移
 			if(inputElements[0].value.match(regFEStr)){
 				document.location = './FileExplorer.php';
 			}
-			
+			//status_viewに遷移
+			if(inputElements[0].value.match(regSTStr)){
+				// document.location = './status_view.php';
+				window.open('./status_view.php');
+			}
+
 			//DataViewに遷移
 			if(inputElements[0].value.match(regDVStr)){
 				window.open('./DataView/DataView_logout.php');
 			}
+
 			//隠しPG実行環境に遷移
 			if(inputElements[0].value.match(regRPStr)){
 //				document.location = './root.php';
 				window.open('./root.php');
 			}
-			
+
 			//９９入力時（戻るボタンクリック）
 			if(inputElements[0].value.match(regBACKStr)){
 				if ($('.backButton')[0]) {
 					$('.backButton')[0].click();
 				}
 			}
-			
+
 			for(var i=0;i < targElements.length;i++){
 				if(targElements[i].innerHTML.match(regStr)){
 					document.location = targElements[i].getAttribute('href');
@@ -68,8 +75,8 @@ var menuShortcut = function () {
 	var inputElements = $('#menuno');
 	for(var i = 0; i < inputElements.length ;i++){
 		//戻るボタンのイベント追加
-		addEvent('keydown' , 
-				inputElements[i] , 
+		addEvent('keydown' ,
+				inputElements[i] ,
 				function( evt ){
 					return menuSelect( evt );
 				}

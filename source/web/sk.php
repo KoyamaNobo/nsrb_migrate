@@ -16,7 +16,7 @@ if(isset($_SESSION['user_id'])){
 		if(preg_match('/^C9$/',$_POST['value'])){
 			$pids = shell_exec('ps aux|grep ' . $_SESSION['user_id'] . "| grep -v grep |awk '{printf \"%s||\",$2 }' ") ;
 			$pidArray = explode("||",$pids);
-			
+
 			//kill -TERMコマンド発行
 			foreach($pidArray as $pid){
 				if(is_numeric($pid)){
@@ -52,15 +52,14 @@ function getDescendantPid($pid){
 //再帰的に子供のpidを取り続ける
 //子供のpidがなくなったら終了
 function getRecursiveChildPid($pid){
-	$pids = shell_exec("ps --ppid " . $pid . " |grep -v PID|awk '{printf $1}'");
-	$pidArray = explode("||",$pids);
-	
-	if(count($pidArray) > 2){
-		return getRecursiveChildPid($pidArray[1]);
+	$pidres = shell_exec("ps --ppid " . $pid . " |grep -v PID|awk '{printf $1}'");
+
+	if(!empty($pidres)){
+		return getRecursiveChildPid($pidres);
 	}else{
-		//countが1ならヘッダ行のみなので、
+		//countが0なら子はいないということ
 		//そのままのpidを返す
 		return $pid;
 	}
 }
-?> 
+?>
