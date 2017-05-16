@@ -275,7 +275,6 @@ class clsLine{
 		$endcol   = (int)$endcol;
 		$length   = $endcol - $startcol;
 		$element  = '';
-		$vValues  = '';
 
 		//"から"までを取り出す
 		$text = '';
@@ -284,8 +283,6 @@ class clsLine{
 		}
 
 		//TODO :2017/03/30: VALUEを設定する必要があるかも
-		//VALUEを設定,取得してくるvalueはthisのなか、$startcolから($startcol+$length)までの範囲の文字列
-		$vValues = $this->getValueInRange($startcol,($startcol+$length));
 		//classを変更する必要がないので書き換え
 		$element .= '<input class="nextinput f'.($startcol).' '.$addclass.'" type="text" name="'.$argname.'" maxlength="'.$length.'" size="'.$length.'" style="width:'.($length / 2).'em;" />';
 
@@ -304,6 +301,6 @@ class clsLine{
 // 			unset($targElem['INP']);
 		}
 	}
-	function getValueInRange();
+
 }
 ?>
