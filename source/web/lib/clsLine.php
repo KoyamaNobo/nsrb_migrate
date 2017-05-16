@@ -304,6 +304,6 @@ class clsLine{
 // 			unset($targElem['INP']);
 		}
 	}
-	function getValueInRange()
+	function getValueInRange();
 }
 ?>
