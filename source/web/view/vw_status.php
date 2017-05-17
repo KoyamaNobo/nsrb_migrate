@@ -44,7 +44,7 @@ include('vw_status_js.php');
 	<div class="rightBlock">
 		<input class="button backButton" type="button" value="–ß‚é" />
 		<div style="display:inline-block;">
-			<form name="foot" action="./index.php" method="get" class="foot">
+			<form name="foot" action="./status_view.php" method="get" class="foot">
 				<label for="root" >ƒƒjƒ…[–¼F</label>
 				<select id="root" name="root" >
 					<option value="">&nbsp;</option>

@@ -3,10 +3,10 @@
 // author : koyama
 // create : 20170510
 //このクラスはローカル変数をスネーク型で記述する
-if(!defined('CHARSET')){
-	define('CHARSET','UTF-8');
+if(!defined(CHARSET)){
+	define(CHARSET,'UTF-8');
 }
-class clsProcessStat{
+class clsDBStat{
 	private $proc_array;
 	private $oLog;
 	//ps lx を使ってみたが,実行開始時間が取れなかった
@@ -22,7 +22,6 @@ class clsProcessStat{
 		$mixed_array = explode(PHP_EOL,shell_exec(self::CMD));
 		$this->oLog = New Log('');
 		//列名は空で作れる
-		$this->proc_array[] = New clsProcessStatusElem('');
 		foreach($mixed_array as $ret_line){
 			//psの結果を配列に変換してプライベート変数へ格納
 			if(strlen(trim($ret_line)) == 0){

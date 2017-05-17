@@ -308,7 +308,7 @@ function getProcessIdStatus($pid,$log){
 	//子のプロセスID（複数）子のプロセスIDのみにして取得
 	$targetPids = array();
 	foreach($processTree as $process){
-		$tmpArray = split(",",$process);
+		$tmpArray = explode(",",$process);
 		array_push($targetPids,$tmpArray[count($tmpArray)-1]);
 	}
 

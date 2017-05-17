@@ -9,13 +9,16 @@ if(isset($_SESSION['user_id'])){
 // 	$oLog->info('pids: ' .$cmd.':'.__FILE__.':'.__LINE__);
 		$pids = shell_exec($cmd);
 		$pidArray = explode('||',$pids);
+		$ppid = "";
 		foreach($pidArray as $pid){
 			if(!is_numeric($pid)){
 				continue;
 			}
-			$ppid = "";
-			//一番下が落ちると必ずすべて落ちるとは限らない
-			for($count=0;$count < 3;$count++){
+			if(empty($ppid)){
+				$ppid = $pid;
+			}
+			// //一番下が落ちると必ずすべて落ちるとは限らない
+			// for($count=0;$count < 3;$count++){
 				$processTree = array();
 				getLastProcessIds($pid,$pid,$processTree,'leaf');
 	// 		$oLog->info('pids: ' .print_r($processTree,true).__FILE__.':'.__LINE__);
@@ -25,7 +28,7 @@ if(isset($_SESSION['user_id'])){
 					shell_exec('kill -CONT ' . $processTree[max(array_keys($processTree))] . ' ');
 					shell_exec('kill -USR1 ' . $processTree[max(array_keys($processTree))] . ' ');
 				}
-			}
+			// }
 		}
 // 		$oLog->info(__FILE__.':'.__LINE__.'process killer end');
 	}
