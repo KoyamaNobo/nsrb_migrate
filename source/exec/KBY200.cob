@@ -102,7 +102,7 @@
        77  F                  PIC  X(001).
       *FD  JSY-F
        01  JSY-F_KBY200.
-           02  JSY-F_PNAME1   PIC  X(006) VALUE SPACE.
+           02  JSY-F_PNAME1   PIC  X(009) VALUE SPACE.
            02  F              PIC  X(001).
            02  JSY-F_LNAME    PIC  X(012) VALUE "JSY-F_KBY200".
            02  F              PIC  X(001).

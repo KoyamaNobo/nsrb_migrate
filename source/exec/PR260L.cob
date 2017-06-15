@@ -191,7 +191,7 @@
        01  SDH_PR260L.
            02  SDH_PNAME1           PIC  X(009)  VALUE "SIWAKE-H1".
            02  F                    PIC  X(001).
-           02  SDH_LNAME            PIC  X(010)  VALUE "SDH_PR260L".
+           02  SDH_LNAME            PIC  X(003)  VALUE "SDH".
            02  F                    PIC  X(001).
            02  SDH_KEY1             PIC  X(100)  VALUE SPACE.
            02  SDH_KEY2             PIC  X(100)  VALUE SPACE.

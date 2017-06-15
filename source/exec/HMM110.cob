@@ -1184,7 +1184,7 @@
       *///////////////add koyama 20170303
            CALL "DB_Select" USING
             HI-M_PNAME1 "WHERE"
-            "HI-HCD" "NOT =" "HI-MHCD" "AND" W-HCD "=" "HI-MHCD"
+            "HI-HCD" "NOT =" "HI-MHCD" "AND" "HI-MHCD" "=" W-HCD
             RETURNING RET.
       *           START HI-M KEY NOT < HI-KEY2 INVALID KEY
       *///////////////
