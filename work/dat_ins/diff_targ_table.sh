@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ################set -e エラーが出るとそこで終了してくれる？
 #set -x
 CURRPTH=`pwd`
@@ -31,9 +31,26 @@ fi
 #引数が4か7だった場合は取り込み処理を実行
 
 if [ -e ${1} ];then
-    echo "data insert start ${1}" |logger -i 
-    "${1}"  2>&1 |tee ${1}.log 
-    echo "data insert end ${1}" |logger -i 
+    echo "data insert start ${1}" |logger -i
+    #指定ファイルのパスに移動する
+    TARGDIR=`dirname "${1}"`
+    FILENAME=`basename "${1}"`
+    cd $TARGDIR
+    #ディレクトリを探してシンボリックリンクを貼っておく
+    DATEDIR=''
+    DIRNAMES=`ls -alt | tail -n +2 |awk '$(NF)~/^[0-9]+$/ {print $(NF)}'`
+    ls -alt | tail -n +2 |awk '$(NF)~/^[0-9]+$/ {print $(NF)}' > temp.txt
+    #日付の新しいディレクトリを探す
+    while read LINE ;do
+      if [[ $DATEDIR < $LINE ]];then
+        DATEDIR="$LINE"
+      fi
+    done < <(ls -alt | tail -n +2 |awk '$(NF)~/^[0-9]+$/ {print $(NF)}')
+    echo "ln -s $DATEDIR datadir"
+    ln -s $DATEDIR datadir
+    "./$FILENAME"  2>&1 |tee ${FILENAME}.log
+    rm datadir
+    echo "data insert end ${1}" |logger -i
 else
     echo "file dase not exists!!"
     exit
@@ -52,7 +69,7 @@ if [ $# -eq 7 ];then
 	RET=`mysql --host=$NEWHOST --user=$NEWUSER --password=$NEWPASS -e"$QUERY" |wc -l`
 	if [ $((RET)) -gt 0 ] ; then
 		#テーブル名,DB間データ不一致であることを出力
-		echo $tname":データ不一致" |logger -i 
+		echo $tname":データ不一致" |logger -i
 	fi
     done
 fi
