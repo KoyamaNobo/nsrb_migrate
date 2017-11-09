@@ -27,7 +27,7 @@ class clsScreen{
 		$returnString = '';
 		foreach($this->execErrorArray as $error){
 			$returnString .= preg_replace("/ Error /","", $error);
-			$this->oLog->error(":[web module]:Error message :".$error .':'.__FILE__.':'.__LINE__);
+			// $this->oLog->error(":[web module]:Error message :".$error .':'.__FILE__.':'.__LINE__);
 			//画面表示の長さの最大値
 			if(strlen($returnString) > $stringmaxlen){
 				$returnString = mb_strimwidth($returnString,0,$stringmaxlen-1,"...");
@@ -96,7 +96,9 @@ class clsScreen{
 			$arrResComm = preg_split('/(_\s|_$)/',$commLine);
 			foreach($arrResComm as $commTerm){
 				//中身のテキストを入れ替え
-				if(preg_match('/CON\s*\(\s*([0-9]+)\,\s*([0-9]+)\)(.+)$/',$commTerm,$matches)){
+				if(preg_match('/Please\s+(.+)$/',$commTerm,$matches)){
+					$this->viewStrReplace(0,0,$matches[1]);
+				}elseif(preg_match('/CON\s*\(\s*([0-9]+)\,\s*([0-9]+)\)(.+)$/',$commTerm,$matches)){
 					//関数名(行,開始列,文字列)
 					$this->lineReset();
 					$this->viewStrReplace($matches[1],$matches[2],$matches[3]);
@@ -154,7 +156,7 @@ class clsScreen{
 					//MOD(MODE)が来たら何もしない
 					//関数名(行,開始列,文字列)
 
-				}elseif(preg_match('/AREA?\s+\(\s*([0-9]+),?([0-9]*)\s*\).*/',$commTerm,$matches)){
+				}elseif(preg_match('/AREA?\s*\(\s*([0-9]+),?([0-9]*)\s*\).*/',$commTerm,$matches)){
 					//AREが来たら対象となっているAREAをリセット
 					//関数名(行,開始列,文字列)
 					$this->lineAreaReset($matches[1],$matches[2]);
@@ -213,6 +215,8 @@ class clsScreen{
 				$this->arrScreenStr[(int)$numLine]->setColText($strText,(int)$numLine,$numStartCol);
 			}else{
 				$this->oLog->error(":[web module]: can not display :Line[".$numLine."]:column[".$numStartCol."] text[".$strText."]".__FILE__.':'.__LINE__);
+				//0行目の指定などはエラー出力ありで最終業として処理 これだと必要なものが消える
+				// $this->arrScreenStr[$this->intRecNum]->setColText($strText,$this->intRecNum ,$numStartCol);
 			}
 		}
 	}

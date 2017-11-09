@@ -31,7 +31,7 @@ echo '                        はい    --->  　　CTRL + F5 を押下          '
 echo '                        いいえ  --->  　　CTRL + F9 を押下          '
 echo '                                                                    '
 echo '                                          を押下して下さい          '
-if (`echo "$<" | grep F9 | wc -l ` == 1) exit
+f5orf9 ; if ($status == 1) exit 1;
 echo '                                                                    '
 echo '            　        ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊          '
 echo '                      ＊  　　　　　　　　　　　　　　　＊　        '

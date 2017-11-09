@@ -22,6 +22,7 @@ var userSetting = function () {
 	//背景色の変更
 	{
 		$('.screen,.status').css('background-color',bgc);
+		// $('input.nextinput:focus').css('background-color',document.getElementById("sbgcolor").value);
 	}
 
 	//文字の大きさ変更
@@ -32,7 +33,9 @@ var userSetting = function () {
 	//文字色の変更
 	{
 		$('.screen,.status').find('a').css('color',fc);
-		$('.screen,.status').find('span').css('color',fc);
+		$('.screen').find('span').css('color',fc);
+		//中の子は入れ替わるので
+		$('.status').find('div').css('color',fc);
 		$('.screen,.status').find('input').css('color',fc);
 	}
 

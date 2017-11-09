@@ -179,129 +179,129 @@
        CALL "SD_Init" USING
            "C-CL" "X" "1" "0" "12" " " "C-CLEAR" RETURNING RESU.
       *C-MID
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "C-MID" " " "0" "0" "94" " " " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01C-MID" "N" "1" "15" "48" " " "C-MID" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02C-MID" "X" "12" "25" "24" "01C-MID" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "03C-MID" "X" "22" "43" "22" "02C-MID" " " RETURNING RESU.
       *ACP-AREA
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "ACP-AREA" " " "0" "0" "7" " " " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "ACP-NGP" " " "12" "0" "6" " " "ACP-AREA" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "A-NEN" "9" "12" "35" "2" " " "ACP-NGP" RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "A-NEN" BY REFERENCE W-NEN2 "2" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "A-GET" "9" "12" "40" "2" "A-NEN" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "A-GET" BY REFERENCE W-GET "2" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "A-PEY" "9" "12" "45" "2" "A-GET" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "A-PEY" BY REFERENCE W-PEY "2" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "ACP-OKC" "9" "22" "60" "1" "ACP-NGP" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "ACP-OKC" BY REFERENCE W-OKC "1" "0" RETURNING RESU.
       *C-ERR
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "C-ERR" " " "0" "0" "332" " " " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01C-ERR" " " "24" "0" "332" " " "C-ERR" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME1" "X" "24" "15" "17" " " "01C-ERR" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME2" " " "24" "0" "28" "E-ME1" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01E-ME2" "X" "24" "15" "18" " " "E-ME2" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02E-ME2" "9" "24" "40" "3" "01E-ME2" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "02E-ME2" BY REFERENCE W-CCD "3" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "03E-ME2" "9" "24" "44" "4" "02E-ME2" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "03E-ME2" BY REFERENCE W-TENC "4" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "04E-ME2" "9" "24" "49" "3" "03E-ME2" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "04E-ME2" BY REFERENCE W-ISU "3" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME3" " " "24" "0" "19" "E-ME2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01E-ME3" "X" "24" "15" "17" " " "E-ME3" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02E-ME3" "X" "24" "35" "2" "01E-ME3" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "02E-ME3" BY REFERENCE JCON1-KEY "2" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME4" " " "24" "0" "22" "E-ME3" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01E-ME4" "X" "24" "15" "18" " " "E-ME4" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02E-ME4" "X" "24" "35" "4" "01E-ME4" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "02E-ME4" BY REFERENCE WTNA-KEY "4" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME11" " " "24" "0" "28" "E-ME4" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01E-ME11" "X" "24" "15" "26" " " "E-ME11" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02E-ME11" "X" "24" "45" "2" "01E-ME11" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "02E-ME11" BY REFERENCE JCON1-KEY "2" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME12" " " "24" "0" "30" "E-ME11" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01E-ME12" "X" "24" "15" "24" " " "E-ME12" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02E-ME12" "X" "24" "45" "6" "01E-ME12" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "02E-ME12" BY REFERENCE OKJF-KEY "6" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME13" " " "24" "0" "31" "E-ME12" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01E-ME13" "X" "24" "15" "24" " " "E-ME13" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02E-ME13" "X" "24" "45" "7" "01E-ME13" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "02E-ME13" BY REFERENCE JSTR-KEY "7" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME14" " " "24" "0" "42" "E-ME13" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01E-ME14" "X" "24" "15" "27" " " "E-ME14" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02E-ME14" "X" "24" "45" "15" "01E-ME14" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "02E-ME14" BY REFERENCE DNKN-KEY "15" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME15" " " "24" "0" "35" "E-ME14" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01E-ME15" "X" "24" "15" "27" " " "E-ME15" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02E-ME15" "X" "24" "45" "8" "01E-ME15" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "02E-ME15" BY REFERENCE NJZAI-KEY "8" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME16" " " "24" "0" "33" "E-ME15" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01E-ME16" "X" "24" "15" "25" " " "E-ME16" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02E-ME16" "X" "24" "45" "8" "01E-ME16" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "02E-ME16" BY REFERENCE NJZAI-KEY "8" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME18" " " "24" "0" "47" "E-ME16" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01E-ME18" "X" "24" "15" "27" " " "E-ME18" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02E-ME18" "X" "24" "45" "20" "01E-ME18" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "02E-ME18" BY REFERENCE TDNW1-KEY "20" "0" RETURNING RESU.
       *
            COPY LIBSCR_P.
@@ -335,7 +335,7 @@
            MOVE W-FID TO WK0064ID.
            MOVE WK0064ID TO SHWW_PNAME1.
            CALL "DB_F_Open" USING
-            "OUTPUT" SHWW_PNAME1 " " BY REFERENCE SHWW_IDLST "0".
+            "INPUT" SHWW_PNAME1 " " BY REFERENCE SHWW_IDLST "0".
            CALL "DB_F_Open" USING
             "INPUT" WTNAF_PNAME1 "SHARED" BY REFERENCE WTNAF_IDLST "1"
             "WTNA-KEY" BY REFERENCE WTNA-KEY.
@@ -365,7 +365,7 @@
             "INVALID" JCON_PNAME1 BY REFERENCE JCON-R "UNLOCK"
             RETURNING RET.
            IF  RET = 1
-               CALL "C3_Set_Jrcode" USING 
+               CALL "C3_Set_Jrcode" USING
                 USER_ID BY REFERENCE COMPLETION_CODE  255
                CALL "SD_Output" USING
                 "E-ME78" E-ME78 "p" RETURNING RESU
@@ -382,7 +382,7 @@
             "INVALID" JCON_PNAME1 BY REFERENCE JCON-R "UNLOCK"
             RETURNING RET.
            IF  RET = 1
-               CALL "C3_Set_Jrcode" USING 
+               CALL "C3_Set_Jrcode" USING
                 USER_ID BY REFERENCE COMPLETION_CODE  255
                CALL "SD_Output" USING
                 "E-ME78" E-ME78 "p" RETURNING RESU
@@ -394,11 +394,11 @@
            END-IF
       *
       *           READ SHWW AT END
-      *//////////////////////     
+      *//////////////////////
            CALL "DB_Read" USING
             "AT END" SHWW_PNAME1 BY REFERENCE SHWW-R " " RETURNING RET.
            IF  RET = 1
-               CALL "C3_Set_Jrcode" USING 
+               CALL "C3_Set_Jrcode" USING
                 USER_ID BY REFERENCE COMPLETION_CODE  255
                CALL "SD_Output" USING
                 "E-ME1" E-ME1 "p" RETURNING RESU
@@ -415,7 +415,7 @@
            CALL "DB_Read" USING
             "INVALID" JCON_PNAME1 BY REFERENCE JCON-R " " RETURNING RET.
            IF  RET = 1
-               CALL "C3_Set_Jrcode" USING 
+               CALL "C3_Set_Jrcode" USING
                 USER_ID BY REFERENCE COMPLETION_CODE  255
                CALL "SD_Output" USING
                 "E-ME78" E-ME78 "p" RETURNING RESU
@@ -436,7 +436,7 @@
            CALL "DB_Update" USING
             JCON_PNAME1 JCON_LNAME JCON1-R RETURNING RET.
            IF  RET = 1
-               CALL "C3_Set_Jrcode" USING 
+               CALL "C3_Set_Jrcode" USING
                 USER_ID BY REFERENCE COMPLETION_CODE  255
                CALL "SD_Output" USING
                 "E-STAT" E-STAT "p" RETURNING RESU
@@ -477,7 +477,7 @@
            GO  TO M-160.
        M-140.
            IF  ERR-STAT NOT = "24"
-               CALL "C3_Set_Jrcode" USING 
+               CALL "C3_Set_Jrcode" USING
                 USER_ID BY REFERENCE COMPLETION_CODE  255
                CALL "SD_Output" USING
                 "E-ME78" E-ME78 "p" RETURNING RESU
@@ -520,7 +520,7 @@
            CALL "DB_Read" USING
             "INVALID" JCON_PNAME1 BY REFERENCE JCON-R " " RETURNING RET.
            IF  RET = 1
-               CALL "C3_Set_Jrcode" USING 
+               CALL "C3_Set_Jrcode" USING
                 USER_ID BY REFERENCE COMPLETION_CODE  255
                CALL "SD_Output" USING
                 "E-ME78" E-ME78 "p" RETURNING RESU
@@ -570,7 +570,7 @@
            CALL "DB_Update" USING
             JCON_PNAME1 JCON_LNAME JCON1-R RETURNING RET.
            IF  RET = 1
-               CALL "C3_Set_Jrcode" USING 
+               CALL "C3_Set_Jrcode" USING
                 USER_ID BY REFERENCE COMPLETION_CODE  255
                CALL "SD_Output" USING
                 "E-STAT" E-STAT "p" RETURNING RESU
@@ -654,7 +654,7 @@
            GO  TO M-280.
        M-260.
            IF  ERR-STAT NOT = "24"
-               CALL "C3_Set_Jrcode" USING 
+               CALL "C3_Set_Jrcode" USING
                 USER_ID BY REFERENCE COMPLETION_CODE  255
                CALL "SD_Output" USING
                 "E-ME78" E-ME78 "p" RETURNING RESU
@@ -696,7 +696,7 @@
            GO  TO M-320.
        M-300.
            IF  ERR-STAT NOT = "24"
-               CALL "C3_Set_Jrcode" USING 
+               CALL "C3_Set_Jrcode" USING
                 USER_ID BY REFERENCE COMPLETION_CODE  255
                CALL "SD_Output" USING
                 "E-ME78" E-ME78 "p" RETURNING RESU
@@ -800,7 +800,7 @@
            END-IF.
        M-400.
       *           READ SHWW AT END
-      *//////////////////////     
+      *//////////////////////
            CALL "DB_Read" USING
             "AT END" SHWW_PNAME1 BY REFERENCE SHWW-R " " RETURNING RET.
            IF  RET = 1
@@ -961,7 +961,7 @@
        NJW-010.
            IF  ERR-STAT NOT = "24"
                MOVE 2 TO WRI-SW
-               CALL "C3_Set_Jrcode" USING 
+               CALL "C3_Set_Jrcode" USING
                 USER_ID BY REFERENCE COMPLETION_CODE  255
                CALL "SD_Output" USING
                 "E-ME78" E-ME78 "p" RETURNING RESU
@@ -1015,7 +1015,7 @@
            CALL "DB_Update" USING
             TDNWF_PNAME1 TDNWF_LNAME TDNW-R1 RETURNING RET.
            IF  RET = 1
-               CALL "C3_Set_Jrcode" USING 
+               CALL "C3_Set_Jrcode" USING
                 USER_ID BY REFERENCE COMPLETION_CODE  255
                CALL "SD_Output" USING
                 "E-STAT" E-STAT "p" RETURNING RESU

@@ -101,6 +101,14 @@
                04  FILLER  PIC  X(028) VALUE
                     "***  Ä¸²»·¼®³ËÝº°ÄÞ ´×°  ***".
                04  FILLER  PIC  X(013).
+             03  E-ME7.
+               04  FILLER  PIC  X(027) VALUE
+                    "***  Ä¸²»·¼®³ËÝº°ÄÞ Å¼  ***".
+               04  FILLER  PIC  X(013).
+             03  E-ME8.
+               04  FILLER  PIC  X(028) VALUE
+                    "***  Ä¸²»·¼®³ËÝº°ÄÞ ´×°  ***".
+               04  FILLER  PIC  X(013).
            COPY LSSEM.
        PROCEDURE DIVISION.
       *Initialize
@@ -141,9 +149,9 @@
             "A-DMM" BY REFERENCE W-DMM "1" "0" RETURNING RESU.
       *C-ERR
        CALL "SD_Init" USING 
-            "C-ERR" " " "0" "0" "116" " " " " RETURNING RESU.
+            "C-ERR" " " "0" "0" "197" " " " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "01C-ERR" " " "24" "0" "116" " " "C-ERR" RETURNING RESU.
+            "01C-ERR" " " "24" "0" "197" " " "C-ERR" RETURNING RESU.
        CALL "SD_Init" USING 
             "E-ME1" "X" "24" "15" "17" " " "01C-ERR" RETURNING RESU.
        CALL "SD_Init" USING 
@@ -164,6 +172,22 @@
             "02E-ME6" "X" "24" "45" "13" "01E-ME6" " " RETURNING RESU.
        CALL "SD_From" USING 
             "02E-ME6" BY REFERENCE TDNW2-HCD "13" "0" RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-ME7" " " "24" "0" "40" "E-ME6" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "01E-ME7" "X" "24" "15" "27" " " "E-ME7" RETURNING RESU.
+       CALL "SD_Init" USING 
+            "02E-ME7" "X" "24" "45" "13" "01E-ME7" " " RETURNING RESU.
+       CALL "SD_From" USING 
+            "02E-ME7" BY REFERENCE TDNN2-JAN "13" "0" RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-ME8" " " "24" "0" "41" "E-ME7" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "01E-ME8" "X" "24" "15" "28" " " "E-ME8" RETURNING RESU.
+       CALL "SD_Init" USING 
+            "02E-ME8" "X" "24" "45" "13" "01E-ME8" " " RETURNING RESU.
+       CALL "SD_From" USING 
+            "02E-ME8" BY REFERENCE TDNN2-JAN "13" "0" RETURNING RESU.
       *
            COPY LSSEM_P.
       *
@@ -382,7 +406,7 @@
             "UNLOCK" RETURNING RET.
            IF  RET = 1
                CALL "SD_Output" USING
-                "E-ME5" E-ME5 "p" RETURNING RESU
+                "E-ME7" E-ME7 "p" RETURNING RESU
                CALL "SD_Output" USING
                 "E-ME99" E-ME99 "p" RETURNING RESU
                CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU
@@ -390,7 +414,7 @@
            END-IF
            IF (ZERO NOT = CODE-TCD) OR (TDNN2-JAN NOT = CODE-JAN)
                CALL "SD_Output" USING
-                "E-ME5" E-ME5 "p" RETURNING RESU
+                "E-ME7" E-ME7 "p" RETURNING RESU
                CALL "SD_Output" USING
                 "E-ME99" E-ME99 "p" RETURNING RESU
                CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU
@@ -398,7 +422,7 @@
            END-IF
            IF (CODE-HCD = ZERO) OR (CODE-SIZ = 0) OR (CODE-SNO = ZERO)
                CALL "SD_Output" USING
-                "E-ME6" E-ME6 "p" RETURNING RESU
+                "E-ME8" E-ME8 "p" RETURNING RESU
                CALL "SD_Output" USING
                 "E-ME99" E-ME99 "p" RETURNING RESU
                CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU

@@ -3,7 +3,7 @@
       *****      (  TDIF  170/3  )        *****
       *****************************************
        01  TDIF.
-           02  TDIF_PNAME1    PIC  X(008) VALUE "TDIF-RDB".
+           02  TDIF_PNAME1    PIC  X(008) VALUE "TDIF".
            02  F              PIC  X(001).
            02  TDIF_LNAME     PIC  X(004) VALUE "TDIF".
            02  F              PIC  X(001).
@@ -45,7 +45,8 @@
              03  TDI-TTE      PIC  N(019).
            02  TDI-TRN        PIC  X(020).
            02  TDI-JAN        PIC  X(013).
-           02  F              PIC  X(052).
+           02  TDI-UTC        PIC  9(001).
+           02  F              PIC  X(051).
            02  TDI-NNGP       PIC  9(006).
            02  TDI-NHMS       PIC  9(006).
            02  F              PIC  X(008).

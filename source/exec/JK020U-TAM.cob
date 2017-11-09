@@ -79,9 +79,9 @@
            03  FILLER  PIC X(01)  VALUE "(".
            03  FILLER  PIC X(01)  VALUE ")".
        01  ACP-KAKU.
-         02  FILLER      PIC X(01).
+         02  01ACP-KAKU  PIC X(01).
        01  DSP-SKM.
-         02  01ACP-KAKU  PIC N(06).
+         02  FILLER      PIC N(06).
        01  DSP-ERRMSG.
          02  FILLER  PIC N(20).
          02  FILLER  PIC X(05)  VALUE X"1B4202".

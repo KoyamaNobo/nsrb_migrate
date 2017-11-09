@@ -4,7 +4,7 @@ if (${#argv} >= 1) then
 else
 	set USER_ID = STN000;
 endif
-set JRCODE=000;
+set JRCODE=010;
 set FN1 = ${JRCODE_PATH}${USER_ID};
 set FN2 = ${ERROR_PATH}${USER_ID};
 set ABORT=0;

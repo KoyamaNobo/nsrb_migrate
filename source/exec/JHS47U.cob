@@ -145,8 +145,8 @@
        01  C-MID.
            02  FILLER  PIC  N(022) VALUE
                 "＊＊＊　　ナフコ　出荷指図書　作成　　＊＊＊".
-           02  FILLER  PIC  X(047) VALUE 
-                "指図日１ '  年   月   日  ,  ２ '  年   月   日". 
+           02  FILLER  PIC  X(047) VALUE
+                "指図日１ '  年   月   日  ,  ２ '  年   月   日".
            02  FILLER  PIC  X(024) VALUE
                 "納入日   '  年   月   日".
            02  FILLER  PIC  X(22)
@@ -156,7 +156,7 @@
                03  A-NEN      PIC  9(02).
                03  A-GET      PIC  9(02).
                03  A-PEY      PIC  9(02).
-           02  ACP-NGP2. 
+           02  ACP-NGP2.
                03  A-NEN2     PIC  9(02).
                03  A-GET2     PIC  9(02).
                03  A-PEY2     PIC  9(02).
@@ -227,64 +227,64 @@
        CALL "SD_Init" USING
            "C-CL" "X" "1" "0" "12" " " "C-CLEAR" RETURNING RESU.
       *C-MID
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "C-MID" " " "0" "0" "137" " " " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01C-MID" "N" "1" "15" "44" " " "C-MID" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02C-MID" "X" "12" "25" "47" "01C-MID" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "03C-MID" "X" "14" "25" "24" "02C-MID" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "04C-MID" "X" "22" "43" "22" "03C-MID" " " RETURNING RESU.
       *ACP-AREA
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "ACP-AREA" " " "0" "0" "19" " " " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "ACP-NGP" " " "12" "0" "6" " " "ACP-AREA" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "A-NEN" "9" "12" "35" "2" " " "ACP-NGP" RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "A-NEN" BY REFERENCE W-NEN2 "2" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "A-GET" "9" "12" "40" "2" "A-NEN" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "A-GET" BY REFERENCE W-GET "2" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "A-PEY" "9" "12" "45" "2" "A-GET" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "A-PEY" BY REFERENCE W-PEY "2" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "ACP-NGP2" " " "12" "0" "6" "ACP-NGP" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "A-NEN2" "9" "12" "58" "2" " " "ACP-NGP2" RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "A-NEN2" BY REFERENCE W-NEN2 "2" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "A-GET2" "9" "12" "63" "2" "A-NEN2" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "A-GET2" BY REFERENCE W-GET "2" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "A-PEY2" "9" "12" "68" "2" "A-GET2" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "A-PEY2" BY REFERENCE W-PEY "2" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "ACP-NNGP" " " "14" "0" "6" "ACP-NGP2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "A-NNEN" "9" "14" "35" "2" " " "ACP-NNGP" RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "A-NNEN" BY REFERENCE W-NEN2 "2" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "A-NGET" "9" "14" "40" "2" "A-NNEN" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "A-NGET" BY REFERENCE W-GET "2" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "A-NPEY" "9" "14" "45" "2" "A-NGET" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "A-NPEY" BY REFERENCE W-PEY "2" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "ACP-OKC" "9" "22" "60" "1" "ACP-NNGP" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "ACP-OKC" BY REFERENCE W-OKC "1" "0" RETURNING RESU.
       *C-ERR
        CALL "SD_Init" USING
@@ -412,7 +412,7 @@
            MOVE W-FID TO WK0064ID.
            MOVE WK0064ID TO SHNW_PNAME1.
            CALL "DB_F_Open" USING
-            "OUTPUT" SHNW_PNAME1 " " BY REFERENCE SHNW_IDLST "0".
+            "INPUT" SHNW_PNAME1 " " BY REFERENCE SHNW_IDLST "0".
            CALL "DB_F_Open" USING
             "I-O" TDNNF_PNAME1 "SHARED" BY REFERENCE TDNNF_IDLST "1"
             "TDNN1-KEY" BY REFERENCE TDNN1-KEY.
@@ -531,8 +531,8 @@
            END-IF
            MOVE ZERO TO W-OEB.
            IF  SHNW-NFN  =  2
-               MOVE  W-SNGP     TO  W-NGP 
-           ELSE 
+               MOVE  W-SNGP     TO  W-NGP
+           ELSE
                MOVE  W-SNGP2    TO  W-NGP
            END-IF.
        M-120.
@@ -981,10 +981,10 @@
            END-IF.
        ACP-025.
            MOVE  W-NGP     TO  W-SNGP.
-       ACP-026. 
+       ACP-026.
            CALL "SD_Accept" USING BY REFERENCE A-NEN2 "A-NEN2" "9" "2"
             BY REFERENCE ESTAT RETURNING RESU.
-           IF  ESTAT      =  "09" 
+           IF  ESTAT      =  "09"
                MOVE  W-SNGP     TO  W-NGP
                GO  TO  ACP-020
            END-IF
@@ -992,7 +992,7 @@
                GO  TO  ACP-026
            END-IF
            CALL "SD_Output" USING "A-NEN2" A-NEN2 "p" RETURNING RESU.
-       ACP-027. 
+       ACP-027.
            CALL "SD_Accept" USING BY REFERENCE A-GET2 "A-GET2" "9" "2"
             BY REFERENCE ESTAT RETURNING RESU.
            IF  ESTAT      =  "09"
@@ -1008,7 +1008,7 @@
            IF  (W-GET <  1)  OR  (W-GET >  12)
                GO  TO  ACP-027
            END-IF.
-       ACP-028. 
+       ACP-028.
            CALL "SD_Accept" USING BY REFERENCE A-PEY2 "A-PEY2" "9" "2"
             BY REFERENCE ESTAT RETURNING RESU.
            IF  ESTAT      =  "09"
@@ -1018,8 +1018,8 @@
                GO  TO  ACP-028
            END-IF
            CALL "SD_Output" USING "A-PEY2" A-PEY2 "p" RETURNING RESU.
-           IF  (W-PEY =  ZERO)  AND  (W-GET = ZERO) 
-               MOVE W-DATE TO W-NGP 
+           IF  (W-PEY =  ZERO)  AND  (W-GET = ZERO)
+               MOVE W-DATE TO W-NGP
                CALL "SD_Output" USING
                 "ACP-NGP2" ACP-NGP2 "p" RETURNING RESU
                GO TO ACP-029
@@ -1027,19 +1027,19 @@
            IF  (W-PEY <  1)  OR  (W-PEY >  31)
                GO  TO  ACP-028
            END-IF
-           MOVE  ZERO      TO  W-NEN1. 
-           IF  W-NEN2 >= DATE-NF1 AND <= DATE-NT1 
+           MOVE  ZERO      TO  W-NEN1.
+           IF  W-NEN2 >= DATE-NF1 AND <= DATE-NT1
                ADD DATE-NC1 TO W-NEN
            END-IF
-           IF  W-NEN2 >= DATE-NF2 AND <= DATE-NT2 
+           IF  W-NEN2 >= DATE-NF2 AND <= DATE-NT2
                ADD DATE-NC2 TO W-NEN
            END-IF
-           IF  W-NGP <  W-DATE 
+           IF  W-NGP <  W-DATE
                GO  TO  ACP-026
            END-IF.
-       ACP-029. 
-           MOVE  W-NGP     TO  W-SNGP2. 
-           IF  W-SNGP    >  W-SNGP2 
+       ACP-029.
+           MOVE  W-NGP     TO  W-SNGP2.
+           IF  W-SNGP    >  W-SNGP2
                GO  TO  ACP-026
            END-IF
       *
@@ -1237,7 +1237,7 @@
            END-IF
            IF  TDNN1-DGN = ZERO
                IF  TDNN1-TCD = 081
-                   IF  TDNN1-NHB = 1 
+                   IF  TDNN1-NHB = 1
                        MOVE 1 TO W-NHBD
                    END-IF
                END-IF
@@ -1300,7 +1300,7 @@
                 "E-ME78" E-ME78 "p" RETURNING RESU
                CALL "SD_Output" USING
                 "E-ME99" E-ME99 "p" RETURNING RESU
-               CALL "C3_Set_Jrcode" USING 
+               CALL "C3_Set_Jrcode" USING
                 USER_ID BY REFERENCE COMPLETION_CODE 255
                MOVE 9 TO W-END
                GO TO TDR-EX
@@ -1341,7 +1341,7 @@
                 "E-ME78" E-ME78 "p" RETURNING RESU
                CALL "SD_Output" USING
                 "E-ME99" E-ME99 "p" RETURNING RESU
-               CALL "C3_Set_Jrcode" USING 
+               CALL "C3_Set_Jrcode" USING
                 USER_ID BY REFERENCE COMPLETION_CODE 255
                MOVE 9 TO W-END
                GO TO TDR-EX

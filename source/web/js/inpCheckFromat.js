@@ -26,7 +26,7 @@ function inpCheck(evt){
 //  戻り値 true :入力チェック成功時
 //         false:入力チェック失敗時
 function numericCheck(val){
-	if (val.match(/^-?( )*[0-9]*( )*$/)) {
+	if (val.match(/^( )*-?[0-9]*.?[0-9]*( )*$/)) {
 		$("#status6").html( "<span></span>");
 		return true;
 	} else {
@@ -40,7 +40,7 @@ function numericCheck(val){
 //  戻り値 true :入力チェック成功時
 //         false:入力チェック失敗時
 function sNumericCheck(val){
-	if (val.match(/(^( )*[0-9]*( )*$|^( )*-[0-9]+( )*$)/)) {
+	if (val.match(/^( )*-?[0-9]*.?[0-9]*( )*$/)) {
 		$("#status6").html( "<span></span>");
 		return true;
 	} else {
@@ -58,16 +58,16 @@ function inpFormat(evt){
 	var targElem = evtToElement(evt);
 	var res = targElem.value;
 	var minusFlg = false;
-	
+
 	formatFlg = false;
-	
+
 	//入力がない場合は何もしない
 	if(res.length == 0){
 		return res;
 	}
 
 	tmp = $(targElem)[0].className;
-	
+
 	var found1 = tmp.match(/SNUMERC[\d]+V[\d]+/);
 	if (found1){
 		className = found1[0].substr(7);
@@ -79,7 +79,7 @@ function inpFormat(evt){
 			formatFlg = true;
 		}
 	}
-	
+
 	if(formatFlg){
 		return res;
 	}

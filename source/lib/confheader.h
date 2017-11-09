@@ -77,6 +77,7 @@ struct screenObject{
 	char xname[31];
 	char cobtype[25];                /*型を格納しておくcomp3の数値桁数最大が18なのでサイズ20+a*/
 	struct screenObject *nextObj;    /*並列の変数がある場合の次の変数*/
+	struct screenObject *parentObj;  /*入れ子の親変数 トップレベルノードはNULL*/
 	struct screenObject *childObj;   /*入れ子の子供がある場合の子変数(先頭)*/
 	cob_field *bodyPnt;                /*cob変数*/
 	int lineShift;                   /*LineがPLUSでずらせるためその数字*/

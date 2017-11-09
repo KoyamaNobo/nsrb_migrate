@@ -236,15 +236,15 @@
            02  FILLER.
              03  FILLER  PIC  N(002) VALUE "ÅyÅ@".
              03  FILLER  PIC  X(001) VALUE "'".
-             03  FILLER  PIC  9(002) .
+             03  FILLER  PIC  9(002).
              03  FILLER  PIC  N(001) VALUE "îN".
-             03  FILLER  PIC Z9.
+             03  FILLER  PIC Z9 .
              03  FILLER  PIC  N(001) VALUE "åé".
              03  FILLER  PIC  N(001) VALUE "Å`".
              03  FILLER  PIC  X(001) VALUE "'".
              03  FILLER  PIC  9(002).
              03  FILLER  PIC  N(001) VALUE "îN".
-             03  FILLER  PIC Z9.
+             03  FILLER  PIC Z9 .
              03  FILLER  PIC  N(001) VALUE "åé".
              03  FILLER  PIC  N(002) VALUE "Å@Åz".
        01  C-HCM.
@@ -275,27 +275,27 @@
                 "ämîF  OK=1 NO=9   ÿ¿∞›".
        01  C-ACP.
            02  FILLER.
-             03  A-HCDF    PIC  9(006).
-             03  A-HCDT    PIC  9(006).
-           02  A-DMM     PIC  9(001).
+             03  A-HCDF  PIC  9(006).
+             03  A-HCDT  PIC  9(006).
+           02  A-DMM   PIC  9(001).
        01  C-DSP.
            02  FILLER.
-             03  S-HCDF    PIC  X(006) VALUE "      ".
-             03  S-HCDT    PIC  X(006) VALUE "      ".
+             03  S-HCDF  PIC  X(006) VALUE "      ".
+             03  S-HCDT  PIC  X(006) VALUE "      ".
            02  FILLER.
-             03  C-MIDK    PIC  N(005) VALUE "Åyã≥Å@àÁÅz".
-             03  C-MIDW    PIC  N(005) VALUE "ÅyÉèÅ[ÉNÅz".
-             03  C-MIDH    PIC  N(005) VALUE "ÉnÉCÉpÅ[Çu".
+             03  C-MIDK  PIC  N(005) VALUE "Åyã≥Å@àÁÅz".
+             03  C-MIDW  PIC  N(005) VALUE "ÅyÉèÅ[ÉNÅz".
+             03  C-MIDH  PIC  N(005) VALUE "ÉnÉCÉpÅ[Çu".
        01  C-ERR.
            02  FILLER.
-             03  E-STAT    PIC  X(002).
-             03  E-ME1     PIC  X(017) VALUE
+             03  E-STAT  PIC  X(002).
+             03  E-ME1   PIC  X(017) VALUE
                   "***  DATA ≈º  ***".
-             03  E-ME2     PIC  X(018) VALUE
+             03  E-ME2   PIC  X(018) VALUE
                   "***  DATA ¥◊∞  ***".
-             03  E-ME98    PIC  X(005) VALUE X"1B4A05".
-             03  E-ME99    PIC  X(005) VALUE X"1B4205".
-             03  E-CL      PIC  X(050) VALUE
+             03  E-ME98  PIC  X(005) VALUE X"1B4A05".
+             03  E-ME99  PIC  X(005) VALUE X"1B4205".
+             03  E-CL    PIC  X(050) VALUE
                   "                                                  ".
            COPY LIBSCR.
        PROCEDURE DIVISION.
@@ -316,90 +316,94 @@
        CALL "SD_Init" USING
             "02C-MID" " " "4" "0" "28" "01C-MID" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "03C-MID" "N" "4" "18" "4" " " "02C-MID" RETURNING RESU.
+            "0102C-MID" "N" "4" "18" "4" " " "02C-MID" RETURNING RESU.
        CALL "SD_Init" USING
-            "04C-MID" "X" "4" "22" "1" "03C-MID" " " RETURNING RESU.
+            "0202C-MID" "X" "4" "22" "1" "0102C-MID" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "05C-MID" "9" "4" "23" "2" "04C-MID" " " RETURNING RESU.
+            "0302C-MID" "9" "4" "23" "2" "0202C-MID" " " RETURNING RESU.
        CALL "SD_From" USING
-            "05C-MID" BY REFERENCE W-SNEN "2" "0" RETURNING RESU.
+            "0302C-MID" BY REFERENCE W-SNEN "2" "0" RETURNING RESU.
        CALL "SD_Init" USING
-            "06C-MID" "N" "4" "25" "2" "05C-MID" " " RETURNING RESU.
+            "0402C-MID" "N" "4" "25" "2" "0302C-MID" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "07C-MID" "Z9" "4" "27" "2" "06C-MID" " " RETURNING RESU.
+            "0502C-MID" "Z9" "4" "27" "2" "0402C-MID" " "
+            RETURNING RESU.
        CALL "SD_From" USING
-            "07C-MID" BY REFERENCE W-SGET "2" "0" RETURNING RESU.
+            "0502C-MID" BY REFERENCE W-SGET "2" "0" RETURNING RESU.
        CALL "SD_Init" USING
-            "08C-MID" "N" "4" "29" "2" "07C-MID" " " RETURNING RESU.
+            "0602C-MID" "N" "4" "29" "2" "0502C-MID" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "09C-MID" "N" "4" "32" "2" "08C-MID" " " RETURNING RESU.
+            "0702C-MID" "N" "4" "32" "2" "0602C-MID" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "10C-MID" "X" "4" "35" "1" "09C-MID" " " RETURNING RESU.
+            "0802C-MID" "X" "4" "35" "1" "0702C-MID" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "11C-MID" "9" "4" "36" "2" "10C-MID" " " RETURNING RESU.
+            "0902C-MID" "9" "4" "36" "2" "0802C-MID" " " RETURNING RESU.
        CALL "SD_From" USING
-            "11C-MID" BY REFERENCE W-ENEN "2" "0" RETURNING RESU.
+            "0902C-MID" BY REFERENCE W-ENEN "2" "0" RETURNING RESU.
        CALL "SD_Init" USING
-            "12C-MID" "N" "4" "38" "2" "11C-MID" " " RETURNING RESU.
+            "1002C-MID" "N" "4" "38" "2" "0902C-MID" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "13C-MID" "Z9" "4" "40" "2" "12C-MID" " " RETURNING RESU.
+            "1102C-MID" "Z9" "4" "40" "2" "1002C-MID" " "
+            RETURNING RESU.
        CALL "SD_From" USING
-            "13C-MID" BY REFERENCE W-EGET "2" "0" RETURNING RESU.
+            "1102C-MID" BY REFERENCE W-EGET "2" "0" RETURNING RESU.
        CALL "SD_Init" USING
-            "14C-MID" "N" "4" "42" "2" "13C-MID" " " RETURNING RESU.
+            "1202C-MID" "N" "4" "42" "2" "1102C-MID" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "15C-MID" "N" "4" "44" "4" "14C-MID" " " RETURNING RESU.
+            "1302C-MID" "N" "4" "44" "4" "1202C-MID" " " RETURNING RESU.
       *C-HCM.
        CALL "SD_Init" USING
             "C-HCM" " " "0" "0" "83" " " " " RETURNING RESU.
        CALL "SD_Init" USING
             "01C-HCM" " " "6" "0" "19" " " "C-HCM" RETURNING RESU.
        CALL "SD_Init" USING
-            "02C-HCM" "N" "6" "20" "4" " " "01C-HCM" RETURNING RESU.
+            "0101C-HCM" "N" "6" "20" "4" " " "01C-HCM" RETURNING RESU.
        CALL "SD_Init" USING
-            "03C-HCM" "X" "6" "24" "4" "02C-HCM" " " RETURNING RESU.
+            "0201C-HCM" "X" "6" "24" "4" "0101C-HCM" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "04C-HCM" "N" "6" "37" "2" "03C-HCM" " " RETURNING RESU.
+            "0301C-HCM" "N" "6" "37" "2" "0201C-HCM" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "05C-HCM" "N" "6" "50" "4" "04C-HCM" " " RETURNING RESU.
+            "0401C-HCM" "N" "6" "50" "4" "0301C-HCM" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "06C-HCM" "X" "6" "54" "5" "05C-HCM" " " RETURNING RESU.
+            "0501C-HCM" "X" "6" "54" "5" "0401C-HCM" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "07C-HCM" "N" "7" "37" "2" "06C-HCM" " " RETURNING RESU.
+            "02C-HCM" "N" "7" "37" "2" "01C-HCM" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "08C-HCM" "N" "8" "37" "2" "07C-HCM" " " RETURNING RESU.
+            "03C-HCM" "N" "8" "37" "2" "02C-HCM" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "09C-HCM" "N" "9" "37" "2" "08C-HCM" " " RETURNING RESU.
+            "04C-HCM" "N" "9" "37" "2" "03C-HCM" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "10C-HCM" " " "10" "0" "16" "09C-HCM" " " RETURNING RESU.
+            "05C-HCM" " " "10" "0" "16" "04C-HCM" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "11C-HCM" "N" "10" "37" "2" " " "10C-HCM" RETURNING RESU.
+            "0105C-HCM" "N" "10" "37" "2" " " "05C-HCM" RETURNING RESU.
        CALL "SD_Init" USING
-            "12C-HCM" "N" "10" "50" "8" "11C-HCM" " " RETURNING RESU.
+            "0205C-HCM" "N" "10" "50" "8" "0105C-HCM" " "
+            RETURNING RESU.
        CALL "SD_Init" USING
-            "13C-HCM" "X" "10" "58" "6" "12C-HCM" " " RETURNING RESU.
+            "0305C-HCM" "X" "10" "58" "6" "0205C-HCM" " "
+            RETURNING RESU.
        CALL "SD_Init" USING
-            "14C-HCM" "N" "11" "37" "2" "10C-HCM" " " RETURNING RESU.
+            "06C-HCM" "N" "11" "37" "2" "05C-HCM" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "15C-HCM" "N" "12" "37" "2" "14C-HCM" " " RETURNING RESU.
+            "07C-HCM" "N" "12" "37" "2" "06C-HCM" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "16C-HCM" "N" "13" "37" "2" "15C-HCM" " " RETURNING RESU.
+            "08C-HCM" "N" "13" "37" "2" "07C-HCM" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "17C-HCM" "N" "14" "37" "2" "16C-HCM" " " RETURNING RESU.
+            "09C-HCM" "N" "14" "37" "2" "08C-HCM" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "18C-HCM" "N" "15" "37" "2" "17C-HCM" " " RETURNING RESU.
+            "10C-HCM" "N" "15" "37" "2" "09C-HCM" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "19C-HCM" "N" "16" "37" "2" "18C-HCM" " " RETURNING RESU.
+            "11C-HCM" "N" "16" "37" "2" "10C-HCM" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "20C-HCM" "N" "17" "37" "2" "19C-HCM" " " RETURNING RESU.
+            "12C-HCM" "N" "17" "37" "2" "11C-HCM" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "21C-HCM" "N" "18" "37" "2" "20C-HCM" " " RETURNING RESU.
+            "13C-HCM" "N" "18" "37" "2" "12C-HCM" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "22C-HCM" "N" "19" "37" "2" "21C-HCM" " " RETURNING RESU.
+            "14C-HCM" "N" "19" "37" "2" "13C-HCM" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "23C-HCM" "N" "20" "37" "2" "22C-HCM" " " RETURNING RESU.
+            "15C-HCM" "N" "20" "37" "2" "14C-HCM" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "24C-HCM" "X" "23" "37" "22" "23C-HCM" " " RETURNING RESU.
+            "16C-HCM" "X" "23" "22" "22" "15C-HCM" " " RETURNING RESU.
       *C-ACP
        CALL "SD_Init" USING
             "C-ACP" " " "0" "0" "13" " " " " RETURNING RESU.
@@ -409,50 +413,50 @@
             "A-HCDF" "9" "W-L" "30" "6" " " "01C-ACP" RETURNING RESU.
        CALL "SD_Using" USING
             "A-HCDF" BY REFERENCE W-HCDF(1) "6" "1" BY REFERENCE CNT 12
-             RETURNING RESU.
+            RETURNING RESU.
        CALL "SD_Init" USING
             "A-HCDT" "9" "W-L" "40" "6" "A-HCDF" " " RETURNING RESU.
        CALL "SD_Using" USING
             "A-HCDT" BY REFERENCE W-HCDT(1) "6" "1" BY REFERENCE CNT 12
-             RETURNING RESU.
+            RETURNING RESU.
        CALL "SD_Init" USING
             "A-DMM" "9" "23" "39" "1" "01C-ACP" " " RETURNING RESU.
        CALL "SD_Using" USING
             "A-DMM" BY REFERENCE W-DMM "1" "0" RETURNING RESU.
       *C-DSP
-       CALL "SD_Init" USING
+       CALL "SD_Init" USING 
             "C-DSP" " " "0" "0" "42" " " " " RETURNING RESU.
-       CALL "SD_Init" USING
-            "01C-DSP" " " "W-L" "0" "12" " " "C-DSP" RETURNING RESU.
-       CALL "SD_Init" USING
-            "S-HCDF" "X" "W-L" "30" "6" " " "01C-DSP" RETURNING RESU.
-       CALL "SD_Init" USING
-            "S-HCDT" "X" "W-L" "40" "6" "S-HCDF" " " RETURNING RESU.
-       CALL "SD_Init" USING
-            "02C-DSP" " " "1" "0" "30" "01C-DSP" " " RETURNING RESU.
-       CALL "SD_Init" USING
-            "C-MIDK" "N" "1" "62" "10" " " "02C-DSP" RETURNING RESU.
-       CALL "SD_Init" USING
-            "C-MIDW" "N" "1" "62" "10" "C-MIDK" " " RETURNING RESU.
-       CALL "SD_Init" USING
-            "C-MIDH" "N" "1" "62" "10" "C-MIDW" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "FILLER" " " "0" "0" "12" " " "C-DSP" RETURNING RESU.
+       CALL "SD_Init" USING 
+            "S-HCDF" "X" "0" "0" "6" " " "FILLER" RETURNING RESU.
+       CALL "SD_Init" USING 
+            "S-HCDT" "X" "0" "0" "6" "S-HCDF" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "FILLER" " " "0" "0" "30" "FILLER" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "C-MIDK" "N" "0" "0" "10" " " "FILLER" RETURNING RESU.
+       CALL "SD_Init" USING 
+            "C-MIDW" "N" "0" "0" "10" "C-MIDK" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "C-MIDH" "N" "0" "0" "10" "C-MIDW" " " RETURNING RESU.
       *C-ERR
-       CALL "SD_Init" USING
+       CALL "SD_Init" USING 
             "C-ERR" " " "0" "0" "97" " " " " RETURNING RESU.
-       CALL "SD_Init" USING
+       CALL "SD_Init" USING 
             "01C-ERR" " " "24" "0" "97" " " "C-ERR" RETURNING RESU.
-       CALL "SD_Init" USING
-            "E-STAT" "X" "24" "10" "2" " " "01C-ERR" RETURNING RESU.
-       CALL "SD_Init" USING
-            "E-ME1" "X" "24" "15" "17" "E-STAT" " " RETURNING RESU.
-       CALL "SD_Init" USING
-            "E-ME2" "X" "24" "15" "18" "E-ME1" " " RETURNING RESU.
-       CALL "SD_Init" USING
-            "E-ME98" "X" "24" "75" "5" "E-ME2" " " RETURNING RESU.
-       CALL "SD_Init" USING
-            "E-ME99" "X" "24" "75" "5" "E-ME98" " " RETURNING RESU.
-       CALL "SD_Init" USING
-            "E-CL" "X" "24" "10" "50" "E-ME99" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-STAT" "X." "24" "0" "2" " " "01C-ERR" RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-ME1" "X" "24" "0" "17" "E-STAT" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-ME2" "X" "24" "0" "18" "E-ME1" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-ME98" "X" "24" "0" "5" "E-ME2" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-ME99" "X" "24" "0" "5" "E-ME98" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-CL" "X" "24" "0" "50" "E-ME99" " " RETURNING RESU.
       *
            COPY LIBSCR_P.
       *
@@ -503,7 +507,7 @@
                                               RETURNING RESU
                GO TO M-45
            END-IF.
-           CALL "SD_Output" USING "C-HCM" C-HCM "p" 
+           CALL "SD_Output" USING "C-HCM" C-HCM "p"
                                               RETURNING RESU.
        M-10.
            MOVE ZERO TO CNT W-C.

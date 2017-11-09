@@ -67,6 +67,8 @@ var menuShortcut = function () {
 					document.location = targElements[i].getAttribute('href');
 				}
 			}
+			//ドキュメントが残っているなら,入力値を消す
+			inputElements[0].value = '';
 			return false;
 		}
 	}

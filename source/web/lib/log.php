@@ -72,20 +72,22 @@ Class Log {
 	}
 
   /*    Info   */
-	public function info($msg) {
+	public function info($msg,$encodeFlg=1) {
 		//エンコードの変更
-		$msg = $this->set_utf8_encording($msg);
+		if($encodeFlg==1){
+			$msg = $this->set_utf8_encording($msg);
+		}
 		//改行コードの変更
 		$msg = $this->rem_line_break($msg);
 		$msg = $this->rem_quote($msg);
 // 		shell_exec('logger -i"log stat '.LOGSETFILE.__FILE__.__LINE__.' "');
 	    if(defined('LOGSETFILE') && LOGSETFILE == true){
-	    	$this->sysinfo($msg);
+	    	$this->sysinfo($msg,$encodeFlg);
 	    }else{
 			$date = date('Y/m/d H:i:s');
 			$log = "Date:".$date . " |INFO    |" .$msg." \n";
 		    error_log($log, 3, $this->infoPath);
-	    	$this->sysinfo($msg);
+	    	$this->sysinfo($msg,$encodeFlg);
 		}
 	}
     /*   Error   */
@@ -154,10 +156,12 @@ Class Log {
 	  /*  syslog Info
 		syslog関数で出力用に作成 20130206
   */
-	public function sysinfo($msg) {
+	public function sysinfo($msg,$encodeFlg=1) {
 	    $date = date('Y/m/d H:i:s');
 		//エンコードの変更
-		$msg = $this->set_utf8_encording($msg);
+		if($encodeFlg==1){
+			$msg = $this->set_utf8_encording($msg);
+		}
 		//改行コードの変更
 		$msg = $this->rem_line_break($msg);
 		$msg = $this->rem_quote($msg);

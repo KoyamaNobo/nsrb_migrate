@@ -18,7 +18,7 @@ echo '                                                                    '
 echo '                                                                    '
 echo '                       実行する     : 　　CTRL + F5 を押下          '
 echo '                     　実行しない　 : 　　CTRL + F9 を押下          '
-if (`echo "$<" | grep F9 | wc -l ` == 1) exit
+f5orf9 ; if ($status == 1) exit 1;
 B:
 echo ' ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊       '
 echo ' ＊＊＊        　手　形　　データ　セーブ          ＊＊＊       '
@@ -223,7 +223,7 @@ echo ' ＊＊＊　　　　　　　　　　　　　　　　　　　　　　＊＊＊       '
 echo ' ＊＊＊         ＜　業務放棄して下さい　＞         ＊＊＊       '
 echo ' ＊＊＊　　　　　　　　　　　　　　　　　　　　　　＊＊＊       '
 echo ' ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊       '
-if (`echo "$<" | grep F9 | wc -l ` == 1) exit
+f5orf9 ; if ($status == 1) exit 1;
 set ABORT=0;
 if($ABORT == 1) then
   goto ENDJOB

@@ -231,8 +231,8 @@
                VALUE   "                      " .
            02  DSP-02    PIC  N(10)
                        VALUE   "倉別品名別在庫明細表".
-           02  DSP-07    PIC  X(45)
-               VALUE "全件=0 , サニクリーン=1 , ヒメプラ他=2  ...  ".
+           02  DSP-07    PIC  X(44) VALUE
+                "全件=0 , ｻﾆｸﾘｰﾝ=1 , ﾊｲﾊﾟｰ=2 , ﾋﾒﾌﾟﾗ=3  ...  ".
            02  DSP-09    PIC  N(03)
                        VALUE   "確認（".
            02  DSP-10    PIC  X(11)
@@ -251,7 +251,7 @@
        CALL "DB_Open".
       *DSP-AREA
        CALL "SD_Init" USING 
-            "DSP-AREA" " " "0" "0" "124" " " " "  RETURNING RESU.
+            "DSP-AREA" " " "0" "0" "123" " " " "  RETURNING RESU.
        CALL "SD_Init" USING 
             "DSP-CLR" "X" "1" "0" "12" " " "DSP-AREA"  RETURNING RESU.
        CALL "SD_Init" USING 
@@ -259,7 +259,7 @@
        CALL "SD_Init" USING 
             "DSP-02" "N" "1" "24" "20" "DSP-01" " "  RETURNING RESU.
        CALL "SD_Init" USING 
-            "DSP-07" "X" "7" "12" "45" "DSP-02" " "  RETURNING RESU.
+            "DSP-07" "X" "7" "13" "44" "DSP-02" " "  RETURNING RESU.
        CALL "SD_Init" USING 
             "DSP-09" "N" "23" "41" "6" "DSP-07" " "  RETURNING RESU.
        CALL "SD_Init" USING 
@@ -321,7 +321,7 @@
                    GO TO  MR020
                END-IF
            END-IF
-           IF  W-SEN  NOT =   2
+           IF  W-SEN  NOT =   2 AND 3
                GO TO  MR021
            END-IF
            MOVE    W-HCD         TO    HI-MHCD HI-HCD.
@@ -368,6 +368,21 @@
                   OR  (W-HCD1    >=   1743  AND  <=  1744)
                   OR  (W-HCD1    >=   1846  AND  <=  1846)
                   OR  (W-HCD1    >=   9652  AND  <=  9653)
+                  OR  (W-HCD1    >=   9656  AND  <=  9656)
+                   GO TO  MR025
+               ELSE
+                   GO TO  MR020
+               END-IF
+           END-IF
+           IF  W-SEN      =   3
+               IF     (W-HCD1    >=   1461  AND  <=  1462)
+                  OR  (W-HCD1    >=   1464  AND  <=  1465)
+                  OR  (W-HCD1    >=   1483  AND  <=  1483)
+                  OR  (W-HCD1    >=   1487  AND  <=  1487)
+                  OR  (W-HCD1    >=   1498  AND  <=  1498)
+                  OR  (W-HCD1    >=   1738  AND  <=  1738)
+                  OR  (W-HCD1    >=   1744  AND  <=  1744)
+                  OR  (W-HCD1    >=   9653  AND  <=  9653)
                   OR  (W-HCD1    >=   9656  AND  <=  9656)
                    GO TO  MR025
                ELSE
@@ -435,7 +450,7 @@
                    GO TO  PRN-030
                END-IF
            END-IF
-           IF  W-SEN  NOT =   2
+           IF  W-SEN  NOT =   2 AND 3
                GO TO  PRN-031
            END-IF
            MOVE    W-HCD         TO    HI-MHCD HI-HCD.
@@ -482,6 +497,21 @@
                   OR  (W-HCD1    >=   1743  AND  <=  1744)
                   OR  (W-HCD1    >=   1846  AND  <=  1846)
                   OR  (W-HCD1    >=   9652  AND  <=  9653)
+                  OR  (W-HCD1    >=   9656  AND  <=  9656)
+                   GO TO  PRN-035
+               ELSE
+                   GO TO  PRN-030
+               END-IF
+           END-IF
+           IF  W-SEN      =   3
+               IF     (W-HCD1    >=   1461  AND  <=  1462)
+                  OR  (W-HCD1    >=   1464  AND  <=  1465)
+                  OR  (W-HCD1    >=   1483  AND  <=  1483)
+                  OR  (W-HCD1    >=   1487  AND  <=  1487)
+                  OR  (W-HCD1    >=   1498  AND  <=  1498)
+                  OR  (W-HCD1    >=   1738  AND  <=  1738)
+                  OR  (W-HCD1    >=   1744  AND  <=  1744)
+                  OR  (W-HCD1    >=   9653  AND  <=  9653)
                   OR  (W-HCD1    >=   9656  AND  <=  9656)
                    GO TO  PRN-035
                ELSE
@@ -677,7 +707,7 @@
            IF  ESTAT    NOT = "01" AND "06"
                GO TO    G-005
            END-IF
-           IF  W-KBN        >  2
+           IF  W-SEN        >  3
                GO TO    G-005
            END-IF
            CALL "SD_Output" USING

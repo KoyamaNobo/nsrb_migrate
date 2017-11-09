@@ -984,13 +984,6 @@
            IF  JHSS-17       =  0
                GO  TO  READ1-040
            END-IF
-           IF  JS-SIGN       =  0
-               IF  JHSS-061      =  2150  OR  2157  OR  2158  OR  2160
-                                OR  2170  OR  2180  OR  5349  OR  5350
-                                OR  5353  OR  5357  OR  5358
-                   GO  TO  READ1-040
-               END-IF
-           END-IF
            IF  JS-SIGN       =  1
                IF  JHSS-061  NOT =  9850
                    GO  TO  READ1-040

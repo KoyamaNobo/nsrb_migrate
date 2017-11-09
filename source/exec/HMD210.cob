@@ -4,7 +4,7 @@
       *    PROGRAM         :  履物売上・値引入力              *
       *    SCREEN          :  SCHD01,SCHD11                   *
       *    COMPILE TYPE    :  COBOL                           *
-      *    JS-SIGN         :  当月=0 , 翌月=1                 *
+      *    JS-SIGN         :  当月=0 , 選択=1                 *
       *********************************************************
        ENVIRONMENT DIVISION.
        CONFIGURATION SECTION.
@@ -14,6 +14,7 @@
        WORKING-STORAGE SECTION.
        77  JS-SIGN            PIC  9(001).
        77  W-FILE             PIC  X(013).
+       77  W-SEN              PIC  9(001) VALUE 0.
        77  W-END              PIC  9(001) VALUE 0.
        77  CHK                PIC  9(001) VALUE 0.
        77  W-INV              PIC  9(001) VALUE 0.
@@ -82,7 +83,6 @@
            02  W-SC           PIC  9(002).
            02  W-DMM          PIC  9(001).
            02  W-DNOD         PIC  9(006).
-           02  W-DNOO         PIC  9(006).
            02  W-NGP          PIC  9(008).
            02  W-NGPD  REDEFINES W-NGP.
              03  W-NGD.
@@ -179,6 +179,26 @@
            02  S-DHC          PIC  9(001).
            02  S-SNC          PIC  9(001).
        77  F                  PIC  X(001).
+      *FD  BBS-TRAN
+       01  BBS-TRAN_HMD210.
+           02  BBS-TRAN_PNAME1  PIC  X(008) VALUE "BB-STRAN".
+           02  F                PIC  X(001).
+           02  BBS-TRAN_LNAME   PIC  X(015) VALUE "BBS-TRAN_HMD210".
+           02  F                PIC  X(001).
+           02  BBS-TRAN_KEY1    PIC  X(100) VALUE SPACE.
+           02  BBS-TRAN_SORT    PIC  X(100) VALUE SPACE.
+           02  BBS-TRAN_IDLST   PIC  X(100) VALUE SPACE.
+           02  BBS-TRAN_RES     USAGE  POINTER.
+       01  BBS-R.
+           02  BBS-DNO        PIC  9(006).
+           02  BBS-GNO        PIC  9(001).
+           02  BBS-CNG        PIC  9(006).
+           02  F              PIC  9(002).
+           02  BBS-TCD        PIC  9(004).
+           02  F              PIC  X(107).
+           02  BBS-DHC        PIC  9(001).
+           02  BBS-SNC        PIC  9(001).
+       77  F                  PIC  X(001).
       *
        77  ESTAT              PIC  X(002).
        77  RESU               PIC  9(001).
@@ -205,7 +225,11 @@
                 "＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
            02  FILLER  PIC  X(022) VALUE
                 "売上=0 , 値引=1   ﾘﾀｰﾝ".
+       01  C-MID1.
+           02  FILLER  PIC  X(026) VALUE
+                "当月分=0 , 翌月分=1   ﾘﾀｰﾝ".
        01  C-ACP.
+           02  A-SEN   PIC  9(001).
            02  A-UNC   PIC  9(001).
       *
            02  FILLER.
@@ -439,6 +463,8 @@
                   "***  マスター　単価エラー  ***".
              03  E-ME30  PIC  X(030) VALUE
                   "***  データが入っていない  ***".
+             03  E-ME31  PIC  X(029) VALUE
+                  "***  BB-STRAN 年月エラー  ***".
              03  E-ME90  PIC  X(021) VALUE
                   "---   キャンセル  ---".
              03  MG-03   PIC  X(024) VALUE
@@ -476,17 +502,26 @@
             "07C-MID" "N" "9" "15" "44" "06C-MID" " " RETURNING RESU.
        CALL "SD_Init" USING 
             "08C-MID" "X" "15" "26" "22" "07C-MID" " " RETURNING RESU.
+      *C-MID1
+       CALL "SD_Init" USING 
+            "C-MID1" " " "0" "0" "26" " " " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "01C-MID1" "X" "12" "24" "26" " " "C-MID1" RETURNING RESU.
       *C-ACP
        CALL "SD_Init" USING 
-            "C-ACP" " " "0" "0" "219" " " " " RETURNING RESU.
+            "C-ACP" " " "0" "0" "220" " " " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "A-UNC" "9" "15" "43" "1" " " "C-ACP" RETURNING RESU.
+            "A-SEN" "9" "12" "45" "1" " " "C-ACP" RETURNING RESU.
+       CALL "SD_Using" USING 
+            "A-SEN" BY REFERENCE W-SEN "1" "0" RETURNING RESU.
+       CALL "SD_Init" USING 
+            "A-UNC" "9" "15" "43" "1" "A-SEN" " " RETURNING RESU.
        CALL "SD_Using" USING 
             "A-UNC" BY REFERENCE W-UNCD "1" "0" RETURNING RESU.
        CALL "SD_Init" USING 
-            "02C-ACP" " " "1" "0" "13" "A-UNC" " " RETURNING RESU.
+            "03C-ACP" " " "1" "0" "13" "A-UNC" " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "AU-NGP" "9" "1" "16" "6" " " "02C-ACP" RETURNING RESU.
+            "AU-NGP" "9" "1" "16" "6" " " "03C-ACP" RETURNING RESU.
        CALL "SD_Using" USING 
             "AU-NGP" BY REFERENCE W-NGPS "6" "0" RETURNING RESU.
        CALL "SD_Init" USING 
@@ -498,15 +533,15 @@
        CALL "SD_Using" USING 
             "AU-SOK" BY REFERENCE W-SCD "1" "0" RETURNING RESU.
        CALL "SD_Init" USING 
-            "03C-ACP" " " "2" "0" "4" "02C-ACP" " " RETURNING RESU.
+            "04C-ACP" " " "2" "0" "4" "03C-ACP" " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "AU-TCD" "9" "2" "6" "4" " " "03C-ACP" RETURNING RESU.
+            "AU-TCD" "9" "2" "6" "4" " " "04C-ACP" RETURNING RESU.
        CALL "SD_Using" USING 
             "AU-TCD" BY REFERENCE W-TCDD "4" "0" RETURNING RESU.
        CALL "SD_Init" USING 
-            "04C-ACP" " " "3" "0" "4" "03C-ACP" " " RETURNING RESU.
+            "05C-ACP" " " "3" "0" "4" "04C-ACP" " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "AU-CCD" "9" "3" "6" "3" " " "04C-ACP" RETURNING RESU.
+            "AU-CCD" "9" "3" "6" "3" " " "05C-ACP" RETURNING RESU.
        CALL "SD_Using" USING 
             "AU-CCD" BY REFERENCE W-CCDD "3" "0" RETURNING RESU.
        CALL "SD_Init" USING 
@@ -514,9 +549,9 @@
        CALL "SD_Using" USING 
             "AU-CSC" BY REFERENCE W-CSCD "1" "0" RETURNING RESU.
        CALL "SD_Init" USING 
-            "05C-ACP" " " "W-L1" "0" "17" "04C-ACP" " " RETURNING RESU.
+            "06C-ACP" " " "W-L1" "0" "17" "05C-ACP" " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "AU-DC" "9" "W-L1" "4" "1" " " "05C-ACP" RETURNING RESU.
+            "AU-DC" "9" "W-L1" "4" "1" " " "06C-ACP" RETURNING RESU.
        CALL "SD_Using" USING 
             "AU-DC" BY REFERENCE W-DC "1" "0" RETURNING RESU.
        CALL "SD_Init" USING 
@@ -528,9 +563,9 @@
        CALL "SD_Using" USING 
             "AU-BIK" BY REFERENCE W-BIK "10" "0" RETURNING RESU.
        CALL "SD_Init" USING 
-            "06C-ACP" " " "W-L3" "0" "25" "05C-ACP" " " RETURNING RESU.
+            "07C-ACP" " " "W-L3" "0" "25" "06C-ACP" " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "AU-SIZ" "9" "W-L3" "1" "1" " " "06C-ACP" RETURNING RESU.
+            "AU-SIZ" "9" "W-L3" "1" "1" " " "07C-ACP" RETURNING RESU.
        CALL "SD_Using" USING 
             "AU-SIZ" BY REFERENCE W-SIZ "1" "0" RETURNING RESU.
        CALL "SD_Init" USING 
@@ -556,13 +591,13 @@
        CALL "SD_Using" USING 
             "AU-KIN" BY REFERENCE W-KIN "8" "0" RETURNING RESU.
        CALL "SD_Init" USING 
-            "AU-BI" "N" "22" "6" "48" "06C-ACP" " " RETURNING RESU.
+            "AU-BI" "N" "22" "6" "48" "07C-ACP" " " RETURNING RESU.
        CALL "SD_Using" USING 
             "AU-BI" BY REFERENCE W-BI "48" "0" RETURNING RESU.
        CALL "SD_Init" USING 
-            "08C-ACP" " " "23" "0" "14" "AU-BI" " " RETURNING RESU.
+            "09C-ACP" " " "23" "0" "14" "AU-BI" " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "AU-KOSU" "9" "23" "6" "3" " " "08C-ACP" RETURNING RESU.
+            "AU-KOSU" "9" "23" "6" "3" " " "09C-ACP" RETURNING RESU.
        CALL "SD_Using" USING 
             "AU-KOSU" BY REFERENCE W-KOSUR "3" "0" RETURNING RESU.
        CALL "SD_Init" USING 
@@ -582,7 +617,7 @@
        CALL "SD_Using" USING 
             "AU-DMM" BY REFERENCE W-DMM "1" "0" RETURNING RESU.
        CALL "SD_Init" USING 
-            "AN-NGP" "9" "4" "8" "6" "08C-ACP" " " RETURNING RESU.
+            "AN-NGP" "9" "4" "8" "6" "09C-ACP" " " RETURNING RESU.
        CALL "SD_Using" USING 
             "AN-NGP" BY REFERENCE W-NGPS "6" "0" RETURNING RESU.
        CALL "SD_Init" USING 
@@ -594,9 +629,9 @@
        CALL "SD_Using" USING 
             "AN-CSC" BY REFERENCE W-CSCD "1" "0" RETURNING RESU.
        CALL "SD_Init" USING 
-            "12C-ACP" " " "W-L1" "0" "23" "AN-CSC" " " RETURNING RESU.
+            "13C-ACP" " " "W-L1" "0" "23" "AN-CSC" " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "AN-HCD" "9" "W-L1" "1" "6" " " "12C-ACP" RETURNING RESU.
+            "AN-HCD" "9" "W-L1" "1" "6" " " "13C-ACP" RETURNING RESU.
        CALL "SD_Using" USING 
             "AN-HCD" BY REFERENCE W-HCD "6" "0" RETURNING RESU.
        CALL "SD_Init" USING 
@@ -612,7 +647,7 @@
        CALL "SD_Using" USING 
             "AN-KIN" BY REFERENCE W-KIN "8" "0" RETURNING RESU.
        CALL "SD_Init" USING 
-            "AN-BI" "N" "15" "8" "48" "12C-ACP" " " RETURNING RESU.
+            "AN-BI" "N" "15" "8" "48" "13C-ACP" " " RETURNING RESU.
        CALL "SD_Using" USING 
             "AN-BI" BY REFERENCE W-BI "48" "0" RETURNING RESU.
        CALL "SD_Init" USING 
@@ -922,9 +957,9 @@
             "05SN-DS" "X" "W-L1" "71" "9" "04SN-DS" " " RETURNING RESU.
       *C-ERR
        CALL "SD_Init" USING 
-            "C-ERR" " " "0" "0" "684" " " " " RETURNING RESU.
+            "C-ERR" " " "0" "0" "713" " " " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "01C-ERR" " " "24" "0" "684" " " "C-ERR" RETURNING RESU.
+            "01C-ERR" " " "24" "0" "713" " " "C-ERR" RETURNING RESU.
        CALL "SD_Init" USING 
             "E-ME1" "X" "24" "15" "15" " " "01C-ERR" RETURNING RESU.
        CALL "SD_Init" USING 
@@ -997,7 +1032,9 @@
        CALL "SD_Init" USING 
             "E-ME30" "X" "24" "15" "30" "E-ME29" " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "E-ME90" "X" "24" "15" "21" "E-ME30" " " RETURNING RESU.
+            "E-ME31" "X" "24" "15" "29" "E-ME30" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-ME90" "X" "24" "15" "21" "E-ME31" " " RETURNING RESU.
        CALL "SD_Init" USING 
             "MG-03" "X" "24" "15" "24" "E-ME90" " " RETURNING RESU.
        CALL "SD_Init" USING 
@@ -1025,12 +1062,26 @@
                CALL "DB_Close"
                STOP RUN
            END-IF
+           CALL "SD_Output" USING "C-CLEAR" C-CLEAR "p" RETURNING RESU.
+           CALL "SD_Output" USING "C-MID" C-MID "p" RETURNING RESU.
            IF  JS-SIGN = 1
                PERFORM NGC-RTN THRU NGC-EX
+           END-IF
+           IF  W-END NOT = 0
+               CALL "C3_Set_Jrcode" USING 
+                USER_ID BY REFERENCE COMPLETION_CODE 255
+               CALL "SD_Output" USING
+                "C-CLEAR" C-CLEAR "p" RETURNING RESU
+               CALL "DB_Close"
+               STOP RUN
            END-IF
       *
            CALL "SD_Output" USING "C-CLEAR" C-CLEAR "p" RETURNING RESU.
            CALL "SD_Output" USING "C-MID" C-MID "p" RETURNING RESU.
+           IF  JS-SIGN = 1
+               CALL "SD_Output" USING "C-MID1" C-MID1 "p" RETURNING RESU
+               CALL "SD_Output" USING "A-SEN" A-SEN "p" RETURNING RESU
+           END-IF
            CALL "DB_F_Open" USING
             "INPUT" T-M_PNAME1 "SHARED" BY REFERENCE T-M_IDLST "2"
             "T-KEY" BY REFERENCE T-KEY "T-KEY2" BY REFERENCE T-KEY2.
@@ -1110,31 +1161,6 @@
            CALL "DB_F_Close" USING
             BY REFERENCE S-TRAN_IDLST S-TRAN_PNAME1.
            CALL "DB_F_Open" USING
-            "INPUT" HKBM_PNAME1 "SHARED" BY REFERENCE HKBM_IDLST "1"
-            "HKB-KEY" BY REFERENCE HKB-KEY.
-           MOVE SPACE TO HKB-KEY.
-           MOVE "05" TO HKB-NO.
-      *           READ HKBM WITH UNLOCK INVALID KEY
-      *///////////////
-           CALL "DB_Read" USING
-            "INVALID KEY" HKBM_PNAME1 BY REFERENCE HKB-R "UNLOCK"
-            RETURNING RET.
-           IF  RET = 1
-               CALL "DB_F_Close" USING
-                BY REFERENCE HKBM_IDLST HKBM_PNAME1
-               CALL "SD_Output" USING
-                "E-ME78" E-ME78 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME23" E-ME23 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME99" E-ME99 "p" RETURNING RESU
-               CALL "C3_Set_Jrcode" USING 
-                USER_ID BY REFERENCE COMPLETION_CODE 255
-               GO TO M-95
-           END-IF
-           MOVE HKB-UNN TO W-DNOD W-DNOO.
-           CALL "DB_F_Close" USING BY REFERENCE HKBM_IDLST HKBM_PNAME1.
-           CALL "DB_F_Open" USING
             "OUTPUT" S-TRAN_PNAME1 " " BY REFERENCE S-TRAN_IDLST "0".
        M-25.
            CALL "SD_Accept" USING BY REFERENCE A-UNC "A-UNC" "9" "1"
@@ -1160,7 +1186,15 @@
                CALL "SD_Output" USING
                 "C-CLEAR" C-CLEAR "p" RETURNING RESU
                CALL "SD_Output" USING "C-MID" C-MID "p" RETURNING RESU
-               GO TO M-25
+               IF  JS-SIGN = 1
+                   CALL "SD_Output" USING
+                    "C-MID1" C-MID1 "p" RETURNING RESU
+                   CALL "SD_Output" USING
+                    "A-SEN" A-SEN "p" RETURNING RESU
+                   GO TO M-25
+               ELSE
+                   GO TO M-25
+               END-IF
            END-IF
            IF  W-END NOT = 0
                GO TO M-95
@@ -1172,7 +1206,15 @@
                CALL "SD_Output" USING
                 "C-CLEAR" C-CLEAR "p" RETURNING RESU
                CALL "SD_Output" USING "C-MID" C-MID "p" RETURNING RESU
-               GO TO M-25
+               IF  JS-SIGN = 1
+                   CALL "SD_Output" USING
+                    "C-MID1" C-MID1 "p" RETURNING RESU
+                   CALL "SD_Output" USING
+                    "A-SEN" A-SEN "p" RETURNING RESU
+                   GO TO M-25
+               ELSE
+                   GO TO M-25
+               END-IF
            END-IF
            IF  W-END NOT = 0
                GO TO M-95
@@ -1206,11 +1248,52 @@
            CALL "DB_Close".
            STOP RUN.
        NGC-RTN.
+           CALL "SD_Output" USING "C-MID1" C-MID1 "p" RETURNING RESU.
+       NGC-020.
+           CALL "SD_Accept" USING BY REFERENCE A-SEN "A-SEN" "9" "1"
+            BY REFERENCE ESTAT RETURNING RESU.
+           IF  ESTAT = C2 OR PF9
+               MOVE 1 TO W-END
+               GO TO NGC-EX
+           END-IF
+           IF  ESTAT NOT = HTB AND SKP
+               GO TO NGC-020
+           END-IF
+           IF  W-SEN = 0
+               GO TO NGC-040
+           END-IF
+           IF  W-SEN NOT = 1
+               GO TO NGC-020
+           END-IF
            ADD 1 TO W-CG.
            IF  W-CG = 13
                MOVE 1 TO W-CG
                ADD 1 TO W-CN
            END-IF.
+       NGC-040.
+           CALL "DB_F_Open" USING
+            "INPUT" BBS-TRAN_PNAME1 " " BY REFERENCE BBS-TRAN_IDLST "0".
+      *           READ BBS-TRAN AT END
+      *///////////////
+           CALL "DB_Read" USING
+            "AT END" BBS-TRAN_PNAME1 BY REFERENCE BBS-R " "
+            RETURNING RET.
+           IF  RET = 1
+               GO TO NGC-060
+           END-IF
+           IF  BBS-CNG NOT = W-CNG
+               CALL "DB_F_Close" USING
+                BY REFERENCE BBS-TRAN_IDLST BBS-TRAN_PNAME1
+               CALL "SD_Output" USING
+                "E-ME31" E-ME31 "p" RETURNING RESU
+               CALL "SD_Output" USING
+                "E-ME99" E-ME99 "p" RETURNING RESU
+               MOVE 1 TO W-END
+               GO TO NGC-EX
+           END-IF.
+       NGC-060.
+           CALL "DB_F_Close" USING
+            BY REFERENCE BBS-TRAN_IDLST BBS-TRAN_PNAME1.
        NGC-EX.
            EXIT.
       *----------  出荷　入力  -----------------------------------------
@@ -1514,7 +1597,8 @@
            MOVE ZERO TO W-RC W-DCD W-ZC.
            MOVE 8 TO W-HSCD.
            IF (W-HMN = ZERO) OR (W-HNC NOT = 0)
-               INITIALIZE W-ASR W-BR
+               INITIALIZE W-BR
+               MOVE ZERO TO W-ASR
                MOVE ALL "　" TO W-BI
            END-IF.
        UAC-340.
@@ -2867,7 +2951,8 @@
            EXIT.
       *-----------------------------------------------------------------
        HMN-RTN.
-           INITIALIZE W-ASR W-BR.
+           INITIALIZE W-BR.
+           MOVE ZERO TO W-ASR.
            MOVE SPACE TO W-BI.
            MOVE ZERO TO W-DCD.
            MOVE HSMS-061 TO W-TCDD.
@@ -3344,7 +3429,56 @@
            EXIT.
       *-----------------------------------------------------------------
        UPD-RTN.
+           CALL "DB_F_Open" USING
+            "I-O" HKBM_PNAME1 "SHARED" BY REFERENCE HKBM_IDLST "1"
+            "HKB-KEY" BY REFERENCE HKB-KEY.
+           MOVE SPACE TO HKB-KEY.
+           MOVE "05" TO HKB-NO.
+      *           READ HKBM INVALID KEY
+      *///////////////
+           CALL "DB_Read" USING
+            "INVALID KEY" HKBM_PNAME1 BY REFERENCE HKB-R "UNLOCK"
+            RETURNING RET.
+           IF  RET = 1
+               CALL "DB_F_Close" USING
+                BY REFERENCE HKBM_IDLST HKBM_PNAME1
+               MOVE 1 TO W-END
+               CALL "SD_Output" USING
+                "E-ME78" E-ME78 "p" RETURNING RESU
+               CALL "SD_Output" USING
+                "E-ME23" E-ME23 "p" RETURNING RESU
+               CALL "SD_Output" USING
+                "E-ME99" E-ME99 "p" RETURNING RESU
+               CALL "C3_Set_Jrcode" USING 
+                USER_ID BY REFERENCE COMPLETION_CODE 255
+               GO TO UPD-EX
+           END-IF
+           MOVE HKB-UNN TO W-DNOD.
            ADD 1 TO W-DNOD.
+           IF  W-DNOD = ZERO
+               MOVE 1 TO W-DNOD
+           END-IF
+           MOVE W-DNOD TO HKB-UNN.
+      *           REWRITE HKB-R INVALID KEY
+      *///////////////
+           CALL "DB_Update" USING
+            HKBM_PNAME1 HKBM_LNAME HKB-R RETURNING RET
+           IF  RET = 1
+               CALL "DB_F_Close" USING
+                BY REFERENCE HKBM_IDLST HKBM_PNAME1
+               MOVE 1 TO W-END
+               CALL "SD_Output" USING
+                "E-ME78" E-ME78 "p" RETURNING RESU
+               CALL "SD_Output" USING
+                "E-ME24" E-ME24 "p" RETURNING RESU
+               CALL "SD_Output" USING
+                "E-ME99" E-ME99 "p" RETURNING RESU
+               CALL "C3_Set_Jrcode" USING 
+                USER_ID BY REFERENCE COMPLETION_CODE 255
+               GO TO UPD-EX
+           END-IF
+           CALL "DB_F_Close" USING BY REFERENCE HKBM_IDLST HKBM_PNAME1.
+      *
            MOVE ZERO TO W-RC.
        UPD-020.
            ADD 1 TO W-RC.
@@ -3480,55 +3614,6 @@
            CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU.
            GO TO UPD-900.
        UPD-200.
-           CALL "DB_F_Open" USING
-            "I-O" HKBM_PNAME1 "SHARED" BY REFERENCE HKBM_IDLST "1"
-            "HKB-KEY" BY REFERENCE HKB-KEY.
-           MOVE SPACE TO HKB-KEY.
-           MOVE "05" TO HKB-NO.
-      *           READ HKBM INVALID KEY
-      *///////////////
-           CALL "DB_Read" USING
-            "INVALID KEY" HKBM_PNAME1 BY REFERENCE HKB-R " "
-            RETURNING RET.
-           IF  RET = 1
-               CALL "DB_F_Close" USING
-                BY REFERENCE HKBM_IDLST HKBM_PNAME1
-               MOVE 1 TO W-END
-               CALL "SD_Output" USING
-                "E-ME78" E-ME78 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME23" E-ME23 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME99" E-ME99 "p" RETURNING RESU
-               CALL "C3_Set_Jrcode" USING 
-                USER_ID BY REFERENCE COMPLETION_CODE 255
-               GO TO UPD-EX
-           END-IF
-           MOVE W-DNOD TO HKB-UNN.
-           IF  HKB-UNN = ZERO
-               MOVE 1 TO HKB-UNN
-           END-IF
-      *           REWRITE HKB-R INVALID KEY
-      *///////////////
-           CALL "DB_Update" USING
-            HKBM_PNAME1 HKBM_LNAME HKB-R RETURNING RET.
-           IF  RET = 1
-               CALL "DB_F_Close" USING
-                BY REFERENCE HKBM_IDLST HKBM_PNAME1
-               MOVE 1 TO W-END
-               CALL "SD_Output" USING
-                "E-STAT" E-STAT "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME78" E-ME78 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME24" E-ME24 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME99" E-ME99 "p" RETURNING RESU
-               CALL "C3_Set_Jrcode" USING 
-                USER_ID BY REFERENCE COMPLETION_CODE 255
-               GO TO UPD-EX
-           END-IF
-           CALL "DB_F_Close" USING BY REFERENCE HKBM_IDLST HKBM_PNAME1.
       *
            IF (W-HMN = ZERO) OR (W-HNC = 1)
                GO TO UPD-EX

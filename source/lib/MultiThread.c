@@ -37,20 +37,20 @@ int checkScreenValue(SD_SCREEN_PARAM *chrCache,cob_field *cobTarg);
 // Author koyama
 int checkScreenValue(SD_SCREEN_PARAM *chrCache,cob_field *cobTarg){
 
-	//値がうまく設定されていない時
-	if(chrCache->statusFlg == 0){
-		return 1;
-	}
-	//初期状態の時
-	if(chrCache->statusFlg == 1){
-		strncpy(chrCache->param,cobTarg->data,cobTarg->size);
-		chrCache->statusFlg = 2;
-		return 1;
-	}
-	//値が一致する時
-	if(strncmp(chrCache->param,cobTarg->data,cobTarg->size) == 0){
-		return 1;
-	}
+	// //値がうまく設定されていない時
+	// if(chrCache->statusFlg == 0){
+	// 	return 1;
+	// }
+	// //初期状態の時
+	// if(chrCache->statusFlg == 1){
+	// 	strncpy(chrCache->param,cobTarg->data,cobTarg->size);
+	// 	chrCache->statusFlg = 2;
+	// 	return 1;
+	// }
+	// //値が一致する時
+	// if(strncmp(chrCache->param,cobTarg->data,cobTarg->size) == 0){
+	// 	return 1;
+	// }
 	return 0;
 }
 
@@ -71,7 +71,8 @@ void* outThread( void* args ){
 	gettimeofday(&mt_m_db_access_time, NULL);
 	while(1){
 //		fprintf(stderr," Error :cthread : %d\n", counter_out );
-		for(i=0;i < SCR_OBJ_MAX;i++){
+		//個々の処理いらないかも無理やり 1回しか通らないように修正
+		for(i=SCR_OBJ_MAX;i < SCR_OBJ_MAX;i++){
 			if(strlen(SD_cobScreen[i].cobargname) > 0){
 				if(SD_cobScreen[i].fromVar.iVarSize != 0 && SD_cobScreen[i].fromVar.bodyPnt != NULL){
 					//初期状態なら
@@ -285,7 +286,7 @@ void setCommonFunctionName(char *tempStack,char *setStrFunc,char *format,...){
 	va_start (ap, format);
 	vsprintf (setStrFunc, format, ap);
 	va_end (ap);
-	if(myConfDebugFlg){
+	if(myConfDebugFlg >= 5){
 		cob_runtime_error(" Error [%04d]: %s Info MT   setCommonFunctionName : %s : %s ",__LINE__,local_server_time(strTime),tempStack,setStrFunc);
 	}
 	return;
@@ -293,7 +294,7 @@ void setCommonFunctionName(char *tempStack,char *setStrFunc,char *format,...){
 
 void unsetCommonFunctionName(char *tempStack,char *setStrFunc){
 	//共有変数を元に戻す
-	if(myConfDebugFlg){
+	if(myConfDebugFlg >= 5){
 		cob_runtime_error(" Error [%04d]: %s Info MT unsetCommonFunctionName : %s : %s ",__LINE__,local_server_time(strTime),tempStack,setStrFunc);
 	}
 	memcpy(tempStack,setStrFunc,MAP_SRC_FUNC_LEN);

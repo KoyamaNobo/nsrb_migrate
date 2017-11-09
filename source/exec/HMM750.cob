@@ -506,8 +506,8 @@
                GO TO M-30
            END-IF
            IF  SNTR-DC = 4
-               IF  SNTR-FT = ZERO
-                   GO TO M-30
+               IF  SNTR-FT = 1
+                   GO TO M-32
                END-IF
            END-IF
       *
@@ -635,8 +635,8 @@
                CALL "SD_Output" USING
                 "E-ME99" E-ME99 "p" RETURNING RESU
                GO TO M-90
-           END-IF
-      *
+           END-IF.
+       M-32.
            MOVE HFTS-FT TO SNTR-FT.
       *           REWRITE SNTR-R.
       *///////////////

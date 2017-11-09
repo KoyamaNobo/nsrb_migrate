@@ -16,7 +16,7 @@ echo '                                                                    '
 echo '                                                                    '
 echo '                       実行する     : 　　CTRL + F5 を押下          '
 echo '                     　実行しない　 : 　　CTRL + F9 を押下          '
-if (`echo "$<" | grep F9 | wc -l ` == 1) exit
+f5orf9 ; if ($status == 1) exit 1;
 set JRCODE=000;
 set ABORT=0;
 FLCNV 'IDE=MSD ICI= IFI=HIM1 IGN= IFO=SHARE ODE=MSD OCI= OFI=BU-HIM OGN= LST=NO ERR=ABORT MOD=CREATE AMD=LOGICAL UMD=NO GTR= DEL=NO CLR=NO OUT= RNG= SEL= SAV= NXT= '

@@ -206,20 +206,20 @@
        CALL "SD_Init" USING
            "C-CL" "X" "1" "0" "12" " " "C-CLEAR" RETURNING RESU.
       *C-MID
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "C-MID" " " "0" "0" "44" " " " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01C-MID" "N" "1" "15" "44" " " "C-MID" RETURNING RESU.
       *C-ERR
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "C-ERR" " " "0" "0" "28" " " " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01C-ERR" " " "24" "0" "28" " " "C-ERR" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME1" "X" "24" "15" "18" " " "01C-ERR" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME98" "X" "24" "75" "5" "E-ME1" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME99" "X" "24" "75" "5" "E-ME98" " " RETURNING RESU.
       *
            COPY LIBSCR_P.
@@ -236,10 +236,10 @@
            MOVE W-FID TO WK0512ID.
            MOVE WK0512ID TO JKEIF_PNAME1.
            CALL "DB_F_Open" USING
-            "OUTPUT" JKEIF_PNAME1 " " BY REFERENCE JKEIF_IDLST "0".
+            "INPUT" JKEIF_PNAME1 " " BY REFERENCE JKEIF_IDLST "0".
        M-15.
       *           READ JKEIF AT END
-      *//////////////////////     
+      *//////////////////////
            CALL "DB_Read" USING
             "AT END" JKEIF_PNAME1 BY REFERENCE JKEI-R " " RETURNING RET.
            IF  RET = 1
@@ -303,7 +303,7 @@
            GO TO M-25.
        M-35.
       *           READ JKEIF AT END
-      *//////////////////////     
+      *//////////////////////
            CALL "DB_Read" USING
             "AT END" JKEIF_PNAME1 BY REFERENCE JKEI-R " " RETURNING RET.
            IF  RET = 1

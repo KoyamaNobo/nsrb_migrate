@@ -571,7 +571,7 @@
            END-IF
            COMPUTE CNT = SNTR-TNC1 + 1.
            IF  CNT = 9
-               MOVE 3 TO CNT
+               MOVE 1 TO CNT
            END-IF
            IF  CNT > 0 AND < 9
                ADD W-KIN TO W-TT(CNT,SNTR-PEY) W-TTT(CNT)

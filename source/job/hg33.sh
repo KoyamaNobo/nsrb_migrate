@@ -63,5 +63,5 @@ echo '                 –@@@@‚g‚d‚m‚j‚`‚m‚g‚e‚t‚q‚x‚nD‚b‚r‚u–   '
 echo '                 –        •s—Ç•Ô•i•ª                          –   '
 echo '                 ––––––––––––––––––––––––   '
 echo '                                                                    '
-if (`echo "$<" | grep F9 | wc -l ` == 1) exit
+f5orf9 ; if ($status == 1) exit 1;
 ENDJOB:

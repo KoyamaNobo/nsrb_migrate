@@ -25,7 +25,7 @@
        01  HTIW-M_HMN010.
            02  HTIW-M_PNAME1  PIC  X(005) VALUE "HTIMW".
            02  F              PIC  X(001).
-           02  HTIW-M_LNAME   PIC  X(013) VALUE "HTIW-M_PNAME1".
+           02  HTIW-M_LNAME   PIC  X(013) VALUE "HTIW-M_HMN010".
            02  F              PIC  X(001).
            02  HTIW-M_KEY1    PIC  X(100) VALUE SPACE.
            02  HTIW-M_SORT    PIC  X(100) VALUE SPACE.

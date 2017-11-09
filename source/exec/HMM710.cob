@@ -1056,7 +1056,7 @@
                CALL "DB_F_Close" USING
                 BY REFERENCE HUH-M_IDLST HUH-M_PNAME1
            END-IF
-           IF  W-POC = 5
+           IF  W-POC = 9
                CALL "PR_Close" RETURNING RESP
            END-IF.
        M-980.

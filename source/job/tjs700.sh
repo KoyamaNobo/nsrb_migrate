@@ -7,6 +7,15 @@ endif
 set JRCODE=000;
 set FN1 = ${JRCODE_PATH}${USER_ID};
 set FN2 = ${ERROR_PATH}${USER_ID};
+set ABORT=0;
+../exec/CSRT50 $USER_ID $JRCODE '10' 'TDIF-TAM' 'WK0256' '((8,6,N),(14,7,N),(21,4,N),(1,7,N))' '' '' '' '' '' '' '    統一伝票発行（トラスコ他ＦＡＸ）    '
+source ../job/CRC_LIBRARY.sh
+if ($JRCODE == 255) then
+  goto ENDJOB
+endif
+if($ABORT == 1) then
+  goto ENDJOB
+endif
 #/ASSIGN OEFN=TDIF,EFN=TDIF-TAM;
 set ABORT=0;
 ../exec/JHS70L-TAM $USER_ID $JRCODE 1

@@ -109,11 +109,10 @@ if(array_key_exists('procInfo',$sani)){
 	//TODO:‚±‚±‚Åpid‚ªŽæ‚ê‚È‚¢‚Æˆ—‚ª‚¨‚©‚µ‚­‚È‚é koyama 20161018
 	//upd koyama 20161018 Pid‚ªŽæ‚ê‚È‚¢
 	$pid = $clsBP->setPid();
-	$oLog->error('[not found process_id]'.' pid:'. $pid .' uri:'.$_SERVER["REQUEST_URI"].' ref:'.$_SERVER["HTTP_REFERER"].__FILE__.':'.__LINE__);
 	if($pid <= 0){
 		if($_SERVER["HTTP_REFERER"] != ''){
 			$oLog->error('[not found process_id]'.__FILE__.':'.__LINE__.' uri:'.$_SERVER["REQUEST_URI"].' ref:'.$_SERVER["HTTP_REFERER"]);
-			header('Location: '.$_SERVER["HTTP_REFERER"].'');
+			header('Location: ./index.php?root='.$_SESSION['def_name'].'');
 		}
 	}
 	$statArray = getProcessIdStatus($clsBP->setPid(),$oLog);

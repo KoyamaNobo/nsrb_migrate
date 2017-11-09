@@ -38,7 +38,7 @@ if($ABORT == 1) then
   goto ENDJOB
 endif
 set ABORT=0;
-../job/e-jan $USER_ID $JRCODE
+../job/e-jan.sh $USER_ID $JRCODE
 source ../job/CRC_LIBRARY.sh
 if($JRCODE == 255) then
   goto ENDJOB

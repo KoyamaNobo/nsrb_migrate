@@ -57,25 +57,6 @@
            02  KNH-F_RES    USAGE  POINTER.
        01  KNH-R            PIC  X(064).
        77  F                PIC  X(001).
-      *FD  NYU-F
-       01  NYU-F_KHD540.
-           02  NYU-F_PNAME1 PIC  X(004) VALUE "NYUF".
-           02  F            PIC  X(001).
-           02  NYU-F_LNAME  PIC  X(012) VALUE "NYU-F_KHD540".
-           02  F            PIC  X(001).
-           02  NYU-F_KEY1   PIC  X(100) VALUE SPACE.
-           02  NYU-F_SORT   PIC  X(100) VALUE SPACE.
-           02  NYU-F_IDLST  PIC  X(100) VALUE SPACE.
-           02  NYU-F_RES    USAGE  POINTER.
-       01  NYU-R.
-           02  F            PIC  X(037).
-           02  NYU-BC       PIC  9(001).
-           02  F            PIC  X(005).
-           02  NYU-KEY      PIC  X(007).
-           02  F            PIC  X(031).
-           02  NYU-RSC      PIC  9(001).
-           02  F            PIC  X(020).
-       77  F                PIC  X(001).
       *FD  URI-F
        01  URI-F_KHD540.
            02  URI-F_PNAME1 PIC  X(004) VALUE "URIF".
@@ -181,35 +162,10 @@
        M-10.
            CALL "SD_Output" USING "C-CLEAR" C-CLEAR "p" RETURNING RESU.
            CALL "SD_Output" USING "C-MID" C-MID "p" RETURNING RESU.
-           CALL "DB_F_Open" USING "I-O SEQUENTIAL" NYU-F_PNAME1 
-            " " BY REFERENCE NYU-F_IDLST "1"
-            "NYU-KEY" BY REFERENCE NYU-KEY.
            CALL "DB_F_Open" USING
             "INPUT" KNH-F_PNAME1 " " BY REFERENCE KNH-F_IDLST "0".
            CALL "DB_F_Open" USING
             "INPUT" URI-F_PNAME1 " " BY REFERENCE URI-F_IDLST "0".
-       M-40.
-      *           READ NYU-F NEXT RECORD AT END
-      *///////////////
-           CALL "DB_Read" USING
-            "NEXT RECORD AT END" NYU-F_PNAME1 BY REFERENCE NYU-R " "
-            RETURNING RET.
-           IF  RET = 1
-               GO TO M-50
-           END-IF
-           IF  NYU-BC = 0
-               GO TO M-40
-           END-IF
-           IF  NYU-RSC = 0
-               GO TO M-40
-           END-IF
-      *           DELETE NYU-F.
-      *///////////////
-           CALL "DB_Delete" USING NYU-F_PNAME1 RETURNING RET.
-           GO TO M-40.
-       M-50.
-           CALL "DB_F_Close" USING
-            BY REFERENCE NYU-F_IDLST NYU-F_PNAME1.
            CALL "DB_F_Close" USING
             BY REFERENCE KNH-F_IDLST KNH-F_PNAME1.
            CALL "DB_F_Close" USING

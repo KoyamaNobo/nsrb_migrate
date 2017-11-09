@@ -5,10 +5,11 @@
 // create : 20131225
 class clsLine{
 	public $strStartTag = '<div>';
-	public $strEndTag = '</div>';
+	public $strEndTag   = '</div>';
 	public $arrLineElem;  //添え字配列:添え字はカラムに対応
 	public $echoElem    = '';       //shからのエコーで表示形に送るもの
-	public $attr;         //属性情報を格納 中にはclsLineAttrクラスを格納
+	public $attr;                   //属性情報を格納 中にはclsLineAttrクラスを格納
+	public $replaceFlg  =0;           //上書きモードの時1に(画面に値を反映させるかどうか)
 	public $oLog;
 
 
@@ -135,7 +136,7 @@ class clsLine{
 		}else{
 			$temp = New clsLineElem($line,$col,(($col - 1) + $elemStrLen),'TEX',$text,'','');
 		}
-		array_push($this->arrLineElem,$temp);
+		$this->arrLineElem[] = $temp;
 // 		ksort($this->arrLineElem);
 		//部分的なreverse
 		//属性の追加
@@ -214,7 +215,7 @@ class clsLine{
 		$height = 0;
 		$width = ($endcol - $startcol);
 		$tmpText = '<div class="boxline'.((int)$startline + 1) .' f'.(int)$startcol.' box und" style="height:'.$height .'em; width:'.($width / 2).'em;"></div>';
-		array_push($this->arrLineElem,New clsLineElem($startline,$startcol,($startcol + $width),'UND',$tmpText,NULL,NULL));
+		$this->arrLineElem[] = New clsLineElem($startline,$startcol,($startcol + $width),'UND',$tmpText,NULL,NULL);
 	}
 
 	//罫線(箱型)のセット(BOX)
@@ -230,7 +231,7 @@ class clsLine{
 			$height = ($endline - $startline + 1) ;
 		}
 		$tmpText = '<div class="boxline'.(int)$startline .' f'.(int)$startcol.' box" style="height:'.$height . 'em; width:'.($width / 2).'em;"></div>';
-		array_push($this->arrLineElem, New clsLineElem($startline,$startcol,($startcol + $width),'BOX',$tmpText,NULL,NULL));
+		$this->arrLineElem[] = New clsLineElem($startline,$startcol,($startcol + $width),'BOX',$tmpText,NULL,NULL);
 	}
 
 	//罫線(上線)のセット(OVE)
@@ -242,7 +243,7 @@ class clsLine{
 			$width = ($endcol - $startcol);
 // 		}
 		$tmpText = '<div class="boxline'.(int)$startline .' f'.(int)$startcol.' box ove" style="height:'.$height . 'em; width:'.($width / 2).'em;"></div>';
-		array_push($this->arrLineElem , New clsLineElem($startline,$startcol,($startcol + $width),'OVE',$tmpText,NULL,NULL));
+		$this->arrLineElem[] = New clsLineElem($startline,$startcol,($startcol + $width),'OVE',$tmpText,NULL,NULL);
 	}
 
 	//罫線(縦線)のセット(VER)
@@ -254,7 +255,7 @@ class clsLine{
 			$height = ($endline - $startline + 1);
 		}
 		$tmpText = '<div class="boxline'.(int)$startline .' f'.(int)$startcol.' box ver" style="height:'.$height . 'em; width:'.($width / 2).'em;"></div>';
-		array_push($this->arrLineElem , New clsLineElem($startline,$startcol,($startcol + $width),'VER',$tmpText,NULL,NULL));
+		$this->arrLineElem[] = New clsLineElem($startline,$startcol,($startcol + $width),'VER',$tmpText,NULL,NULL);
 	}
 	//BUZZERのセット
 	function setBuzzer($startLine,$startColumn,$modalFlg,$soundsLength){
@@ -265,7 +266,7 @@ class clsLine{
 			$element .= '<input id="info-buz" class="f'.($startColumn).'" type="hidden" name="info-buz" value="'.$soundsLength.'" />';
 		}
 
-		array_push($this->arrLineElem , New clsLineElem($startLine,$startColumn,($startColumn + 0),'INP',$element,NULL,NULL));
+		$this->arrLineElem[] = New clsLineElem($startLine,$startColumn,($startColumn + 0),'INP',$element,NULL,NULL);
 	}
 
 	//入力項目のセット  (INP)
@@ -275,6 +276,7 @@ class clsLine{
 		$endcol   = (int)$endcol;
 		$length   = $endcol - $startcol;
 		$element  = '';
+		$values   = '';
 
 		//"から"までを取り出す
 		$text = '';
@@ -282,13 +284,37 @@ class clsLine{
 			$text .= '&nbsp;';
 		}
 
-		//TODO :2017/03/30: VALUEを設定する必要があるかも
+		//TODO :20170330: VALUEを設定する必要があるかも
+		//20170713 VALUEを探す処理追加
+		if($this->replaceFlg == 1){
+			foreach($this->arrLineElem as $tLineElem){
+			//TEXT系以外のノードは関係なし
+				if( !( $tLineElem->dataType == $tLineElem->arrKind[0] || $tLineElem->dataType == $tLineElem->arrKind[1] )){
+				continue;
+				}
+				//一致するものがあればそれを代入
+				if($startcol == $tLineElem->sCol && $endcol == ($tLineElem->eCol + 1)  ){
+					$values = $tLineElem->origText;
+					break;
+				}
+				//とりあえず、中で取得できるかどうか試してみる
+				//上で値が入らなかったら要素を切らないといけない add koyama 20171010
+				//今回指定のinputを包含していれば処理する
+				//完全一致のものがあることを考えてbrakeしない
+				if($startcol >= $tLineElem->sCol && $endcol <= ($tLineElem->eCol + 1)  ){
+					$values = substr($tLineElem->origText,($startcol - $tLineElem->sCol),($endcol - $startcol));
+					// $this->oLog->info("values         :".$values.__FILE__.':'.__LINE__);
+				}
+			}
+		}
+		// $this->oLog->info(":".$values.__FILE__.':'.__LINE__);
 		//classを変更する必要がないので書き換え
-		$element .= '<input class="nextinput f'.($startcol).' '.$addclass.'" type="text" name="'.$argname.'" maxlength="'.$length.'" size="'.$length.'" style="width:'.($length / 2).'em;" />';
+		$element .= '<input class="nextinput f'.($startcol).' '.$addclass.'" type="text" name="'.$argname.'" maxlength="'.$length.'" size="'.$length.'" value="'.$values.'" style="width:'.($length / 2).'em;" />';
 
 // 		$this->arrLineElem =  New clsLineElem($startColumn,($startcol + $length),'INP',$element);
 		//行はいらないので0でセット
-		array_push($this->arrLineElem , New clsLineElem(0,$startcol,($startcol + $length),'INP',$element,NULL,NULL));
+		// $this->oLog->info(":".$element.__FILE__.':'.__LINE__);
+		$this->arrLineElem[] = New clsLineElem(0,$startcol,($startcol + $length),'INP',$element,NULL,NULL);
 	}
 
 	//inputを画面にひとつにする

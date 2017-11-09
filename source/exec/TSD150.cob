@@ -238,6 +238,8 @@
                   "***  SM REWRITE ´×°  ***".
              03  E-ME21  PIC  X(026) VALUE
                   "***  TDTM REWRITE ´×°  ***".
+             03  E-ME25  PIC  X(025) VALUE
+                  "***  UKETM µÁºÐËÞ´×°  ***".
              03  E-KEY   PIC  X(006).
              03  E-TCD   PIC  X(004).
              03  E-NGP   PIC  9(008).
@@ -293,9 +295,9 @@
             "A-DMM" BY REFERENCE W-DMM "1" "0" RETURNING RESU.
       *C-ERR
        CALL "SD_Init" USING 
-            "C-ERR" " " "0" "0" "572" " " " " RETURNING RESU.
+            "C-ERR" " " "0" "0" "597" " " " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "01C-ERR" " " "24" "0" "572" " " "C-ERR" RETURNING RESU.
+            "01C-ERR" " " "24" "0" "597" " " "C-ERR" RETURNING RESU.
        CALL "SD_Init" USING 
             "E-STAT" "X" "24" "10" "2" " " "01C-ERR" RETURNING RESU.
        CALL "SD_From" USING 
@@ -337,7 +339,9 @@
        CALL "SD_Init" USING 
             "E-ME21" "X" "24" "15" "26" "E-ME18" " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "E-KEY" "X" "24" "50" "6" "E-ME21" " " RETURNING RESU.
+            "E-ME25" "X" "24" "15" "25" "E-ME21" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-KEY" "X" "24" "50" "6" "E-ME25" " " RETURNING RESU.
        CALL "SD_From" USING 
             "E-KEY" BY REFERENCE TD-KEY "6" "0" RETURNING RESU.
        CALL "SD_Init" USING 
@@ -716,7 +720,7 @@
                GO TO S-140
            END-IF
            IF  CL-SJ = 0
-               MOVE CL-NGPS TO UT-OKD
+               MOVE CL-NGPS TO W-OKD
                GO TO S-140
            END-IF.
        S-120.
@@ -739,14 +743,14 @@
                MOVE UT-SNM TO CL-NEN
                MOVE UT-MKG TO CL-GET
                MOVE UT-MKP TO CL-PEY
-               MOVE CL-NGPS TO UT-OKD
+               MOVE CL-NGPS TO W-OKD
                GO TO S-140
            END-IF
            IF  CL-SJ = 1
                GO TO S-120
            END-IF
            IF  UT-MKG = CL-GET
-               MOVE CL-NGPS TO UT-OKD
+               MOVE CL-NGPS TO W-OKD
                GO TO S-140
            END-IF
            MOVE ZERO TO CL-KEY.
@@ -762,7 +766,7 @@
                 "E-ME9" E-ME9 "p" RETURNING RESU
                CALL "SD_Output" USING
                 "E-ME99" E-ME99 "p" RETURNING RESU
-               MOVE CL-NGPS TO UT-OKD
+               MOVE CL-NGPS TO W-OKD
                GO TO S-140
            END-IF.
        S-130.
@@ -783,11 +787,11 @@
                MOVE UT-SNM TO CL-NEN
                MOVE UT-MKG TO CL-GET
                MOVE UT-MKP TO CL-PEY
-               MOVE CL-NGPS TO UT-OKD
+               MOVE CL-NGPS TO W-OKD
                GO TO S-140
            END-IF
            IF  UT-MKG = CL-GET
-               MOVE CL-NGPS TO UT-OKD
+               MOVE CL-NGPS TO W-OKD
                GO TO S-130
            END-IF.
        S-140.
@@ -845,7 +849,15 @@
                END-IF
            END-IF
            PERFORM S-100 THRU S-140.
-           MOVE W-OKD TO UT-OKD..
+           IF  W-OKD = ZERO
+               CALL "SD_Output" USING
+                "E-ME25" E-ME25 "p" RETURNING RESU
+               CALL "SD_Output" USING
+                "E-KEY" E-KEY "p" RETURNING RESU
+               CALL "SD_Output" USING
+                "E-ME99" E-ME99 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU
+           MOVE W-OKD TO UT-OKD.
       *           WRITE UKET-R INVALID KEY
       *//////////////
            CALL "DB_Insert" USING

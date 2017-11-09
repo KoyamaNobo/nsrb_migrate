@@ -18,11 +18,6 @@ class clsScreenToHTML{
 	function htmlEcho($fnameCtoP){
 		$ErrorMax = 2;
 		//実行系への入力
-		if(!file_exists($fnameCtoP)){
-			$this->oLog->error(__FILE__.':'.__LINE__.':write file_exists');
-			//入力用のtmpファイルが存在しなければ強制終了
-			return;
-		}
 		$fp = fopen($fnameCtoP,'w');
 		if(!flock($fp,LOCK_EX)){
 			//lockが取れなければ表示なしにする
@@ -31,7 +26,7 @@ class clsScreenToHTML{
 // 		$this->oLog->INFO(__FILE__.':'.__LINE__.':fopen');
 		$wRes = fwrite($fp," ".PHP_EOL,2);
 		foreach($this->screen->arrScreenStr as $key=>$view){
-			//HTMLの仕様なはずだがFILEが正しく掛けないので最初スペース
+			//HTMLの仕様なはずだがFILEが正しく書けないので最初スペース
 			$wRes = fwrite($fp," ".$view->strStartTag.PHP_EOL,strlen($view->strStartTag.PHP_EOL) + 1);
 			//echo表示がなければ中身の表示を試す
 			if(empty($view->echoElem)){

@@ -34,8 +34,8 @@
 32 ******                       (       )  CHAINN  ANO
 33 HMM250LM直送先マスタ　一括ＣＯＰＹ登録  CHAINN  ANO exec
 34 ******                       (       )  CHAINN  ANO
-35 ******                       (       )  CHAINN  ANO
-36 ******                       (       )  CHAINN  ANO
+35 JHS610JS荷札ﾌｧｲﾙ 　印字区分０ｾｯﾄ        CHAINN  A   job
+36 JHS620JS送り状ﾌｧｲﾙ 印字区分０ｾｯﾄ        CHAINN  A   job
 37 ******  ---  品名マスター　修正後  ---  CHAINN  ANO
 38 JTN91ULM入出庫累積Ｆ 変換 (親ｺｰﾄﾞ付番)  CHAINN  ANO exec
 39 JTN95ULM倉別在庫Ｍ   変換 (    〃    )  CHAINN  ANO exec

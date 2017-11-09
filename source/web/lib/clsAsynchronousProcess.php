@@ -13,21 +13,23 @@ class AsynchronousProcess{
 	public $max_count     = LOOP_COUNT; //readの時にループが限界に来たら
 	public $oLog;
 	public $charCode;
-	
+
 	function __construct($infname,$outfname){
 		require_once('./lib/log.php');
 		$this->oLog = New Log('');
+		// $this->oLog->info('microtime(true) = '.microtime(true).__FILE__.__LINE__);
 		$this->getline_index = 0;
 		$this->fnamePtoC = $infname;
 		$this->fnameCtoP = $outfname;
 		$this->charCode  = array('UTF-8','JIS', 'eucjp-win', 'SJIS');
+		// $this->oLog->info('microtime(true) = '.microtime(true).__FILE__.__LINE__);
 	}
 
 	function run(){
 		exec($this->strCmd,$this->output,$this->return_val);
 		$this->pid = $this->output[0];
 	}
-	
+
 	//pidの値(num)を返す
 	//pidがセットされていなければ-1
 	function getPid(){
@@ -37,7 +39,7 @@ class AsynchronousProcess{
 			return -1;
 		}
 	}
-	
+
 	//持っている情報からpidを特定
 	function setPid(){
 		$cmd = '';
@@ -57,12 +59,12 @@ class AsynchronousProcess{
 	function getStatus(){
 		return $this->return_val;
 	}
-	
-	
+
+
 	function getTempNameOut(){
 		return $this->fnameCtoP;
 	}
-	
+
 	function getTempNameIn(){
 		return $this->fnamePtoC;
 	}
@@ -85,7 +87,7 @@ class AsynchronousProcess{
 		}
 		return $result;
 	}
-	
+
 	//対象への読み込み
 	//今なん行目まで読んでいるかを基準に一度読んだところは読み飛ばす
 	function pRead(){
@@ -95,12 +97,13 @@ class AsynchronousProcess{
 		$iPreFileSize = 0;
 		$readCount = READ_COUNT;    //何度読み込みをスキップするか(スキップだけをして処理中かどうかを判定しない)
 		$ii = 0;
-		
+		// $this->oLog->info('microtime(true) = '.microtime(true).__FILE__.__LINE__);
+
 		while(1){
 			if(file_exists($this->fnameCtoP) == false){
 				break;
 			}
-			clearstatcache(true,$this->fnameCtoP); 
+			clearstatcache(true,$this->fnameCtoP);
 			if( filesize($this->fnameCtoP) !== 0 ){
 				$readCount--;
 			}else {
@@ -108,7 +111,7 @@ class AsynchronousProcess{
 				//書き込み中
 // 				usleep(1);
 			}
-			
+
 			if( $readCount == 0){
 				$fp = fopen($this->fnameCtoP,'r');
 				if($fp == false|| !flock($fp, LOCK_EX)){
@@ -132,12 +135,12 @@ class AsynchronousProcess{
 				break;
 			}
 		}
-		
-// 		$this->oLog->info(__FILE__.':'.__LINE__.':HTML :'.$result.':');
+
+		// $this->oLog->info('microtime(true) = '.microtime(true).__FILE__.__LINE__);
 		return $result;
 	}
-	
-	
+
+
 	function __destruct(){
 		$this->getline_index = 0;
 		$this->pid           = 0;

@@ -9,15 +9,16 @@ var clickBack = function () {
 		let regOpt      = new RegExp('opt=','');
 		let regPm       = new RegExp('typ=pm','');
 		let regJs       = new RegExp('typ=js','');
+		let regProc     = new RegExp('procInfo','');
 		let regLm       = new RegExp('typ=lm','');
 		let regSm       = new RegExp('typ=sm','');
 		let regPrevious = new RegExp('previous','');
 		let regIniUppercase = new RegExp('[A-Z].*','');
-		
+
 		//exists opt
 		if(location.href.match(regOpt)){
 			targArray = location.href.split('&');
-			
+
 			for(let ii = 0;ii < targArray.length;i++){
 				if(!targArray[ii].match(regOpt)){
 					targUrl += targArray[ii] + '&';
@@ -27,10 +28,18 @@ var clickBack = function () {
 			targUrl = targUrl.substr(0,(targUrl.length-1));
 			document.location = targUrl;
 		}
-		
+
 		//typ=pm
 		if(location.href.match(regPm) || location.href.match(regSm)){
-			history.back();
+			if(document.referrer.match(regProc)){
+				history.back();
+				// history.go(-2);
+			}else if(document.referrer.match(regLm) || document.referrer.match(regJs)){
+				history.back();
+				// history.go(-3);
+			}else{
+				history.back();
+			}
 		}
 		//typ=js
 		//typ=lm
@@ -80,8 +89,8 @@ var clickBack = function () {
 	for(let ii = 0; ii < inputElements.length ;ii++){
 		//戻るボタンのイベント追加
 		if($(inputElements[ii]).hasClass('backButton')){
-			addEvent('click' , 
-					inputElements[ii] , 
+			addEvent('click' ,
+					inputElements[ii] ,
 					function( evt ){
 						return backButton( evt );
 					}

@@ -25,10 +25,10 @@ if (${#argv} > 1) then
         else
           #失敗したらその旨をログに保存
           if (${?FN2} == 1) then
-              echo "db_bkup NG Backup:${argv[${ii}]} Parent:${argv[2]}" | tee ${FN2} | logger -t db_bkup 
+              echo "db_bkup NG Backup:${argv[${ii}]} Parent:${argv[2]}" | tee ${FN2} | logger -t db_bkup
           else
               #FN2定義なし(コマンド実行時)
-              echo "db_bkup NG Backup:${argv[${ii}]} Parent:${argv[2]}" | logger -t db_bkup 
+              echo "db_bkup NG Backup:${argv[${ii}]} Parent:${argv[2]}" | logger -t db_bkup
           endif
           exit 1
         endif
@@ -44,10 +44,10 @@ if (${#argv} > 1) then
         else
           #失敗したらその旨をログに保存
           if (${?FN2} == 1) then
-              echo "db_bkup NG Backup:${argv[${ii}]} Parent:${argv[2]}" | tee ${FN2} | logger -t db_bkup 
+              echo "db_bkup NG Backup:${argv[${ii}]} Parent:${argv[2]}" | tee ${FN2} | logger -t db_bkup
           else
               #FN2定義なし(コマンド実行時)
-              echo "db_bkup NG Backup:${argv[${ii}]} Parent:${argv[2]}" | logger -t db_bkup 
+              echo "db_bkup NG Backup:${argv[${ii}]} Parent:${argv[2]}" | logger -t db_bkup
           endif
           exit 1
         endif
@@ -69,10 +69,10 @@ if (${#argv} > 1) then
         else
           #失敗したらその旨をログに保存
           if (${?FN2} == 1) then
-              echo "db_bkup NG Backup:${argv[${ii}]} Parent:${argv[2]}" | tee ${FN2} | logger -t db_bkup 
+              echo "db_bkup NG Backup:${argv[${ii}]} Parent:${argv[2]}" | tee ${FN2} | logger -t db_bkup
           else
               #FN2定義なし(コマンド実行時)
-              echo "db_bkup NG Backup:${argv[${ii}]} Parent:${argv[2]}" | logger -t db_bkup 
+              echo "db_bkup NG Backup:${argv[${ii}]} Parent:${argv[2]}" | logger -t db_bkup
           endif
           exit 1
         endif
@@ -83,10 +83,10 @@ if (${#argv} > 1) then
 else
   #引数エラー
   if (${?FN2} == 1) then
-      echo "db_bkup NG argv:Not enough" | tee ${FN2} | logger -t db_bkup 
+      echo "db_bkup NG argv:Not enough" | tee ${FN2} | logger -t db_bkup
   else
 	  #FN2定義なし(コマンド実行時)
-      echo "db_bkup NG argv:Not enough" 
+      echo "db_bkup NG argv:Not enough"
   endif
   exit 1
 endif

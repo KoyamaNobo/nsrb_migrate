@@ -23,7 +23,7 @@
            02  W-FID1         PIC  X(006) VALUE "WK0128".
            02  W-FID2         PIC  X(003).
        01  W-MDD.
-           02  W-MD    OCCURS 38.
+           02  W-MD    OCCURS 57.
              03  WM-TM        PIC  X(030).
              03  WM-MD    REDEFINES WM-TM.
                04  WM-M0      PIC  N(003).
@@ -196,7 +196,7 @@
              03  E-ME1   PIC  X(017) VALUE
                   "***  DATA Å¼  ***".
              03  E-ME2   PIC  X(026) VALUE
-                  "***  ÌÞÝÙ² ¶Þ 38¦ º´À  ***".
+                  "***  ÌÞÝÙ² ¶Þ 57¦ º´À  ***".
              03  E-ME3   PIC  X(018) VALUE
                   "***  DATA ´×°  ***".
              03  E-ME4   PIC  X(025) VALUE
@@ -412,7 +412,7 @@
            MOVE ZERO TO W-C.
        M-20.
            ADD 1 TO W-C.
-           IF  W-C NOT = 39
+           IF  W-C NOT = 58
                INITIALIZE W-MD(W-C)
                GO TO M-20
            END-IF
@@ -439,16 +439,25 @@
            IF  W-PC = 1
                MOVE ZERO TO W-C
            ELSE
-               MOVE 20 TO W-C
+               IF  W-PC = 2
+                   MOVE 20 TO W-C
+               ELSE
+                   MOVE 40 TO W-C
+               END-IF
            END-IF.
        M-35.
            ADD 1 TO W-C W-L.
            CALL "SD_Arg_Match_Line" USING "W-L" "2" W-L RETURNING RESU.
-           IF (W-CD < W-C) OR (W-C = 39)
+           IF (W-CD < W-C) OR (W-C = 58)
                GO TO M-40
            END-IF
            IF  W-PC = 1
                IF  W-C = 21
+                   GO TO M-45
+               END-IF
+           END-IF
+           IF  W-PC = 2
+               IF  W-C = 41
                    GO TO M-45
                END-IF
            END-IF
@@ -467,7 +476,7 @@
            END-IF
            CALL "SD_Output" USING "D-MIDE" D-MIDE "p" RETURNING RESU.
        M-45.
-           IF  W-BTC = 2
+           IF  W-BTC = 3
                GO TO M-55
            END-IF
            IF  W-BTC = 1
@@ -477,22 +486,43 @@
                MOVE 19 TO W-C
                GO TO M-50
            END-IF
+           IF  W-BTC = 2
+               MOVE 21 TO W-L
+               CALL "SD_Arg_Match_Line" USING
+                "W-L" "2" W-L RETURNING RESU
+               MOVE 39 TO W-C
+               GO TO M-50
+           END-IF
            MOVE 2 TO W-L.
            CALL "SD_Arg_Match_Line" USING "W-L" "2" W-L RETURNING RESU.
            IF  W-PC = 1
                MOVE ZERO TO W-C
            ELSE
-               MOVE 20 TO W-C
+               IF  W-PC = 2
+                   MOVE 20 TO W-C
+               ELSE
+                   MOVE 40 TO W-C
+               END-IF
            END-IF.
        M-50.
            ADD 1 TO W-C W-L.
            CALL "SD_Arg_Match_Line" USING "W-L" "2" W-L RETURNING RESU.
-           IF (W-CD < W-C) OR (W-C = 39)
+           IF (W-CD < W-C) OR (W-C = 58)
                GO TO M-60
            END-IF
            IF  W-PC = 1
                IF  W-C = 21
                    MOVE 2 TO W-PC
+                   IF  W-CD >= W-C
+                       GO TO M-30
+                   ELSE
+                       GO TO M-65
+                   END-IF
+               END-IF
+           END-IF
+           IF  W-PC = 2
+               IF  W-C = 41
+                   MOVE 3 TO W-PC
                    IF  W-CD >= W-C
                        GO TO M-30
                    ELSE
@@ -510,25 +540,29 @@
            IF  ESTAT = PF9
                GO TO M-95
            END-IF
-           IF  ESTAT = BTB
-               SUBTRACT 1 FROM W-C W-L
-               CALL "SD_Arg_Match_Line" USING
-                "W-L" "2" W-L RETURNING RESU
-               IF  W-C = 0
-                   GO TO M-45
-               ELSE
-                   IF  W-C NOT = 20
-                       GO TO M-55
-                   ELSE
-                       MOVE 1 TO W-PC W-BTC
-                       IF  W-CD >= W-C
-                           GO TO M-30
-                       ELSE
-                           GO TO M-65
-                       END-IF
-                   END-IF
-               END-IF
+           IF  ESTAT NOT = BTB
+               GO TO M-57
            END-IF
+           SUBTRACT 1 FROM W-C W-L.
+           CALL "SD_Arg_Match_Line" USING "W-L" "2" W-L RETURNING RESU.
+           IF  W-C = 0
+               GO TO M-45
+           END-IF
+           IF  W-C NOT = 20 AND 40
+               GO TO M-55
+           END-IF
+           IF  W-C = 20
+               MOVE 1 TO W-PC W-BTC
+           END-IF
+           IF  W-C = 40
+               MOVE 2 TO W-PC W-BTC
+           END-IF
+           IF  W-CD >= W-C
+               GO TO M-30
+           ELSE
+               GO TO M-65
+           END-IF.
+       M-57.
            IF  ESTAT NOT = HTB AND SKP
                GO TO M-55
            END-IF
@@ -555,7 +589,7 @@
                SUBTRACT 1 FROM W-C W-L
                CALL "SD_Arg_Match_Line" USING
                 "W-L" "2" W-L RETURNING RESU
-               MOVE 2 TO W-BTC
+               MOVE 3 TO W-BTC
                GO TO M-45
            END-IF
            IF  ESTAT NOT = HTB AND SKP
@@ -727,7 +761,7 @@
            MOVE HKB-BMN TO W-BMN.
        SET1-030.
            ADD 1 TO W-C.
-           IF  W-C > 38
+           IF  W-C > 57
                CALL "DB_F_Close" USING
                 BY REFERENCE HBUHF_IDLST HBUHF_PNAME1
                CALL "DB_F_Close" USING
@@ -904,7 +938,7 @@
            MOVE HKB-BMN TO W-BMN.
        SET2-030.
            ADD 1 TO W-C.
-           IF  W-C > 38
+           IF  W-C > 57
                CALL "DB_F_Close" USING
                 BY REFERENCE HBHKF_IDLST HBHKF_PNAME1
                CALL "DB_F_Close" USING

@@ -301,9 +301,10 @@ function getProcessIdStatus($pid,$log){
 	);
 
 	$processTree = array();
-
+// $log->info('microtime(true) = '.microtime(true).__FILE__.__LINE__);
 	//子のプロセスをすべて取得
 	getLastProcessIds($pid,$pid,$processTree,"children");
+// $log->info('microtime(true) = '.microtime(true).__FILE__.__LINE__);
 
 	//子のプロセスID（複数）子のプロセスIDのみにして取得
 	$targetPids = array();
@@ -317,8 +318,11 @@ function getProcessIdStatus($pid,$log){
 	//../job/を見つけたら無条件で（ジョブ名・ステータス・PID）を取得して終了
 	$breakflg = 0;
 	$countArray = count($targetPids);
+// $log->info('microtime(true) = '.microtime(true).print_r($targetPids,true).__FILE__.__LINE__);
 	for ($i = $countArray-1; $i >= 0; $i--) {
-		$process = shell_exec("ps aux |awk 'match($2,/". $targetPids[$i] ."/) {printf \"%s||%s||%s||%s||\",$2,$8,$11,$12 }' ");
+// $log->info('microtime(true) = '.microtime(true)."ps '". $targetPids[$i] ."' ".__FILE__.__LINE__);
+		// $process = shell_exec("ps aux |awk ' match($2, /". $targetPids[$i] .".*/) {printf \"%s||%s||%s||%s||\",$2,$8,$11,$12 ;} ' ");
+	$process = shell_exec("ps aux |awk ' $2 ~ /". $targetPids[$i] ."/ {printf \"%s||%s||%s||%s||\",$2,$8,$11,$12 ;} ' ");
 		$setflg=0;
 		if(!empty($process) && $process != "" ){
 			$tmpArray = explode("||",$process);
@@ -362,6 +366,7 @@ function getProcessIdStatus($pid,$log){
 			}
 		}
 	}
+// $log->info('microtime(true) = '.microtime(true).__FILE__.__LINE__);
 	return $statArray;
 }
 
@@ -377,6 +382,23 @@ function getProcessIdStatus($pid,$log){
 //          例）processTree[0]⇒123,457,852 ←葉の852
 //              processTree[1]⇒123,745 ←葉の745
 function getLastProcessIds($pid,$str,&$processTree,$arg){
+	//子のプロセスID取得
+	// $tmppid = trim(shell_exec("ps alx|awk '$4==\"".$pid."\" { print $3 }'"));
+	$tmppid = trim(shell_exec("ps  --no-header --ppid " . $pid . " |awk '$4 !~ /tee/ {print $1}' "));
+	if(!empty($tmppid) && $tmppid != "" ){
+		if($arg=="children"){
+			array_push($processTree,$str.",".$tmppid);
+		}
+		getLastProcessIds($tmppid, $str.",".$tmppid,$processTree,$arg );
+	}else{
+		//それ以上子が居ない時に通る
+		if($arg=="leaf"){
+			array_push($processTree, substr($str, (strrpos($str,',') + 1) ));
+		}
+	}
+}
+//TODO : 関数の書き換えが終わったら削除する
+function rem_getLastProcessIds($pid,$str,&$processTree,$arg){
 	//子のプロセスID取得
 	$tmppid = shell_exec("ps  --no-header --ppid " . $pid . " |awk '{printf \"%s\\n\",$1}' ");
 	$tmppid = explode("\n",$tmppid);

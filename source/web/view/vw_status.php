@@ -37,24 +37,21 @@ include('vw_status_js.php');
 		<input class="uset" type="hidden" id="sfcolor" name="sfcolor" value="<?php if(isset($_SESSION['reverse_font_color']) && !empty($_SESSION['reverse_font_color'])){ echo $_SESSION['reverse_font_color']; } ?>" />
 		<input class="uset" type="hidden" id="sbgcolor" name="sbgcolor" value="<?php if(isset($_SESSION['reverse_bg_color']) && !empty($_SESSION['reverse_bg_color'])){ echo $_SESSION['reverse_bg_color']; } ?>" />
 		<div>
-			<label for="modal-open">画面数<label>
-			<input id="modal-open" class="modal-open" type="button" value="<?php if(property_exists($oStatus,'proc_array')){ echo (int)($oStatus->countStatusLine()).'行取得'; }else{ echo 'X行取得'; } ?>" />
+			<input id="listnum" class="" type="button" value="<?php if(property_exists($oStatus,'proc_array')){ echo (int)($oStatus->countStatusLine()).'行取得'; }else{ echo 'X行取得'; } ?>" />
+			<input id="listmax" class="" type="hidden" value="<?php echo (int)$oStatus->countStatusMax(); ?>" />
 		</div>
 	</div>
 	<div class="rightBlock">
-		<input class="button backButton" type="button" value="戻る" />
+		<input class="button page_change" type="button" value="<" />
+		<label for="page_num" >ページ：</label>
+		<input id="page_num" name="page_num" class="button page_num" type="button" value="<?php echo $page_num;?>" />
+		<input class="button page_change" type="button" value=">" />
 		<div style="display:inline-block;">
 			<form name="foot" action="./status_view.php" method="get" class="foot">
-				<label for="root" >メニュー名：</label>
-				<select id="root" name="root" >
-					<option value="">&nbsp;</option>
-<?php
-foreach($_SESSION['pg_name'] as $strPgName){
-	echo '					<option value="'.$strPgName.'">'.$strPgName.'</option>'.PHP_EOL;
-}
-?>
-				</select>
-				<input class="button rootMenu" type="submit" name="send" value="選択" />
+				<label for="status_mode" >切替：</label>
+				<input id="current_mode" name="current_mode" type="hidden" value="<?php echo $current_mode;?>" />
+				<input id="status_mode" name="status_mode" type="hidden" value="<?php echo $status_mode;?>" />
+				<input class="button rootMenu" type="submit" value="<?php echo $buttonName; ?>状態" />
 			</form>
 		</div>
 	</div>

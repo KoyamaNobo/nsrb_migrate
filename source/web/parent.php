@@ -11,7 +11,7 @@ if(isset($argv[1])){
 $fnameCtoP = $argv[(count($argv) - 1)];
 $fnamePtoC = $argv[(count($argv) - 2)]; //書き込み用ファイル
 $oLog = New Log('');
-$efilename = "../tmp/".$argv[(count($argv) - 3)]."error.log"; 
+$efilename = DATA_SAVE_PASS.$argv[(count($argv) - 3)]."error.log"; 
 $descriptorspec = array(
    0 => array("pipe", "r"),  // stdin は、子プロセスが読み込むパイプです。
    1 => array("pipe", "w"),  // stdout は、子プロセスが書き込むパイプです。

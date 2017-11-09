@@ -43,27 +43,36 @@ function funcSpecialKey(evt){
 function screenSwitch(evt){
 	//画面切り離し系の処理はその他と切り分け
 	if(evt.keyCode == 112 && evt.ctrlKey == true){
-		//F1+Ctrl(画面再接続)
-		if($.find('.modal-content').length >= 1){
-			screensSelect();
-		}else{
-			//modalが出ているときはoverlayが存在
-			if($.find('.modal-overlay').length > 0){
-				$('.modal-overlay').click();
-			}
-		}
-		return true;
+		funcF1Button();
 	}else if(evt.keyCode == 113 && evt.ctrlKey == true){
 		//F2+Ctrl(画面切離)
-		//?が無いのはありえないはず
-		var now = new Date();
-		if(now.getTime() > sendTime){
-			sendTime = now.getTime() + 300;
-			window.open(window.location.href.slice(0,window.location.href.indexOf('?')));
-			return true;
-		}
+		funcF2Button();
 	}
 	return false;
+}
+
+//Ctrl+F1
+function funcF1Button(){
+	//F1+Ctrl(画面再接続)
+	if($.find('.modal-content').length >= 1){
+		screensSelect();
+	}else{
+		//modalが出ているときはoverlayが存在
+		if($.find('.modal-overlay').length > 0){
+			$('.modal-overlay').click();
+		}
+	}
+}
+
+//Ctrl+F2
+function funcF2Button(){
+	//?が無いのはありえないはず
+	var now = new Date();
+	if(now.getTime() > sendTime){
+		sendTime = now.getTime() + 300;
+		window.open(window.location.href.slice(0,window.location.href.indexOf('?')));
+		return true;
+	}
 }
 
 //特殊キー用のボタンを押したときの処理
@@ -87,6 +96,17 @@ function funcSkExec(key,evt){
 
 	//実行ジョブが終了していたら特殊キー実行しない
 	if(parentStatus[0].value == "end" ){
+		return true;
+	}
+
+	//Ctrl+F1はAjax軽処理ではないのでここで抜ける
+	if(key == "C1"){
+		funcF1Button();
+		return true;
+	}
+	//Ctrl+F2はAjax軽処理ではないのでここで抜ける
+	if(key == "C2"){
+		funcF2Button();
 		return true;
 	}
 

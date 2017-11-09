@@ -282,9 +282,9 @@
        CALL "SD_Init" USING
            "01C-ERR" " " "24" "0" "77" " " "C-ERR" RETURNING RESU.
        CALL "SD_Init" USING
-           "E-ME2" "X" "24" "15" "17" " " "01C-ERR" RETURNING RESU.
+           "E-ME1" "X" "24" "15" "17" " " "01C-ERR" RETURNING RESU.
        CALL "SD_Init" USING
-           "E-ME98" "X" "24" "75" "5" "E-ME2" " " RETURNING RESU.
+           "E-ME98" "X" "24" "75" "5" "E-ME1" " " RETURNING RESU.
        CALL "SD_Init" USING
            "E-ME99" "X" "24" "75" "5" "E-ME98" " " RETURNING RESU.
        CALL "SD_Init" USING

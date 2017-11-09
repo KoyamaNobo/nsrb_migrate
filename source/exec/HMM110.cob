@@ -1925,7 +1925,7 @@
                END-IF
            END-IF
            IF  W-BC3 = 30
-               IF  W-BC1 NOT = 71 AND 72 AND 74 AND 91
+               IF  W-BC1 NOT = 71 AND 72 AND 74 AND 76 AND 91
                    GO TO ACP-100
                END-IF
            END-IF

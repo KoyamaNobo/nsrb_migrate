@@ -13,10 +13,12 @@ $oConf         = New initConf();                    //config.php内コンフィ�
 $oLog          = New Log('');                       //ロギングクラス
 $oStatus;                                           //後続の処理で何を入れるかを変える
 $status_mode   = '';                                //モード:現在とは逆のものが入る
+$current_mode  = '';                                //モード:現在のものが入る
 $page_num      = 1;
 
-$sani = $_GET;
-$message = "";
+$sani          = $_REQUEST;
+$message       = "";
+$buttonName    = "";
 
 if(!(sessionCheck($message) && $oConf->loginCheck($_SESSION['user_name'], $_SESSION['password'] ,$message ))){
     //ログイン失敗時
@@ -26,8 +28,8 @@ if(!(sessionCheck($message) && $oConf->loginCheck($_SESSION['user_name'], $_SESS
 }
 
 //空で無ければ値を取得
-if(!empty($sani['status-mode'])){
-    $status_mode = $sani['status-mode'];
+if(!empty($sani['status_mode'])){
+    $status_mode = $sani['status_mode'];
 }
 
 #プロセスの状態チェック
@@ -35,14 +37,20 @@ if(select_mode($status_mode) != STATUS_MODE_DB){
     require_once('./lib/clsProcessStat.php');
     $oStatus = New clsProcessStat();
     //切り替えるとすると次は逆になる
-    $status_mode = STATUS_MODE_PROC;
+    $status_mode  = STATUS_MODE_DB;
+    $current_mode = STATUS_MODE_PROC;
+    $buttonName   = "DB";
 }else{
     require_once('./lib/clsDBStat.php');
     $oStatus = New clsDBStat();
     //切り替えるとすると次は逆になる
-    $status_mode = STATUS_MODE_DB
+    $status_mode  = STATUS_MODE_PROC;
+    $current_mode = STATUS_MODE_DB;
+    $buttonName   = "PG";
 }
+// $oLog->info('microtime(true) = '.microtime(true).__FILE__.__LINE__);
 require_once('./view/vw_status.php');
+// $oLog->info('microtime(true) = '.microtime(true).__FILE__.__LINE__);
 
 //この処理に必要な関数を別で着る
 function select_mode($str_mode){

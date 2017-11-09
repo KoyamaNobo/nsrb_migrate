@@ -10,17 +10,19 @@ class clsProcessStat{
 	private $proc_array;
 	private $oLog;
 	//ps lx を使ってみたが,実行開始時間が取れなかった
-	const CMD = 'ps aux | grep -v "sbin" |grep -v grep |grep apache ';
-	const LIST_LINE = 15;
+	// const CMD = 'ps aux | grep -v "sbin" |grep -v grep |grep -v "ps"|grep apache ';
+	const CMD = 'ps lx --no-header | grep -v "bash" | grep -v "sbin"|grep -v grep |grep -v "ps"';
+	const LIST_LINE = 10;
 	public $title = '';
 
 	///
 	function __construct(){
 		require_once('./lib/log.php');
+		$this->oLog = New Log('');
 		$this->proc_array = array();
 		$this->title      = mb_convert_encoding("実行中プロセス",CHARSET);
 		$mixed_array = explode(PHP_EOL,shell_exec(self::CMD));
-		$this->oLog = New Log('');
+		$now_time = time();
 		//列名は空で作れる
 		$this->proc_array[] = New clsProcessStatusElem('');
 		foreach($mixed_array as $ret_line){
@@ -28,8 +30,9 @@ class clsProcessStat{
 			if(strlen(trim($ret_line)) == 0){
 				continue;
 			}
+			// $this->oLog->info('microtime(true) = '.microtime(true).__FILE__.__LINE__);
 			$split_string = preg_split('/\s+/',$ret_line,NULL,PREG_SPLIT_NO_EMPTY);
-			$cls = New clsProcessStatusElem($split_string);
+			$cls = New clsProcessStatusElem($split_string,$now_time);
 			//表示情報として必要ないものは表示しない
 			if($this->unnecessaryElem($cls) == 1){
 				continue;
@@ -41,12 +44,22 @@ class clsProcessStat{
 	///HTMLとして返す行をまとめて取得する
 	public function getLineWithPageNum($page_num){
 		$return_string  ='';
-		$return_string .='<div class="statusBlock">';
-		for($ii=1;$ii < self::LIST_LINE;$ii++){
-			$view_num = ($page_num * $ii) - 1;
+		$return_string .='<div class="statusBlock">'.PHP_EOL;
+		//ヘッダの出力
+		$return_string .= $this->getLineWithLineNum(0);
+		for($ii=1;$ii <= self::LIST_LINE;$ii++){
+			if($page_num > 1){
+				$view_num = (self::LIST_LINE * ($page_num - 1))+ $ii;
+			}else{
+				$view_num = $ii;
+			}
 			$return_string .= $this->getLineWithLineNum($view_num);
 		}
-		$return_string .='</div>';
+		//ページ番号を埋める
+		$return_string .='<div class="process footer">'.PHP_EOL;
+		$return_string .='<span>-'.$page_num.'-</span>'.PHP_EOL;
+		$return_string .='</div>'.PHP_EOL;
+		$return_string .='</div>'.PHP_EOL;
 		return $return_string;
 	}
 
@@ -58,7 +71,18 @@ class clsProcessStat{
 		if(!array_key_exists($num,$this->proc_array)){
 			return $return_string;
 		}
-		$return_string .= '<div class="process">'.PHP_EOL;
+		if($this->proc_array[$num]->getHeader_Flg() == 1){
+			$return_string .= '<div class="process header">'.PHP_EOL;
+		}else{
+			$return_string .= '<div class="process">'.PHP_EOL;
+		}
+		$return_string .= '<span class="stnum">';
+		if($num != 0){
+			$return_string .= sprintf("%03d",$num);
+		}else{
+			$return_string .= mb_convert_encoding("連番",CHARSET);
+		}
+		$return_string .= '</span>'.PHP_EOL;
 		$return_string .= '<span class="stid">';
 		$return_string .= mb_strimwidth($this->proc_array[$num]->getId(),0,8,'-',CHARSET);
 		$return_string .= '</span>'.PHP_EOL;
@@ -69,7 +93,7 @@ class clsProcessStat{
 		$return_string .= mb_strimwidth($this->proc_array[$num]->getUser(),0,8,'-',CHARSET);
 		$return_string .= '</span>'.PHP_EOL;
 		$return_string .= '<span class="ststart">';
-		$return_string .= mb_strimwidth($this->proc_array[$num]->getStart(),0,8,'-',CHARSET);
+		$return_string .= mb_strimwidth($this->proc_array[$num]->getStart(),0,11,'-',CHARSET);
 		$return_string .= '</span>'.PHP_EOL;
 		$return_string .= '<span class="stlapsed">';
 		$return_string .= mb_strimwidth($this->proc_array[$num]->getLapsed(),0,8,'-',CHARSET);
@@ -78,11 +102,18 @@ class clsProcessStat{
 		$return_string .= mb_strimwidth($this->proc_array[$num]->getStatus(),0,6,'-',CHARSET);
 		$return_string .= '</span>'.PHP_EOL;
 		$return_string .= '<span class="stname">';
-		$return_string .= mb_strimwidth($this->proc_array[$num]->getName(),0,30,'...',CHARSET);
+		$nbsp_pos = strpos($this->proc_array[$num]->getName(),'&nbsp');
+		if($nbsp_pos > 10 && $nbsp_pos < 18){
+			//スペースが途中にあり、文字数が超えない場合底までを出力
+			$return_string .= substr($this->proc_array[$num]->getName(),0,$nbsp_pos);
+		}else{
+			$return_string .= mb_strimwidth($this->proc_array[$num]->getName(),0,18,'...',CHARSET);
+		}
 		$return_string .= '</span>'.PHP_EOL;
-//		$return_string .= '<pre>';
-//		$return_string .= $this->proc_array[$num]->getAll();
-//		$return_string .= '</pre>'.PHP_EOL;
+		// $return_string .= '<pre>';
+		// $return_string .= $this->proc_array[$num]->getAll();
+		// $return_string .= '</pre>'.PHP_EOL;
+
 		$return_string .='</div>'.PHP_EOL;
 		return $return_string;
 	}
@@ -90,6 +121,11 @@ class clsProcessStat{
 	public function countStatusLine(){
 		//ヘッダ行があるので -1
 		return count($this->proc_array) - 1;
+	}
+	//表示ページ数の最大
+	public function countStatusMax(){
+		//ヘッダ行があるので -1
+		return ceil((count($this->proc_array) - 1) / self::LIST_LINE);
 	}
 
 	//$processStatusElemで画面表示に必要ないものかどうかを判断
@@ -127,18 +163,23 @@ class clsProcessStat{
 class clsProcessStatusElem{
 	private $name;
 	private $all;
+	private $header_flg;
 	private $start_time;
 	private $lapsed_time;
 	private $id;
 	private $user;
 	private $status;
 	private $parent_id;
+	private $oLog;
 
 	///ps auxのときの最適化
-	function __construct($string_array){
-		$this->id          = mb_convert_encoding("ID",CHARSET);;
-		$this->parent_id   = mb_convert_encoding("親ID",CHARSET);;
-		$this->name        = mb_convert_encoding("名前",CHARSET);;
+	function __construct($string_array,$now){
+		require_once('./lib/log.php');
+		$this->oLog = New Log('');
+		$this->header_flg  = 1;
+		$this->id          = mb_convert_encoding("ID",CHARSET);
+		$this->parent_id   = mb_convert_encoding("親ID",CHARSET);
+		$this->name        = mb_convert_encoding("名前",CHARSET);
 		$this->start_time  = mb_convert_encoding("開始時間",CHARSET);
 		$this->lapsed_time = mb_convert_encoding("経過時間",CHARSET);
 		$this->user        = mb_convert_encoding("ユーザ",CHARSET);
@@ -146,10 +187,18 @@ class clsProcessStatusElem{
 		$this->all         = '';
 		//空文字列ならヘッダ
 		if(!empty($string_array)){
-			$this->string_parse_aux($string_array);
-			$this->takeParentId($this->id);
+			// $this->string_parse_aux($string_array);
+			// $this->oLog->info('microtime(true) = '.microtime(true).__FILE__.__LINE__);
+			$this->string_parse_alx($string_array,$now);
+			//ここはalxならいらない。
+			// $this->takeParentId($this->id);
+
 		}
 		// $this->string_parse_alx($string_array);
+	}
+	//プロセスIDのGet
+	public function getHeader_Flg(){
+		return $this->header_flg;
 	}
 	//プロセスIDのGet
 	public function getId(){
@@ -181,7 +230,7 @@ class clsProcessStatusElem{
 	public function getStatus(){
 		//とりあえずそのまま入れる
 		$ret_val = $this->status;
-		if(preg_match('/(S|O)/',$this->status)){
+		if(preg_match('/(S|O|R)/',$this->status)){
 			$ret_val = mb_convert_encoding("実行",CHARSET);
 		}
 		if(preg_match('/T/',$this->status)){
@@ -197,7 +246,7 @@ class clsProcessStatusElem{
 
 	private function takeParentId($childId){
 		if(is_numeric($childId)){
-			$ret_val = shell_exec("ps alx|awk '$3==\"".$childId."\" { print $4 }'");
+			$ret_val = shell_exec("ps l --no-header --pid=\"".$childId."\" |awk '{ print $4 }'");
 			$this->parent_id = trim($ret_val);
 		}
 	}
@@ -218,7 +267,9 @@ class clsProcessStatusElem{
 					break;
 				case 1:
 					//一つ以上あるときは空初期化
-					$this->name = '';
+					$this->name       = '';
+					//idがあるときはheaderではない
+					$this->header_flg = 0;
 					$this->id = $string_array[$ii];
 					break;
 				case 7:
@@ -260,40 +311,74 @@ class clsProcessStatusElem{
 		}
 	}
 	//ps alxで取ったときのstring_parse
-	function string_parse_alx($string_array){
+	function string_parse_alx($string_array,$now){
 		//string_arrayが空のときは一度も通らない
 		for($ii=0;$ii < count($string_array);$ii++){
 			//区切り記号を*にしておく
 			$this->all       .= '*'.$string_array[$ii];
 			switch ($ii) {
 				case 0:
+				case 1:
+					break;
 				case 2:
+					//一つ以上あるときは空初期化
+					$this->name = '';
+					//idがあるときはheaderではない
+					$this->header_flg = 0;
+					$this->id = $string_array[$ii];
+					break;
 				case 3:
+					$this->parent_id = $string_array[$ii];
+					break;
 				case 4:
 				case 5:
 				case 6:
-					break;
-				case 1:
-					//一つ以上あるときは空初期化
-					$this->name = '';
-					$this->id = $string_array[$ii];
-					break;
 				case 7:
+				case 8:
+				case 10:
+					break;
+				case 9:
 					//状態
 					$this->status = $string_array[$ii];
 					break;
-				case 8:
-					//開始時間
-					$this->start_time = $string_array[$ii];
-					break;
-				case 9:
+				case 11:
 					//経過時間
 					$this->lapsed_time = $string_array[$ii];
+					//開始時間(誤差は許容することにする)
+					if(preg_match('/^[0:]+$/',$this->lapsed_time) == 0){
+						$this->start_time =
+						date('m/d H:i',
+							strtotime(
+								preg_replace('/([0-9]+):([0-9]+)/','-${1} minute -${2} second '
+								,$this->lapsed_time)
+							)
+						);
+					}else{
+						$this->start_time = '';
+					}
 					break;
-
+				case 12:
+					//プロセス名の先頭
+					$this->name  = $string_array[$ii].'&nbsp;';
+					break;
+				case 13:
+					//ユーザのはず
+					$this->user  = $string_array[$ii];
+					$this->name  .= $string_array[$ii].'&nbsp;';
+					break;
 				default:
 					//それ以降 プロセス名
-					$this->name  .= $string_array[$ii].'&nbsp;';
+					//sh -cの記述は起動の指定
+					if(preg_match('/^sh.*-c&nbsp;$/',$this->name)){
+						$this->name  = $string_array[$ii].'&nbsp;';
+						$this->user  = $string_array[$ii + 1];
+					}else if(preg_match('/tcsh&nbsp;/',$this->name)){
+						//何故かスペース一つが切れていない
+						$this->name  = preg_replace('/.*tcsh&nbsp;/','',$this->name) . $string_array[$ii].'&nbsp;';
+						$this->user  = $string_array[$ii];
+					} else {
+						$this->name  .= $string_array[$ii].'&nbsp;';
+					}
 					break;
 			}
 		}

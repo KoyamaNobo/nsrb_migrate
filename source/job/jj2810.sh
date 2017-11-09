@@ -25,6 +25,6 @@ endif
 if($ABORT == 1) then
   goto ENDJOB
 endif
-../exec/JT281L $USER_ID $JRCODE 0
+../exec/JT281L $USER_ID $JRCODE
 source ../job/CRC_LIBRARY.sh
 ENDJOB:

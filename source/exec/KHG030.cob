@@ -183,36 +183,36 @@
        CALL "SD_Init" USING
            "C-CL" "X" "1" "0" "12" " " "C-CLEAR" RETURNING RESU.
       *C-MID
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "C-MID" " " "0" "0" "336" " " " "  RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01C-MID" "N" "3" "10" "48" " " "C-MID"  RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02C-MID" "N" "4" "10" "48" "01C-MID" " "  RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "03C-MID" "N" "5" "10" "48" "02C-MID" " "  RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "04C-MID" "N" "6" "10" "48" "03C-MID" " "  RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "05C-MID" "N" "7" "10" "48" "04C-MID" " "  RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "06C-MID" "N" "8" "10" "48" "05C-MID" " "  RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "07C-MID" "N" "9" "10" "48" "06C-MID" " "  RETURNING RESU.
       *C-ERR
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "C-ERR" " " "0" "0" "31" " " " "  RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01C-ERR" " " "24" "0" "31" " " "C-ERR"  RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME2" "X" "24" "15" "16" " " "01C-ERR"  RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-KEY" "X" "24" "35" "5" "E-ME2" " "  RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "E-KEY" BY REFERENCE KHT-KEY "5" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME98" "X" "24" "75" "5" "E-KEY" " "  RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME99" "X" "24" "75" "5" "E-ME98" " "  RETURNING RESU.
       *
            COPY LIBSCR_P.
@@ -492,6 +492,7 @@
            IF  W-RR NOT = ZERO
                MOVE W-RR TO P-RR
            END-IF
+           CALL "PR_Get_Linage" RETURNING LINAGECOUNTER.
            IF  LINAGECOUNTER > 62
                PERFORM S-05 THRU S-15
            END-IF

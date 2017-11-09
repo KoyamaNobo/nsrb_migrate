@@ -12,7 +12,7 @@
 <link rel="shortcut icon" href="/icons/favicon.ico" />
 <title><?php echo SITE_TITLE; ?> - ˆ—’†</title>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
-<script type="text/javascript" src="./js/common.js"></script>
+<script type="text/javascript" src="./js/common.js?var=20170912"></script>
 <?php
 include('./view/vw_exec_js.php');
 ?>
@@ -28,6 +28,7 @@ include('./view/vw_exec_js.php');
 				<label for="sk" >MENUF</label>
 				<select id="skSelect" name="skSelect" >
 					<option value="">&nbsp;</option>
+					<option value="C2">‰æ–Ê•¡»</option>
 					<option value="CS4">’âŽ~</option>
 					<option value="CS5">ÄŠJ</option>
 					<option value="C8">ƒvƒ•úŠü</option>

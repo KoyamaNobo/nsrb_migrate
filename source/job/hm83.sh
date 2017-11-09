@@ -15,7 +15,7 @@ echo '                   ＨＩＭ　振替単価変更                             '
 echo '                   ＨＵＨＭ　前残・翌繰金額変更                     '
 echo '                   各累積ファイル　振替金額再セット                 '
 echo '                                                                    '
-if (`echo "$<" | grep F9 | wc -l ` == 1) exit;
+f5orf9 ; if ($status == 1) exit 1;
 set ABORT=0;
 source ../job/db_bkup.sh "hm83.sh" "\!"
 source ../job/CRC_LIBRARY.sh

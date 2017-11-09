@@ -52,8 +52,7 @@ function getDescendantPid($pid){
 //再帰的に子供のpidを取り続ける
 //子供のpidがなくなったら終了
 function getRecursiveChildPid($pid){
-	$pidres = shell_exec("ps --ppid " . $pid . " |grep -v PID|awk '{printf $1}'");
-
+	$pidres = shell_exec("ps --ppid " . $pid . " |grep -v PID |grep -v tee |awk '{printf $1}'");
 	if(!empty($pidres)){
 		return getRecursiveChildPid($pidres);
 	}else{

@@ -63,7 +63,7 @@
                03  TDNW1-HC       PIC  9(001).
                03  F              PIC  X(008).
                03  TDNW1-PC       PIC  9(001).
-           02  TDNW-R2.
+           02  TDNW-R2    REDEFINES  TDNW-R1.
                03  TDNW2-KEY.
                  04  TDNW2-STC.
                    05  TDNW2-STC1 PIC  9(004).

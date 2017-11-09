@@ -61,17 +61,6 @@
            02  W-OC           PIC  9(001) VALUE 0.
            02  W-FILE         PIC  X(013).
            02  W-DC           PIC  9(001).
-           02  W-NK.
-             03  W-NO         PIC  9(006).
-             03  W-DATED      PIC  9(008).
-             03  W-TCD        PIC  9(004).
-             03  W-TNC        PIC  9(002).
-             03  W-BC         PIC  9(001).
-             03  W-DCC        PIC  9(001).
-             03  W-SKD        PIC  9(008).
-             03  W-KIN        PIC S9(009).
-             03  W-SHZ        PIC S9(007).
-           02  W-DTC          PIC  9(001).
            02  W-KEY.
              03  F            PIC  X(013).
              03  W-DNO        PIC  9(006).
@@ -81,7 +70,6 @@
       *
            COPY LIBFDD.
            COPY LITM.
-           COPY LSNYUR.
            COPY LIHKBM.
            COPY LITUKF.
            COPY LISKDF.
@@ -119,43 +107,6 @@
            02  U-GT           PIC S9(006)V9(02).
            02  U-TEK          PIC  N(018).
            02  F              PIC  X(005).
-       77  F                  PIC  X(001).
-      *FD  NYU-F
-       01  NYU-F_KHD530.
-           02  NYU-F_PNAME1   PIC  X(004) VALUE "NYUF".
-           02  F              PIC  X(001).
-           02  NYU-F_LNAME    PIC  X(012) VALUE "NYU-F_KHD530".
-           02  F              PIC  X(001).
-           02  NYU-F_KEY1     PIC  X(100) VALUE SPACE.
-           02  NYU-F_SORT     PIC  X(100) VALUE SPACE.
-           02  NYU-F_IDLST    PIC  X(100) VALUE SPACE.
-           02  NYU-F_RES      USAGE  POINTER.
-       01  NYU-R.
-           02  NYU-RD.
-             03  N-DATE       PIC  9(008).
-             03  N-NGP   REDEFINES N-DATE.
-               04  N-NG       PIC  9(006).
-               04  F          PIC  9(002).
-             03  N-TCD        PIC  9(004).
-             03  N-KIN        PIC S9(008).
-             03  N-NC.
-               04  N-NC1      PIC  9(001).
-               04  N-NC2      PIC  9(001).
-             03  F            PIC  X(015).
-             03  N-BC         PIC  9(001).
-             03  N-TNC        PIC  9(002).
-             03  F            PIC  X(003).
-             03  N-KEY.
-               04  N-NO       PIC  9(006).
-               04  N-GNO      PIC  9(001).
-             03  F            PIC  X(008).
-             03  N-SKD        PIC  9(008).
-             03  N-DCC        PIC  9(001).
-             03  F            PIC  X(014).
-             03  N-RSC        PIC  9(001).
-             03  N-DPC        PIC  9(001).
-             03  F            PIC  X(002).
-           02  F              PIC  X(017).
        77  F                  PIC  X(001).
       *FD  KNH-F
        01  KNH-F_KHD530.
@@ -225,18 +176,6 @@
            02  KNHRYR_RES     USAGE  POINTER.
        01  KNHRY-R            PIC  X(064).
        77  F                  PIC  X(001).
-      *FD  NYURYR
-       01  NYURYR_KHD530.
-           02  NYURYR_PNAME1  PIC  X(006) VALUE "NYURYR".
-           02  F              PIC  X(001).
-           02  NYURYR_LNAME   PIC  X(013) VALUE "NYURYR_KHD530".
-           02  F              PIC  X(001).
-           02  NYURYR_KEY1    PIC  X(100) VALUE SPACE.
-           02  NYURYR_SORT    PIC  X(100) VALUE SPACE.
-           02  NYURYR_IDLST   PIC  X(100) VALUE SPACE.
-           02  NYURYR_RES     USAGE  POINTER.
-       01  NYURY-R            PIC  X(102).
-       77  F                  PIC  X(001).
       *
        77  ESTAT              PIC  X(002).
        77  RESU               PIC  9(001).
@@ -261,8 +200,6 @@
              03  FILLER  PIC  N(016) VALUE
                   "＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
            02  FILLER.
-             03  C-MID1  PIC  N(016) VALUE
-                  "＊＊＊　　入金　累積　　　＊＊＊".
              03  C-MID2  PIC  N(016) VALUE
                   "＊＊＊　売上・値引　累積　＊＊＊".
              03  C-MID4  PIC  N(016) VALUE
@@ -321,7 +258,7 @@
            "01C-CLEAR" "X" "1" "0" "12" " " "C-CLEAR" RETURNING RESU.
       *C-AMID
        CALL "SD_Init" USING 
-            "C-AMID" " " "0" "0" "288" " " " "  RETURNING RESU.
+            "C-AMID" " " "0" "0" "256" " " " "  RETURNING RESU.
        CALL "SD_Init" USING 
             "C-MID" " " "0" "0" "192" " " "C-AMID"  RETURNING RESU.
        CALL "SD_Init" USING 
@@ -337,18 +274,16 @@
        CALL "SD_Init" USING 
             "06C-MID" "N" "9" "10" "32" "05C-MID" " "  RETURNING RESU.
        CALL "SD_Init" USING 
-            "02C-AMID" " " "6" "0" "96" "C-MID" " "  RETURNING RESU.
+            "02C-AMID" " " "6" "0" "64" "C-MID" " "  RETURNING RESU.
        CALL "SD_Init" USING 
-            "C-MID1" "N" "6" "10" "32" " " "02C-AMID"  RETURNING RESU.
-       CALL "SD_Init" USING 
-            "C-MID2" "N" "6" "10" "32" "C-MID1" " "  RETURNING RESU.
+            "C-MID2" "N" "6" "10" "32" " " "02C-AMID"  RETURNING RESU.
        CALL "SD_Init" USING 
             "C-MID4" "N" "6" "10" "32" "C-MID2" " "  RETURNING RESU.
       *C-ERR
        CALL "SD_Init" USING 
-            "C-ERR" " " "0" "0" "501" " " " "  RETURNING RESU.
+            "C-ERR" " " "0" "0" "415" " " " "  RETURNING RESU.
        CALL "SD_Init" USING 
-            "01C-ERR" " " "24" "0" "501" " " "C-ERR"  RETURNING RESU.
+            "01C-ERR" " " "24" "0" "415" " " "C-ERR"  RETURNING RESU.
        CALL "SD_Init" USING 
             "E-ME3" "X" "24" "15" "18" " " "01C-ERR"  RETURNING RESU.
        CALL "SD_Init" USING 
@@ -356,21 +291,15 @@
        CALL "SD_Init" USING 
             "E-ME5" "X" "24" "15" "30" "E-ME4" " "  RETURNING RESU.
        CALL "SD_Init" USING 
-            "E-ME6" "X" "24" "15" "30" "E-ME5" " "  RETURNING RESU.
-       CALL "SD_Init" USING 
-            "E-ME8" "X" "24" "15" "30" "E-ME6" " "  RETURNING RESU.
+            "E-ME8" "X" "24" "15" "30" "E-ME5" " "  RETURNING RESU.
        CALL "SD_Init" USING 
             "E-ME11" "X" "24" "15" "30" "E-ME8" " "  RETURNING RESU.
        CALL "SD_Init" USING 
-            "E-ME15" "X" "24" "15" "30" "E-ME11" " "  RETURNING RESU.
-       CALL "SD_Init" USING 
-            "E-ME21" "X" "24" "15" "30" "E-ME15" " "  RETURNING RESU.
+            "E-ME21" "X" "24" "15" "30" "E-ME11" " "  RETURNING RESU.
        CALL "SD_Init" USING 
             "E-ME22" "X" "24" "15" "30" "E-ME21" " "  RETURNING RESU.
        CALL "SD_Init" USING 
-            "E-ME25" "X" "24" "15" "26" "E-ME22" " "  RETURNING RESU.
-       CALL "SD_Init" USING 
-            "E-ME26" "X" "24" "15" "24" "E-ME25" " "  RETURNING RESU.
+            "E-ME26" "X" "24" "15" "24" "E-ME22" " "  RETURNING RESU.
        CALL "SD_Init" USING 
             "E-ME27" "X" "24" "15" "26" "E-ME26" " "  RETURNING RESU.
        CALL "SD_Init" USING 
@@ -403,11 +332,7 @@
        M-020.
            CALL "SD_Output" USING "C-CLEAR" C-CLEAR "p" RETURNING RESU.
            CALL "SD_Output" USING "C-MID" C-MID "p" RETURNING RESU.
-           CALL "SD_Output" USING "C-MID1" C-MID1 "p" RETURNING RESU.
            MOVE ZERO TO W-DATE.
-           CALL "DB_F_Open" USING
-            "I-O" NYU-F_PNAME1 " " BY REFERENCE NYU-F_IDLST "1"
-            "N-KEY" BY REFERENCE N-KEY.
            CALL "DB_F_Open" USING
             "INPUT" URI-F_PNAME1 " " BY REFERENCE URI-F_IDLST "0".
            CALL "DB_F_Open" USING
@@ -415,233 +340,17 @@
            CALL "DB_F_Open" USING
             "EXTEND" URIR-F_PNAME1 " " BY REFERENCE URIR-F_IDLST "0".
            CALL "DB_F_Open" USING
-            "EXTEND" NYUR-F_PNAME1 " " BY REFERENCE NYUR-F_IDLST "0".
-           CALL "DB_F_Open" USING
             "EXTEND" KNHR-F_PNAME1 " " BY REFERENCE KNHR-F_IDLST "0".
            CALL "DB_F_Open" USING
             "EXTEND" URIRYR_PNAME1 " " BY REFERENCE URIRYR_IDLST "0".
            CALL "DB_F_Open" USING
             "EXTEND" KNHRYR_PNAME1 " " BY REFERENCE KNHRYR_IDLST "0".
            CALL "DB_F_Open" USING
-            "EXTEND" NYURYR_PNAME1 " " BY REFERENCE NYURYR_IDLST "0".
-           CALL "DB_F_Open" USING
             "I-O" T-M_PNAME1 "SHARED" BY REFERENCE T-M_IDLST "2"
             "T-KEY" BY REFERENCE T-KEY "T-KEY2" BY REFERENCE T-KEY2.
            CALL "DB_F_Open" USING
             "I-O" SKDF_PNAME1 "SHARED" BY REFERENCE SKDF_IDLST "1"
             "SKD-KEY" BY REFERENCE SKD-KEY.
-           MOVE ZERO TO W-NK W-DC.
-       M-100.
-      *           READ NYU-F NEXT RECORD AT END
-      *///////////////
-           CALL "DB_Read" USING
-            "NEXT RECORD AT END" NYU-F_PNAME1 BY REFERENCE NYUR-R " "
-            RETURNING RET.
-           IF  RET = 1
-               GO TO M-240
-           END-IF
-           IF  N-BC = 0
-               GO TO M-100
-           END-IF
-           IF  N-DPC = 0
-               GO TO M-100
-           END-IF
-           IF  W-OC = 0
-               MOVE 1 TO W-OC
-               CALL "DB_F_Open" USING
-                "I-O" TUKF_PNAME1 "SHARED" BY REFERENCE TUKF_IDLST "2"
-                "TUK-KEY" BY REFERENCE TUK-KEY "TUK-KEY2" BY REFERENCE
-                TUK-KEY2
-           END-IF.
-       M-120.
-           MOVE ZERO TO NYUR-R.
-           MOVE NYU-R TO NYUR-R.
-      *           WRITE NYUR-R.
-      *//////////////
-           CALL "DB_Insert" USING
-            NYUR-F_PNAME1 NYUR-F_LNAME NYUR-R RETURNING RET.
-           IF  ERR-STAT = "00"
-               GO TO M-140
-           END-IF
-           CALL "SD_Output" USING "E-STAT" E-STAT "p" RETURNING RESU.
-           CALL "SD_Output" USING "E-ME6" E-ME6 "p" RETURNING RESU.
-           CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU.
-           IF  ERR-STAT NOT = "34"
-               CALL "SD_Output" USING
-                "E-ME78" E-ME78 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME99" E-ME99 "p" RETURNING RESU
-               CALL "C3_Set_Jrcode" USING 
-                USER_ID BY REFERENCE COMPLETION_CODE  255
-               GO TO M-980
-           END-IF
-           CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU.
-           CALL "DB_F_Close" USING
-            BY REFERENCE NYUR-F_IDLST NYUR-F_PNAME1.
-           MOVE "NYURF        " TO W-FILE.
-           CALL "SD_Output" USING "E-ME71" E-ME71 "p" RETURNING RESU.
-           CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU.
-           CALL "SD_Output" USING " " " " "STOP" RETURNING RESU.
-           CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU.
-           CALL "DB_F_Open" USING
-            "EXTEND" NYUR-F_PNAME1 " " BY REFERENCE NYUR-F_IDLST "0".
-           GO TO M-120.
-       M-140.
-           MOVE ZERO TO NYURY-R.
-           MOVE NYU-R TO NYURY-R.
-      *           WRITE NYURY-R.
-      *//////////////
-           CALL "DB_Insert" USING
-            NYURYR_PNAME1 NYURYR_LNAME NYURY-R RETURNING RET.
-           IF  ERR-STAT = "00"
-               GO TO M-160
-           END-IF
-           CALL "SD_Output" USING "E-STAT" E-STAT "p" RETURNING RESU.
-           CALL "SD_Output" USING "E-ME25" E-ME25 "p" RETURNING RESU.
-           CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU.
-           IF  ERR-STAT NOT = "34"
-               CALL "SD_Output" USING
-                "E-ME78" E-ME78 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME99" E-ME99 "p" RETURNING RESU
-               CALL "C3_Set_Jrcode" USING 
-                USER_ID BY REFERENCE COMPLETION_CODE  255
-               GO TO M-980
-           END-IF
-           CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU.
-           CALL "DB_F_Close" USING
-            BY REFERENCE NYURYR_IDLST NYURYR_PNAME1.
-           MOVE "NYURYR       " TO W-FILE.
-           CALL "SD_Output" USING "E-ME71" E-ME71 "p" RETURNING RESU.
-           CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU.
-           CALL "SD_Output" USING " " " " "STOP" RETURNING RESU.
-           CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU.
-           CALL "DB_F_Open" USING
-            "EXTEND" NYURYR_PNAME1 " " BY REFERENCE NYURYR_IDLST "0".
-           GO TO M-140.
-       M-160.
-       M-200.
-           IF  W-TCD = ZERO
-               MOVE N-DATE TO W-DATED
-               MOVE N-TCD TO W-TCD
-               MOVE N-NO TO W-NO
-               MOVE N-TNC TO W-TNC
-               MOVE N-BC TO W-BC
-               MOVE N-DCC TO W-DCC
-               MOVE N-SKD TO W-SKD
-           ELSE
-               IF  N-NO NOT = W-NO
-                   GO TO M-220
-               END-IF
-           END-IF
-           IF  N-NC2 > 7
-               ADD N-KIN TO W-SHZ
-           ELSE
-               ADD N-KIN TO W-KIN
-           END-IF
-           MOVE 1 TO N-RSC.
-      *           REWRITE NYU-R INVALID KEY
-      *///////////////
-           CALL "DB_Update" USING
-            NYU-F_PNAME1 NYU-F_LNAME NYU-R RETURNING RET.
-           IF  RET = 1
-               CALL "SD_Output" USING
-                "E-STAT" E-STAT "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME15" E-ME15 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME99" E-ME99 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME78" E-ME78 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME99" E-ME99 "p" RETURNING RESU
-               CALL "C3_Set_Jrcode" USING 
-                USER_ID BY REFERENCE COMPLETION_CODE  255
-               CALL "DB_F_Close" USING
-                BY REFERENCE TUKF_IDLST TUKF_PNAME1
-               GO TO M-980
-           END-IF
-      *
-           MOVE N-TCD TO T-KEY.
-      *           READ T-M INVALID KEY
-      *///////////////
-           CALL "DB_Read" USING
-            "INVALID KEY" T-M_PNAME1 BY REFERENCE T-R " " RETURNING RET.
-           IF  RET = 1
-               GO TO M-100
-           END-IF
-           IF  N-NG NOT > T-DNG
-               GO TO M-100
-           END-IF
-           MOVE N-NG TO T-DNG.
-           IF  T-ENG NOT = ZERO
-               MOVE ZERO TO T-ENG
-           END-IF
-      *           REWRITE T-R INVALID KEY
-      *///////////////
-           CALL "DB_Update" USING
-            T-M_PNAME1 T-M_LNAME T-R RETURNING RET.
-           IF  RET = 1
-               CALL "SD_Output" USING
-                "E-STAT" E-STAT "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME11" E-ME11 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME99" E-ME99 "p" RETURNING RESU
-               CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU
-           END-IF
-           GO TO M-100.
-       M-220.
-           MOVE 3 TO W-DTC.
-           PERFORM SKDW-RTN THRU SKDW-EX.
-           IF  COMPLETION_CODE = 255
-               CALL "DB_F_Close" USING
-                BY REFERENCE TUKF_IDLST TUKF_PNAME1
-               GO TO M-980
-           END-IF
-           PERFORM HKB-RTN THRU HKB-EX.
-           IF  COMPLETION_CODE = 255
-               CALL "DB_F_Close" USING
-                BY REFERENCE TUKF_IDLST TUKF_PNAME1
-               GO TO M-980
-           END-IF
-           PERFORM TUK-RTN THRU TUK-EX.
-           IF  COMPLETION_CODE = 255
-               CALL "DB_F_Close" USING
-                BY REFERENCE TUKF_IDLST TUKF_PNAME1
-               GO TO M-980
-           END-IF
-           MOVE ZERO TO W-NK.
-           GO TO M-200.
-       M-240.
-           IF  W-TCD = ZERO
-               GO TO M-300
-           END-IF
-           MOVE 3 TO W-DTC.
-           PERFORM SKDW-RTN THRU SKDW-EX.
-           IF  COMPLETION_CODE = 255
-               CALL "DB_F_Close" USING
-                BY REFERENCE TUKF_IDLST TUKF_PNAME1
-               GO TO M-980
-           END-IF
-           PERFORM HKB-RTN THRU HKB-EX.
-           IF  COMPLETION_CODE = 255
-               CALL "DB_F_Close" USING
-                BY REFERENCE TUKF_IDLST TUKF_PNAME1
-               GO TO M-980
-           END-IF
-           PERFORM TUK-RTN THRU TUK-EX.
-           IF  COMPLETION_CODE = 255
-               CALL "DB_F_Close" USING
-                BY REFERENCE TUKF_IDLST TUKF_PNAME1
-               GO TO M-980
-           END-IF.
-       M-300.
-           IF  W-OC = 1
-               MOVE 0 TO W-OC
-               CALL "DB_F_Close" USING
-                BY REFERENCE TUKF_IDLST TUKF_PNAME1
-           END-IF
       *
            CALL "SD_Output" USING "C-MID2" C-MID2 "p" RETURNING RESU.
            MOVE 1 TO W-DC.
@@ -753,7 +462,6 @@
            IF  U-GNO = 9
                GO TO M-390
            END-IF
-           MOVE 0 TO W-DTC.
            PERFORM SKDW-RTN THRU SKDW-EX.
            IF  COMPLETION_CODE = 255
                CALL "DB_F_Close" USING
@@ -950,23 +658,17 @@
            CALL "DB_F_Close" USING BY REFERENCE T-M_IDLST T-M_PNAME1.
            CALL "DB_F_Close" USING BY REFERENCE SKDF_IDLST SKDF_PNAME1.
            CALL "DB_F_Close" USING
-            BY REFERENCE NYU-F_IDLST NYU-F_PNAME1.
-           CALL "DB_F_Close" USING
             BY REFERENCE URI-F_IDLST URI-F_PNAME1.
            CALL "DB_F_Close" USING
             BY REFERENCE KNH-F_IDLST KNH-F_PNAME1.
            CALL "DB_F_Close" USING
             BY REFERENCE URIR-F_IDLST URIR-F_PNAME1.
            CALL "DB_F_Close" USING
-            BY REFERENCE NYUR-F_IDLST NYUR-F_PNAME1.
-           CALL "DB_F_Close" USING
             BY REFERENCE KNHR-F_IDLST KNHR-F_PNAME1.
            CALL "DB_F_Close" USING
             BY REFERENCE URIRYR_IDLST URIRYR_PNAME1.
            CALL "DB_F_Close" USING
             BY REFERENCE KNHRYR_IDLST KNHRYR_PNAME1.
-           CALL "DB_F_Close" USING
-            BY REFERENCE NYURYR_IDLST NYURYR_PNAME1.
            CALL "SD_Output" USING "C-CLEAR" C-CLEAR "p" RETURNING RESU.
            CALL "DB_Close".
            STOP RUN.
@@ -1117,9 +819,6 @@
            CALL "DB_F_Close" USING BY REFERENCE HKBM_IDLST HKBM_PNAME1.
        TUK-010.
            INITIALIZE TUK-R.
-           IF  W-DC = 0
-               GO TO TUK-020
-           END-IF
            MOVE U-TCD TO TUK-TCD TUK-TCD2.
            MOVE W-DAI TO TUK-DAI.
            MOVE U-DATE TO TUK-DATE.
@@ -1135,17 +834,6 @@
            END-IF
            MOVE U-DNO TO TUK-DNO.
            MOVE U-GNO TO TUK-GNO.
-           GO TO TUK-030.
-       TUK-020.
-           MOVE W-TCD TO TUK-TCD TUK-TCD2.
-           MOVE W-DAI TO TUK-DAI.
-           MOVE W-DATED TO TUK-DATE.
-           MOVE 3 TO TUK-DC.
-           MOVE W-KIN TO TUK-KIN.
-           MOVE W-SHZ TO TUK-SHZ.
-           MOVE W-NO TO TUK-DNO.
-           MOVE 0 TO TUK-GNO.
-       TUK-030.
            MOVE TUK-TCD TO T-KEY.
       *           READ T-M WITH UNLOCK INVALID KEY
       *///////////////
@@ -1200,19 +888,6 @@
            INITIALIZE SKD-R.
            MOVE ZERO TO SKD-HNO.
            MOVE SPACE TO SKD-BI SKD-HCDD.
-           IF  W-DTC = 3
-               MOVE W-TCD TO SKD-TCD
-               MOVE W-DATED TO SKD-DATE
-               MOVE 3 TO SKD-DTC
-               MOVE W-NO TO SKD-DNO
-               MOVE W-KIN TO SKD-KIN
-               MOVE W-SKD TO SKD-SKD
-               MOVE W-TNC TO SKD-TNC
-               MOVE W-BC TO SKD-BMC
-               MOVE W-DCC TO SKD-DCC
-               MOVE W-SHZ TO SKD-SHZ
-               GO TO SKDW-010
-           END-IF
            MOVE U-TCD TO SKD-TCD.
            MOVE U-DATE TO SKD-DATE.
            IF  U-DC = 0 OR 1 OR 2 OR 3 OR 4

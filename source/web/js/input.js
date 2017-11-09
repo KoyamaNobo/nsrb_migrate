@@ -11,13 +11,17 @@ var ErrorStrArray = new Array();
 //エスケープボタンを押下フラグ（押下時true）
 var escKeyFlg = false;
 //タイムアウト時間 16以下はFireFoxは動かない
-var TimeoutTime = 48;
+var TimeoutTime = 16;
+//タイムアウト時間 16以下はFireFoxは動かない
+var ReplaceModeFlg = 0;
+//history.back()を一度以上しないため
+var historyBackFlg = false;
 
 //定期的に画面をとってくる
 function fncChangeScreen() {
 	var outfname = $('#outfname')[0];
 	var infname  = $('#infname')[0];
-	var pid  = $('#pid')[0];
+	var pid      = $('#pid')[0];
 	//menu等の場合infnameがない
 	if( infname == void 0){
 		return ;
@@ -51,10 +55,10 @@ function fncChangeScreen() {
 
 
 //入力えんたー時パラメータを送信
-var nextInput = function (event){
+function nextInput(event){
 	//入力変換
 	//author : koyama 20170202
-	function change_input_send(){
+	function change_input_send(event){
 		let inputValue='';
 		let statusValue='';
 		//入力チェック
@@ -87,8 +91,9 @@ var nextInput = function (event){
 			case 'Alt':
 				if(event.shiftKey == true){
 					statusValue = '10';
+				}else{
+					statusValue = 'a';
 				}
-				statusValue = 'a';
 				break;
 			case 'F1' :
 			case 'F2' :
@@ -104,7 +109,7 @@ var nextInput = function (event){
 					break;
 				}
 				if(event.key == 'F8' && event.shiftKey == true){
-					statusValue = 'c2';
+					statusValue = 'c1';
 					break;
 				}
 				if(event.key == 'F9' && event.shiftKey == true){
@@ -113,6 +118,11 @@ var nextInput = function (event){
 				}
 				statusValue = event.key.substr(1);
 				break;
+				case 'Process' :
+					//2バイト入力
+					replaceModeExec(event);
+					// 全角半角キーを押されたらとりあえず送信はしない
+					return true;
 			default:
 				return true;
 		}
@@ -136,6 +146,11 @@ var nextInput = function (event){
 		return false;
 	}
 
+	//上書きモードの時,後ろの一文字を消す
+	function replaceModeExec(event){
+		//event.target.selectionStart ->これがキャレットの位置
+		event.target.value = event.target.value.substr(0,event.target.selectionStart);
+	}
 	let targElem = evtToElement(event);
 	let outfname = $('#outfname');
 	let infname  = $('#infname');
@@ -149,7 +164,7 @@ var nextInput = function (event){
 	if(sendFlag == false){
 		//エラーメッセージが表示中　かつ
 		//ジョブ終了時はキー操作無効
-		var tmp = $("#status1").html();
+		let tmp = $("#status1").html();
 		tmp = jQuery.trim(tmp.replace(/<("[^"]*"|'[^']*'|[^'">])*>/g,''));
 		if(tmp.length > 0 && $('#parentStatus')[0].value == "end" ){
 			return false;
@@ -157,22 +172,28 @@ var nextInput = function (event){
 		//CTL+ANYキーの処理(画面切離関係)
 		if(screenSwitch(event)){
 			//特殊キーの場合はこれ以上処理しない
-			return false;
+			event.stopImmediatePropagation();
+			// return false;
 		}
 
 		//CTL+ANYキーの処理
 		if(funcSpecialKey(event)){
 			//特殊キーの場合はこれ以上処理しない
-			return false;
+			event.stopImmediatePropagation();
+			// return false;
 		}
 		//入力に何かあれば下記関数で、何もなければtrueで帰ってくる
 		let retVal;
-		retVal = change_input_send();
+		retVal = change_input_send(event);
 		if(retVal == false){
 			//入力があったときはバブリングキャンセル
+			// if(event.defaultPrevented != true){
+			// 	event.preventDefault();
+			// }
+			// event.stopImmediatePropagation();
 			// event.stopPropagation();
 		}
-		return retVal;
+		// return retVal;
 	}
 };
 
@@ -182,7 +203,7 @@ var anyKeyEvent = function(evt){
 
 	//エラーメッセージが表示中　かつ
 	//ジョブ終了時はキー操作無効
-	var tmp = $("#status1").html();
+	let tmp = $("#status1").html();
 	tmp = jQuery.trim(tmp.replace(/<("[^"]*"|'[^']*'|[^'">])*>/g,''));
 	if(tmp.length > 0  && parentStatus[0].value == "end" ){
 		return false;
@@ -193,7 +214,7 @@ var anyKeyEvent = function(evt){
 	}
 	//F5 + ctrl
 	if(evt.keyCode >= 112 && evt.keyCode <= 123){
-		var targElem = evtToElement(evt);
+		let targElem = evtToElement(evt);
 		if(evt.ctrlKey == true){
 			//これとinputじゃないときに動く？
 			//CTL+ANYキーの処理(画面切離関係)
@@ -202,7 +223,7 @@ var anyKeyEvent = function(evt){
 				return false;
 			}
 
-			var menuCmb = $('#root')[0];
+			let menuCmb = $('#root')[0];
 			var forcusElem = (document.activeElement || window.getSelection().focusNode);
 			if(forcusElem == menuCmb || forcusElem.tagName.toLowerCase() == 'input'){
 				forcusElem=null;
@@ -496,8 +517,13 @@ function screenReplace(resultTxt){
 
 //入力時のエンターをキャンセル
 var enterCancel = function (evt){
-	if(evt.Key == 'Enter'){
+	switch(evt.Key){
+	case 'F10':
+	case 'Enter' :
 		return false;
+		break;
+	default :
+
 	}
 }
 
@@ -587,12 +613,21 @@ var inputAddElement = function (){
 					}
 			);
 			addEvent('keyup' ,
-					inputElements[i] ,
-					function evtSetInputColor( evt ){
-						return setInputColor( evt );
-					}
+				inputElements[i] ,
+				function evtSetInputColor( evt ){
+					return setInputColor( evt );
+				}
 			);
 		}
+		addEvent('keyup' ,
+		inputElements[i] ,
+		function evtSetReplaceMode( evt ){
+			if(evt.keyCode == 45 && evt.code == "Insert"){
+				ReplaceModeFlg = (ReplaceModeFlg + 1) % 2;
+			}
+			return false;
+		}
+		);
 		addEvent('keypress' ,
 				inputElements[i] ,
 				function evtEnterCancel( evt ){
@@ -678,22 +713,9 @@ function setLineIndex(resObj){
 //changeScreenの中からステータスに関連するものを取得して画面に表示
 //表示後は不要になるため消去
 function changeStatus(changeScreen){
-
-	//changeScreenの中からstatus2Getを消す
-	if($(changeScreen).find('#status2Get').length > 0){
-		$("#status2").html( "<span>" + $(changeScreen).find('#status2Get')[0].value + "</span>");
-		$(changeScreen).find('#status2Get').remove();
-	}
-
-	//changeScreenの中からstatus4Getを消す
-	if($(changeScreen).find('#status4Get').length > 0){
-		$("#status4").html( "<span>" + $(changeScreen).find('#status4Get')[0].value + "</span>");
-		$(changeScreen).find('#status4Get').remove();
-	}
-
 	//changeScreenの中からerror探して表示
 	if($(changeScreen).find('.error').length > 0){
-		for(let ii=0;ii < $(changeScreen).find('.error').length ;ii++ ){
+		for(var ii=0;ii < $(changeScreen).find('.error').length ;ii++ ){
 			//同じ文字列が見つからなかったら
 			if(ErrorStrArray.length == 0 || ($(changeScreen).find('.error').length > 0 && $.inArray($(changeScreen).find('.error')[ii].value,ErrorStrArray) == -1)){
 				escKeyFlg = false;
@@ -720,7 +742,9 @@ function changeStatus(changeScreen){
 	}
 
 	//pidが取得出来なくても終了したということなので、戻る
-	if($('#pid') == void 0){
+	if($('#pid') == void 0 && historyBackFlg == false){
+		// location.href = document.referrer;
+		historyBackFlg = true;
 		history.back();
 		return null;
 	}
@@ -728,12 +752,16 @@ function changeStatus(changeScreen){
 	//一旦画面に書き出しそれを処理
 	//ただしエラーメッセージがあるときはEscキー押下時のみ戻る
 	if($('#parentStatus').length > 0 && $('#parentStatus')[0].value == "end"){
-		if(ErrorStrArray.length == 0){
+		if(ErrorStrArray.length == 0 && historyBackFlg == false){
+			// location.href = document.referrer;
+			historyBackFlg = true;
 			history.back();
 			return null;
 		}else{
-			if(escKeyFlg == true){
+			if(escKeyFlg == true && historyBackFlg == false){
 				escKeyFlg = false;
+				// location.href = document.referrer;
+				historyBackFlg = true;
 				history.back();
 				return null;
 			}

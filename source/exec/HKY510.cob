@@ -510,7 +510,7 @@
             "AT END" URIRYR_PNAME1 BY REFERENCE URIRY-R " "
             RETURNING RET.
            IF  RET = 1
-               GO TO M-90
+               GO TO M-85
            END-IF
            IF  URIRY-NG < W-SNG
                GO TO M-55
@@ -604,6 +604,8 @@
             URIAGE_PNAME1 URIAGE_LNAME URIAGE-R RETURNING RET.
            IF  W-END = 0
                GO TO M-60
+           ELSE
+               GO TO M-90
            END-IF.
        M-85.
            CALL "C3_Set_Jrcode" USING 

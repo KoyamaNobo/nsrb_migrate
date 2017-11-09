@@ -77,6 +77,8 @@ int SD_From(char *cobArgName,char *argPoint,char *cSize,char *cArgc,...);
 int getColTargetObject(struct screenObject *targObj);
 //targObjの行番号を返す
 int getLineTargetObject(struct screenObject *targObj);
+//cob_fieldがpackedとして正しい値か確認
+int SD_isPackedFormat(cob_field *);
 //////////////////Function liet AND prototype End
 
 //----------------------------------------------------------異常終了処理
@@ -108,7 +110,7 @@ char *local_server_time(char *retStr){
 	return retStr;
 }
 
-//RTrim実装
+//RTrim実装(空白文字のみかどうかを判定)
 //(それぞれにRtimがあるのでここでも専用を書き直す)
 //date:20160520
 //auth: koyama
@@ -126,9 +128,9 @@ int isNullOrEmpty(char *targ){
 	}
 	//全てがスペースなら
 	if(num == strlen(strstart)){
-		num = 0;
-	}else{
 		num = 1;
+	}else{
+		num = 0;
 	}
 	return num;
 }
@@ -341,7 +343,8 @@ int SD_calc_editing_scale(int digits,char *editForm,char delim){
 int cobtype_calc_digits(char *cobtype){
 	char *start_cobtype;
 	char *end_cobtype;
-	int retVal=0;
+	int hyphen_flg = 0;
+	int retVal     = 0;
 
 	start_cobtype = cobtype;
 	//一つ後ろまで
@@ -352,7 +355,12 @@ int cobtype_calc_digits(char *cobtype){
 			break;
 		}
 		if(*start_cobtype == '9' || *start_cobtype == 'Z' || *start_cobtype == '-'){
-			retVal++;
+			//ハイフンが含まれる時はハイフン一つ少ない値になる
+			if(*start_cobtype == '-'){
+				hyphen_flg = 1;
+			}else{
+				retVal++;
+			}
 		}
 
 	}
@@ -449,6 +457,27 @@ int getColTargetObject(struct screenObject *targObj){
 }
 
 //
+//cob_fieldがpackedとして正しい値か確認
+//author:koyama
+int SD_isPackedFormat(cob_field *checkTarg){
+	int ret=1,counter=0;
+	//packの最後の0.5バイトにフラグがあるので正しいかどうかを判定
+	char checkChar = *(checkTarg->data + (checkTarg->size - 1)) & 0x0F;
+	switch (checkChar){
+		case 0x0c:
+		case 0x0d:
+		case 0x0F:
+			break;
+		default:
+			ret = 0;
+			break;
+	}
+
+	return ret;
+}
+
+
+//
 //editingFormatの数字項目をカウント
 //author:koyama
 int getNumCount(char *text){
@@ -532,6 +561,7 @@ int memset2byte(char *text,char *setChar,int length){
 char *SD_getFromVarPnt(struct fromObject fromVar,int length){
 
 	char t;   //変数のサイズ用
+	char *currentP;    //現在有効だと思われるデータのポインタ
 	char tmp1[128] = "";
 	char tmp2[128] = "";
 	char tmp3[128] = "";
@@ -539,9 +569,13 @@ char *SD_getFromVarPnt(struct fromObject fromVar,int length){
 	int dim2;
 	int dim3;
 
+	if(fromVar.bodyPnt != NULL){
+		currentP = fromVar.bodyPnt->data;
+	}
+
 	switch(fromVar.iDim){
 	case 0:
-		fromVar.curPnt = fromVar.arrPnt;
+		fromVar.curPnt = currentP;
 		break;
 	case 1:
 		if(fromVar.actualFlg1 == -99){
@@ -552,7 +586,7 @@ char *SD_getFromVarPnt(struct fromObject fromVar,int length){
 		}else{
 			dim1 = (fromVar.var1Size * sizeof(t)) * (fromVar.actualFlg1 - 1);
 		}
-		fromVar.curPnt = fromVar.arrPnt + dim1;
+		fromVar.curPnt = currentP + dim1;
 		break;
 	case 2:
 		if(fromVar.actualFlg1 == -99){
@@ -572,7 +606,7 @@ char *SD_getFromVarPnt(struct fromObject fromVar,int length){
 			dim2 = (fromVar.var2Size * sizeof(t)) * (fromVar.actualFlg2 - 1);
 		}
 		//0から始まるので - 1?
-		fromVar.curPnt = fromVar.arrPnt + dim1 + dim2 ;
+		fromVar.curPnt = currentP + dim1 + dim2 ;
 		break;
 	case 3:
 		if(fromVar.actualFlg1 == -99){
@@ -600,7 +634,7 @@ char *SD_getFromVarPnt(struct fromObject fromVar,int length){
 			dim3 = (fromVar.var3Size * sizeof(t)) * (fromVar.actualFlg3 - 1);
 		}
 		//0から始まるので - 1?
-		fromVar.curPnt = fromVar.arrPnt + dim1 + dim2 + dim3;
+		fromVar.curPnt = currentP + dim1 + dim2 + dim3;
 		break;
 	default:
 		break;
@@ -618,6 +652,7 @@ char *SD_getFromVarPnt(struct fromObject fromVar,int length){
 char *SD_getInputVarPnt(struct inputObject inputVar,int length){
 
 	char t;   //変数のサイズ用
+	char *currentP;    //現在有効だと思われるデータのポインタ
 	char tmp1[128] = "";
 	char tmp2[128] = "";
 	char tmp3[128] = "";
@@ -625,9 +660,12 @@ char *SD_getInputVarPnt(struct inputObject inputVar,int length){
 	int dim2;
 	int dim3;
 
+	if(inputVar.bodyPnt != NULL){
+		currentP = inputVar.bodyPnt->data;
+	}
 	switch(inputVar.iDim){
 	case 0:
-		inputVar.curPnt = inputVar.arrPnt;
+		inputVar.curPnt = currentP;
 		break;
 	case 1:
 		if(inputVar.actualFlg1 == -99){
@@ -638,7 +676,7 @@ char *SD_getInputVarPnt(struct inputObject inputVar,int length){
 			//添え字番号がひとつずれているから
 			dim1 = (inputVar.var1Size * sizeof(t)) * inputVar.actualFlg1;
 		}
-		inputVar.curPnt = inputVar.arrPnt + dim1;
+		inputVar.curPnt = currentP + dim1;
 		break;
 	case 2:
 		if(inputVar.actualFlg1 == -99){
@@ -655,7 +693,7 @@ char *SD_getInputVarPnt(struct inputObject inputVar,int length){
 		}else{
 			dim2 = (inputVar.var2Size * sizeof(t)) * inputVar.actualFlg2;
 		}
-		inputVar.curPnt = inputVar.arrPnt + dim1 + dim2;
+		inputVar.curPnt = currentP + dim1 + dim2;
 		break;
 	case 3:
 		if(inputVar.actualFlg1 == -99){
@@ -679,7 +717,7 @@ char *SD_getInputVarPnt(struct inputObject inputVar,int length){
 		}else{
 			dim3 = (inputVar.var3Size * sizeof(t)) * inputVar.actualFlg3;
 		}
-		inputVar.curPnt = inputVar.arrPnt + dim1 + dim2 + dim3;
+		inputVar.curPnt = currentP + dim1 + dim2 + dim3;
 		break;
 	default:
 		break;
@@ -815,8 +853,9 @@ int SD_Init(char *argname,char *type,char *ychar,char *xchar,char *length,char *
 	SD_cobScreen[SD_cobScreenLen].lineShift  = 0;
 	SD_cobScreen[SD_cobScreenLen].ColShift  = 0;
 	//ここで作ったポインタの初期化
-	SD_cobScreen[SD_cobScreenLen].nextObj  = (void *)0;
-	SD_cobScreen[SD_cobScreenLen].childObj = (void *)0;
+	SD_cobScreen[SD_cobScreenLen].nextObj   = (void *)0;
+	SD_cobScreen[SD_cobScreenLen].parentObj = (void *)0;
+	SD_cobScreen[SD_cobScreenLen].childObj  = (void *)0;
 	//cobolの変数を格納(ここではNULLで定義して一度でも使われたら格納する)
 	SD_cobScreen[SD_cobScreenLen].bodyPnt  = (void *)0;
 	SD_cobScreen[SD_cobScreenLen].inputVar.iVarSize = 0;
@@ -881,6 +920,7 @@ int SD_Init(char *argname,char *type,char *ychar,char *xchar,char *length,char *
 		for(i=SD_cobScreenLen;i >= 0;i--){
 			if(strcmp(SD_cobScreen[i].cobargname,parentObjName) == 0){
 				if(strcmp(SD_cobScreen[i].cobargname,SD_cobScreen[(SD_cobScreenLen - 1)].cobargname) == 0){
+					SD_cobScreen[SD_cobScreenLen].parentObj = &SD_cobScreen[i];
 					SD_cobScreen[i].childObj = &SD_cobScreen[SD_cobScreenLen];
 					break;
 				}else{
@@ -962,12 +1002,25 @@ int SD_Screen_Output(char *scrSrcPath){
 		}
 	}
 
-	/* (4)ファイルの読み（書き）*/
+	//  (4)ファイルの読み（書き）
 	while (fgets(s, 256, fp) != NULL) {
-		/* ここではfgets()により１行単位で読み出し */
+		char *lastChar = NULL;
+		// ここではfgets()により１行単位で読み出し
+		//76文字目以降は認識しないことにする
+		s[75] = '\0';
+		//_or)が最後になる
+		lastChar      = (char *)strrchr(s,'_');
+		if(lastChar == NULL){
+			lastChar      = (char *)strrchr(s,')');
+		}
+		//_も)も無いときは75文字目までをそのまま出力
+		if(lastChar != NULL){
+			*lastChar     = '\n';
+			*(lastChar+1) = '\0';
+		}
 		printf("%s", s);
 	}
-	fclose(fp);	/* (5)ファイルのクローズ */
+	fclose(fp);   // (5)ファイルのクローズ
 	return 0;
 }
 
@@ -1065,14 +1118,15 @@ void setDataCobarg(char *buff,struct screenObject *targScreenObj,cob_field *inpu
 	if(a_to.type == COB_TYPE_NUMERIC){
 //		a_from.type = COB_TYPE_NUMERIC;
 		//ドットを探しあればそれ以降を小数点に
-		if(strchr(term_buff,0x2e) != 0 ){
+		if(strchr(term_buff,0x2e) != 0){
 			//\0との比較なので-1
+			a_from.type = COB_TYPE_NUMERIC_DISPLAY;
 			a_from.scale = (strchr(term_buff,0x00) - strchr(term_buff,0x2e)) - 1;
 			remTargChar(term_buff,0x2e);
 		}else{
 			a_from.scale = a_to.scale;
-			//入力に小数点の分だけ後ろを0埋め
-			addAfterTargChar(term_buff,'0',(int)a_to.scale);
+			//入力に小数点の分だけ後ろを0埋め 埋める必要はない upd koyama 20170829
+			// addAfterTargChar(term_buff,'0',(int)a_to.scale);
 		}
 	}
 	if(strncmp(status,"01",strlen("01")) == 0){
@@ -1080,9 +1134,11 @@ void setDataCobarg(char *buff,struct screenObject *targScreenObj,cob_field *inpu
 		a_from.digits=strlen(term_buff);
 	}else if(strncmp(status,"06",strlen("06")) == 0){
 		//skip
+		if(a_to.type == COB_TYPE_NUMERIC){
+			a_from.type = COB_TYPE_NUMERIC_DISPLAY;
+		}
 		a_from.digits=targObj->size;
 	}
-
 
 	//ここにコピー
 	d_to.size   = targObj->size;
@@ -1104,16 +1160,54 @@ void setDataCobarg(char *buff,struct screenObject *targScreenObj,cob_field *inpu
 //空文字列の時、元の値相当のものをセット
 //in : temporaryObj:元の値を取り出すオブジェクト,targObj:コピー先オブジェクト,setArg:
 //author:koyama 20150310 仕様変更が必要なため作り直し
-int influenceWhenEmptyString(char *inputArg,struct screenObject *temporaryObj){
+int influenceWhenEmptyString(char *inputArg,struct screenObject *temporaryObj,cob_field *d_from){
 	int retVal = 0;
+	char *strPic;
+	//空にする処理に変更
+	//データの挿入位置を始点からどれだけずらすか
+	cob_field       d_null;
+	cob_field       d_to;
+	//attrは共有するので外で宣言
+	cob_field_attr  a_null = {COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL};
+	cob_field_attr  a_to = {COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL};
+	//空を作成(d_fromがbodyから取られている場合困るので、作成し直す
+	a_null.digits  = temporaryObj->length;
+	d_null.data    = malloc(temporaryObj->length + 1);
+	memset(d_null.data,'\0',(temporaryObj->length + 1));
+	memset(d_null.data,' ',temporaryObj->length);
+	d_null.size    = temporaryObj->length;
+	d_null.attr    = &a_null;
+	//サイズからならコピーされないので
+	d_to.size = 0 ;
+	//値の反映はinputとusingに行う
 	if(temporaryObj->fromVar.iVarSize != 0){
-		memcpy(inputArg,SD_getFromVarPnt(temporaryObj->fromVar,temporaryObj->length),temporaryObj->length);
+		d_to.size    = temporaryObj->fromVar.iVarSize;
+		a_to.digits  = temporaryObj->fromVar.iVarSize;
+		d_to.data    = SD_getFromVarPnt(temporaryObj->fromVar,temporaryObj->fromVar.iVarSize);
+		d_to.attr    = &a_to;
+	}else if(temporaryObj->inputVar.iVarSize != 0){
+		// d_to.size    = temporaryObj->inputVar.iVarSize;
+		// a_to.digits  = temporaryObj->inputVar.iVarSize;
+		// d_to.data    = SD_getInputVarPnt(temporaryObj->inputVar,temporaryObj->inputVar.iVarSize);
+		// d_to.attr    = &a_to;
 	}else if(temporaryObj->usingVar.iVarSize != 0){
-		memcpy(inputArg,SD_getInputVarPnt(temporaryObj->usingVar,temporaryObj->length),temporaryObj->length);
-	}else{
-		memset(inputArg,' ',temporaryObj->length);
+		d_to.size    = temporaryObj->usingVar.iVarSize;
+		a_to.digits  = temporaryObj->usingVar.iVarSize;
+		d_to.data    = SD_getInputVarPnt(temporaryObj->usingVar,temporaryObj->usingVar.iVarSize);
+		if(temporaryObj->usingVar.bodyPnt != NULL){
+			d_to.attr    = temporaryObj->usingVar.bodyPnt->attr;
+		}else{
+			d_to.attr    = &a_to;
+		}
 	}
+	//データmoveでリセットする処理.d_fromはポインタ受取なので
+	cob_move(&d_null,d_from);
+	cob_move(d_from,&d_to);
 
+	free(d_null.data);
+
+	//最後に値を写して終了
+	memcpy(inputArg,d_to.data,d_to.size);
 	return retVal;
 }
 
@@ -1142,22 +1236,32 @@ void setDataRecursive(char *buff,struct screenObject *targObj,char *inputArg,cha
 
 	//あとで汎用的に使うためにセット
 	if(targObj->bodyPnt == NULL){
-		d_from.data = inputArg;
-		d_from.attr = &a_from;
+		d_from.size  = targObj->length;
+		d_from.data  = inputArg;
+		d_from.attr  = &a_from;
 	}else{
-		d_from.data = targObj->bodyPnt->data;
-		d_from.attr = targObj->bodyPnt->attr;
+		d_from.size  = targObj->bodyPnt->size;
+		d_from.data  = targObj->bodyPnt->data;
+		a_from.type  = targObj->bodyPnt->attr->type;
+		a_from.digits= targObj->bodyPnt->attr->digits;
+		a_from.scale = targObj->bodyPnt->attr->scale;
+		a_from.pic   = targObj->bodyPnt->attr->pic;
+		d_from.attr  = &a_from;
 	}
 
-	//ENTER or TAB以外の処理(文字の長さが0)
-	if(strlen(term_buff) == 0){
-		//中身を初期化
-		influenceWhenEmptyString(inputArg,targObj);
+	//ENTER or TAB以外の時は入力とみなさない
+	if((strncmp(status,"01",strlen("01")) == 0 && strncmp(status,"06",strlen("06")) == 0)){
+		//共有変数を元に戻す
+		unsetCommonFunctionName(map_source_func,strStack);
 		return ;
 	}
-	//ENTER or TAB以外の時は入力とみなさない
-	if((strncmp(status,"01",strlen("01")) == 0 || strncmp(status,"06",strlen("06")) == 0)){
-
+	//(文字の長さが0)若しくは全てから(Enterで確定された時以外) (TODO:スペースのみを入力するケースがある場合out)
+	if((strlen(term_buff) == 0 || isNullOrEmpty(term_buff) == 1) && strncmp(status,"01",strlen("01")) != 0){
+		//中身を初期化
+		influenceWhenEmptyString(inputArg,targObj,&d_from);
+		//共有変数を元に戻す
+		unsetCommonFunctionName(map_source_func,strStack);
+		return ;
 	}
 	if(targObj->bodyPnt != NULL){
 		//cobarrgが存在するなら
@@ -1169,13 +1273,14 @@ void setDataRecursive(char *buff,struct screenObject *targObj,char *inputArg,cha
 		a_to.flags  = targObj->bodyPnt->attr->flags;
 
 	}else if(strchr(temporaryObj->cobtype,'Z') != 0 || strchr(temporaryObj->cobtype,'-') != 0){
-		//数値か文字か
+		//数値か文字か(フォーマット付き数字列)
 		//中身を初期化
 		memset(inputArg, ' ', temporaryObj->length);
 		//数値のときは挿入の開始位置をずらす(後ろが長さなのでそのまま-)
 		memcpy((inputArg + (temporaryObj->length - strlen(term_buff))), term_buff, strlen(term_buff));
 
 	}else if(strchr(temporaryObj->cobtype,'9') != 0){
+		//数字(Z,-を含まない数字列)
 		//型に合わせて
 		if(strchr(temporaryObj->cobtype,'S') == 0){
 			//S9ではない
@@ -1204,11 +1309,12 @@ void setDataRecursive(char *buff,struct screenObject *targObj,char *inputArg,cha
 
 		//ここにコピー
 		d_from.size = strlen(term_buff);
+		d_from.data = term_buff;
+		// 先にセットしたので
+		// d_from.attr = &a_from;
 		d_to.size   = temporaryObj->length;
 		d_to.data   = inputArg;
-		d_from.data = term_buff;
 		d_to.attr   = &a_to;
-		d_from.attr = &a_from;
 		cob_move(&d_from,&d_to);
 	}else if(strchr(temporaryObj->cobtype,'N') != 0||strchr(temporaryObj->cobtype,'X') != 0){
 		//型だけ先に
@@ -1240,14 +1346,12 @@ void setDataRecursive(char *buff,struct screenObject *targObj,char *inputArg,cha
 		d_to.data   = inputArg;
 		d_from.data = term_buff;
 		d_to.attr   = &a_to;
-//		d_from.attr = &a_from;    //先にセットしたので
+		// d_from.attr = &a_from;    //先にセットしたので
 		cob_move(&d_from,&d_to);
-
 	}else{
 		//中身を初期化
 		memset(inputArg, ' ', temporaryObj->length);
 		memcpy(inputArg, term_buff,  strlen(term_buff));
-
 	}
 
 	setDataRelation(temporaryObj,&d_from,status,0);
@@ -1260,81 +1364,87 @@ void setDataRecursive(char *buff,struct screenObject *targObj,char *inputArg,cha
 //ステータスのセットと文字の不要部分の除去する関数
 //in:(ref)term_buff,(ref)eStatus
 void setStatusASplit(char *term_buff,char *eStatus){
+	char *split_start=NULL;
+	//直strchrを書くと問題があるのでポインタを取得
+	//`が存在し,それより後ろの長さが`プラス2文字+改行以内
+	if(strrchr(term_buff,'`') != 0 && (strlen(strrchr(term_buff,'`')) < 5  || strcmp(strrchr(term_buff,'`'),"`esc") == 1)){
+		split_start = strrchr(term_buff,'`');
+	}
 	//後ろにステータスがないときは改行だけを除去
-	if(strchr(term_buff,'`') != 0){
-		if(strcmp((strchr(term_buff,'`') + 1),"N") == 0){
+	if(split_start != NULL){
+		if(strcmp((split_start + 1),"N") == 0){
 			//NOC
 			strcpy(eStatus,"00");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"h",strlen("h")) == 0){
+		}else if(strncmp((split_start + 1),"h",strlen("h")) == 0){
 			//HTB
 			strcpy(eStatus,"01");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"c1",strlen("c1")) == 0){
+		}else if(strncmp((split_start + 1),"c1",strlen("c1")) == 0){
 			//C1
 			strcpy(eStatus,"02");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"c2",strlen("c2")) == 0){
+		}else if(strncmp((split_start + 1),"c2",strlen("c2")) == 0){
 			//C2
 			strcpy(eStatus,"03");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"a",strlen("a")) == 0){
+		}else if(strncmp((split_start + 1),"a",strlen("a")) == 0){
 			//ADV
 			strcpy(eStatus,"04");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"f",strlen("f")) == 0){
+		}else if(strncmp((split_start + 1),"f",strlen("f")) == 0){
 			//FUK
 			strcpy(eStatus,"05");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"s",strlen("s")) == 0){
+		}else if(strncmp((split_start + 1),"s",strlen("s")) == 0){
 			//SKP
 			strcpy(eStatus,"06");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"b",strlen("b")) == 0){
+		}else if(strncmp((split_start + 1),"b",strlen("b")) == 0){
 			//BTB
 			strcpy(eStatus,"09");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"5",strlen("5")) == 0){
+		}else if(strncmp((split_start + 1),"5",strlen("5")) == 0){
 			//PF5
 			strcpy(eStatus,"P5");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"6",strlen("6")) == 0){
+		}else if(strncmp((split_start + 1),"6",strlen("6")) == 0){
 			//PF6
 			strcpy(eStatus,"P6");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"7",strlen("7")) == 0){
+		}else if(strncmp((split_start + 1),"7",strlen("7")) == 0){
 			//PF7
 			strcpy(eStatus,"P7");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"8",strlen("8")) == 0){
+		}else if(strncmp((split_start + 1),"8",strlen("8")) == 0){
 			//PF8
 			strcpy(eStatus,"P8");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"9",strlen("9")) == 0){
+		}else if(strncmp((split_start + 1),"9",strlen("9")) == 0){
 			//PF9
 			strcpy(eStatus,"P9");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"10",strlen("10")) == 0){
+		}else if(strncmp((split_start + 1),"10",strlen("10")) == 0){
 			//PF10
 			strcpy(eStatus,"PA");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"14",strlen("14")) == 0){
+		}else if(strncmp((split_start + 1),"14",strlen("14")) == 0){
 			//PF14
 			strcpy(eStatus,"PE");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"17",strlen("17")) == 0){
+		}else if(strncmp((split_start + 1),"17",strlen("17")) == 0){
 			//PF17
 			strcpy(eStatus,"FW");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"18",strlen("18")) == 0){
+		}else if(strncmp((split_start + 1),"18",strlen("18")) == 0){
 			//PF18
 			strcpy(eStatus,"BW");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"21",strlen("21")) == 0){
+		}else if(strncmp((split_start + 1),"21",strlen("21")) == 0){
 			//PF21
 			strcpy(eStatus,"UP");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"22",strlen("22")) == 0){
+		}else if(strncmp((split_start + 1),"22",strlen("22")) == 0){
 			//PF22
 			strcpy(eStatus,"DW");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"1",strlen("1")) == 0){
+		}else if(strncmp((split_start + 1),"1",strlen("1")) == 0){
 			//PF1
 			strcpy(eStatus,"P1");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"2",strlen("2")) == 0){
+		}else if(strncmp((split_start + 1),"2",strlen("2")) == 0){
 			//PF2
 			strcpy(eStatus,"P2");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"3",strlen("3")) == 0){
+		}else if(strncmp((split_start + 1),"3",strlen("3")) == 0){
 			//PF3
 			strcpy(eStatus,"P3");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"4",strlen("4")) == 0){
+		}else if(strncmp((split_start + 1),"4",strlen("4")) == 0){
 			//PF4
 			strcpy(eStatus,"P4");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"d",strlen("d")) == 0){
+		}else if(strncmp((split_start + 1),"d",strlen("d")) == 0){
 			//DW
 			strcpy(eStatus,"DW");
-		}else if(strncmp((strchr(term_buff,'`') + 1),"esc",strlen("esc")) == 0){
+		}else if(strncmp((split_start + 1),"esc",strlen("esc")) == 0){
 			//DW
 			strcpy(eStatus,"ESC");
 		}
@@ -1343,7 +1453,7 @@ void setStatusASplit(char *term_buff,char *eStatus){
 			term_buff[(strchr(term_buff,'\n') - term_buff)] = '\0';
 		}
 		//すぷりったを削除(この時に改行コードなども除去される)
-		memset(strchr(term_buff,'`'),'\0',strlen(strchr(term_buff,'`')));
+		memset(split_start ,'\0',strlen(strchr(term_buff,'`')));
 	}else{
 		//すぷりったを削除(この時に改行コードなども除去される)
 		//ステータスの記述がなければエンターだということにする
@@ -1357,22 +1467,75 @@ void setStatusASplit(char *term_buff,char *eStatus){
 //画面からの受け取った値を既存の値と混ぜる(statusがSKIPのとき)
 //in : temporaryObj 混ぜる画面オブジェクト,inArgPos 入力時のデフォルト,input_term入力
 //author : koyama 20170314
-int margeInputValueConditionSkip(struct screenObject *temporaryObj,char *inArgPos,char *input_term){
+int mergeInputValueConditionSkip(struct screenObject *temporaryObj,char *inArgPos,char *input_term){
 	int varLength=0,intLengthDiff=0;
-	char tempStr[2048]="";
+	char copyStr[2048]="";
+	char *tempStr = copyStr;
+	int  CompFlg = 0;
+	cob_field_attr  a_from = {COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL};
+	cob_field_attr  a_to = {COB_TYPE_ALPHANUMERIC, 0, 0, 0, NULL};
+	cob_field       d_from = {0,NULL,NULL};
+	cob_field       d_to = {0,NULL,NULL};
+	cob_field       *from_base=NULL;
+
+	d_from.size = temporaryObj->length;
 	if(temporaryObj->fromVar.iVarSize != 0){
 		inArgPos      = SD_getFromVarPnt(temporaryObj->fromVar,temporaryObj->length);
 		varLength     = temporaryObj->fromVar.iVarSize;
+		//compならコピーの時に
+		if(temporaryObj->fromVar.bodyPnt != NULL
+			&& temporaryObj->fromVar.bodyPnt->attr->type == COB_TYPE_NUMERIC_PACKED){
+			from_base   = temporaryObj->fromVar.bodyPnt;
+			d_from.size = temporaryObj->fromVar.iVarSize;
+		}
 	}else if(temporaryObj->usingVar.iVarSize != 0){
 		inArgPos = SD_getInputVarPnt(temporaryObj->usingVar,temporaryObj->length);
 		varLength = temporaryObj->usingVar.iVarSize;
+		//compならコピーの時に
+		if(temporaryObj->usingVar.bodyPnt != NULL
+			&& temporaryObj->usingVar.bodyPnt->attr->type == COB_TYPE_NUMERIC_PACKED){
+			from_base   = temporaryObj->usingVar.bodyPnt;
+			d_from.size = temporaryObj->usingVar.iVarSize;
+		}
 	}else{
 		memset(inArgPos,' ',strlen(inArgPos));
-		varLength = temporaryObj->length;
+		varLength   = temporaryObj->length;
 	}
+	//ここのsizeはformのデータ長に併せなければダメ？
+	a_to.digits = varLength;
+	d_to.size   = temporaryObj->length;
+	d_to.data   = tempStr;
+	d_to.attr   = &a_to;
+	d_from.data = inArgPos;
+	d_from.attr = &a_from;
+	if(from_base != NULL){
+		//COMP3は必ず数字なので
+		a_to.type     = COB_TYPE_NUMERIC_DISPLAY;
+		//input OR Fromなので元の属性にあわせる(typeを数字にしたので、必要になる)
+		a_from.type     = from_base->attr->type;
+		a_from.digits = from_base->attr->digits;
+		a_from.scale  = from_base->attr->scale;
+		a_from.flags  = from_base->attr->flags;
+		//COMP3の場合バイト長とデータの長さが違うので
+		// varLength     = from_base->attr->digits;
+		varLength     = temporaryObj->length;
+		if(SD_isPackedFormat(&d_from) == 0){
+			//COMP3なのにcomp3として正しい値ではなかったら
+			cob_set_packed_zero (&d_from);
+		}
+	}
+	cob_move(&d_from,&d_to);
+	// strncat(tempStr,inArgPos,varLength);
+
+	//入力と出力のサイズが違う時
 	intLengthDiff = varLength - temporaryObj->length;
-	strncat(tempStr,inArgPos,varLength);
-	strcat(input_term,tempStr + (strlen(input_term) - intLengthDiff));
+	//intLengthDiffが意味が違うようなので調整 upd koyama
+	if(intLengthDiff >= 0){
+		strcat(input_term,tempStr + (strlen(input_term) + intLengthDiff));
+	}else{
+		memset(input_term,' ',abs(intLengthDiff));
+		strcat(input_term,tempStr + (strlen(input_term)));
+	}
 
 	return 0;
 }
@@ -1380,7 +1543,7 @@ int margeInputValueConditionSkip(struct screenObject *temporaryObj,char *inArgPo
 //画面からの受け取った値を既存の値と混ぜる(statusがPF5のとき)
 //in : temporaryObj 混ぜる画面オブジェクト,inArgPos 入力時のデフォルト,input_term入力
 //author : koyama 20170314
-int margeInputValueConditionPF5(struct screenObject *temporaryObj,char *inArgPos,char *input_term){
+int mergeInputValueConditionPF5(struct screenObject *temporaryObj,char *inArgPos,char *input_term){
 	int varLength = 0;
 	int relationFlg = 0;
 	//using,fromがあるときはその値を使う
@@ -1404,7 +1567,7 @@ int margeInputValueConditionPF5(struct screenObject *temporaryObj,char *inArgPos
 //画面からの受け取った値を既存の値と混ぜる(statusがEnterのとき)
 //in : temporaryObj 混ぜる画面オブジェクト,inArgPos 入力時のデフォルト,input_term入力
 //author : koyama 20170314
-int margeInputValueConditionEnter(struct screenObject *temporaryObj,char *inArgPos,char *input_term){
+int mergeInputValueConditionEnter(struct screenObject *temporaryObj,char *inArgPos,char *input_term){
 	int varLength = 0;
 	//using,fromがあるときはその値を使う
 	if(temporaryObj->fromVar.iVarSize != 0){
@@ -1453,16 +1616,16 @@ void getDataRecursive(char *buff,struct screenObject *targObj,char *status,char 
 				if(strncmp(status,"06",strlen("06")) == 0){
 					//using,fromがあるときはその値を使う
 					//20170314 処理の簡略化のため関数化
-					margeInputValueConditionSkip(temporaryObj,inArgPos,term_buff);
+					mergeInputValueConditionSkip(temporaryObj,inArgPos,term_buff);
 					setDataRecursive(term_buff,temporaryObj,inArgPos,status);
 				}else if(strncmp(status,"P5",strlen("P5")) == 0){
 					//PF5）(F5)のときは値を持ってくる
-					margeInputValueConditionPF5(temporaryObj,inArgPos,term_buff);
+					mergeInputValueConditionPF5(temporaryObj,inArgPos,term_buff);
 					//データを移さないパターン
 					setDataRecursive(term_buff,temporaryObj,inArgPos,status);
 				//usingやinputがあるときには引用しない TODO::koyama 20161116
 					//20170314 処理の簡略化のため関数化
-					// margeInputValueConditionEnter(temporaryObj,inArgPos,term_buff);
+					// mergeInputValueConditionEnter(temporaryObj,inArgPos,term_buff);
 					//
 				}
 			}else{
@@ -1603,8 +1766,9 @@ int SD_From(char *cobArgName,char *argPoint,char *cSize,char *cArgc,...){
 		cob_runtime_error(" Error C [%02d]: Option Missing  set option %d, need option is 4 target %s \n",99,cob_call_params,cobArgName);
 		executeEnd();
 	}
-
-	if(!isdigit(*cSize) ||  (!isdigit(*cArgc) && isNullOrEmpty(cArgc))){
+	//(!isdigit(*cArgc) == 1 && isNullOrEmpty(cArgc) == 1)のisNullOrEmpty(cArgc)はいらなそうなので削除 upd koyama 20170818
+	//サイズが数字である、配列の数字が無い、配列の数字の箇所に空文字列,'0',スペースの時|| *cArgc == '0'
+	if(!isdigit(*cSize) ||  (!isdigit(*cArgc) && isNullOrEmpty(cArgc) == 0 )){
 		//cSize,cArgcが不正だったら関数を終了
 		cob_runtime_error(" Error C [%02d]:invalid parameter %s ",99,map_source_func);
 		//共有変数を元に戻す
@@ -1613,6 +1777,7 @@ int SD_From(char *cobArgName,char *argPoint,char *cSize,char *cArgc,...){
 	}
 
 	//文字列で来るのでintに変換
+	//すうじ
 	iArgc = atoi(cArgc);
 	iSize = atoi(cSize);
 
@@ -1735,7 +1900,8 @@ int SD_Into(char *cobArgName,char *argPoint,char *cSize,char *cArgc,...){
 		executeEnd();
 	}
 
-	if(!isdigit(*cSize) ||  (!isdigit(*cArgc) && isNullOrEmpty(cArgc))){
+	//(!isdigit(*cArgc) == 1 && isNullOrEmpty(cArgc) == 1)のisNullOrEmpty(cArgc)はいらなそうなので削除 upd koyama 20170818
+	if(!isdigit(*cSize) ||  (!isdigit(*cArgc) == 1)){
 		//cSize,cArgcが不正だったら関数を終了
 		cob_runtime_error(" Error C [%02d]:invalid parameter %s ",99,map_source_func);
 		//共有変数を元に戻す
@@ -1874,7 +2040,8 @@ int SD_Using(char *cobArgName,char *argPoint,char *cSize,char *cArgc,...){
 		executeEnd();
 	}
 
-	if(!isdigit(*cSize) ||  (!isdigit(*cArgc) && isNullOrEmpty(cArgc))){
+	//(!isdigit(*cArgc) == 1 && isNullOrEmpty(cArgc) == 1)のisNullOrEmpty(cArgc)はいらなそうなので削除 upd koyama 20170818
+	if(!isdigit(*cSize) ||  (!isdigit(*cArgc) == 1)){
 		//cSize,cArgcが不正だったら関数を終了
 		cob_runtime_error(" Error C [%02d]:invalid parameter %s ",99,map_source_func);
 		//共有変数を元に戻す
@@ -2136,15 +2303,16 @@ int SD_Output(char *argname,char *printarg,char *curLength){
 					d_to.size = a_to.digits;
 				}else{
 					//小数点ではなくpicがあるときにすべき
+					//S9の指定も小数点を含む場合がある
 					//TODO 判定を数字の時に数字桁のみに
-					if( (*strPic != '\0') && (strcmp(currentObject->cobtype,"9") != 0)){
+					if( (*strPic != '\0') && (strcmp(currentObject->cobtype,"9") != 0) && (strcmp(currentObject->cobtype,"S9") != 0)){
 						//小数点があるときはscaleを計算
 						a_to.digits = cobtype_calc_digits(currentObject->cobtype);
 						d_to.size   = currentObject->length;
 						a_to.flags=1;
 					}else{
 						a_to.digits = currentObject->length;
-						d_to.size   = a_to.digits;
+						d_to.size   = currentObject->length;
 						a_to.flags=0;
 					}
 				}

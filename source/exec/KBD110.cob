@@ -2036,6 +2036,7 @@
        ACP-540.
            SUBTRACT 1 FROM W-SC.
            SUBTRACT 6 FROM W-C.
+           CALL "SD_Arg_Match_Col" USING "W-C" "2" W-C RETURNING RESU.
            IF  W-SC NOT = ZERO
                IF  W-SS(W-SC) = 0
                    GO TO ACP-540

@@ -11,7 +11,7 @@ if(isset($argv[1])){
 	exit;
 }
 
-$efilename = "../tmp/".$argv[(count($argv) - 3)]."error.log";
+$efilename = DATA_SAVE_PASS.$argv[(count($argv) - 3)]."error.log";
 $descriptorspec = array(
    0 => array("pipe", "r"),  # stdin は、子プロセスが読み込むパイプです。
    1 => array("pipe", "w"),  # stdout は、子プロセスが書き込むパイプです。
@@ -39,8 +39,8 @@ $t->process = proc_open($cmd,$descriptorspec,$t->pipes);
 stream_set_blocking($t->pipes[0],0);
 stream_set_blocking($t->pipes[1],0);
 if(is_resource($t->process)){
-# 			stream_set_blocking($t->pipes[0],0);
-# 			stream_set_blocking($t->pipes[1],0);
+	// stream_set_block1ing($t->pipes[0],0);
+	// stream_set_blocking($t->pipes[1],0);
 	#file削除のために両方必要
 	$fnameCtoP = $argv[(count($argv) - 1)];
 	$fnamePtoC = $argv[(count($argv) - 2)]; #書き込み用ファイル
@@ -58,15 +58,15 @@ if(is_resource($t->process)){
 		#プロセスの状態がfalseの場合終了
 		$procStatus = proc_get_status($t->process);
 
-		#実行系からの対しての出力
-		#実行系の結果が残りどれくらいあるかのステータスを取得
-		#残りの読み込みデータがなければ読み込まない
-#  		$oLog->info(__FILE__.':'.__LINE__.'readed:'.$startTime);
+		// 実行系からの対しての出力
+		// 実行系の結果が残りどれくらいあるかのステータスを取得
+		// 残りの読み込みデータがなければ読み込まない
+		// $oLog->info(__FILE__.':'.__LINE__.'readed:'.$startTime);
 		$ii = 0;
 		while(!empty($strRead = fgets($t->pipes[1],1024))){
 			#改行のみは出力しない
 			if(strlen($strRead) > 0){
-# $oLog->info('readed:'.$strRead.__FILE__.':'.__LINE__);
+//  $oLog->info('readed:'.$strRead.__FILE__.':'.__LINE__,0);
 				$toHTML->screen->elemParse($strRead);
 			}
 			$ii++;
@@ -80,11 +80,17 @@ if(is_resource($t->process)){
 			break;
 		}
 
-		#実行系への入力 読み込みを次のループで行うためにあとで書き込む
+		// 実行系への入力 読み込みを次のループで行うためにあとで書き込む
 		if(!file_exists($fnamePtoC)){
-			$oLog->info(__FILE__.':'.__LINE__.'resource1:');
-			#入力用のtmpファイルが存在しなければ強制終了
-			break;
+			// 入力用のtmpファイルが存在しなければ作る
+			touch($fnamePtoC);
+			//touchの結果でファイルステータスは変わっているはず
+			clearstatcache(true,$fnamePtoC);
+			if(!file_exists($fnamePtoC)){
+				// 入力用のtmpファイルが作成出来なければ強制終了
+				// $oLog->info('resource1:'.__FILE__.':'.__LINE__);
+				break;
+			}
 		}
 		$fp = fopen($fnamePtoC,'r+');
 		$wRes = 0;
@@ -94,7 +100,7 @@ if(is_resource($t->process)){
 			$strWrite = fgets($fp,1024);
 			if(!empty($strWrite)){
 				fflush($t->pipes[0]);
-				# $oLog->info("write [".$strWrite."]".__FILE__.__LINE__);
+				// $oLog->info("write [".$strWrite."]".__FILE__.__LINE__);
 				$wRes = fwrite($t->pipes[0],$strWrite);
 			}
 			if($wRes != 0){
@@ -104,7 +110,7 @@ if(is_resource($t->process)){
 			fclose($fp);
 		}else{
 			#ファイルが正常に開けないときは強制終了
-			$oLog->info(__FILE__.':'.__LINE__.' file:open error');
+			$oLog->info(' file:open error'.__FILE__.':'.__LINE__);
 			break;
 		}
 
@@ -121,7 +127,15 @@ if(is_resource($t->process)){
 			break;
 		}
 	}
-	proc_close($t->process);
+	// fclose($t->pipes[2]);
+	// fclose($t->pipes[1]);
+	// fclose($t->pipes[0]);
+	if(preg_match('/\.sh/',$cmd)){
+		proc_terminate($t->process);
+	}else{
+		//COBOL直接のときはUSR1
+		proc_terminate($t->process,30);
+	}
 	#作成されたプロセス管理用のファイルは作ったレベルで処理(comment koyama 20150707)
 # 	unlink($fnameCtoP);
 # 	unlink($fnamePtoC);

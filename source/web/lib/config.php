@@ -1,7 +1,8 @@
-<?php 
+<?php
 ///
 ///設定ファイル
 ///(定義やdefineをまとめておく)
+ini_set('default_charset', 'Shift_JIS');
 define('SITE_TITLE','MAP');
 define('SOURCEDIR','../');
 define('DEFFNAME','menu/gmenu.sh');
@@ -12,7 +13,7 @@ define('DB_HOST','127.0.0.1');
 define('DB_USER','mysql');
 define('DB_PASS','mysql');
 define('LOGSETFILE' , false );
-define('CHARSET' , 'SJIS' );
+define('CHARSET' , 'SJIS-win' );
 define('EXEC_LIVE',5760); //php parentにおいてループ開始から強制終了までの時間(分)
 define('EXEC_SLEEP',200);  //php parentにおいてループの際のusleepの秒数(milli sec)
 define('LOOP_COUNT',20);  //php parentにおいてループの際のusleepの秒数(milli sec)

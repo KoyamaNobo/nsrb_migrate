@@ -17,7 +17,7 @@ echo '                                                                  '
 echo '                                                                  '
 echo '                       実行する     : 　　CTRL + F5 を押下        '
 echo '                     　実行しない　 : 　　CTRL + F9 を押下        '
-if (`echo "$<" | grep F9 | wc -l ` == 1) exit
+f5orf9 ; if ($status == 1) exit 1;
 FLCNV 'IDE=NO     ODE=MSD    OFI=KHTNF CMD=BOTH CLR=NO'
 source ../job/CRC_LIBRARY.sh
 ENDJOB:

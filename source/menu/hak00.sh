@@ -6,7 +6,7 @@
 04 ******                                  CHAINN  ANO
 05 HAKIM3PM月次作表処理                    CHAINN  ANO menu
 06 HAKIM4PM履物・工品　月次繰越処理他      CHAINN  ANO menu
-07 ******                                  CHAINN  ANO
+07 HAKIMWPM  Ｗ処理（売上入力・伝票発行）  CHAINN  ANO menu
 08 HAKIMTPM棚卸処理                        CHAINN  ANO menu
 09 HAKIM5PM年間処理                        CHAINN  ANO menu
 10 HAKIM6PM問合せ処理                      CHAINN  ANO menu
