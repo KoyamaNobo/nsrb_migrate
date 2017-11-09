@@ -1649,7 +1649,7 @@
            IF  W-SIZ = 3
                MOVE HI-SS3 TO W-BIT
                CALL "SD_Output" USING
-                "-TBL3" D-TBL3 "p" RETURNING RESU
+                "D-TBL3" D-TBL3 "p" RETURNING RESU
            END-IF
            IF  W-SIZ = 4
                MOVE HI-SS4 TO W-BIT
