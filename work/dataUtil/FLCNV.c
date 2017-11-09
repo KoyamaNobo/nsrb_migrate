@@ -646,33 +646,37 @@ int strSplit_ELM( char *iStr, char *oList[] ) {
 	str1 = iStr;
 	str2 = strstr(iStr, ")");
 
-	//文字列要素「@」囲みを検索
-	if(strstr(iStr, "@") != NULL){
-		if(str2 < strstr(iStr, "@")){
-			while(str1 > str2){
-				if(strstr(strstr(iStr, "@"),"@") != NULL){
-					str_flg = 1;
-					str1 = strstr(strstr(iStr, "@"),"@");
-				}
-			}
+  //最初の要素にしか対応しないものは削除 rem koyama
+	// //文字列要素「@」囲みを検索
+	// if(strstr(iStr, "@") != NULL){
+	// 	if(str2 < strstr(iStr, "@")){
+	// 		while(str1 > str2){
+	// 			if(strstr(strstr(iStr, "@"),"@") != NULL){
+	// 				str_flg = 1;
+	// 				str1 = strstr(strstr(iStr, "@"),"@");
+	// 			}
+	// 		}
+	// 	}
+	// }
 
-		}
-	}
-
+  //最初の一つを入れる処理？
 	//区切り文字を検索
 	if(str_flg == 1){
 		while(str1 > str2){
 			str2 = strstr(str2, ")");
 		}
 		tk = str2;
-		oList[cnt++] = tk;
+		oList[cnt] = tk;
+    cnt++;
 		tk = strtok( str2, ")" );
 	}else{
 		tk = strtok( iStr, ")" );
 	}
 
-	while( tk != NULL && isNullOrEmpty(tk)!=0 && cnt < 1000 ) {
-		oList[cnt++] = tk;
+  //ここで実際の分割
+	while( tk != NULL && isNullOrEmpty(tk)==0 && cnt < 1000 ) {
+		oList[cnt] = tk;
+    cnt++;
 		tk = strtok( NULL, ")" );
 	}
 
@@ -1978,7 +1982,9 @@ int dbExecute(Trgt_inf *itrgt,DB_SETTING *targSetting){
 	string_concat(&query, check_tablename(itrgt->ifi));
 	string_concat(&query, " AS MDATA ");
 
-	//条件文
+  //頭がFFのものは削除扱いなので、対象にしない add koyama 20170619
+  string_concat(&query, " WHERE HEX(MID(ITEM,1,1)) <> 'FF' ");
+  //条件文
 	for(ii = 0; ii < ITEMLST ; ii++){
 
 		if((itrgt->sel[ii].s_point != 0) && (itrgt->sel[ii].length) != 0){
@@ -1987,7 +1993,7 @@ int dbExecute(Trgt_inf *itrgt,DB_SETTING *targSetting){
 			sprintf(wk_length1,"%d",itrgt->sel[ii].length);
 
 			if (ii == 0){
-				string_concat(&query, " WHERE ");
+				string_concat(&query, " AND ( ");
 			}else if(itrgt->sel[ii].logical == 0){
 				string_concat(&query, " AND ");
 			}else if(itrgt->sel[ii].logical == 1){
@@ -2162,6 +2168,11 @@ int dbExecute(Trgt_inf *itrgt,DB_SETTING *targSetting){
 			break;
 		}
 	}
+  //上で項目を一つでもつなげたら
+  if((itrgt->sel[0].s_point != 0) && (itrgt->sel[0].length) != 0){
+    string_concat(&query, " ) ");
+
+  }
 
 	string_concat(&query, " ) AS t2 ");
 	string_concat(&query, " ORDER BY t2.rownum ");
@@ -2191,9 +2202,9 @@ int dbExecute(Trgt_inf *itrgt,DB_SETTING *targSetting){
 		string_concat(&query, ";");
 		//SQL発行
 		if(mysql_query(mysqlConn,query.data) != 0){
-			setTableUnlock(targSetting, itrgt);
 			//エラーのときはmysql_failureで
 			mysql_failure();
+      setTableUnlock(targSetting, itrgt);
 			DB_Close();
 			string_fin(&query);
 			return 1;

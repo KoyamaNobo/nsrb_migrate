@@ -38,13 +38,13 @@ const char* TYPE_CHAR  = "C";    //文字列定数
 #define OPER_LEN 4		// 演算子の文字列長
 //const int  ITEMLST    = 20;		// SORT対象構造体の要素数
 #define ITEMLST 256		// SORT対象構造体の要素数
-#define  SQLSTR 2048		// SQL文字列の最大長
+#define SQLSTR 2048		// SQL文字列の最大長
 #define LOGICAL_DEF -1
 #define LOGICAL_AND 0
 #define LOGICAL_OR 1
 #define PATHNAME_SIZE 1024
 #define QUERYMAX_SIZE 32768
-
+#define DATA_MAX_LEN 4096
 
 //SORT対象の引数構造体
 struct argv_inf {
@@ -214,6 +214,31 @@ void trgt_ini(Trgt_inf *iotrgt ) {
 
 //	iotrgt->logical = LOGICAL_AND;
 
+}
+
+//RTrim実装
+//(それぞれにRtimがあるのでここでも専用を書き直す)
+//date:20160520
+//auth: koyama
+int isNullOrEmpty(char *targ){
+	char *strstart;
+	char *strend;
+	int num=0;
+	strstart = targ;
+	//最後の文字から判定対象
+	strend = targ + strlen(strstart);
+	for(strend--;strend >= strstart;strend--){
+		if(*strend == ' '){
+			num++;
+		}
+	}
+	//全てがスペースなら
+	if(num == strlen(strstart)){
+		num = 1;
+	}else{
+		num = 0;
+	}
+	return num;
 }
 
 //
@@ -969,38 +994,43 @@ int strSplit_ELM( char *iStr, char *oList[] ) {
 	char	*tk;
 	int		cnt = 0;
 	int		str_flg = 0;
-	char	*str1;			//「@」位置(初期位置は比較文字の先頭ポインタ)
-	char	*str2;			//「)」位置(初期位置は比較文字の先頭ポインタ)
+	char	*str1;            //「@」位置(初期位置は比較文字の先頭ポインタ)
+	char	*str2;            //「)」位置(初期位置は比較文字の先頭ポインタ)
 
 	str1 = iStr;
 	str2 = strstr(iStr, ")");
 
-	//文字列要素「@」囲みを検索
-	if(strstr(iStr, "@") != NULL){
-		if(str2 < strchr(iStr, '@')){
-			while(str1 > str2){
-				if(strchr(strchr(iStr, '@'),'@') != NULL){
-					str_flg = 1;
-					str1 = strchr(strchr(iStr, '@'),'@');
-				}
-			}
-		}
-	}
+  //最初の要素にしか対応しないものは削除 rem koyama
+	// //文字列要素「@」囲みを検索
+	// if(strstr(iStr, "@") != NULL){
+	// 	if(str2 < strstr(iStr, "@")){
+	// 		while(str1 > str2){
+	// 			if(strstr(strstr(iStr, "@"),"@") != NULL){
+	// 				str_flg = 1;
+	// 				str1 = strstr(strstr(iStr, "@"),"@");
+	// 			}
+	// 		}
+	// 	}
+	// }
 
+  //最初の一つを入れる処理？
 	//区切り文字を検索
 	if(str_flg == 1){
 		while(str1 > str2){
 			str2 = strstr(str2, ")");
 		}
 		tk = str2;
-		oList[cnt++] = tk;
+		oList[cnt] = tk;
+    cnt++;
 		tk = strtok( str2, ")" );
 	}else{
 		tk = strtok( iStr, ")" );
 	}
 
-	while( tk != NULL && cnt < 1000 ) {
-		oList[cnt++] = tk;
+  //ここで実際の分割
+	while( tk != NULL && isNullOrEmpty(tk)==0 && cnt < 1000 ) {
+		oList[cnt] = tk;
+    cnt++;
 		tk = strtok( NULL, ")" );
 	}
 
@@ -1803,6 +1833,107 @@ int chkRecLenParam(Trgt_inf *itrgt, int recLen, char **errstr, int *errcnt, cons
 	}
 }
 
+//outの構造体配列をsumで調整する
+//add koyama 20170920 元の処理を切り出して関数化
+int adjustOutWithSum(Argv_inf *parseArgs[],Trgt_inf *itrgt,int *item_cnt_p){
+		int argParseCount = 0;
+		int sumMaxLength = 0;
+		int item_cnt = *item_cnt_p;
+		int wkCount = 0;
+		int checkArray[ITEMLST] = {};
+		int ret = 0;
+		char strTime[] = "0000/00/00 00:00:00.000000";
+
+		for(wkCount = 0;wkCount < item_cnt;wkCount++){
+			int existFlg = 0;        //同じスタートポイント,長さのものが出来た時に
+			for(argParseCount = 0;(itrgt->sum[argParseCount].s_point != 0) && (argParseCount < ITEMLST) ;argParseCount++){
+				//前側がなければ0,あれば長さが入る
+				int frontExists = 0;
+				//前側がなければ0,あれば開始位置が入る
+				int frontSPoint = 0;
+				if((parseArgs[wkCount]->s_point == itrgt->sum[argParseCount].s_point)
+				&& (parseArgs[wkCount]->length == itrgt->sum[argParseCount].length)){
+					//開始,長さともに同じものがあればそのまま入れる
+					parseArgs[wkCount]->type = itrgt->sum[argParseCount].type;
+					parseArgs[wkCount]->sumflg = true;
+					existFlg = 1;
+				}else{
+					//構造体をコピーしてだんだん中身を小さくする仕様に変更 20170920 upd koyama =><失敗
+					//outに含まれている(一致してなくて範囲に入る=>前か後ろが違う)
+					if(parseArgs[wkCount]->s_point <= itrgt->sum[argParseCount].s_point
+					&& (parseArgs[wkCount]->s_point + parseArgs[wkCount]->length) >= (itrgt->sum[argParseCount].s_point + itrgt->sum[argParseCount].length)){
+						if(parseArgs[wkCount]->s_point < itrgt->sum[argParseCount].s_point){
+							//sumaryより前側があるなら長さを短くする
+							//後で長さが必要になる可能性があるので
+							frontExists  = parseArgs[wkCount]->length;
+							frontSPoint  = parseArgs[wkCount]->s_point;
+							parseArgs[wkCount]->length = itrgt->sum[argParseCount].s_point - parseArgs[wkCount]->s_point;
+							//sumaryの部分を追加
+							wkCount++;                       //前側があるかないかで+する位置が違うため
+							insertArrayArgv(parseArgs,&itrgt->sum[argParseCount],wkCount,item_cnt);
+							//ここはsumからとったので,sumflg = true
+							parseArgs[wkCount]->sumflg = true;
+							wkCount++;                       //前側があるかないかで+する位置が違うため
+						}else{
+							// TODO: 20161208 ここで何をしているのか調査
+							// TODO:スタートが一致していて,parseArgsが大きいもののよう
+							//sumの開始位置が前回入れた項目より小さい時なので必ず間に挿入になる？20161208 add koyama
+							frontExists  = parseArgs[wkCount]->length;
+							frontSPoint  = parseArgs[wkCount]->s_point;
+							parseArgs[wkCount]->length = itrgt->sum[argParseCount].length;
+							insertArrayArgv(parseArgs,&itrgt->sum[argParseCount],wkCount,item_cnt);
+							parseArgs[wkCount]->sumflg = true;
+							wkCount++;							//
+						}
+						item_cnt++;
+						if((parseArgs[wkCount-1]->s_point + frontExists) > (itrgt->sum[argParseCount].s_point + itrgt->sum[argParseCount].length)){
+							//summaryより後ろ側があるならそれを入れる
+							//TODO : 後ろが更に分割になる場合を考慮できていない
+							if(frontExists > 0){
+								//前も後ろもの時は要素を作って挿入する
+								Argv_inf *tempArg;
+								tempArg = malloc(sizeof(Argv_inf));
+								argv_ini(tempArg);
+								tempArg->s_point = itrgt->sum[argParseCount].s_point + itrgt->sum[argParseCount].length;
+								//frontSPoint,frontExistsに関しては-1の値のときの-2の値の時がある
+								tempArg->length = (frontSPoint + frontExists) - tempArg->s_point; //元々の終了位置- 自分のスタート
+								tempArg->type = malloc((strlen(TYPE_CHAR) + 1) * sizeof(*TYPE_CHAR));
+								strcpy(tempArg->type,TYPE_CHAR);
+								tempArg->operand = itrgt->sum[argParseCount].operand;
+								tempArg->value = itrgt->sum[argParseCount].value;
+								tempArg->sumflg = false;
+								tempArg->logical = itrgt->sum[argParseCount].logical;
+								insertArrayArgv(parseArgs,tempArg,wkCount,item_cnt);
+								//ここを次の対象にするためにitem_cntをインクリメント市内
+								// item_cnt++;
+							}else{
+								//後ろ側だけの時はsummaryの最後を開始,元の長さからsummaryを引いたものを長さとする
+								parseArgs[wkCount]->length = itrgt->sum[argParseCount].s_point + itrgt->sum[argParseCount].length;
+								parseArgs[wkCount]->length = parseArgs[wkCount]->length - itrgt->sum[argParseCount].length;
+							}
+						}
+						//ここに入ったら一旦はbreakしておく TODO:正しく動くようにするために除去
+						// break;
+					}
+					//sumの最大長を確保しておく
+					if(sumMaxLength < argParseCount){
+						sumMaxLength = argParseCount;
+					}
+					existFlg = 1;
+				}
+			}
+		}
+		//outに含まれていなければの条件を判定する方法を検討 TODO
+		// if(existFlg != 1){
+		// 	fprintf(stderr," Error [%02d] %s : Summary is not included in the output(start:%d) \n", 88,local_server_time(strTime),itrgt->sum[argParseCount].s_point);
+		// 	//DB接続の切断(外で接続を繋いだので外で切る upd koyama 20161108)
+		// 	ret = 1;
+		// }
+		*item_cnt_p = item_cnt;
+		return ret;
+}
+
+
 //*********************************************************
 //DB移行処理
 //*********************************************************
@@ -1929,78 +2060,9 @@ int mysql_Init(Trgt_inf *itrgt,DB_SETTING *targSetting){
 	//SUMを判定,クエリ埋め込み情報に変換
 	if((itrgt->sum[0].s_point != 0)){
 		//実際にsumをクエリ埋め込み情報に		//入力されたsumを順に判定
-		int argParseCount = 0;
-		for(argParseCount = 0;(itrgt->sum[argParseCount].s_point != 0) && (argParseCount < ITEMLST) ;argParseCount++){
-			int existFlg = 0;        //同じスタートポイント,長さのものが有ったとき1に
-			int wkCount = 0;
-			for(wkCount = 0;wkCount < item_cnt;wkCount++){
-				//開始,長さともに同じものがあれば
-				if((parseArgs[wkCount]->s_point == itrgt->sum[argParseCount].s_point)
-				&& (parseArgs[wkCount]->length == itrgt->sum[argParseCount].length)){
-					parseArgs[wkCount]->type = itrgt->sum[argParseCount].type;
-					parseArgs[wkCount]->sumflg = true;
-					existFlg = 1;
-				}else{
-					//outに含まれている(一致してなくて範囲に入る=>前か後ろが違う)
-					if(parseArgs[wkCount]->s_point <= itrgt->sum[argParseCount].s_point
-					&& (parseArgs[wkCount]->s_point + parseArgs[wkCount]->length) >= (itrgt->sum[argParseCount].s_point + itrgt->sum[argParseCount].length)){
-						int frontExists = 0;           //前側がなければ0,あれば長さが入る
-						if(parseArgs[wkCount]->s_point < itrgt->sum[argParseCount].s_point){
-							//sumaryより前側があるなら長さを短くする
-							frontExists  =parseArgs[wkCount]->length;   //後で長さが必要になる可能性があるので
-							parseArgs[wkCount]->length = itrgt->sum[argParseCount].s_point - parseArgs[wkCount]->s_point;
-							//sumaryの部分を追加
-							wkCount++;                       //前側があるかないかで+する位置が違うため
-							insertArrayArgv(parseArgs,&itrgt->sum[argParseCount],wkCount,item_cnt);
-							//ここはsumからとったので,sumflg = true
-							parseArgs[wkCount]->sumflg = true;
-							wkCount++;                       //前側があるかないかで+する位置が違うため
-						}else{
-							//TODO: 20161208 ここで何をしているのか調査
-							//
-							//sumの開始位置が前回入れた項目より小さい時なので必ず間に挿入になる？20161208 add koyama
-							parseArgs[wkCount]->s_point = itrgt->sum[argParseCount].s_point + itrgt->sum[argParseCount].length;
-							insertArrayArgv(parseArgs,&itrgt->sum[argParseCount],wkCount,item_cnt);
-							parseArgs[wkCount]->sumflg = true;
-							wkCount++;							//
-							wkCount++;							//
-						}
-						item_cnt++;
-						if((parseArgs[wkCount-1]->s_point + frontExists) > (itrgt->sum[argParseCount].s_point + itrgt->sum[argParseCount].length)){
-							//summaryより後ろ側があるならそれを入れる
-							if(frontExists > 0){
-								//前も後ろもの時は要素を作って挿入する
-								Argv_inf *tempArg;
-								tempArg = malloc(sizeof(Argv_inf));
-								argv_ini(tempArg);
-								tempArg->s_point = itrgt->sum[argParseCount].s_point + itrgt->sum[argParseCount].length;
-								tempArg->length = (parseArgs[wkCount-2]->s_point + frontExists) - tempArg->s_point; //元々の終了位置- 自分のスタート
-								tempArg->type = malloc((strlen(TYPE_CHAR) + 1) * sizeof(*TYPE_CHAR));
-								strcpy(tempArg->type,TYPE_CHAR);
-								tempArg->operand = itrgt->sum[argParseCount].operand;
-								tempArg->value = itrgt->sum[argParseCount].value;
-								tempArg->sumflg = false;
-								tempArg->logical = itrgt->sum[argParseCount].logical;
-								insertArrayArgv(parseArgs,tempArg,wkCount,item_cnt);
-								item_cnt++;
-							}else{
-								//後ろ側だけの時はsummaryの最後を開始,元の長さからsummaryを引いたものを長さとする
-								parseArgs[wkCount]->length = itrgt->sum[argParseCount].s_point + itrgt->sum[argParseCount].length;
-								parseArgs[wkCount]->length = parseArgs[wkCount]->length - itrgt->sum[argParseCount].length;
-							}
-						}
-					}
-					existFlg = 1;
-				}
-			}
-
-			//outに含まれていなければこの時点でもエラーか
-			if(existFlg != 1){
-				fprintf(stderr," Error [%02d] %s : Summary is not included in the output(start:%d) \n", 88,local_server_time(strTime),itrgt->sum[argParseCount].s_point);
-				//DB接続の切断(外で接続を繋いだので外で切る upd koyama 20161108)
-				return 1;
-			}
-		}
+		//sum ループの中にparseArgsループ >> parseArgsループ の中にsum ループに変更
+		//+ 関数化
+		adjustOutWithSum(parseArgs,itrgt,&item_cnt);
 	}
 
 	//中身をすべてwkoutにコピー
@@ -2225,11 +2287,15 @@ int mysql_Init(Trgt_inf *itrgt,DB_SETTING *targSetting){
 					string_concat(&query, wk_length1);
 					string_concat(&query, " - 1),1)),1,1) ");
 					//WHEN '7' THEN (CAST(MID(item, 15 , (9 - 1) ) as SIGNED) * 10
-					string_concat(&query, " WHEN '7' THEN (CAST(MID(item, ");
-					string_concat(&query, wk_point);
-					string_concat(&query, " , (");
-					string_concat(&query, wk_length1);
-					string_concat(&query, " - 1) ) as SIGNED) * 10 ");
+					if(wkout[ii].length != 1){
+						string_concat(&query, " WHEN '7' THEN (CAST(MID(item, ");
+						string_concat(&query, wk_point);
+						string_concat(&query, " , (");
+						string_concat(&query, wk_length1);
+						string_concat(&query, " - 1) ) as SIGNED) * 10 ");
+					}else{
+						string_concat(&query, " WHEN '7' THEN (0 ");
+					}
 					//+ CAST(SUBSTR(HEX(MID(item, 15 + (9 - 1),1 )),2,1 ) as SIGNED) ) *(-1)
 					string_concat(&query, " + CAST(SUBSTR(HEX(MID(item,  ");
 					string_concat(&query, wk_point);
@@ -2238,11 +2304,15 @@ int mysql_Init(Trgt_inf *itrgt,DB_SETTING *targSetting){
 					//2015/08/04 kawada del string_concat(&query, " - 1),1 )),2,1 ) as SIGNED)  * (-1))");
 					string_concat(&query, " - 1),1 )),2,1 ) as SIGNED) ) * (-1)");		//2015/08/04 kawada add 不具合修正
 					//ELSE (CAST(MID(item, 15 , (9 - 1) ) as SIGNED) * 10
-					string_concat(&query, " ELSE (CAST(MID(item, ");
-					string_concat(&query, wk_point);
-					string_concat(&query, " , (");
-					string_concat(&query, wk_length1);
-					string_concat(&query, " - 1) ) as SIGNED) * 10 ");
+					if(wkout[ii].length != 1){
+						string_concat(&query, " ELSE (CAST(MID(item, ");
+						string_concat(&query, wk_point);
+						string_concat(&query, " , (");
+						string_concat(&query, wk_length1);
+						string_concat(&query, " - 1) ) as SIGNED) * 10 ");
+					}else{
+						string_concat(&query, " ELSE (0 ");
+					}
 					//+ CAST(SUBSTR(HEX(MID(item, 15 + (9 - 1),1 )),2,1 ) as SIGNED) ) END
 					string_concat(&query, " + CAST(SUBSTR(HEX(MID(item,  ");
 					string_concat(&query, wk_point);
@@ -2294,6 +2364,8 @@ int mysql_Init(Trgt_inf *itrgt,DB_SETTING *targSetting){
 	string_concat(&query, check_tablename(itrgt->ifi));
 	string_concat(&query, " AS DATA ");
 
+	//頭がFFのものは削除扱いなので、対象にしない add koyama 20170619
+	string_concat(&query, " WHERE HEX(MID(ITEM,1,1)) <> 'FF' ");
 	//条件文
 	//フロー3
 	for(ii = 0; ii < ITEMLST ; ii++){
@@ -2307,7 +2379,7 @@ int mysql_Init(Trgt_inf *itrgt,DB_SETTING *targSetting){
 			sprintf(wk_length1,"%d",itrgt->sel[ii].length);
 
 			if (ii == 0){
-				string_concat(&query, " WHERE ");
+				string_concat(&query, " AND ");
 			}else if(itrgt->sel[ii].logical == LOGICAL_AND){
 				string_concat(&query, " AND ");
 			}else if(itrgt->sel[ii].logical == LOGICAL_OR){
@@ -2548,7 +2620,7 @@ int mysql_Init(Trgt_inf *itrgt,DB_SETTING *targSetting){
 			if(*(itrgt->key[ii].type) == 'S'){
 			//符号付
 			//CASE MID(HEX(MID(item,15 + (9 - 1),1)),1,1)
-				string_concat(&query, " CASE");
+				string_concat(&query, " LPAD(CAST(CASE");
 				string_concat(&query, " MID(HEX(MID(item,");
 				string_concat(&query, wk_point);
 				string_concat(&query, " + (");
@@ -2577,11 +2649,13 @@ int mysql_Init(Trgt_inf *itrgt,DB_SETTING *targSetting){
 				string_concat(&query, wk_point);
 				string_concat(&query, " + (");
 				string_concat(&query, wk_length1);
-				string_concat(&query, " - 1),1 )),2,1 ) as SIGNED) ) END");
+				string_concat(&query, " - 1),1 )),2,1 ) as SIGNED) ) END as char),");
+				string_concat(&query, wk_length1);
+				string_concat(&query, ", '0') ");
 			}else if(*(itrgt->key[ii].type) == 'P' || *(itrgt->key[ii].type) == 'Q'){
 				//packed decimal
 				//CASE SUBSTR(HEX(MID(ITEM,39,CEIL((4 + 1) / 2))) ,CEIL((4 + 1) / 2) * 2)
-				string_concat(&query, " CASE");
+				string_concat(&query, " LPAD(CAST(CASE");
 				string_concat(&query, "  SUBSTR(HEX(MID(ITEM,");
 				string_concat(&query, wk_point);
 				string_concat(&query, " ,");
@@ -2614,7 +2688,9 @@ int mysql_Init(Trgt_inf *itrgt,DB_SETTING *targSetting){
 				string_concat(&query, " )) ,1,");
 				string_concat(&query, wk_length1);
 				string_concat(&query, " * 2) as SIGNED) ");
-				string_concat(&query, " END ");
+				string_concat(&query, " END as char),");
+				string_concat(&query, wk_length1);
+				string_concat(&query, ", '0') ");
 			}else{
 				string_concat(&query, " CAST(chCharMap(item,");
 				string_concat(&query, wk_point);
@@ -2658,7 +2734,8 @@ int mysql_Init(Trgt_inf *itrgt,DB_SETTING *targSetting){
 
 	// temporary作成
 	memset(sqlstr,'\0',strlen(sqlstr));
-	strcpy(sqlstr,"CREATE TEMPORARY TABLE tmp (ID INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ITEM VARBINARY(1024));");
+	sprintf(sqlstr,"CREATE TEMPORARY TABLE tmp (ID INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ITEM VARBINARY(%d));", DATA_MAX_LEN );
+	//strcpy(sqlstr,"CREATE TEMPORARY TABLE tmp (ID INT NOT NULL AUTO_INCREMENT PRIMARY KEY, ITEM VARBINARY(1024));");
 	ret = mysql_run(sqlstr);
 	if(ret != 0){
 		//DB接続の切断(外で接続を繋いだので外で切る upd koyama 20161108)
@@ -2719,6 +2796,7 @@ int mysql_Init(Trgt_inf *itrgt,DB_SETTING *targSetting){
 	//SQL発行
 	ret = mysql_real_query(mysqlConn,query.data,query.size);
 	if(ret != 0){
+		mysql_failure();
 		string_fin(&query);
 		//DB接続の切断(外で接続を繋いだので外で切る upd koyama 20161108)
 		return 1;

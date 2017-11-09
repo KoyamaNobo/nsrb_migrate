@@ -2027,11 +2027,15 @@ int getTargetString(Trgt_inf *itrgt,char *strRetTarget,int *dataLength){
 	}else if(itrgt->mod == 0){
 		//DB2ファイル
 		unsigned long *f_length;     //フィールドの長さ(配列として受け取るのでポインタ宣言)
-		if(res->row_count == 0){
-			//行を1行も持っていなければ終わり
+		//行を持っていなければ終わり(取れなければ)
+		if((row = mysql_fetch_row(res)) == NULL){
 			return 1;
 		}
-		row = mysql_fetch_row(res);
+		// if(res->row_count == 0){
+		// 	//行を1行も持っていなければ終わり
+		// 	return 1;
+		// }
+		// row = mysql_fetch_row(res);
 		if(row != NULL){
 			f_length =  mysql_fetch_lengths(res);
 			//フィールド指定がITEMのみなので0番目のみ
