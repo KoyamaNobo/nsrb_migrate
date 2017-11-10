@@ -460,7 +460,10 @@ int DB_Close(){
 	//DB_initを通っていることを確認
 	if(background_targSetting != NULL){
 		//return voidなので必ず0で返す
-		mysql_close(mysqlConn);
+		//double freeになるケースが有るようなので回避
+		if(mysql_ping(mysqlConn) != 0){
+			mysql_close(mysqlConn);
+		}
 	}
 	return ret;
 }
@@ -476,7 +479,8 @@ int __mysql_failure(const char *funcName,int funcLine){
 		,99,mysql_error(mysqlConn),funcName,funcLine,local_server_time(strTime));
 
 	//ロールバック
-	ret = mysql_query(mysqlConn, "ROLLBACK");
+	ret = mysql_rollback(mysqlConn);
+	// ret = mysql_query(mysqlConn, "ROLLBACK");
 
 	return ret;
 }
@@ -1528,11 +1532,11 @@ int overlapKeyToSum(Trgt_inf *ioTrgt){
 int checkTrgtCorrect(Trgt_inf *ioTrgt){
 	char strTime[] = "0000/00/00 00:00:00.000000";
 
-	if(strlen(ioTrgt->ifi) == 0){
+	if(ioTrgt->ifi == NULL || strlen(ioTrgt->ifi) == 0){
 		fprintf(stderr," Error C [%02d]:Where is the input source  %s \n",01,local_server_time(strTime));
 		return 1;
 	}
-	if(strlen(ioTrgt->ofi) == 0){
+	if(ioTrgt->ofi == NULL || strlen(ioTrgt->ofi) == 0){
 		fprintf(stderr," Error C [%02d]:Where is the output destination %s \n",02,local_server_time(strTime));
 		return 1;
 	}
@@ -1878,9 +1882,10 @@ int adjustOutWithSum(Argv_inf *parseArgs[],Trgt_inf *itrgt,int *item_cnt_p){
 							// TODO: 20161208 ここで何をしているのか調査
 							// TODO:スタートが一致していて,parseArgsが大きいもののよう
 							//sumの開始位置が前回入れた項目より小さい時なので必ず間に挿入になる？20161208 add koyama
-							frontExists  = parseArgs[wkCount]->length;
+							parseArgs[wkCount]->s_point = (itrgt->sum[argParseCount].s_point + itrgt->sum[argParseCount].length );
+							parseArgs[wkCount]->length -= itrgt->sum[argParseCount].length;
+							frontExists  = itrgt->sum[argParseCount].length;
 							frontSPoint  = parseArgs[wkCount]->s_point;
-							parseArgs[wkCount]->length = itrgt->sum[argParseCount].length;
 							insertArrayArgv(parseArgs,&itrgt->sum[argParseCount],wkCount,item_cnt);
 							parseArgs[wkCount]->sumflg = true;
 							wkCount++;							//
@@ -1904,11 +1909,10 @@ int adjustOutWithSum(Argv_inf *parseArgs[],Trgt_inf *itrgt,int *item_cnt_p){
 								tempArg->sumflg = false;
 								tempArg->logical = itrgt->sum[argParseCount].logical;
 								insertArrayArgv(parseArgs,tempArg,wkCount,item_cnt);
-								//ここを次の対象にするためにitem_cntをインクリメント市内
-								// item_cnt++;
+								item_cnt++;
 							}else{
 								//後ろ側だけの時はsummaryの最後を開始,元の長さからsummaryを引いたものを長さとする
-								parseArgs[wkCount]->length = itrgt->sum[argParseCount].s_point + itrgt->sum[argParseCount].length;
+								parseArgs[wkCount]->s_point = itrgt->sum[argParseCount].s_point + itrgt->sum[argParseCount].length;
 								parseArgs[wkCount]->length = parseArgs[wkCount]->length - itrgt->sum[argParseCount].length;
 							}
 						}
