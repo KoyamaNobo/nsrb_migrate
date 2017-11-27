@@ -106,7 +106,7 @@ typedef struct db_object{
 	char tableName[TNAME_LENGTH];           // 対象のテーブル名
 	char tablePName[TNAME_LENGTH];          // 対象のテーブル名(COBOL)
 	char tableLName[TNAME_LENGTH];          // 対象の識別子
-	char fileStatus[STAT_LENGTH];           // Openする際にSTATUSがあれば格納[0]:ORGANIZATION(ファイル編成),[1]:ACCESS MODE(Dynamic,Random,Sequential)
+	char fileStatus[STAT_LENGTH];           // Openする際にSTATUSがあれば格納[0]:ORGANIZATION(ファイル編成),[1]:ACCESS MODE(Dynamic,Random,Sequential),[2]:OPEN MODE(INPUT,OUTPUT,I-O,EXTEND)
 	char accessStatus[STAT_LENGTH];         // 最後に実行した処理のステータスを格納([0]実行した関数の頭文字 [1]成否 成'0' 否'1' [2])
 	char sharedStatus[STAT_LENGTH];         // 共有排他等の設定([0]O:Opened,C:Closed;[1] :初期値,E:排他,S:共有,P:ReadOnly;[2]I:INPUT,-:I-O,O:OUTPUT,E:EXTEND)
 	char readStatus[STAT_LENGTH];           // 直前のread指定([0]A:At End,I:Invalid;N:Next At End;)
@@ -162,7 +162,6 @@ int __M_CLOSE(const char*,int);
 char *getAssignPName(char **,char *);                //assign用のenv問い合わせ
 char* getFieldSpecifiedElement(char *,char *,char *);
 char* getFieldSpecified(char *,char *,char *);
-void setFileStatus(char *,char *);
 DBReaded *initDBReaded(DBReaded *);
 int removeDBReaded(DBReaded *);
 int destroyDBReaded(DB_TABLE_OBJ *);
@@ -183,6 +182,8 @@ int updateRecordFromBuffer(DB_TABLE_OBJ *);
 int deleteRecordFromBuffer(DB_TABLE_OBJ *);
 void initFieldObj(DB_FIELD_OBJ *);
 int InitDB_Table(DB_TABLE_OBJ *);
+//Updateから呼ばれる専用Read
+int DB_Read_for_update(char *,char *,char *,char *,...);
 int matchTableStatus(DB_TABLE_OBJ *,char *);
 void setTableStatus(DB_TABLE_OBJ *,char ,int );
 char getTableStatusWithIndex(DB_TABLE_OBJ *,int );
@@ -192,6 +193,8 @@ char *getFileStatus(DB_TABLE_OBJ *);
 char getFileStatusOrgnization(DB_TABLE_OBJ *);
 //ファイルのオープンモードのアクセスモードを文字で取得
 char getFileStatusAccess(DB_TABLE_OBJ *);
+//ファイルのアクセスモードやオープンモードをセット
+void setFileStatus(char *,DB_TABLE_OBJ *);
 //未使用？
 int recordLength(char *);    ////テーブルに対する最大サイズ(レコードサイズ)を取得
 
@@ -584,18 +587,18 @@ int setInsertRecord(DB_TABLE_OBJ *TableObj,char *result,int f_length){
 //in TableObj:対象の構造体 result:取得したデータ
 //return otherRownum:読んだ行数,エラーの時-1
 //Author:koyama 20170117
-	int setUpdateRecord(DB_TABLE_OBJ *TableObj,char *result,int f_length){
+int setUpdateRecord(DB_TABLE_OBJ *TableObj,char *result,int f_length){
 	MYSQL_ROW res;
 	int otherRownum =0;
 	int maxcols=0;			 //フィールドの数とそのループ変数
 
 	DBReaded *otherRow=NULL;
 	otherRow = initDBReaded(NULL);
-	//INVALID KEYのときはKEYで更新をかけないとダメ
-	if(getFileStatusOrgnization(TableObj) == 'I'){
+	//INVALID KEYのときはKEYで更新をかけないとダメ -> INVALIDが使えるのはRANDAMで開いた時
+	if(getFileStatusAccess(TableObj) == 'R'){
 		char dataTemp[READDATA_MAX_LEN]="";
 		int readResult = 0;
-		readResult = DB_Read("INVALID KEY",TableObj->tablePName,dataTemp," ");
+		readResult = DB_Read_for_update("INVALID KEY",TableObj->tablePName,dataTemp," ");
 		if(readResult != 0){
 			// TODO 結果をどう返すかを考える必要がある
 			return -1;
@@ -2155,52 +2158,74 @@ char getFileStatusAccess(DB_TABLE_OBJ *targetTable){
 }
 
 //ファイルのオープンモードをセット
-//last update 20171016 koyama
-void setFileStatus(char *charTarget,char *filestat){
+//ファイルのオープンモードをセットなので、
+//last update 20171114 koyama
+void setFileStatus(char *charTarget,DB_TABLE_OBJ *targetTable){
 	char *charSetting;
+	//対象は後ろから見て最初に見つけたスペースから後ろ
+	//無いときはそのもの
 	if((charSetting = strrchr(charTarget,' ')) !=NULL){
 		charSetting = charSetting + 1;
-		// +0 ORGANIZATION, +1 ACCESS MODE
-		if( strncmp(charSetting,"INDEXED",strlen("INDEXED"))==0){
-			*(filestat + 0) = 'I';
-			//空ならDynamicを入れておく
-			if(*(filestat + 1) == '\0'){
-				*(filestat + 1) = 'D';
-			}
-		}else if( strncmp(charSetting,"RELATIVE",strlen("RELATIVE"))==0){
-			*(filestat + 0) = 'R';
-			//空ならDynamicを入れておく
-			if(*(filestat + 1) == '\0'){
-				*(filestat + 1) = 'D';
-			}
-		}else if( strncmp(charSetting,"SEQUENTIAL",strlen("SEQUENTIAL"))==0){
-			if(*(filestat + 0)== '\0'){
-				//SEQUENTIALとだけ書いて有る場合はINDEXED扱い
-				*(filestat + 0) = 'I';
-			}else{
-				//SEQUENTIALと2回書いて有る場合はSEQUENTIALのファイル編成扱い
-				*(filestat + 0) = 'S';
-			}
-			*(filestat + 1) = 'S';
-		}else if( strncmp(charSetting,"RANDOM",strlen("RANDOM"))==0){
-			*(filestat + 1) = 'R';
-			//空ならSEQUENTIALを入れておく
-			if(*(filestat + 0) == '\0'){
-				*(filestat + 0) = 'S';
-			}
-		}else if( strncmp(charSetting,"DYNAMIC",strlen("DYNAMIC"))==0){
-			*(filestat + 1) = 'D';
-			//空ならSEQUENTIALを入れておく
-			if(*(filestat + 0) == '\0'){
-				*(filestat + 0) = 'S';
-			}
+	}else{
+		charSetting = charTarget;
+	}
+	// +0 ORGANIZATION, +1 ACCESS MODE
+	if( strncmp(charSetting,"INDEXED",strlen("INDEXED"))==0){
+		*(targetTable->fileStatus + 0) = 'I';
+		//空ならRandomを入れておく
+		if(*(targetTable->fileStatus + 1) == '\0'){
+			*(targetTable->fileStatus + 1) = 'R';
 		}
-		//一度取得したら切る
+	}else if( strncmp(charSetting,"RELATIVE",strlen("RELATIVE"))==0){
+		*(targetTable->fileStatus + 0) = 'R';
+		//空ならRandomを入れておく
+		if(*(targetTable->fileStatus + 1) == '\0'){
+			*(targetTable->fileStatus + 1) = 'R';
+		}
+	}else if( strncmp(charSetting,"SEQUENTIAL",strlen("SEQUENTIAL"))==0){
+		//ORGANIZATION SEQUENTIALは省略するのでACCESS MODE
+		if(*(targetTable->fileStatus + 0) == '\0'){
+			//SEQUENTIALとだけ書いて有る場合はINDEXED扱い
+			//SEQUENTIALのSEQUENTIALもINDEXEDの動きで読めるはず
+			*(targetTable->fileStatus + 0) = 'I';
+		}
+		*(targetTable->fileStatus + 1) = 'S';
+	}else if( strncmp(charSetting,"RANDOM",strlen("RANDOM"))==0){
+		*(targetTable->fileStatus + 1) = 'R';
+		//空ならSEQUENTIALを入れておく
+		if(*(targetTable->fileStatus + 0) == '\0'){
+			*(targetTable->fileStatus + 0) = 'S';
+		}
+	}else if( strncmp(charSetting,"DYNAMIC",strlen("DYNAMIC"))==0){
+		*(targetTable->fileStatus + 1) = 'D';
+		//空ならSEQUENTIALを入れておく
+		if(*(targetTable->fileStatus + 0) == '\0'){
+			*(targetTable->fileStatus + 0) = 'S';
+		}
+	}else if( strncmp(charSetting,"INPUT",strlen("INPUT"))==0){
+		//OPEN-MODE
+		*(targetTable->sharedStatus + 2) = charSetting[0];
+		*(targetTable->fileStatus   + 2) = charSetting[0];
+	}else if( strncmp(charSetting,"OUTPUT",strlen("OUTPUT"))==0){
+		//OPEN-MODE
+		*(targetTable->sharedStatus + 2) = charSetting[0];
+		*(targetTable->fileStatus   + 2) = charSetting[0];
+	}else if( strncmp(charSetting,"EXTEND",strlen("EXTEND"))==0){
+		//OPEN-MODE
+		*(targetTable->sharedStatus + 2) = charSetting[0];
+		*(targetTable->fileStatus   + 2) = charSetting[0];
+	}else if( strncmp(charSetting,"I-O",strlen("I-O"))==0){
+		//OPEN-MODE(I-Oは-で初期化)
+		*(targetTable->sharedStatus + 2) = charSetting[1];
+		*(targetTable->fileStatus   + 2) = charSetting[1];
+	}
+	//取得したら切る
+	if(charSetting != charTarget){
 		charSetting = (charSetting - 1);
 		*(charSetting) = '\0';
-	}else{
-		return ;
 	}
+
+	return ;
 }
 
 //ORDER 句を作成
@@ -3053,7 +3078,7 @@ int DB_Read(char *iMode,char *iPName,char *oItem,char *lockMode,...){
 	sqlstrLen += strlen(strSql);
 
 	//テーブル名の追加 & Readステータス処理
-	if(strchr(iMode,'I') != NULL && strncmp(strchr(iMode,'I'),"INVALID",strlen("INVALID")) == 0 && getFileStatusAccess(&DB_table[intCurTableNum]) != 'S'){
+	if(strchr(iMode,'I') != NULL && strncmp(strchr(iMode,'I'),"INVALID",strlen("INVALID")) == 0 ){
 		sqlstrLen += setTableNameAfterStr(strSql,&DB_table[intCurTableNum],'I');
 		//INVALID KEYのとき(RUNDOM ACCESSになるのでポインタを消去)
 		DB_table[intCurTableNum].prevPoint = 0;
@@ -3062,14 +3087,8 @@ int DB_Read(char *iMode,char *iPName,char *oItem,char *lockMode,...){
 		sprintf(strPrevKey,"%d",DB_table[intCurTableNum].prevPoint);
 	}else{
 		sqlstrLen += setTableNameAfterStr(strSql,&DB_table[intCurTableNum],'S');
-		//前がinvalidの時はIDの撮り直しが必要か?
-		if(getTableStatusWithIndex(&DB_table[intCurTableNum],2) == 'I'){
-			//IDを文字列化
-			sprintf(strPrevKey,"%d",getIntConvertOrigPtoOrderP(&DB_table[intCurTableNum]));
-		}else{
-			//IDを文字列化
-			sprintf(strPrevKey,"%d",DB_table[intCurTableNum].prevPoint);
-		}
+		//IDを文字列化
+		sprintf(strPrevKey,"%d",DB_table[intCurTableNum].prevPoint);
 		//TODO:RDBのときにLIMIT用の変数をstrPrevKeyで作る(入れ替える)
 		if((DB_table[intCurTableNum].strWhere->flg % DB_WHERE_RDB) == 0){
 			//IDを文字列化
@@ -3097,7 +3116,7 @@ int DB_Read(char *iMode,char *iPName,char *oItem,char *lockMode,...){
 	}
 	//モードによるWHERE句の指定(INVALID KEYのときはWHERE でキー値を指定)
 	//INVALIDのとき条件追加
-	if(strchr(iMode,'I') != NULL && strncmp(strchr(iMode,'I'),"INVALID",strlen("INVALID")) == 0 && getFileStatusAccess(&DB_table[intCurTableNum]) != 'S' &&(DB_table[intCurTableNum].strWhere->flg % DB_WHERE_RDB) != 0 ){
+	if(strchr(iMode,'I') != NULL && strncmp(strchr(iMode,'I'),"INVALID",strlen("INVALID")) == 0  &&(DB_table[intCurTableNum].strWhere->flg % DB_WHERE_RDB) != 0 ){
 		//------------------------------------------------------------------------------KEY値指定のときがあるため
 		//通常関数を呼ぶときの変数の数がconst_call_param
 		int this_call_param = cob_call_params - const_call_param;
@@ -3145,151 +3164,32 @@ int DB_Read(char *iMode,char *iPName,char *oItem,char *lockMode,...){
 		//ANDでキーの判定
 		//キーの値の1番目の長さが0以上なら
 		if(key1exist > 0){
-			char strFeildSpec[64] = "";
-			char strKeyVal[1024]="";
-			int  keyLen=0;
-			mystrncat( strSql, sqlstrLen," AND ",strlen(" AND "));
-			sqlstrLen += strlen(" AND ");
-
-			keyLen = dataEscapeCopy(DB_table[intCurTableNum].key1,strKeyVal,DB_table[intCurTableNum].key1Len);
-			//フィールド名からMID(?,?)をとってくる
-			if(strlen(getFieldSpecified(DB_table[intCurTableNum].tableLName,DB_table[intCurTableNum].key1Name,strFeildSpec)) == 0){
-				mysql_failure();
-				cob_runtime_error(" Error C [%02d]: %s Coudn't get Field Status [%s] ",99,map_source_func,DB_table[intCurTableNum].key1Name);
+			int falseKeyset = 0;
+			falseKeyset = set_DB_Read_query_has_invalid_key(&DB_table[intCurTableNum],strSql,&sqlstrLen,1);
+			if(falseKeyset != 0){
 				ret = 1;
 				return ret;
 			}
-			//ORで逆向きワイルドカードを追加 add koyama 20160811
-			mystrncat( strSql, sqlstrLen," ( ",strlen(" ( "));
-			sqlstrLen += strlen(" ( ");
-			//ここをpacked対応しなければ 20160112 -> ここは例外を作らないとWildCardとぶつかる
-			mystrncat( strSql, sqlstrLen," '",strlen(" '"));
-			sqlstrLen += strlen(" '");
-			//値を埋める ここはWildCardなし
-			mystrncat( strSql, sqlstrLen,strKeyVal,keyLen);
-			sqlstrLen += keyLen;
-			mystrncat( strSql, sqlstrLen,"' LIKE BINARY REPLACE(",strlen("' LIKE BINARY REPLACE("));
-			sqlstrLen += strlen("' LIKE BINARY REPLACE(");
-			//MID(*,*)をつなぐ
-			mystrncat( strSql, sqlstrLen,strFeildSpec,strlen(strFeildSpec));
-			sqlstrLen += strlen(strFeildSpec);
-			mystrncat( strSql, sqlstrLen," ,' ','_') OR ",strlen(" ,' ','_') OR "));
-			sqlstrLen += strlen(" ,' ','_') OR ");
-
-				//MID(*,*)をつなぐ
-			mystrncat( strSql, sqlstrLen,strFeildSpec,strlen(strFeildSpec));
-			sqlstrLen += strlen(strFeildSpec);
-			//ここをpacked対応しなければ 20160112 -> ここは例外を作らないとWildCardとぶつかる
-			mystrncat( strSql, sqlstrLen," LIKE BINARY '",strlen(" LIKE BINARY '"));
-			sqlstrLen += strlen(" LIKE BINARY '");
-			//値を埋める
-			changeWildcard( strSql, sqlstrLen,strKeyVal,keyLen);
-			sqlstrLen += keyLen;
-			mystrncat( strSql, sqlstrLen,"' ",strlen("' "));
-			sqlstrLen += strlen("' ");
-
-			//ORで逆向きワイルドカードを追加 add koyama 20160811
-			mystrncat( strSql, sqlstrLen," ) ",strlen(" ) "));
-			sqlstrLen += strlen(" ) ");
 		}
 
 		//キーの値の2番目の長さが0以上なら
 		if(key2exist > 0){
-			char strFeildSpec[64] = "";
-			char strKeyVal[1024]  ="";
-			int keyLen            =0;
-			mystrncat( strSql, sqlstrLen," AND ",strlen(" AND "));
-			sqlstrLen += strlen(" AND ");
-
-			keyLen = dataEscapeCopy(DB_table[intCurTableNum].key2,strKeyVal,DB_table[intCurTableNum].key2Len);
-			if(strlen(getFieldSpecified(DB_table[intCurTableNum].tableLName,DB_table[intCurTableNum].key2Name,strFeildSpec)) == 0){
-				mysql_failure();
-				cob_runtime_error(" Error C [%02d]: %s Coudn't get Field Status [%s] ",99,map_source_func,DB_table[intCurTableNum].key2Name);
+			int falseKeyset = 0;
+			falseKeyset = set_DB_Read_query_has_invalid_key(&DB_table[intCurTableNum],strSql,&sqlstrLen,2);
+			if(falseKeyset != 0){
 				ret = 1;
 				return ret;
 			}
-			//ORで逆向きワイルドカードを追加 add koyama 20160811
-			mystrncat( strSql, sqlstrLen," ( ",strlen(" ( "));
-			sqlstrLen += strlen(" ( ");
-			//ここをpacked対応しなければ 20160112 -> ここは例外を作らないとWildCardとぶつかる
-			mystrncat( strSql, sqlstrLen," '",strlen(" '"));
-			sqlstrLen += strlen(" '");
-			//値を埋める ここはWildCardなし
-			mystrncat( strSql, sqlstrLen,strKeyVal,keyLen);
-			sqlstrLen += keyLen;
-			mystrncat( strSql, sqlstrLen,"' LIKE BINARY REPLACE(",strlen("' LIKE BINARY REPLACE("));
-			sqlstrLen += strlen("' LIKE BINARY REPLACE(");
-			//MID(*,*)をつなぐ
-			mystrncat( strSql, sqlstrLen,strFeildSpec,strlen(strFeildSpec));
-			sqlstrLen += strlen(strFeildSpec);
-			mystrncat( strSql, sqlstrLen," ,' ','_') OR ",strlen(" ,' ','_') OR "));
-			sqlstrLen += strlen(" ,' ','_') OR ");
-
-				//MID(*,*)をつなぐ
-			mystrncat( strSql, sqlstrLen,strFeildSpec,strlen(strFeildSpec));
-			sqlstrLen += strlen(strFeildSpec);
-			//ここをpacked対応しなければ 20160112 -> ここは例外を作らないとWildCardとぶつかる
-			mystrncat( strSql, sqlstrLen," LIKE BINARY '",strlen(" LIKE BINARY '"));
-			sqlstrLen += strlen(" LIKE BINARY '");
-			//値を埋める
-			changeWildcard( strSql, sqlstrLen,strKeyVal,keyLen);
-			sqlstrLen += keyLen;
-			mystrncat( strSql, sqlstrLen,"' ",strlen("' "));
-			sqlstrLen += strlen("' ");
-
-			//ORで逆向きワイルドカードを追加 add koyama 20160811
-			mystrncat( strSql, sqlstrLen," ) ",strlen(" ) "));
-			sqlstrLen += strlen(" ) ");
 		}
 
 		//キーの値の3番目の長さが0以上なら
 		if(key3exist > 0){
-			char strFeildSpec[64] = "";
-			char strKeyVal[1024]  ="";
-			int keyLen            =0;
-			mystrncat( strSql, sqlstrLen," AND ",strlen(" AND "));
-			sqlstrLen += strlen(" AND ");
-
-			keyLen = dataEscapeCopy(DB_table[intCurTableNum].key3,strKeyVal,DB_table[intCurTableNum].key3Len);
-			if(strlen(getFieldSpecified(DB_table[intCurTableNum].tableLName,DB_table[intCurTableNum].key2Name,strFeildSpec)) == 0){
-				mysql_failure();
-				cob_runtime_error(" Error C [%02d]: %s Coudn't get Field Status [%s] ",99,map_source_func,DB_table[intCurTableNum].key3Name);
+			int falseKeyset = 0;
+			falseKeyset = set_DB_Read_query_has_invalid_key(&DB_table[intCurTableNum],strSql,&sqlstrLen,3);
+			if(falseKeyset != 0){
 				ret = 1;
 				return ret;
 			}
-			//ORで逆向きワイルドカードを追加 add koyama 20160811
-			mystrncat( strSql, sqlstrLen," ( ",strlen(" ( "));
-			sqlstrLen += strlen(" ( ");
-			//ここをpacked対応しなければ 20160112 -> ここは例外を作らないとWildCardとぶつかる
-			mystrncat( strSql, sqlstrLen," '",strlen(" '"));
-			sqlstrLen += strlen(" '");
-			//値を埋める ここはWildCardなし
-			mystrncat( strSql, sqlstrLen,strKeyVal,keyLen);
-			sqlstrLen += keyLen;
-			mystrncat( strSql, sqlstrLen,"' LIKE BINARY REPLACE(",strlen("' LIKE BINARY REPLACE("));
-			sqlstrLen += strlen("' LIKE BINARY REPLACE(");
-			//MID(*,*)をつなぐ
-			mystrncat( strSql, sqlstrLen,strFeildSpec,strlen(strFeildSpec));
-			sqlstrLen += strlen(strFeildSpec);
-			mystrncat( strSql, sqlstrLen," ,' ','_') OR ",strlen(" ,' ','_') OR "));
-			sqlstrLen += strlen(" ,' ','_') OR ");
-
-				//MID(*,*)をつなぐ
-			mystrncat( strSql, sqlstrLen,strFeildSpec,strlen(strFeildSpec));
-			sqlstrLen += strlen(strFeildSpec);
-			//ここをpacked対応しなければ 20160112 -> ここは例外を作らないとWildCardとぶつかる
-			mystrncat( strSql, sqlstrLen," LIKE BINARY '",strlen(" LIKE BINARY '"));
-			sqlstrLen += strlen(" LIKE BINARY '");
-			//値を埋める
-			//TODO:koyama 20170314:全て空白のときに全てをワイルドカードにすると全てを対象にしてしまう
-			changeWildcard( strSql, sqlstrLen,strKeyVal,keyLen);
-			sqlstrLen += keyLen;
-			mystrncat( strSql, sqlstrLen,"' ",strlen("' "));
-			sqlstrLen += strlen("' ");
-
-			//ORで逆向きワイルドカードを追加 add koyama 20160811
-			mystrncat( strSql, sqlstrLen," ) ",strlen(" ) "));
-			sqlstrLen += strlen(" ) ");
 		}
 
 		mystrncat( strSql, sqlstrLen, " LIMIT ", strlen(" LIMIT "));
@@ -3458,7 +3358,529 @@ int DB_Read(char *iMode,char *iPName,char *oItem,char *lockMode,...){
 	return ret;
 }
 
+//DB_ReadのINVALIDKey際のクエリをつなぐ関数
+//keyの3番目
+//return 問題なし 0  問題あり 1
+//author:koyama
+//add-date: 20171121
+int set_DB_Read_query_has_invalid_key3(DB_TABLE_OBJ *targetTable,char *strSql,int *sqlstrLen){
+	char strFeildSpec[64] = "";
+	char strKeyVal[1024]="";
+	int  keyLen=0;
+	int  retVal=0;
 
+	mystrncat( strSql, *sqlstrLen," AND ",strlen(" AND "));
+	*sqlstrLen += strlen(" AND ");
+
+	keyLen = dataEscapeCopy(targetTable->key3,strKeyVal,targetTable->key3Len);
+	//フィールド名からMID(?,?)をとってくる
+	if(strlen(getFieldSpecified(targetTable->tableLName,targetTable->key3Name,strFeildSpec)) == 0){
+		mysql_failure();
+		cob_runtime_error(" Error C [%02d]: %s Coudn't get Field Status [%s] ",99,map_source_func,targetTable->key1Name);
+		retVal = 1;
+		return retVal;
+	}
+	//ORで逆向きワイルドカードを追加 add koyama 20160811
+	mystrncat( strSql, *sqlstrLen," ( ",strlen(" ( "));
+	*sqlstrLen += strlen(" ( ");
+	//ここをpacked対応しなければ 20160112 -> ここは例外を作らないとWildCardとぶつかる
+	mystrncat( strSql, *sqlstrLen," '",strlen(" '"));
+	*sqlstrLen += strlen(" '");
+	//値を埋める ここはWildCardなし
+	mystrncat( strSql, *sqlstrLen,strKeyVal,keyLen);
+	*sqlstrLen += keyLen;
+	mystrncat( strSql, *sqlstrLen,"' LIKE BINARY REPLACE(",strlen("' LIKE BINARY REPLACE("));
+	*sqlstrLen += strlen("' LIKE BINARY REPLACE(");
+	//MID(*,*)をつなぐ
+	mystrncat( strSql, *sqlstrLen,strFeildSpec,strlen(strFeildSpec));
+	*sqlstrLen += strlen(strFeildSpec);
+	mystrncat( strSql, *sqlstrLen," ,' ','_') OR ",strlen(" ,' ','_') OR "));
+	*sqlstrLen += strlen(" ,' ','_') OR ");
+
+		//MID(*,*)をつなぐ
+	mystrncat( strSql, *sqlstrLen,strFeildSpec,strlen(strFeildSpec));
+	*sqlstrLen += strlen(strFeildSpec);
+	//ここをpacked対応しなければ 20160112 -> ここは例外を作らないとWildCardとぶつかる
+	mystrncat( strSql, *sqlstrLen," LIKE BINARY '",strlen(" LIKE BINARY '"));
+	*sqlstrLen += strlen(" LIKE BINARY '");
+	//値を埋める
+	changeWildcard( strSql, *sqlstrLen,strKeyVal,keyLen);
+	*sqlstrLen += keyLen;
+	mystrncat( strSql, *sqlstrLen,"' ",strlen("' "));
+	*sqlstrLen += strlen("' ");
+
+	//ORで逆向きワイルドカードを追加 add koyama 20160811
+	mystrncat( strSql, *sqlstrLen," ) ",strlen(" ) "));
+	*sqlstrLen += strlen(" ) ");
+
+	return retVal;
+}
+
+//DB_ReadのINVALIDKey際のクエリをつなぐ関数
+//keyの2番目
+//return 問題なし 0  問題あり 1
+//author:koyama
+//add-date: 20171121
+int set_DB_Read_query_has_invalid_key2(DB_TABLE_OBJ *targetTable,char *strSql,int *sqlstrLen){
+	char strFeildSpec[64] = "";
+	char strKeyVal[1024]="";
+	int  keyLen=0;
+	int  retVal=0;
+
+	mystrncat( strSql, *sqlstrLen," AND ",strlen(" AND "));
+	*sqlstrLen += strlen(" AND ");
+
+	keyLen = dataEscapeCopy(targetTable->key2,strKeyVal,targetTable->key2Len);
+	//フィールド名からMID(?,?)をとってくる
+	if(strlen(getFieldSpecified(targetTable->tableLName,targetTable->key2Name,strFeildSpec)) == 0){
+		mysql_failure();
+		cob_runtime_error(" Error C [%02d]: %s Coudn't get Field Status [%s] ",99,map_source_func,targetTable->key1Name);
+		retVal = 1;
+		return retVal;
+	}
+	//ORで逆向きワイルドカードを追加 add koyama 20160811
+	mystrncat( strSql, *sqlstrLen," ( ",strlen(" ( "));
+	*sqlstrLen += strlen(" ( ");
+	//ここをpacked対応しなければ 20160112 -> ここは例外を作らないとWildCardとぶつかる
+	mystrncat( strSql, *sqlstrLen," '",strlen(" '"));
+	*sqlstrLen += strlen(" '");
+	//値を埋める ここはWildCardなし
+	mystrncat( strSql, *sqlstrLen,strKeyVal,keyLen);
+	*sqlstrLen += keyLen;
+	mystrncat( strSql, *sqlstrLen,"' LIKE BINARY REPLACE(",strlen("' LIKE BINARY REPLACE("));
+	*sqlstrLen += strlen("' LIKE BINARY REPLACE(");
+	//MID(*,*)をつなぐ
+	mystrncat( strSql, *sqlstrLen,strFeildSpec,strlen(strFeildSpec));
+	*sqlstrLen += strlen(strFeildSpec);
+	mystrncat( strSql, *sqlstrLen," ,' ','_') OR ",strlen(" ,' ','_') OR "));
+	*sqlstrLen += strlen(" ,' ','_') OR ");
+
+		//MID(*,*)をつなぐ
+	mystrncat( strSql, *sqlstrLen,strFeildSpec,strlen(strFeildSpec));
+	*sqlstrLen += strlen(strFeildSpec);
+	//ここをpacked対応しなければ 20160112 -> ここは例外を作らないとWildCardとぶつかる
+	mystrncat( strSql, *sqlstrLen," LIKE BINARY '",strlen(" LIKE BINARY '"));
+	*sqlstrLen += strlen(" LIKE BINARY '");
+	//値を埋める
+	changeWildcard( strSql, *sqlstrLen,strKeyVal,keyLen);
+	*sqlstrLen += keyLen;
+	mystrncat( strSql, *sqlstrLen,"' ",strlen("' "));
+	*sqlstrLen += strlen("' ");
+
+	//ORで逆向きワイルドカードを追加 add koyama 20160811
+	mystrncat( strSql, *sqlstrLen," ) ",strlen(" ) "));
+	*sqlstrLen += strlen(" ) ");
+
+	return retVal;
+}
+
+
+//DB_ReadのINVALIDKey際のクエリをつなぐ関数
+//keyの1番目
+//return 問題なし 0  問題あり 1
+//author:koyama
+//add-date: 20171121
+int set_DB_Read_query_has_invalid_key1(DB_TABLE_OBJ *targetTable,char *strSql,int *sqlstrLen){
+	char strFeildSpec[64] = "";
+	char strKeyVal[1024]="";
+	int  keyLen=0;
+	int  retVal=0;
+
+	mystrncat( strSql, *sqlstrLen," AND ",strlen(" AND "));
+	*sqlstrLen += strlen(" AND ");
+
+	keyLen = dataEscapeCopy(targetTable->key1,strKeyVal,targetTable->key1Len);
+	//フィールド名からMID(?,?)をとってくる
+	if(strlen(getFieldSpecified(targetTable->tableLName,targetTable->key1Name,strFeildSpec)) == 0){
+		mysql_failure();
+		cob_runtime_error(" Error C [%02d]: %s Coudn't get Field Status [%s] ",99,map_source_func,targetTable->key1Name);
+		retVal = 1;
+		return retVal;
+	}
+	//ORで逆向きワイルドカードを追加 add koyama 20160811
+	mystrncat( strSql, *sqlstrLen," ( ",strlen(" ( "));
+	*sqlstrLen += strlen(" ( ");
+	//ここをpacked対応しなければ 20160112 -> ここは例外を作らないとWildCardとぶつかる
+	mystrncat( strSql, *sqlstrLen," '",strlen(" '"));
+	*sqlstrLen += strlen(" '");
+	//値を埋める ここはWildCardなし
+	mystrncat( strSql, *sqlstrLen,strKeyVal,keyLen);
+	*sqlstrLen += keyLen;
+	mystrncat( strSql, *sqlstrLen,"' LIKE BINARY REPLACE(",strlen("' LIKE BINARY REPLACE("));
+	*sqlstrLen += strlen("' LIKE BINARY REPLACE(");
+	//MID(*,*)をつなぐ
+	mystrncat( strSql, *sqlstrLen,strFeildSpec,strlen(strFeildSpec));
+	*sqlstrLen += strlen(strFeildSpec);
+	mystrncat( strSql, *sqlstrLen," ,' ','_') OR ",strlen(" ,' ','_') OR "));
+	*sqlstrLen += strlen(" ,' ','_') OR ");
+
+		//MID(*,*)をつなぐ
+	mystrncat( strSql, *sqlstrLen,strFeildSpec,strlen(strFeildSpec));
+	*sqlstrLen += strlen(strFeildSpec);
+	//ここをpacked対応しなければ 20160112 -> ここは例外を作らないとWildCardとぶつかる
+	mystrncat( strSql, *sqlstrLen," LIKE BINARY '",strlen(" LIKE BINARY '"));
+	*sqlstrLen += strlen(" LIKE BINARY '");
+	//値を埋める
+	changeWildcard( strSql, *sqlstrLen,strKeyVal,keyLen);
+	*sqlstrLen += keyLen;
+	mystrncat( strSql, *sqlstrLen,"' ",strlen("' "));
+	*sqlstrLen += strlen("' ");
+
+	//ORで逆向きワイルドカードを追加 add koyama 20160811
+	mystrncat( strSql, *sqlstrLen," ) ",strlen(" ) "));
+	*sqlstrLen += strlen(" ) ");
+
+	return retVal;
+}
+
+//DB_ReadのINVALIDKey際のクエリをつなぐ関数(ラッパー)
+//keyの何番目かによって関数を再呼び出し
+//author:koyama
+//add-date: 20171121
+int set_DB_Read_query_has_invalid_key(DB_TABLE_OBJ *targetTable,char *strSql,int *sqlstrLen,int keyNum){
+	int retVal=0;
+	switch (keyNum){
+		case 1 :
+			retVal = set_DB_Read_query_has_invalid_key1(targetTable,strSql,sqlstrLen);
+			break;
+		case 2 :
+			retVal = set_DB_Read_query_has_invalid_key2(targetTable,strSql,sqlstrLen);
+			break;
+		case 3 :
+			retVal = set_DB_Read_query_has_invalid_key3(targetTable,strSql,sqlstrLen);
+			break;
+		default :
+			break;
+	}
+	return retVal;
+}
+
+//DB_Update 専用のDB_Read
+//INVALIDの時に対象を取得するためだけの機能
+//author:koyama
+//add-date: 20171121
+int DB_Read_for_update(char *iMode,char *iPName,char *oItem,char *lockMode,...){
+	int ret =0;
+	char *iLName;
+	int i = 0,sqlstrLen=0;
+	int const_call_param = 4;
+	int readNextFlg = 0;
+	int bufferedFlg = 0;               //同じテーブルのbufferに何固まっていたら処理しなければ、不具合が出る
+	char strSql[1024] = "";
+	char strPrevKey[30] = "";					 //IDを格納するために一時的に使用
+	//関数名を共有変数にセット
+	char strStack[MAP_SRC_FUNC_LEN];
+	setCommonFunctionName(strStack,map_source_func,"DB_Read :%.30s",iPName);
+	if(myConfDebugFlg >= 20){
+		cob_runtime_error(" Error [%04d]: %s Info DB_Read S %s ",__LINE__,local_server_time(strTime),iPName);
+	}
+
+	//ファイル状態キーの初期化
+	*(DB_filestat + 0) = '0';
+	*(DB_filestat + 1) = '0';
+	intCurTableNum = getTargTable(DB_table,iPName,DB_Table_num);
+
+	//テーブルの名前が取れないのはコーディング上のエラーということにする
+	if(intCurTableNum == -1){
+		cob_runtime_error(" Error C [%02d]: %s Table is not Open [%.20s] ",99,map_source_func,iPName);
+		ret = 1;
+		return ret;
+	}
+
+	//OPENに失敗していたら
+	//前処理はOpenだけでは無いがOpenが失敗している場合ははじく
+	if(matchTableStatus(&DB_table[intCurTableNum],"O1") != 0){
+		//statusを変更せずに終了
+		ret = 1;
+		return ret;
+	}
+
+	//lockModeの確認
+	if( lockMode[0] != ' ' && lockMode[0] != 'U' ){
+		mysql_failure();
+		ret = 1;
+		cob_runtime_error(" Error C [%02d]: Lock mode failed %s,table status:%s ",21,DB_table[intCurTableNum].tablePName,DB_table[intCurTableNum].accessStatus);
+		return ret;
+	}
+
+	if(strlen(DB_table[intCurTableNum].tableName) == 0 ){
+		mysql_failure();
+		ret = 1;
+		cob_runtime_error(" Error C [%02d]: not found table name. status %s ",22,DB_table[intCurTableNum].accessStatus);
+		return ret;
+	}
+	//最初の文字列をセットして
+	sprintf(strSql,"/* pg_name %s user_name %s :DB_Read %s */ SELECT ID,ITEM,orig_id FROM ",source_file_name,source_user_name,local_server_time(strTime));
+	sqlstrLen += strlen(strSql);
+
+	//テーブル名の追加 & Readステータス処理
+	if(strchr(iMode,'I') != NULL && strncmp(strchr(iMode,'I'),"INVALID",strlen("INVALID")) == 0 ){
+		//UPDATEのときなので必ず通る
+		sqlstrLen += setTableNameAfterStr(strSql,&DB_table[intCurTableNum],'I');
+		//INVALID KEYのとき(RUNDOM ACCESSになるのでポインタを消去)
+		//IDを文字列化
+		//updateのときは全県から探索
+		sprintf(strPrevKey,"%d",0);
+	}
+
+	//WHERE 句の指定
+	mystrncat( strSql, sqlstrLen," WHERE ",strlen(" WHERE "));
+	sqlstrLen += strlen(" WHERE ");
+
+	//RDBのときはID検索ではなくLIMITで
+	if((DB_table[intCurTableNum].strWhere->flg % DB_WHERE_RDB) != 0){
+		mystrncat( strSql, sqlstrLen," ID > ",strlen(" ID > "));
+		sqlstrLen += strlen(" ID > ");
+		//IDを結合
+		mystrncat( strSql, sqlstrLen,strPrevKey,strlen(strPrevKey));
+		sqlstrLen += strlen(strPrevKey);
+		mystrncat( strSql, sqlstrLen," ",strlen(" "));
+		sqlstrLen += strlen(" ");
+	}else if((DB_table[intCurTableNum].strWhere->flg % DB_WHERE_INX) == 0){
+		//indexファイルの
+	}
+	//モードによるWHERE句の指定(INVALID KEYのときはWHERE でキー値を指定)
+	//INVALIDのとき条件追加
+	if(strchr(iMode,'I') != NULL && strncmp(strchr(iMode,'I'),"INVALID",strlen("INVALID")) == 0  &&(DB_table[intCurTableNum].strWhere->flg % DB_WHERE_RDB) != 0 ){
+		//------------------------------------------------------------------------------KEY値指定のときがあるため
+		//通常関数を呼ぶときの変数の数がconst_call_param
+		int this_call_param = cob_call_params - const_call_param;
+		int roopInvalid = 0;
+		va_list list;
+		//それぞれのkeyを使うかどうかのフラグ
+		int key1exist = 0;
+		int key2exist = 0;
+		int key3exist = 0;
+
+		//----------------------------------------------ここの変数スコープでの変数
+		//key値が指定されたらそのキー値のみを使う
+		if(this_call_param > 0){
+			//key値が入っているparamを取得
+			va_start(list,lockMode);
+			for(roopInvalid = 0;roopInvalid < this_call_param;roopInvalid++){
+				char *tmpKey = va_arg( list , char * );
+				if(DB_table[intCurTableNum].key1 == tmpKey){
+					key1exist = 1;
+				}
+				if(DB_table[intCurTableNum].key2 == tmpKey){
+					key2exist = 1;
+				}
+				if(DB_table[intCurTableNum].key3 == tmpKey){
+					key3exist = 1;
+				}
+			}
+			va_end( list );
+		}else{
+			//keyの指定がなければ最近変わったものをkeyとして使う必要あり？
+			//key1を使うか
+			if(DB_table[intCurTableNum].key1Len > 0){
+				key1exist = 1;
+			}
+			//key2を使うか
+			if(key1exist == 0 && DB_table[intCurTableNum].key2Len > 0){
+				key2exist = 1;
+			}
+			//key3を使うか
+			if((key1exist == 0 && key2exist == 0  ) && DB_table[intCurTableNum].key3Len > 0){
+				key3exist = 1;
+			}
+		}
+
+		//ANDでキーの判定
+		//キーの値の1番目の長さが0以上なら
+		if(key1exist > 0){
+			int falseKeyset = 0;
+			falseKeyset = set_DB_Read_query_has_invalid_key(&DB_table[intCurTableNum],strSql,&sqlstrLen,1);
+			if(falseKeyset != 0){
+				ret = 1;
+				return ret;
+			}
+		}
+
+		//キーの値の2番目の長さが0以上なら
+		if(key2exist > 0){
+			int falseKeyset = 0;
+			falseKeyset = set_DB_Read_query_has_invalid_key(&DB_table[intCurTableNum],strSql,&sqlstrLen,2);
+			if(falseKeyset != 0){
+				ret = 1;
+				return ret;
+			}
+		}
+
+		//キーの値の3番目の長さが0以上なら
+		if(key3exist > 0){
+			int falseKeyset = 0;
+			falseKeyset = set_DB_Read_query_has_invalid_key(&DB_table[intCurTableNum],strSql,&sqlstrLen,3);
+			if(falseKeyset != 0){
+				ret = 1;
+				return ret;
+			}
+		}
+
+		mystrncat( strSql, sqlstrLen, " LIMIT ", strlen(" LIMIT "));
+		sqlstrLen += strlen(" LIMIT ");
+		mystrncat( strSql, sqlstrLen, DATA_READ_NUM, strlen(DATA_READ_NUM));
+		sqlstrLen += strlen(DATA_READ_NUM);
+		mystrncat( strSql, sqlstrLen, " ; ", strlen(" ; "));
+		sqlstrLen += strlen(" ; ");
+		//ここでも同じ仕組みでとれるのか？
+		if(matchTableStatus(&DB_table[intCurTableNum],"R0I")){
+			readNextFlg = 1;
+		}
+		//今回InVALIDだったことをセット
+		setTableStatusWithIndex(&DB_table[intCurTableNum],'I',2);
+	}else if(DB_table[intCurTableNum].strWhere->where_size > 0 && (DB_table[intCurTableNum].strWhere->flg % DB_WHERE_RDB) == 0 ){
+		//ここの条件にマッチするものは元のRDB
+		//ID指定を上でしないでLimitの一番上を使うのでANDなし
+		//なければ0文字つなぐので問題なし
+		mystrncat( strSql, sqlstrLen,DB_table[intCurTableNum].strWhere->where,DB_table[intCurTableNum].strWhere->where_size);
+		sqlstrLen += DB_table[intCurTableNum].strWhere->where_size;
+
+		//IDを結合
+		//必要なのは2行だけなので絞込
+		mystrncat( strSql, sqlstrLen, " LIMIT ", strlen(" LIMIT "));
+		sqlstrLen += strlen(" LIMIT ");
+
+		mystrncat( strSql, sqlstrLen,strPrevKey,strlen(strPrevKey));
+		sqlstrLen += strlen(strPrevKey);
+
+		//必要なのはN行だけなので絞込
+		mystrncat( strSql, sqlstrLen, ", ", strlen(", "));
+		sqlstrLen += strlen(", ");
+		mystrncat( strSql, sqlstrLen, DATA_READ_NUM, strlen(DATA_READ_NUM));
+		sqlstrLen += strlen(DATA_READ_NUM);
+		mystrncat( strSql, sqlstrLen, "; ", strlen("; "));
+		sqlstrLen += strlen("; ");
+		//RDBはDB_Scratch,DB_Selectで中身がリセットされる仕組み
+		readNextFlg = 1;
+		//今回RDBだったことをセット
+		setTableStatusWithIndex(&DB_table[intCurTableNum],'R',2);
+	}else{
+		//---------------------------------------------------------------------------------NEXT AT END? 20161222
+		readNextFlg = 1;
+		mystrncat( strSql, sqlstrLen, " LIMIT ", strlen(" LIMIT "));
+		sqlstrLen += strlen(" LIMIT ");
+		mystrncat( strSql, sqlstrLen, DATA_READ_NUM, strlen(DATA_READ_NUM));
+		sqlstrLen += strlen(DATA_READ_NUM);
+		mystrncat( strSql, sqlstrLen, " ; ", strlen(" ; "));
+		sqlstrLen += strlen(" ; ");
+		//今回NEXT AT ENDだったことをセット
+		setTableStatusWithIndex(&DB_table[intCurTableNum],iMode[0],2);
+	}
+	//Bufferで処理ができなかった時Bufferに残っているものを一掃 20170814 add koyama
+	bufferedFlg += checkInsertBuffer(&DB_table[intCurTableNum]);
+	bufferedFlg += checkUpdateBuffer(&DB_table[intCurTableNum]);
+	bufferedFlg += checkDeleteBuffer(&DB_table[intCurTableNum]);
+
+	//既に読んでいるものがある場合をそれを取得して関数を抜ける
+	if(readNextFlg != 0 && bufferedFlg == 0 && DB_table[intCurTableNum].dataReadedCur != NULL && DB_table[intCurTableNum].dataReadedCur->nextPoint != NULL){
+
+		//前回読んだ部分を削除,その次のデータを読み込む
+		popDBReaded(&DB_table[intCurTableNum],oItem);
+		getDataDBReaded(&DB_table[intCurTableNum],oItem);
+		//ステータスの格納
+		setTableStatus(&DB_table[intCurTableNum],'R',ret);
+
+		//共有変数を元に戻す
+		memcpy(map_source_func,strStack,MAP_SRC_FUNC_LEN);
+		return ret;
+	}
+
+
+	//debugFlgがオンの時時間などを出力
+	if(myConfDebugFlg >= 20){
+		cob_runtime_error(" Error [%04d]: %s Info DB_Read %s ",__LINE__,local_server_time(strTime),iPName);
+	}
+	//クエリ発行の直前でtrunsaction
+	DB_Transaction(mysqlConn);
+	//queryの実行
+	if((ret = mysql_real_query(mysqlConn, strSql, sqlstrLen)) != 0){
+		mysql_failure();
+		ret = 1;
+		//エラーコードで返す。(受け側で処理してないから意味ないけど。。。)
+		return ret;
+	}
+	//debugFlgがオンの時時間などを出力
+	if(myConfDebugFlg >= 20){
+		cob_runtime_error(" Error [%04d]: %s Info DB_Read %s ",__LINE__,local_server_time(strTime),iPName);
+		if(myConfDebugFlg >= 25){
+			cob_runtime_error(" Error [%04d]: %s Debug DB_Read %s %s ",__LINE__,local_server_time(strTime),iPName,strSql);
+		}
+	}
+	//----------------------------------------------------------------------------ここからデータ取得
+	//ここから動きが違うので変数の追加
+	MYSQL_ROW res;
+	MYSQL_RES *result;
+	//debugFlgがオンの時時間などを出力
+	if(myConfDebugFlg >= 20){
+		cob_runtime_error(" Error [%04d]: %s Info DB_Read %s ",__LINE__,local_server_time(strTime),iPName);
+	}
+	result = mysql_use_result(mysqlConn);
+//	ret = result != NULL ? 0 : 1;
+	if(result == 0){
+		mysql_failure();
+		//mysqlのエラーを標準エラーに(なぜ最初4文字が\0か不明)
+		mytool_runtime_error(source_file_name," Error C [%02d]: Database store Error %20s %s %s:%d %s ",99,(mysqlConn->net.last_error + 4),map_source_func,__func__,__LINE__,local_server_time(strTime));
+		return 1;
+	}
+
+	int otherRownum = 0;
+	destroyDBReaded(&DB_table[intCurTableNum]);
+	//いったんすべてをデータ構造として格納
+	otherRownum = setReadedRecordFromDBResult(&DB_table[intCurTableNum],result);
+
+	if(otherRownum != 0){
+		mysql_free_result(result);
+		//AutoCommit Offなので
+		DB_Commit(mysqlConn);
+		//予め格納したデータ構造の最初の一行を取得
+		memcpy(oItem,DB_table[intCurTableNum].dataReadedCur->dbData, DB_table[intCurTableNum].dataReadedCur->dbDataLen);
+		ret = 0;
+	}else{
+		mysql_free_result(result);
+		//AutoCommit OffなのでSELECTでは何も戻らないが暗黙的トランザクションを切る
+		DB_Rollback(mysqlConn);
+		//ファイル状態キーの変更
+		switch(getTableStatusWithIndex(&DB_table[intCurTableNum],2)){
+			case 'I':
+				//READ INVALID KEYの時(KEY未発見)
+				*(DB_filestat + 0) = '2';
+				*(DB_filestat + 1) = '3';
+				break;
+			case 'R':
+				*(DB_filestat + 0) = '1';
+				*(DB_filestat + 1) = '0';
+				break;
+			default :
+				//READ AT ENDの時(読み切ったことを示す)
+				*(DB_filestat + 0) = '1';
+				*(DB_filestat + 1) = '0';
+				break;
+		}
+		ret = 1;
+	}
+
+	//ここまで成功して、SharedModeがunlockならLockを解除
+	if(ret == 0){
+		if(lockMode[0] == 'U'){
+			ret = M_UNLOCK(DB_table[intCurTableNum].tablePName,__func__,__LINE__);
+		}
+	}
+	//ステータスの格納
+	setTableStatus(&DB_table[intCurTableNum],'R',ret);
+
+	//debugFlgがオンの時時間などを出力
+	if(myConfDebugFlg >= 20){
+		cob_runtime_error(" Error [%04d]: %s Info DB_Read %s ",__LINE__,local_server_time(strTime),iPName);
+		if(myConfDebugFlg >= 25){
+			cob_runtime_error(" Error [%04d]: %s Debug DB_Read %s %s ",__LINE__,local_server_time(strTime),iPName,strSql);
+		}
+	}
+
+	//共有変数を元に戻す
+	memcpy(map_source_func,strStack,MAP_SRC_FUNC_LEN);
+	return ret;
+}
 
 /* 変更関数 */
 int DB_Update(char *iPName,char *iLName,char *iItem){
@@ -3532,90 +3954,6 @@ int DB_Update(char *iPName,char *iLName,char *iItem){
 		memcpy(map_source_func,strStack,MAP_SRC_FUNC_LEN);
 		return ret;
 	}
-
-	//関数のはじめでtrunsaction
-	DB_Transaction(mysqlConn);
-
-	//文字をエスケープしながらコピー
-	//メモリ確保はエスケープを考えて大きめに
-	tmpItem = (char *)malloc(sizeof(char) * (varLength(3) * 2));
-	memset(tmpItem,'\0',(varLength(3) * 2));
-	if(tmpItem == NULL){
-		ret = 1;
-		cob_runtime_error(" Error [%02d]: memory not alloc %s ",99,local_server_time(strTime));
-		//ステータスの格納
-		setTableStatus(&DB_table[intCurTableNum],'U',ret);
-		//共有変数を元に戻す
-		memcpy(map_source_func,strStack,MAP_SRC_FUNC_LEN);
-		return ret;
-	}
-	itemLen = dataEscapeCopy(iItem,tmpItem,varLength(3));
-
-	sprintf(strSql,"/*  pg_name %s user_name %s : DB_Update %s */ UPDATE  ",source_file_name,source_user_name,local_server_time(strTime));
-	//テーブル名指定
-	sqlstrLen += strlen(strSql);
-	mystrncat( strSql, sqlstrLen,"`",strlen("`"));
-	sqlstrLen += strlen("`");
-
-	//\0に置き換えている
-	mystrncat( strSql,sqlstrLen,DB_table[intCurTableNum].tableName, strlen(DB_table[intCurTableNum].tableName) );
-	sqlstrLen += strlen(DB_table[intCurTableNum].tableName);
-
-	mystrncat( strSql, sqlstrLen,"`",strlen("`"));
-	sqlstrLen += strlen("`");
-
-	//更新項目指定
-	mystrncat( strSql, sqlstrLen," SET ITEM = \"",strlen(" SET ITEM = \""));
-	sqlstrLen += strlen(" SET ITEM = \"");
-
-	//\0に置き換えている
-	mystrncat( strSql, sqlstrLen, tmpItem,itemLen);
-	sqlstrLen += itemLen;
-
-	mystrncat( strSql, sqlstrLen, "\"",strlen("\""));
-	sqlstrLen += strlen("\"");
-
-	//検索key設定
-
-	//Readした行に対して行えばいいのでこれでいい
-	//IDを文字列化前回のReadがInvalidでなくkeyがあるファイルの時
-	if(DB_table[intCurTableNum].readStatus[0] != 'I' && (DB_table[intCurTableNum].strWhere->flg % DB_WHERE_INX) == 0){
-		setStrOrigPrePoint(strKeyTemp,&DB_table[intCurTableNum]);
-	}else{
-		sprintf(strKeyTemp,"%d",DB_table[intCurTableNum].prevPoint);
-	}
-	if(strlen(strKeyTemp) >= 1){
-		mystrncat( strSql, sqlstrLen, " WHERE ID = ",strlen(" WHERE ID = "));
-		sqlstrLen += strlen(" WHERE ID = ");
-		mystrncat( strSql, sqlstrLen, strKeyTemp,strlen(strKeyTemp));
-		sqlstrLen += strlen(strKeyTemp);
-
-		mystrncat( strSql, sqlstrLen, ";",strlen(";"));
-		sqlstrLen += strlen(";");
-
-		//SQL実行
-		//binaryを含むのでこちらに書き換えmysql_real_query() 20140718 koyama
-		if(mysql_real_query(mysqlConn, strSql, sqlstrLen) != 0){
-			mysql_failure();
-			DB_Rollback(mysqlConn);
-			ret = 1;
-		}else{
-			//AutoCommit Offなので
-			DB_Commit(mysqlConn);
-		}
-	}else{
-		//IDが取れなければエラー終了
-		ret = 1;
-	}
-	//終了処理
-	free(tmpItem);
-	tmpItem = NULL;
-	//ステータスの格納
-	setTableStatus(&DB_table[intCurTableNum],'U',ret);
-
-	//共有変数を元に戻す
-	memcpy(map_source_func,strStack,MAP_SRC_FUNC_LEN);
-	return ret;
 }
 
 /* 追加関数 */
@@ -3860,24 +4198,20 @@ int DB_F_Open(char *strMode,char *iPName,char *lockMode,char *ioidlist,char *cAr
 	}
 	//ここで作るDB_Tableオブジェクトを初期化
 	InitDB_Table(&DB_table[targ_Table_num]);
-	DB_table[targ_Table_num].sharedStatus[0] = 'O';
-	DB_table[targ_Table_num].sharedStatus[1] = lockMode[0];
 
 	strcpy(strInnerMode,strMode);
-	if( strncmp(strInnerMode,"I-O",strlen("I-O"))==0){
-		DB_table[targ_Table_num].sharedStatus[2] = strInnerMode[1];	//INPUTとかぶるので二文字目で初期化
-	}else{
-		DB_table[targ_Table_num].sharedStatus[2] = strInnerMode[0];	//一文字目で初期化
-	}
-	//何も入れられてなければSharedでセットしたことにする
+	DB_table[targ_Table_num].sharedStatus[1] = lockMode[0];
+	//何も入れられてなければSharedでセットしたことにする(上でスペースが入る時)
 	if(DB_table[targ_Table_num].sharedStatus[1] == 0x20){
 		DB_table[targ_Table_num].sharedStatus[1] = 'S';
 	}
 	//後ろから見た最初のスペースに何か指定があれば
-	setFileStatus(strInnerMode,DB_table[targ_Table_num].fileStatus);
+	setFileStatus(strInnerMode,&DB_table[targ_Table_num]);
 	//スペースで2つめが指定してあることもあるので
-	setFileStatus(strInnerMode,DB_table[targ_Table_num].fileStatus);
-	//
+	setFileStatus(strInnerMode,&DB_table[targ_Table_num]);
+	//最大ORGANIZATION,ACCESS-MODE,OPEN-MODE
+	setFileStatus(strInnerMode,&DB_table[targ_Table_num]);
+
 	if( strncmp(strInnerMode,"OUTPUT",strlen("OUTPUT"))==0){
 		//INPUTとかぶるので二文字目で初期化
 		DB_Trunc(DB_table[targ_Table_num].tablePName);
@@ -3895,11 +4229,15 @@ int DB_F_Open(char *strMode,char *iPName,char *lockMode,char *ioidlist,char *cAr
 
 		//ここに入るときはkeyがあるファイル
 		DB_table[targ_Table_num].strWhere->flg *= DB_WHERE_INX;
-		if(strlen(getFileStatus(&DB_table[targ_Table_num])) == 0){
-			char indexedStr[128] = "";
-			strcpy(indexedStr," INDEXED");
-			//もともと、区切りより後ろであることを理由にしているのでスペースあり
-			setFileStatus(indexedStr,DB_table[targ_Table_num].fileStatus);
+		if(getFileStatusOrgnization(&DB_table[targ_Table_num]) == '\0'){
+			//ファイル情報のステータスが入れられていないことがあるので
+			strcpy(strInnerMode,"INDEXED");
+			if(strstr(strMode,"DYNAMIC") == NULL && strstr(strMode,"SEQUENTIAL")){
+				strcat(strInnerMode," RANDOM");
+				//RANDOMを先に切り取ってもらう
+				setFileStatus(strInnerMode,&DB_table[targ_Table_num]);
+			}
+			setFileStatus(strInnerMode,&DB_table[targ_Table_num]);
 		}
 
 		for(i = 0;i < (iArgc * 2); i++){
