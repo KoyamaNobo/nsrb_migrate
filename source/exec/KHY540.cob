@@ -327,7 +327,7 @@
            MOVE KKB-YCN TO P-YCN.
            CALL "PR_Get_Linage" RETURNING LINAGECOUNTER.
            IF  LINAGECOUNTER > 59
-               PERFORM S-10 THRU S-15
+               PERFORM S-05 THRU S-15
            END-IF.
            MOVE SPACE TO SP-R.
            MOVE W-P1 TO SP-R.

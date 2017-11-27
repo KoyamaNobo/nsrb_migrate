@@ -87,7 +87,8 @@
            02   ZAIKO-BMC           PIC 9(02).
            02   ZAIKO-BMNO          PIC 9(01).
            02   ZAIKO-NGP           PIC 9(06).
-           02   FILLER              PIC X(32).
+           02   ZAIKO-TAN           PIC 9(05).
+           02   FILLER              PIC X(27).
            02   FILLER              PIC X(128).
        77  F                        PIC X(001).
       *
@@ -467,6 +468,7 @@
                MOVE  CODE-ITF  TO  ZAIKO-ITF
            END-IF
            MOVE  W-NGP     TO  ZAIKO-NGP.
+           MOVE  HI-FT     TO  ZAIKO-TAN.
       *           WRITE    ZAIKO-R.
       *//////////////
            CALL "DB_Insert" USING

@@ -21,7 +21,7 @@ if($ABORT == 1) then
 endif
 #**
 set ABORT=0;
-../exec/FUKU01 $USER_ID $JRCODE
+../job/fuku01.sh $USER_ID $JRCODE
 source ../job/CRC_LIBRARY.sh
 if($ABORT == 1) then
   goto ENDJOB

@@ -175,7 +175,7 @@
       *           READ HKBM NEXT RECORD AT END 
       *///////////////
            CALL "DB_Read" USING
-            "INVALID KEY" HKBM_PNAME1 BY REFERENCE HKB-R " "
+            "AT END" HKBM_PNAME1 BY REFERENCE HKB-R " "
             RETURNING RET.
            IF  RET = 1
                GO TO M-15

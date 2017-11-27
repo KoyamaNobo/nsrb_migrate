@@ -136,7 +136,81 @@
            02  F                   PIC  X(02) VALUE  SPACE.
            02  F                   PIC  N(03) VALUE  "合計②".
       ***
-           COPY  LWMSG_PR.
+      ***************************************
+      *    ｴﾗｰ DISPLAY (ﾜｰｸ)                *
+      ***************************************
+       01  DISP-ERR-WORK.
+           02  DISP-MSG.
+               03  ERR-MSGX.
+                   04  ERR-MSGN     PIC N(25).
+               03  ERR-SPACE        PIC X(50).
+               03  ERR-F            PIC X(12).
+               03  ERR-M            PIC X(01).
+               03  ERR-K            PIC X(30).
+               03  ERR-FLG          PIC X(02).
+      *******************************
+      *    プリンタ№変更ワーク     *
+      *******************************
+       01  ASNPRN.
+           03  ASNPRN1              PIC  X(03)   VALUE  "PRN".
+           03  ASNPRN2              PIC  9(03).
+       01  PMEDIA                   PIC  X(06)   VALUE  SPACE.
+      *******************************
+      *    該当月取込み処理ワーク   *
+      *******************************
+       01  ZYMD                     PIC  9(08).
+       01  ZI                       PIC  9(02).
+       01  Z-R.
+           02  Z-KEY1               PIC  X(06).
+           02  Z-KSMM               PIC  9(02).
+           02  Z-KONYMD.
+               03  Z-KONYY          PIC  9(04).
+               03  Z-KONYYL  REDEFINES Z-KONYY.
+                 04  Z-KONYY1       PIC  9(02).
+                 04  Z-KONYY2       PIC  9(02).
+               03  Z-KONMM          PIC  9(02).
+               03  Z-KONDD          PIC  9(02).
+           02  Z-ZENYMD.
+               03  Z-ZENYY          PIC  9(04).
+               03  Z-ZENMM          PIC  9(02).
+               03  Z-ZENDD          PIC  9(02).
+           02  Z-GESYMD.
+               03  Z-GESYY          PIC  9(04).
+               03  Z-GESYYL  REDEFINES Z-GESYY.
+                 04  Z-GESYY1       PIC  9(02).
+                 04  Z-GESYY2       PIC  9(02).
+               03  Z-GESMM          PIC  9(02).
+               03  Z-GESDD          PIC  9(02).
+           02  Z-GEMYMD.
+               03  Z-GEMYY          PIC  9(04).
+               03  Z-GEMYYL  REDEFINES Z-GEMYY.
+                 04  Z-GEMYY1       PIC  9(02).
+                 04  Z-GEMYY2       PIC  9(02).
+               03  Z-GEMMM          PIC  9(02).
+               03  Z-GEMDD          PIC  9(02).
+           02  Z-ACEPSIN            PIC  9(01).
+           02  Z-TOUKI.
+             03  Z-TOU     OCCURS 15.
+               04  Z-TOUF.
+                 05  Z-TOUFYY       PIC  9(04).
+                 05  Z-TOUFYYL  REDEFINES Z-TOUFYY.
+                   06  Z-TOUFYY1    PIC  9(02).
+                   06  Z-TOUFYY2    PIC  9(02).
+                 05  Z-TOUFMM       PIC  9(02).
+                 05  Z-TOUFDD       PIC  9(02).
+               04  Z-TOUT.
+                 05  Z-TOUTYY       PIC  9(04).
+                 05  Z-TOUTYYL  REDEFINES Z-TOUTYY.
+                   06  Z-TOUTYY1    PIC  9(02).
+                   06  Z-TOUTYY2    PIC  9(02).
+                 05  Z-TOUTMM       PIC  9(02).
+                 05  Z-TOUTDD       PIC  9(02).
+           02  Z-UPDYM.
+             03  Z-UPDYY            PIC  9(04).
+             03  Z-UPDMM            PIC  9(02).
+           02  Z-SIMEBI             PIC  9(02).
+           02  FILLER               PIC  X(223).
+      ***
       ***  部門名マスタ
            COPY  BUMONF.
       ***  プリンター
@@ -178,7 +252,73 @@
            03  ACP-BUMONCD-FROM    PIC 9(04).
            03  ACP-BUMONCD-TO      PIC 9(04).
            03  ACP-KAKU            PIC X(01).
-       COPY  LSMSG_PR.
+      ***
+      **
+      **   MESSEGE  AREA
+      **
+       01  DISP-ERR-AREA.
+           02  DISP-MSG-01.
+               03  FILLER  PIC X(50).
+           02  DISP-MSG-SPACE.
+               03  FILLER  PIC X(50).
+           02  DISP-BUZ-B.
+               03  FILLER  PIC X(05) VALUE X"1B4210"..
+           02  DISP-BUZ-J.
+               03  FILLER  PIC X(05) VALUE X"1B4A01".
+           02  NOR-M01.
+               03  FILLER  PIC X(50).
+               03  FILLER  PIC X(22) VALUE
+               "＊　マスタ　登録済　＊".
+           02  NOR-D01.
+               03  FILLER  PIC X(50).
+               03  FILLER  PIC X(22) VALUE
+               "＊　データ　登録済　＊".
+           02  INV-M01.
+               03  FILLER  PIC X(50).
+               03  FILLER  PIC X(22) VALUE
+               "＊　マスタ　未登録　＊".
+           02  INV-D01.
+               03  FILLER  PIC X(50).
+               03  FILLER  PIC X(22) VALUE
+               "＊　データ　未登録　＊".
+           02  OK-01.
+               03  FILLER  PIC X(50).
+               03  FILLER  PIC X(14) VALUE
+               "＊　Ｏ　Ｋ　＊".
+           02  CAN-01.
+               03  FILLER  PIC X(50).
+               03  FILLER  PIC X(18) VALUE
+               "＊　キャンセル　＊".
+           02  ERR-01.
+               03  FILLER  PIC X(50).
+               03  FILLER  PIC X(18) VALUE
+               "＊　入力エラー　＊".
+           02  INV-MCT.
+               03  FILLER  PIC X(50).
+               03  FILLER  PIC X(28) VALUE
+               "＊　コントロールＭ未登録　＊".
+           02  INV-CON.
+               03  FILLER  PIC X(50).
+               03  FILLER  PIC X(42) VALUE
+               "＊　コントロールＦ未登録　処理続行不可　＊".
+           02  ERR-YMD.
+               03  FILLER  PIC X(50).
+               03  FILLER  PIC X(22) VALUE
+               "＊　日付入力エラー　＊".
+           02  ERR-DIS.
+               03  FILLER  PIC X(50).
+               03  FILLER  PIC X(05) VALUE
+               "<<<  ".
+               03  FILLER  PIC X(12).
+               03  FILLER  PIC X(01).
+               03  FILLER  PIC X(11) VALUE
+               "ｴﾗｰ STATUS=".
+               03  FILLER  PIC X(02).
+               03  FILLER  PIC X(05) VALUE
+               "  >>>".
+               03  FILLER  PIC X(05) VALUE
+               " KEY=".
+               03  FILLER  PIC X(30).
       ***
        PROCEDURE          DIVISION.
        CALL "DB_Initialize" USING BY REFERENCE ERR-STAT RETURNING RET.
@@ -244,7 +384,166 @@
        CALL "SD_Into" USING
             "ACP-KAKU" BY REFERENCE W-KAKU "1" "0" RETURNING RESU.
       *
-           COPY LSMSG_PR_P.
+      *DISP-ERR-AREA
+       CALL "SD_Init" USING
+            "DISP-ERR-AREA" " " "24" "0" "961" " " " " RETURNING RESU.
+       CALL "SD_Init" USING
+            "DISP-MSG-01" " " "24" "0" "50" " " "DISP-ERR-AREA"
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "01DISP-MSG-01" "X" "24" "2" "50" " " "DISP-MSG-01"
+            RETURNING RESU.
+       CALL "SD_From" USING
+            "01DISP-MSG-01" BY REFERENCE ERR-MSGX "50" "0"
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "DISP-MSG-SPACE" " " "24" "0" "50" "DISP-MSG-01" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "01DISP-MSG-SPACE" "X" "24" "2" "50" " " "DISP-MSG-SPACE"
+            RETURNING RESU.
+       CALL "SD_From" USING
+            "01DISP-MSG-SPACE" BY REFERENCE ERR-SPACE "50" "0"
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "DISP-BUZ-B" " " "24" "0" "5" "DISP-MSG-SPACE" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "01DISP-BUZ-B" "X" "24" "80" "5" " " "DISP-BUZ-B"
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "DISP-BUZ-J" " " "24" "0" "5" "DISP-BUZ-B" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "01DISP-BUZ-J" "X" "24" "80" "5" " " "DISP-BUZ-J"
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "NOR-M01" " " "24" "0" "72" "DISP-BUZ-J" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "01NOR-M01" "X" "24" "2" "50" " " "NOR-M01"
+            RETURNING RESU.
+       CALL "SD_From" USING
+            "01NOR-M01" BY REFERENCE ERR-SPACE "50" "0" RETURNING RESU.
+       CALL "SD_Init" USING
+            "02NOR-M01" "X" "24" "2" "22" "01NOR-M01" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "NOR-D01" " " "24" "0" "72" "NOR-M01" " " RETURNING RESU.
+       CALL "SD_Init" USING
+            "01NOR-D01" "X" "24" "2" "50" " " "NOR-D01"
+            RETURNING RESU.
+       CALL "SD_From" USING
+            "01NOR-D01" BY REFERENCE ERR-SPACE "50" "0" RETURNING RESU.
+       CALL "SD_Init" USING
+            "02NOR-D01" "X" "24" "2" "22" "01NOR-D01" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "INV-M01" " " "24" "0" "72" "NOR-D01" " " RETURNING RESU.
+       CALL "SD_Init" USING
+            "01INV-M01" "X" "24" "2" "50" " " "INV-M01" RETURNING RESU.
+       CALL "SD_From" USING
+            "01INV-M01" BY REFERENCE ERR-SPACE "50" "0" RETURNING RESU.
+       CALL "SD_Init" USING
+            "02INV-M01" "X" "24" "2" "22" "01INV-M01" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "INV-D01" " " "24" "0" "72" "INV-M01" " " RETURNING RESU.
+       CALL "SD_Init" USING
+            "01INV-D01" "X" "24" "2" "50" " " "INV-D01" RETURNING RESU.
+       CALL "SD_From" USING
+            "01INV-D01" BY REFERENCE ERR-SPACE "50" "0" RETURNING RESU.
+       CALL "SD_Init" USING
+            "02INV-D01" "X" "24" "2" "22" "01INV-D01" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "OK-01" " " "24" "0" "64" "INV-D01" " " RETURNING RESU.
+       CALL "SD_Init" USING
+            "01OK-01" "X" "24" "2" "50" " " "OK-01" RETURNING RESU.
+       CALL "SD_From" USING
+            "01OK-01" BY REFERENCE ERR-SPACE "50" "0" RETURNING RESU.
+       CALL "SD_Init" USING
+            "02OK-01" "X" "24" "2" "14" "01OK-01" " " RETURNING RESU.
+       CALL "SD_Init" USING
+            "CAN-01" " " "24" "0" "68" "OK-01" " " RETURNING RESU.
+       CALL "SD_Init" USING
+            "01CAN-01" "X" "24" "2" "50" " " "CAN-01" RETURNING RESU.
+       CALL "SD_From" USING
+            "01CAN-01" BY REFERENCE ERR-SPACE "50" "0" RETURNING RESU.
+       CALL "SD_Init" USING
+            "02CAN-01" "X" "24" "2" "18" "01CAN-01" " " RETURNING RESU.
+       CALL "SD_Init" USING
+            "ERR-01" " " "24" "0" "68" "CAN-01" " " RETURNING RESU.
+       CALL "SD_Init" USING
+            "01ERR-01" "X" "24" "2" "50" " " "ERR-01" RETURNING RESU.
+       CALL "SD_From" USING
+            "01ERR-01" BY REFERENCE ERR-SPACE "50" "0" RETURNING RESU.
+       CALL "SD_Init" USING
+            "02ERR-01" "X" "24" "2" "18" "01ERR-01" " " RETURNING RESU.
+       CALL "SD_Init" USING
+            "INV-MCT" " " "24" "0" "78" "ERR-01" " " RETURNING RESU.
+       CALL "SD_Init" USING
+            "01INV-MCT" "X" "24" "2" "50" " " "INV-MCT" RETURNING RESU.
+       CALL "SD_From" USING
+            "01INV-MCT" BY REFERENCE ERR-SPACE "50" "0" RETURNING RESU.
+       CALL "SD_Init" USING
+            "02INV-MCT" "X" "24" "2" "28" "01INV-MCT" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "INV-CON" " " "24" "0" "92" "INV-MCT" " " RETURNING RESU.
+       CALL "SD_Init" USING
+            "01INV-CON" "X" "24" "2" "50" " " "INV-CON" RETURNING RESU.
+       CALL "SD_From" USING
+            "01INV-CON" BY REFERENCE ERR-SPACE "50" "0" RETURNING RESU.
+       CALL "SD_Init" USING
+            "02INV-CON" "X" "24" "2" "42" "01INV-CON" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "ERR-YMD" " " "24" "0" "72" "INV-CON" " " RETURNING RESU.
+       CALL "SD_Init" USING
+            "01ERR-YMD" "X" "24" "2" "50" " " "ERR-YMD" RETURNING RESU.
+       CALL "SD_From" USING
+            "01ERR-YMD" BY REFERENCE ERR-SPACE "50" "0" RETURNING RESU.
+       CALL "SD_Init" USING
+            "02ERR-YMD" "X" "24" "2" "22" "01ERR-YMD" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "ERR-DIS" " " "24" "0" "121" "ERR-YMD" " " RETURNING RESU.
+       CALL "SD_Init" USING
+            "01ERR-DIS" "X" "24" "2" "50" " " "ERR-DIS" RETURNING RESU.
+       CALL "SD_From" USING
+            "01ERR-DIS" BY REFERENCE ERR-SPACE "50" "0" RETURNING RESU.
+       CALL "SD_Init" USING
+            "02ERR-DIS" "X" "24" "2" "5" "01ERR-DIS" " " RETURNING RESU.
+       CALL "SD_Init" USING
+            "03ERR-DIS" "X" "24" "7" "12" "02ERR-DIS" " "
+            RETURNING RESU.
+       CALL "SD_From" USING
+            "03ERR-DIS" BY REFERENCE ERR-F "12" "0" RETURNING RESU.
+       CALL "SD_Init" USING
+            "04ERR-DIS" "X" "24" "19" "1" "03ERR-DIS" " "
+            RETURNING RESU.
+       CALL "SD_From" USING
+            "04ERR-DIS" BY REFERENCE ERR-M "1" "0" RETURNING RESU.
+       CALL "SD_Init" USING
+            "05ERR-DIS" "X" "24" "20" "11" "04ERR-DIS" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "06ERR-DIS" "X" "24" "31" "2" "05ERR-DIS" " "
+            RETURNING RESU.
+       CALL "SD_From" USING
+            "06ERR-DIS" BY REFERENCE ERR-FLG "2" "0" RETURNING RESU.
+       CALL "SD_Init" USING
+            "07ERR-DIS" "X" "24" "33" "5" "06ERR-DIS" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "08ERR-DIS" "X" "24" "38" "5" "07ERR-DIS" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "09ERR-DIS" "X" "24" "43" "30" "08ERR-DIS" " "
+            RETURNING RESU.
+       CALL "SD_From" USING
+            "09ERR-DIS" BY REFERENCE ERR-K "30" "0" RETURNING RESU.
       *
            ACCEPT USER_ID FROM ARGUMENT-VALUE.
            ACCEPT COMPLETION_CODE FROM ARGUMENT-VALUE.
@@ -469,5 +768,40 @@
        MEI-EX.
            EXIT.
       **
-       COPY  LPMSG_PR.
-      **
+      *****************************
+      *    ｴﾗｰ DISPLAY (ﾒｲﾝ)      *
+      *****************************
+       ERR-ENT.
+           MOVE    ERR-STAT  TO  ERR-FLG.
+           PERFORM CLSE-ENT THRU CLSE-EXT.
+           CALL "SD_Output" USING
+            "DISP-MSG-SPACE" DISP-MSG-SPACE "p" RETURNING RESU.
+       ERR-010.
+           CALL "SD_Output" USING "ERR-DIS" ERR-DIS "p" RETURNING RESU.
+           CALL "SD_Output" USING
+           "DISP-BUZ-B" DISP-BUZ-B "p" RETURNING RESU.
+           CALL "SD_Output" USING
+            "DISP-MSG-SPACE" DISP-MSG-SPACE "p" RETURNING RESU.
+           GO TO ERR-010.
+       ERR-EXT.
+           EXIT.
+      *****************************
+      *    該当月取込み処理       *
+      *****************************
+       Z-RTN.
+           MOVE    1         TO  ZI.
+       Z-010.
+           IF  ZI  >  15
+               MOVE  99      TO  ZI
+               GO    TO      Z-EXT
+           END-IF.
+           IF  Z-TOUF(ZI)  >  ZYMD
+               ADD   1       TO  ZI
+               GO    TO      Z-010
+           END-IF.
+           IF  Z-TOUT(ZI)  <  ZYMD
+               ADD   1       TO  ZI
+               GO    TO      Z-010
+           END-IF.
+       Z-EXT.
+           EXIT.

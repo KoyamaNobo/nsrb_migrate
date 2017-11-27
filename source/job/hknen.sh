@@ -180,41 +180,6 @@ endif
 #***  OUTPUT : PRN999
 ../exec/HMY620 $USER_ID $JRCODE
 source ../job/CRC_LIBRARY.sh
-#***  =====　都道府県年間売上順位別　販売実績表　============
-#***  --- 都道府県データ　更新 ---
-#***  INPUT  : WK0064NNN
-#***  I-O    : HKBM
-set ABORT=0;
-../exec/HMY520 $USER_ID $JRCODE
-source ../job/CRC_LIBRARY.sh
-if($ABORT == 1) then
-  goto ENDJOB
-endif
-if ($JRCODE == 255) then
-  goto ENDJOB
-endif
-#**
-set ABORT=0;
-../exec/CSRT50 $USER_ID $JRCODE '10' 'HKBM' 'WK0064' '(21,10,S,D)' '' '' '' '' '(1,2,N,EQ,@01@)' '' '   都道府県年間売上順位別　販売実績表   '
-source ../job/CRC_LIBRARY.sh
-if ($JRCODE == 255) then
-  goto ENDJOB
-endif
-if($ABORT == 1) then
-  goto ENDJOB
-endif
-#***  --- 都道府県年間売上順位別　販売実績表 ---
-#***  INPUT  : DATEM,HKBM,WK0064NNN
-#***  OUTPUT : PRN999
-set ABORT=0;
-../exec/HMY530 $USER_ID $JRCODE
-source ../job/CRC_LIBRARY.sh
-if($ABORT == 1) then
-  goto ENDJOB
-endif
-if ($JRCODE == 255) then
-  goto ENDJOB
-endif
 #***  =====　年間品種別　生産明細表　===========
 set ABORT=0;
 ../exec/CSRT50 $USER_ID $JRCODE '10' 'SUSRYF' 'WK0064' '((32,1,N),(1,6,N),(46,6,N),(42,1,N))' '((1,51),(@          @),(1,3))' '' '' '' '' '' '          履物年間　生産明細表          '

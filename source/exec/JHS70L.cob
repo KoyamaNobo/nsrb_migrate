@@ -489,9 +489,9 @@
                END-IF
            END-IF
            IF  W-HKC = 2
-               IF (TDIW-DATE < W-SNGP AND > W-ENGP) OR
-                  (TDIW-CYO < W-SCYO AND > W-ECYO) OR
-                  (TDIW-TPC < W-STPC AND > W-ETPC)
+               IF (TDIW-DATE < W-SNGP OR > W-ENGP) OR
+                  (TDIW-CYO < W-SCYO OR > W-ECYO) OR
+                  (TDIW-TPC < W-STPC OR > W-ETPC)
                    GO TO M-10
                END-IF
            END-IF
@@ -824,9 +824,9 @@
                END-IF
            END-IF
            IF  W-HKC = 2
-               IF (TDIW-DATE < W-SNGP AND > W-ENGP) OR
-                  (TDIW-CYO < W-SCYO AND > W-ECYO) OR
-                  (TDIW-TPC < W-STPC AND > W-ETPC)
+               IF (TDIW-DATE < W-SNGP OR > W-ENGP) OR
+                  (TDIW-CYO < W-SCYO OR > W-ECYO) OR
+                  (TDIW-TPC < W-STPC OR > W-ETPC)
                    GO TO M-80
                END-IF
            END-IF
@@ -1048,10 +1048,14 @@
            CALL "SD_Accept" USING BY REFERENCE A-DMM "A-DMM" "9" "1"
             BY REFERENCE ESTAT RETURNING RESU.
            IF  ESTAT = BTB
-               IF (W-SCYO < 9850000) AND (W-ECYO > 9850999)
-                   GO TO ACP-35
-               ELSE
-                   GO TO ACP-25
+               IF  W-HKC = 1
+                   GO TO ACP-05
+                ELSE
+                   IF (W-SCYO < 9850000) AND (W-ECYO > 9850999)
+                       GO TO ACP-35
+                   ELSE
+                       GO TO ACP-25
+                   END-IF
                END-IF
            END-IF
            IF  ESTAT NOT = HTB AND SKP

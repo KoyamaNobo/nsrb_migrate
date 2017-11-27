@@ -932,7 +932,7 @@
        CALL "SD_From" USING 
             "D-YG" BY REFERENCE W-YG "6" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "D-UTC1" "Z" "13" "64" "1" "D-YG" " " RETURNING RESU.
+            "D-UTC1" "Z" "13" "63" "1" "D-YG" " " RETURNING RESU.
        CALL "SD_From" USING 
             "D-UTC1" BY REFERENCE W-UTC1 "1" " " RETURNING RESU.
        CALL "SD_Init" USING

@@ -43,24 +43,4 @@ endif
 if ($JRCODE == 255) then
   goto ENDJOB
 endif
-set ABORT=0;
-../exec/HMY520 $USER_ID $JRCODE
-source ../job/CRC_LIBRARY.sh
-if($ABORT == 1) then
-  goto ENDJOB
-endif
-if ($JRCODE == 255) then
-  goto ENDJOB
-endif
-set ABORT=0;
-../exec/CSRT50 $USER_ID $JRCODE '10' 'HKBM' 'WK0064' '(21,10,S,D)' '' '' '' '' '(1,2,N,EQ,@01@)' '' '   ìsìπï{åßîNä‘îÑè„èáà ï Å@îÃîÑé¿ê—ï\   '
-source ../job/CRC_LIBRARY.sh
-if ($JRCODE == 255) then
-  goto ENDJOB
-endif
-if($ABORT == 1) then
-  goto ENDJOB
-endif
-../exec/HMY530 $USER_ID $JRCODE
-source ../job/CRC_LIBRARY.sh
 ENDJOB:

@@ -208,7 +208,7 @@
             "INPUT" J-M_PNAME1 "SHARED" BY REFERENCE J-M_IDLST "1"
             "J-KEY" BY REFERENCE J-KEY.
            CALL "DB_F_Open" USING
-            "INPUT" SS-F_PNAME1 " " BY REFERENCE SS-F_IDLST "0".
+            "OUTPUT" SS-F_PNAME1 " " BY REFERENCE SS-F_IDLST "0".
        M-10.
       *           READ JSSR-F AT END
       *//////////////////////     

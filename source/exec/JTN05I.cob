@@ -153,6 +153,9 @@
              03  W-TEKD  REDEFINES W-TEKI.
                04  W-THT      PIC  N(009).
                04  W-TTE      PIC  N(019).
+               04  W-TTED  REDEFINES W-TTE.
+                 05  W-TTE1   PIC  N(012).
+                 05  W-TTE2   PIC  N(007).
              03  W-PRC        PIC  9(001).
              03  W-UPC        PIC  9(001).
              03  W-MEI.
@@ -1730,6 +1733,17 @@
                    GO TO M-280
                END-IF
            END-IF
+           IF  W-ACT = 1
+               IF  W-CCD > 001
+                   IF  TC-MZC = 1
+                       IF  W-TTE2 = SPACE
+                           MOVE "î≠ëóñæç◊èëç›íÜ" TO W-TTE2
+                           CALL "SD_Output" USING
+                            "A-TTE" A-TTE "p" RETURNING RESU
+                       END-IF
+                   END-IF
+               END-IF
+           END-IF
            MOVE 0 TO W-DC.
        M-325.
            CALL "SD_Accept" USING BY REFERENCE A-THT "A-THT" "N" "18"
@@ -1941,6 +1955,12 @@
            IF  W-UCHK = 1
                MOVE 1 TO TDI-UPC
            END-IF
+           IF  W-TCD = 4990
+               IF  999999 = W-HCD(1) OR W-HCD(2) OR W-HCD(3) OR W-HCD(4)
+                                                OR W-HCD(5) OR W-HCD(6)
+                   MOVE 1 TO TDI-UTC
+               END-IF
+           END-IF
       *           WRITE TDI-R INVALID KEY
       *//////////////
            CALL "DB_Insert" USING
@@ -2019,6 +2039,8 @@
       *
            CALL "SD_Output" USING "C-CLEAR" C-CLEAR "p" RETURNING RESU.
            CALL "SD_Output" USING "D-PRM" D-PRM "p" RETURNING RESU.
+           MOVE ZERO TO W-FNGP W-DNOF.
+           MOVE 999999 TO W-TNGP W-DNOT.
        M-520.
            CALL "SD_Accept" USING BY REFERENCE A-SEN "A-SEN" "9" "1"
             BY REFERENCE ESTAT RETURNING RESU.
