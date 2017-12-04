@@ -2,6 +2,7 @@
 session_start();
 require_once('./lib/config.php');
 require_once('./lib/log.php');
+require_once('./lib/clsSharedMemory.php');
 $oLog = New Log('');
 if(isset($_SESSION['user_id'])){
 	if(!empty($_POST['value'])){
@@ -23,6 +24,8 @@ if(isset($_SESSION['user_id'])){
 					//中断時でも業務放棄可能にさせるため　CONTとTERM発行
 					shell_exec('kill -CONT ' . $pid . ' ');
 					shell_exec('kill -USR1 ' . $pid . ' ');
+					//共有メモリを破棄
+					SharedMemory::destroy($pid);
 				}
 			}
 		}

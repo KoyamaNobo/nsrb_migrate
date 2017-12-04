@@ -4,6 +4,7 @@ define('CSCREEN','/clear\s+screen/i');
 require_once('./lib/config.php');
 require_once('./lib/log.php');
 require_once('./lib/clsScreenToHTML.php');
+require_once('./lib/clsSharedMemory.php');
 
 if(isset($argv[1])){
 	$cmd = $argv[1];
@@ -48,8 +49,15 @@ if(is_resource($t->process)){
 	$toHTML  = New clsScreenToHTML();
 	$strRead = '' ;#output用データの格納
 
+	$memory = new SharedMemory();
+	// 自プロセスIDをキーに共有メモリを作成(処理終了時にはメモリを破棄)
+	$id = getmypid();
+	$memory->create($id);
+
 	$oLog->info("success ::".$cmd."::".__FILE__.__LINE__);
 	$startTime = time() + (EXEC_LIVE * 60);
+	$html = '';
+
 	while(1){
 		$exitWaitFlg = false;
 		#最初に少し処理を待ってからスタート
@@ -66,53 +74,37 @@ if(is_resource($t->process)){
 		while(!empty($strRead = fgets($t->pipes[1],1024))){
 			#改行のみは出力しない
 			if(strlen($strRead) > 0){
-//  $oLog->info('readed:'.$strRead.__FILE__.':'.__LINE__,0);
+				//  $oLog->info('readed:'.$strRead.__FILE__.':'.__LINE__,0);
 				$toHTML->screen->elemParse($strRead);
 			}
 			$ii++;
 		}
 		if($ii > 0){
 			$toHTML->lineIndex += $ii;
-			$toHTML->htmlEcho($fnameCtoP);
+			$newHtml = $toHTML->getHtml();
+			if (strcmp($html, $newHtml) !== 0) {
+				$memory->write_outputfile($newHtml);
+				$html = $newHtml;
+			}
 		}
 		#終了予定時間を過ぎたら強制終了
 		if($startTime < time()){
 			break;
 		}
 
-		// 実行系への入力 読み込みを次のループで行うためにあとで書き込む
-		if(!file_exists($fnamePtoC)){
-			// 入力用のtmpファイルが存在しなければ作る
-			touch($fnamePtoC);
-			//touchの結果でファイルステータスは変わっているはず
-			clearstatcache(true,$fnamePtoC);
-			if(!file_exists($fnamePtoC)){
-				// 入力用のtmpファイルが作成出来なければ強制終了
-				// $oLog->info('resource1:'.__FILE__.':'.__LINE__);
-				break;
-			}
-		}
-		$fp = fopen($fnamePtoC,'r+');
 		$wRes = 0;
-		if($fp){
-			$strWrite = '' ;#入力データの格納
-			stream_set_blocking($t->pipes[0],1);
-			$strWrite = fgets($fp,1024);
-			if(!empty($strWrite)){
-				fflush($t->pipes[0]);
-				// $oLog->info("write [".$strWrite."]".__FILE__.__LINE__);
-				$wRes = fwrite($t->pipes[0],$strWrite);
-			}
-			if($wRes != 0){
-				ftruncate($fp,0);
-			}
-			unset($wRes);
-			fclose($fp);
-		}else{
-			#ファイルが正常に開けないときは強制終了
-			$oLog->info(' file:open error'.__FILE__.':'.__LINE__);
-			break;
+		$strWrite = '' ;#入力データの格納
+		stream_set_blocking($t->pipes[0],1);
+		$strWrite = $memory->read_inputfile();
+		if(!empty($strWrite)){
+			fflush($t->pipes[0]);
+			// $oLog->info("write [".$strWrite."]".__FILE__.__LINE__);
+			$wRes = fwrite($t->pipes[0],$strWrite);
 		}
+		if($wRes != 0){
+			$memory->delete_inputfile();
+		}
+		unset($wRes);
 
 		#プロセス終了時の戻る対応
 		#プロセスの状態がfalseの場合終了
