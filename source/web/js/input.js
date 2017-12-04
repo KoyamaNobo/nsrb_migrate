@@ -28,7 +28,7 @@ function fncChangeScreen() {
 	}
 	if(sendFlag == false){
 		$.ajax({
-			type: "POST",
+			type: "GET",
 			url: "getOut.php",
 			data:{ infname:infname.value, outfname:outfname.value, pid:pid.value },
 			success: function(msg,txt){

@@ -3,6 +3,7 @@
 //php起動用
 //
 require_once('./lib/log.php');
+require_once('./lib/clsSharedMemory.php');
 class BackgroundProcess{
 	public $strCmd        = '';
 	public $return_val    = array();
@@ -12,6 +13,7 @@ class BackgroundProcess{
 	public $tempnameOut   = '';//起動した先の標準出力に
 	public $tempnameIn    = '';//起動した先の標準入力に
 	public $oLog;
+	public $memory;
 
 	function __construct($cmd,$id){
 		$this->oLog = New Log('');
@@ -91,51 +93,10 @@ class BackgroundProcess{
 	//対象からの読み込み
 	function pRead(){
 		$result = '';
-		$resultArray = array();
-		$filesize = 0;  //
-		$counter = 0;
-		$iPreFileSize = 0;
-		$readCount = READ_COUNT;    //何度読み込みをスキップするか
-		$errCount = 0;              //counterが0のままでいるときは何らかのエラー
-		$ii = 0;                    //読み込みの行数カウント
-
-		//読み込むファイルをopen
-		while(1){
-			clearstatcache(true,$this->tempnameOut);
-			//filesize 0の間はスキップ or ReadCountを減らしきっていない
-			if( filesize($this->tempnameOut) != 0 && $readCount >= 0){
-				$readCount--;
-				//変化中は
-				$iPreFileSize = filesize($this->tempnameOut);
-				continue;
-			}else{
-				//filesizeが0のままだったら読み込みせずに終了
-				break;
-			}
-			//filesizeが変わっていく時は保留
-			if( filesize($this->tempnameOut) !== $iPreFileSize){
-				$iPreFileSize = filesize($this->tempnameOut);
-				continue;
-			}
-
-			//読み込むファイルをopen
-			$fp = fopen($this->tempnameOut,'r');
-			stream_set_blocking($fp,0);
-			if($fp !== false){
-				//初期表示にどこまで出すか
-				while($temp = fgets($fp,1024)){
-					//0行目にしないために先にインクリメント
-					$ii++;
-					$result .= $temp."\n";
-					$this->getline_index = $ii;
-				}
-				fclose($fp);
-// 					echo $result;
-				//1度読み込んだら終了
-			}
-			break;
+		if ($this->createSharedMemory()) {
+			$result = $this->memory->read_outputfile();
+			$this->getline_index = substr_count($result, "\n");
 		}
-
 		return $result;
 	}
 
@@ -143,13 +104,23 @@ class BackgroundProcess{
 	function pWrite($inputData){
 		if(!is_null($inputData)){
 			echo "p:write_data".$this_tempnameIn.PHP_EOL;
-			$fp = fopen($this->tempnameIn,'w');
-			if($fp){
-				echo "p:write";
-				fwrite($fp,$inputData);
-				fclose($fp);
+
+			if ($this->createSharedMemory()) {
+				$this->memory->write_inputfile($inputData);
 			}
 		}
+	}
+
+	// 共有メモリを作成する
+	function createSharedMemory()
+	{
+		if (empty($this->memory)) {
+			// PIDをキーに共有メモリを作成する。
+			$this->memory = new SharedMemory();
+			$this->memory->open($this->pid);
+		}
+
+		return !$this->memory->is_error();
 	}
 
 	function __destruct(){
