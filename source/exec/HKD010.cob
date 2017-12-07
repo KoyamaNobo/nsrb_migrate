@@ -318,8 +318,6 @@
                   "***  NYUF DELETE ¥◊∞  ***".
              03  E-ME18  PIC  X(024) VALUE
                   "***  ì¸ã‡ï[Å@î≠çsçœ  ***".
-             03  E-ME19  PIC  X(024) VALUE
-                  "***  êUë÷ì`ï[Å@Ç»Çµ  ***".
              03  E-ME20  PIC  X(026) VALUE
                   "***  ìæà”êÊÅ@É`ÉFÉbÉN  ***".
              03  E-ME21  PIC  X(024) VALUE
@@ -458,38 +456,38 @@
        CALL "SD_Init" USING 
             "S-SKD" "X" "20" "15" "8" " " "03D-SPACE" RETURNING RESU.
       *C-ERR
-       CALL "SD_Init" USING
-            "C-ERR" " " "0" "0" "308" " " " "  RETURNING RESU.
-       CALL "SD_Init" USING
-            "01C-ERR" " " "24" "0" "308" " " "C-ERR"  RETURNING RESU.
-       CALL "SD_Init" USING
-            "E-ME1" "X" "24" "15" "15" " " "01C-ERR"  RETURNING RESU.
-       CALL "SD_Init" USING
-            "E-ME4" "X" "24" "15" "18" "E-ME1" " "  RETURNING RESU.
-       CALL "SD_Init" USING
-            "E-ME9" "X" "24" "15" "24" "E-ME4" " "  RETURNING RESU.
-       CALL "SD_Init" USING
-            "E-ME10" "X" "24" "15" "26" "E-ME9" " "  RETURNING RESU.
-       CALL "SD_Init" USING
-            "E-ME11" "X" "24" "15" "17" "E-ME10" " "  RETURNING RESU.
-       CALL "SD_Init" USING
-            "E-ME12" "X" "24" "15" "24" "E-ME11" " "  RETURNING RESU.
-       CALL "SD_Init" USING
-            "E-ME14" "X" "24" "15" "26" "E-ME12" " "  RETURNING RESU.
-       CALL "SD_Init" USING
-            "E-ME15" "X" "24" "15" "17" "E-ME14" " "  RETURNING RESU.
-       CALL "SD_Init" USING
-            "E-ME16" "X" "24" "15" "18" "E-ME15" " "  RETURNING RESU.
-       CALL "SD_Init" USING
-            "E-ME17" "X" "24" "15" "25" "E-ME16" " "  RETURNING RESU.
-       CALL "SD_Init" USING
-            "E-ME18" "X" "24" "15" "24" "E-ME17" " "  RETURNING RESU.
-       CALL "SD_Init" USING
-            "E-ME20" "X" "24" "15" "26" "E-ME18" " "  RETURNING RESU.
-       CALL "SD_Init" USING
-            "E-ME21" "X" "24" "15" "24" "E-ME20" " "  RETURNING RESU.
-       CALL "SD_Init" USING
-            "E-ME22" "X" "24" "15" "24" "E-ME21" " "  RETURNING RESU.
+       CALL "SD_Init" USING 
+            "C-ERR" " " "0" "0" "308" " " " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "01C-ERR" " " "24" "0" "308" " " "C-ERR" RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-ME1" "X" "24" "15" "15" " " "01C-ERR" RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-ME4" "X" "24" "15" "18" "E-ME1" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-ME9" "X" "24" "15" "24" "E-ME4" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-ME10" "X" "24" "15" "26" "E-ME9" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-ME11" "X" "24" "15" "17" "E-ME10" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-ME12" "X" "24" "15" "24" "E-ME11" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-ME14" "X" "24" "15" "26" "E-ME12" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-ME15" "X" "24" "15" "17" "E-ME14" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-ME16" "X" "24" "15" "18" "E-ME15" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-ME17" "X" "24" "15" "25" "E-ME16" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-ME18" "X" "24" "15" "24" "E-ME17" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-ME20" "X" "24" "15" "26" "E-ME18" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-ME21" "X" "24" "15" "24" "E-ME20" " " RETURNING RESU.
+       CALL "SD_Init" USING 
+            "E-ME22" "X" "24" "15" "24" "E-ME21" " " RETURNING RESU.
       *
            COPY LSSEM_P.
            COPY LIBSCR_P.
@@ -515,8 +513,8 @@
            END-IF
            CALL "SD_Output" USING "C-CLEAR" C-CLEAR "p" RETURNING RESU.
            IF  D-NANG NOT = D-NHNG AND D-NKNG
-               CALL "C3_Set_Jrcode" USING
-                USER_ID BY REFERENCE COMPLETION_CODE  255
+               CALL "C3_Set_Jrcode" USING 
+                USER_ID BY REFERENCE COMPLETION_CODE 255
                CALL "SD_Output" USING
                 "E-ME4" E-ME4 "p" RETURNING RESU
                CALL "SD_Output" USING
@@ -564,7 +562,6 @@
            IF  W-END = 8
                GO TO M-100
            END-IF
-      *
            GO TO M-060.
        M-100.
            CALL "DB_F_Close" USING
@@ -576,7 +573,7 @@
             "N-KEY" BY REFERENCE N-KEY.
        M-120.
       *           READ NYU-F NEXT RECORD AT END
-      *///////////////
+      *//////////////////////
            CALL "DB_Read" USING
             "NEXT RECORD AT END" NYU-F_PNAME1 BY REFERENCE NYU-R " "
             RETURNING RET.
@@ -620,7 +617,7 @@
            END-IF.
        M-200.
       *           READ NYU-F NEXT RECORD AT END
-      *///////////////
+      *//////////////////////
            CALL "DB_Read" USING
             "NEXT RECORD AT END" NYU-F_PNAME1 BY REFERENCE NYU-R " "
             RETURNING RET.
@@ -851,7 +848,6 @@
            MOVE T-TNC TO W-TC.
            MOVE T-DCC TO W-DCC.
        ACP-140.
-      *     ACCEPT A-NC.
            CALL "SD_Accept" USING BY REFERENCE A-NC "A-NC" "9" "2"
             BY REFERENCE ESTAT RETURNING RESU.
            CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU.
@@ -974,7 +970,7 @@
                GO TO ACP-160
            END-IF.
        ACP-180.
-           CALL "SD_Accept" USING BY REFERENCE A-KIN "A-KIN" "9" "8"
+           CALL "SD_Accept" USING BY REFERENCE A-KIN "A-KIN" "S9" "8"
             BY REFERENCE ESTAT RETURNING RESU.
            IF  ESTAT = BTB
                IF  W-NC = "30" OR "40"
@@ -1058,13 +1054,15 @@
            ADD 1 TO CNT.
            IF  CNT = 9
                CALL "SD_Output" USING "D-AD" D-AD "p" RETURNING RESU
-               GO TO ACP-320.
+               GO TO ACP-320
+           END-IF
            MOVE W-AR(CNT) TO W-R.
            ADD W-KIN TO W-GKIN.
            IF  W-NC2 > 7
                ADD W-KIN TO W-SHZ
            ELSE
-               ADD W-KIN TO W-TKIN.
+               ADD W-KIN TO W-TKIN
+           END-IF
            GO TO ACP-300.
        ACP-320.
            IF  W-ACT = 2
@@ -1078,7 +1076,7 @@
       *
            MOVE W-TCDD TO TSK-KEY.
       *           READ TSKF WITH UNLOCK INVALID KEY
-      *///////////////
+      *//////////////////////
            CALL "DB_Read" USING
             "INVALID KEY" TSKF_PNAME1 BY REFERENCE TSK-R "UNLOCK"
             RETURNING RET.
@@ -1194,7 +1192,7 @@
            EXIT.
       *-------------  ÇcÇ`ÇsÇ`Å@ÉZÉbÉgÅiÇqÇdÇvÇqÇhÇsÇdÅEÇcÇdÇkÇdÇsÇdÅjÅ@
        SET-RTN.
-      *     MOVE 0 TO W-INV.
+      *    MOVE 0 TO W-INV.
            MOVE ZERO TO W-INV.
            MOVE SPACE TO N-KEY.
            MOVE W-DNO TO N-NO.
@@ -1270,7 +1268,7 @@
            MOVE W-R TO W-AR(CNT).
       *
       *           READ NYU-F NEXT RECORD AT END
-      *///////////////
+      *//////////////////////
            CALL "DB_Read" USING
             "NEXT RECORD AT END" NYU-F_PNAME1 BY REFERENCE NYU-R " "
             RETURNING RET.
