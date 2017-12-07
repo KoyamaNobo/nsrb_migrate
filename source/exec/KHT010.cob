@@ -85,7 +85,6 @@
            02  KUH-F_LNAME    PIC  X(012) VALUE "KUH-F_KHT010".
            02  F              PIC  X(001).
            02  KUH-F_KEY1     PIC  X(100) VALUE SPACE.
-           02  KUH-F_KEY2     PIC  X(100) VALUE SPACE.
            02  KUH-F_SORT     PIC  X(100) VALUE SPACE.
            02  KUH-F_IDLST    PIC  X(100) VALUE SPACE.
            02  KUH-F_RES      USAGE  POINTER.
@@ -128,10 +127,10 @@
            02  A-DMM   PIC  9(001).
        01  C-DSP.
            02  D-NSD.
-             03  FILLER  PIC Z9 .
-             03  FILLER  PIC Z9 .
-             03  FILLER  PIC Z9 .
-             03  FILLER  PIC Z9 .
+             03  FILLER  PIC Z9.
+             03  FILLER  PIC Z9.
+             03  FILLER  PIC Z9.
+             03  FILLER  PIC Z9.
            02  D-NA    PIC  X(020).
            02  D-MD    PIC  X(002) VALUE "  ".
            02  D-UHD.
@@ -346,7 +345,7 @@
            END-IF
            MOVE W-KEY TO KH-KEY.
       *           READ KH-M WITH UNLOCK INVALID KEY
-      *///////////////
+      *//////////////////////
            CALL "DB_Read" USING
             "INVALID KEY" KH-M_PNAME1 BY REFERENCE KH-R "UNLOCK"
             RETURNING RET.
@@ -362,7 +361,7 @@
        M-080.
            MOVE KH-KEY TO KHT-KEY.
       *           READ KHT-M WITH UNLOCK INVALID KEY
-      *///////////////
+      *//////////////////////
            CALL "DB_Read" USING
             "INVALID KEY" KHT-M_PNAME1 BY REFERENCE KHT-R "UNLOCK"
             RETURNING RET.
@@ -402,7 +401,7 @@
            END-IF.
        M-120.
       *           READ KUH-F AT END
-      *//////////////////////     
+      *//////////////////////
            CALL "DB_Read" USING
             "AT END" KUH-F_PNAME1 BY REFERENCE K-R " " RETURNING RET.
            IF  RET = 1
@@ -458,7 +457,7 @@
                MOVE 5 TO CHK
            END-IF
       *           READ KUH-F AT END
-      *//////////////////////     
+      *//////////////////////
            CALL "DB_Read" USING
             "AT END" KUH-F_PNAME1 BY REFERENCE K-R " " RETURNING RET.
            IF  RET = 1

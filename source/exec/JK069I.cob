@@ -26,7 +26,7 @@
                03  WYY     PIC  9(02).
                03  WMM     PIC  9(02).
                03  WDD     PIC  9(02).
-           02  N-24        PIC  N(24)   VALUE  ALL   "　".
+           02  N-24        PIC  N(24)   VALUE  ALL "　".
        01  W-AREA2.
            02  O           PIC  9(01)   VALUE  ZERO.
            02  M           PIC  9(02)   VALUE  ZERO.
@@ -156,7 +156,7 @@
        77  COMPLETION_CODE    PIC  X(003) VALUE ZERO.
       *
        01  DSP-CLR.
-           02  FILLER  PIC  X(012) VALUE "CLEAR SCREEN".
+           02  FILLER  PIC  X(12) VALUE "CLEAR SCREEN".
        01  ACP-AREA.
            02  ACP-ACT     PIC  9(01).
            02  DSP-NAM     PIC  N(05).
@@ -172,7 +172,7 @@
                03  A-41       PIC  9(04).
                03  A-42       PIC  9(03).
                03  D-43       PIC  N(24).
-           02  D-44   PIC  N(24).
+           02  D-44        PIC  N(24).
            02  ACP-5.
                03  A-51       PIC  9(01).
                03  D-52       PIC  N(06).
@@ -202,65 +202,65 @@
                03  DIS-9   PIC  ZZZZ- .
                03  DIS-10  PIC  ZZZZ- .
            02  DSP-KEI     PIC  ZZZ,ZZZ- .
-           02  DSP-LINE    PIC  X(01)  VALUE  "-".
+           02  DSP-LINE    PIC  X(01)   VALUE  "-".
            02  ACP-KOS     PIC S9(03).
            02  DSP-KOS     PIC ZZ9- .
            02  ACP-OKC     PIC  9(01).
        01  DSP-CLE.
            02  CLE-01.
                03  C-11.
-                   04  FILLER  PIC  X(06) VALUE "      ".
-                   04  FILLER  PIC  X(01) VALUE " ".
-                   04  FILLER  PIC  X(04) VALUE "    ".
-                   04  FILLER  PIC  X(02) VALUE "  ".
-                   04  FILLER  PIC  X(02) VALUE "  ".
-                   04  FILLER  PIC  X(02) VALUE "  ".
-                   04  FILLER  PIC  X(04) VALUE "    ".
-                   04  FILLER  PIC  X(03) VALUE "   ".
+                   04  FILLER  PIC  X(06)   VALUE "      ".
+                   04  FILLER  PIC  X(01)   VALUE " ".
+                   04  FILLER  PIC  X(04)   VALUE "    ".
+                   04  FILLER  PIC  X(02)   VALUE "  ".
+                   04  FILLER  PIC  X(02)   VALUE "  ".
+                   04  FILLER  PIC  X(02)   VALUE "  ".
+                   04  FILLER  PIC  X(04)   VALUE "    ".
+                   04  FILLER  PIC  X(03)   VALUE "   ".
                    04  C-111   PIC  N(24).
                03  C-12.
-                   04  FILLER  PIC  X(01) VALUE " ".
-                   04  FILLER  PIC  X(12) VALUE   "　　　　　　".
-                   04  FILLER  PIC  X(04) VALUE "    ".
+                   04  FILLER  PIC  X(01)   VALUE " ".
+                   04  FILLER  PIC  X(12)   VALUE "　　　　　　".
+                   04  FILLER  PIC  X(04)   VALUE "    ".
                    04  C-121   PIC  N(24).
                03  C-13.
-                   04  FILLER  PIC  X(01) VALUE " ".
-                   04  FILLER  PIC  X(12) VALUE   "　　　　　　".
+                   04  FILLER  PIC  X(01)   VALUE " ".
+                   04  FILLER  PIC  X(12)   VALUE "　　　　　　".
                    04  C-131.
-                       05  FILLER  PIC  X(01) VALUE " ".
-                       05  FILLER  PIC  X(06) VALUE "      ".
-                       05  FILLER  PIC  X(02) VALUE "  ".
-                   04  FILLER  PIC  X(08) VALUE "        ".
+                       05  FILLER  PIC  X(01)   VALUE " ".
+                       05  FILLER  PIC  X(06)   VALUE "      ".
+                       05  FILLER  PIC  X(02)   VALUE "  ".
+                   04  FILLER  PIC  X(08)   VALUE "        ".
                03  C-14.
-                   04  FILLER  PIC  X(04) VALUE  "    ".
-               03  C-15    PIC  X(09) VALUE "         ".
-               03  C-16    PIC  X(01) VALUE " ".
+                   04  FILLER  PIC  X(04)   VALUE  "    ".
+               03  C-15    PIC  X(09)   VALUE "         ".
+               03  C-16    PIC  X(01)   VALUE " ".
            02  CLE-02.
                03  CLE-21.
-                   04  FILLER  PIC  X(07) VALUE "       ".
-                   04  FILLER  PIC  X(01) VALUE " ".
+                   04  FILLER  PIC  X(07)   VALUE "       ".
+                   04  FILLER  PIC  X(01)   VALUE " ".
                    04  FILLER  PIC  X(24)
-                               VALUE "                        ".
+                                      VALUE "                        ".
                    04  FILLER  PIC  X(24)
-                               VALUE "                        ".
+                                      VALUE "                        ".
                03  CLE-22.
-                   04  FILLER  PIC  X(07) VALUE "       ".
-                   04  FILLER  PIC  X(01) VALUE " ".
-                   04  FILLER  PIC  X(05) VALUE "     ".
-                   04  FILLER  PIC  X(05) VALUE "     ".
-                   04  FILLER  PIC  X(05) VALUE "     ".
-                   04  FILLER  PIC  X(05) VALUE "     ".
-                   04  FILLER  PIC  X(05) VALUE "     ".
-                   04  FILLER  PIC  X(05) VALUE "     ".
-                   04  FILLER  PIC  X(05) VALUE "     ".
-                   04  FILLER  PIC  X(05) VALUE "     ".
-                   04  FILLER  PIC  X(05) VALUE "     ".
-                   04  FILLER  PIC  X(05) VALUE "     ".
-                   04  FILLER  PIC  X(08) VALUE "        ".
-           02  CLE-03      PIC  X(06) VALUE  "      ".
+                   04  FILLER  PIC  X(07)   VALUE "       ".
+                   04  FILLER  PIC  X(01)   VALUE " ".
+                   04  FILLER  PIC  X(05)   VALUE "     ".
+                   04  FILLER  PIC  X(05)   VALUE "     ".
+                   04  FILLER  PIC  X(05)   VALUE "     ".
+                   04  FILLER  PIC  X(05)   VALUE "     ".
+                   04  FILLER  PIC  X(05)   VALUE "     ".
+                   04  FILLER  PIC  X(05)   VALUE "     ".
+                   04  FILLER  PIC  X(05)   VALUE "     ".
+                   04  FILLER  PIC  X(05)   VALUE "     ".
+                   04  FILLER  PIC  X(05)   VALUE "     ".
+                   04  FILLER  PIC  X(05)   VALUE "     ".
+                   04  FILLER  PIC  X(08)   VALUE "        ".
+           02  CLE-03      PIC  X(06)   VALUE  "      ".
            02  CLE-04.
-               03  C-41    PIC  X(08) VALUE  "        ".
-               03  C-42    PIC  X(07) VALUE  "       ".
+               03  C-41    PIC  X(08)   VALUE  "        ".
+               03  C-42    PIC  X(07)   VALUE  "       ".
        01  DSP-REV-AREA.
            02  DSP-RR-ALL.
             03 DSP-RR1     PIC  X(61).
@@ -273,18 +273,18 @@
             03 DSP-RC3     PIC  X(61).
             03 DSP-RC4     PIC  X(61).
        01  DSP-ERR.
-           02  INV-M02     PIC  X(28) 
-                           VALUE   "＊＊品名マスター　未登録＊＊".
-           02  ERR-03      PIC  X(24) 
-                           VALUE   "＊＊　該当伝票無し　＊＊".
-           02  ERR-04      PIC  X(22) 
-                           VALUE   "＊＊　伝区エラー　＊＊".
-           02  ERR-05      PIC  X(28) 
-                           VALUE   "＊＊　入数が同一でない　＊＊".
-           02  ERR-06      PIC  X(32) 
-                           VALUE   "＊　使用サイズ＝ＺＥＲＯです　＊".
-           02  ERR-SET     PIC  X(26) 
-               VALUE   "＊　セット数量　エラー　＊".
+           02  INV-M02     PIC  X(28)
+                           VALUE "＊＊品名マスター　未登録＊＊".
+           02  ERR-03      PIC  X(24)
+                           VALUE "＊＊　該当伝票無し　＊＊".
+           02  ERR-04      PIC  X(22)
+                           VALUE "＊＊　伝区エラー　＊＊".
+           02  ERR-05      PIC  X(28)
+                           VALUE "＊＊　入数が同一でない　＊＊".
+           02  ERR-06      PIC  X(32)
+                           VALUE "＊　使用サイズ＝ＺＥＲＯです　＊".
+           02  ERR-SET     PIC  X(26)
+               VALUE "＊　セット数量　エラー　＊".
       **
       **   MESSEGE  AREA
       **
@@ -294,33 +294,33 @@
            02  DISP-MSG-SPACE.
                03  FILLER  PIC X(40).
            02  DISP-BUZ-B.
-               03  FILLER  PIC X(05) VALUE X"1B4A02".
-           02  DISP-BUZ-J.
                03  FILLER  PIC X(05) VALUE X"1B4202".
+           02  DISP-BUZ-J.
+               03  FILLER  PIC X(05) VALUE X"1B4A02".
            02  NOR-M01.
                03  FILLER  PIC X(22) VALUE
-                 "＊　マスタ　登録済　＊".
+               "＊　マスタ　登録済　＊".
            02  NOR-D01.
                03  FILLER  PIC X(22) VALUE
-                 "＊　データ　登録済　＊".
+               "＊　データ　登録済　＊".
            02  INV-M01.
                03  FILLER  PIC X(22) VALUE
-                 "＊　マスタ　未登録　＊".
+               "＊　マスタ　未登録　＊".
            02  INV-D01.
                03  FILLER  PIC X(22) VALUE
-                 "＊　データ　未登録　＊".
+               "＊　データ　未登録　＊".
            02  OK-01.
                03  FILLER  PIC X(14) VALUE
-                 "＊　Ｏ　Ｋ　＊".
+               "＊　Ｏ　Ｋ　＊".
            02  CAN-01.
                03  FILLER  PIC X(18) VALUE
-                 "＊　キャンセル　＊".
+               "＊　キャンセル　＊".
            02  ERR-01.
                03  FILLER  PIC X(18) VALUE
-                 "＊　入力エラー　＊".
+               "＊　入力エラー　＊".
            02  ERR-02.
                03  FILLER  PIC X(22) VALUE
-                 "＊　データ　なし　　＊".
+               "＊　データ　なし　　＊".
            02  ERR-DIS.
                03  FILLER  PIC X(05) VALUE
                "<<<  ".
@@ -334,7 +334,7 @@
                03  FILLER  PIC X(05) VALUE
                " KEY=".
                03  FILLER  PIC X(30).
-      ************************
+      **
        PROCEDURE               DIVISION.
       *Initialize
        CALL "SD_Initialize" RETURNING RESU.
@@ -461,13 +461,13 @@
             RETURNING RESU.
        CALL "SD_Into" USING 
             "A-64" BY REFERENCE W-64(1,1) "4" "2" BY REFERENCE A 107
-            BY REFERENCE B 2 RETURNING RESU.
+            BY REFERENCE B 4 RETURNING RESU.
        CALL "SD_Init" USING 
             "D-64" "ZZZZ-" "LIN1 PLUS 1" "COL1" "5" "A-64" " "
             RETURNING RESU.
        CALL "SD_From" USING 
             "D-64" BY REFERENCE W-64(1,1) "4" "2" BY REFERENCE A 107
-            BY REFERENCE B 2 RETURNING RESU.
+            BY REFERENCE B 4 RETURNING RESU.
        CALL "SD_Init" USING 
             "D-65" "ZZZ,ZZZ-" "LIN1 PLUS 1" "73" "8" "D-64" " "
             RETURNING RESU.
@@ -482,61 +482,61 @@
             RETURNING RESU.
        CALL "SD_From" USING 
             "DIS-1" BY REFERENCE W-64(1,1) "4" "2" BY REFERENCE A 107
-            "1" 1 RETURNING RESU.
+            "1" 4 RETURNING RESU.
        CALL "SD_Init" USING 
             "DIS-2" "ZZZZ-" "LIN1 PLUS 1" "19" "5" "DIS-1" " "
             RETURNING RESU.
        CALL "SD_From" USING 
             "DIS-2" BY REFERENCE W-64(1,1) "4" "2" BY REFERENCE A 107
-            "2" 1 RETURNING RESU.
+            "2" 4 RETURNING RESU.
        CALL "SD_Init" USING 
             "DIS-3" "ZZZZ-" "LIN1 PLUS 1" "25" "5" "DIS-2" " "
             RETURNING RESU.
        CALL "SD_From" USING 
             "DIS-3" BY REFERENCE W-64(1,1) "4" "2" BY REFERENCE A 107
-            "3" 1 RETURNING RESU.
+            "3" 4 RETURNING RESU.
        CALL "SD_Init" USING 
             "DIS-4" "ZZZZ-" "LIN1 PLUS 1" "31" "5" "DIS-3" " "
             RETURNING RESU.
        CALL "SD_From" USING 
             "DIS-4" BY REFERENCE W-64(1,1) "4" "2" BY REFERENCE A 107
-            "4" 1 RETURNING RESU.
+            "4" 4 RETURNING RESU.
        CALL "SD_Init" USING 
             "DIS-5" "ZZZZ-" "LIN1 PLUS 1" "37" "5" "DIS-4" " "
             RETURNING RESU.
        CALL "SD_From" USING 
             "DIS-5" BY REFERENCE W-64(1,1) "4" "2" BY REFERENCE A 107
-            "5" 1 RETURNING RESU.
+            "5" 4 RETURNING RESU.
        CALL "SD_Init" USING 
             "DIS-6" "ZZZZ-" "LIN1 PLUS 1" "43" "5" "DIS-5" " "
             RETURNING RESU.
        CALL "SD_From" USING 
-            "DIS-6" BY REFERENCE W-64(1,1) "4" "2"  BY REFERENCE A 107
-            "6" 1 RETURNING RESU.
+            "DIS-6" BY REFERENCE W-64(1,1) "4" "2" BY REFERENCE A 107
+            "6" 4 RETURNING RESU.
        CALL "SD_Init" USING 
             "DIS-7" "ZZZZ-" "LIN1 PLUS 1" "49" "5" "DIS-6" " "
             RETURNING RESU.
        CALL "SD_From" USING 
-            "DIS-7" BY REFERENCE W-64(1,1) "4" "2"  BY REFERENCE A 107
-            "7" 1 RETURNING RESU.
+            "DIS-7" BY REFERENCE W-64(1,1) "4" "2" BY REFERENCE A 107
+            "7" 4 RETURNING RESU.
        CALL "SD_Init" USING 
             "DIS-8" "ZZZZ-" "LIN1 PLUS 1" "55" "5" "DIS-7" " "
             RETURNING RESU.
        CALL "SD_From" USING 
-            "DIS-8" BY REFERENCE W-64(1,1) "4" "2"  BY REFERENCE A 107
-            "8" 1 RETURNING RESU.
+            "DIS-8" BY REFERENCE W-64(1,1) "4" "2" BY REFERENCE A 107
+            "8" 4 RETURNING RESU.
        CALL "SD_Init" USING 
             "DIS-9" "ZZZZ-" "LIN1 PLUS 1" "61" "5" "DIS-8" " "
             RETURNING RESU.
        CALL "SD_From" USING 
-            "DIS-9" BY REFERENCE W-64(1,1) "4" "2"  BY REFERENCE A 107
-            "9" 1 RETURNING RESU.
+            "DIS-9" BY REFERENCE W-64(1,1) "4" "2" BY REFERENCE A 107
+            "9" 4 RETURNING RESU.
        CALL "SD_Init" USING 
             "DIS-10" "ZZZZ-" "LIN1 PLUS 1" "67" "5" "DIS-9" " "
             RETURNING RESU.
        CALL "SD_From" USING 
-            "DIS-10" BY REFERENCE W-64(1,1) "4" "2"  BY REFERENCE A 107
-            "10" 2 RETURNING RESU.
+            "DIS-10" BY REFERENCE W-64(1,1) "4" "2" BY REFERENCE A 107
+            "10" 4 RETURNING RESU.
        CALL "SD_Init" USING 
             "DSP-KEI" "ZZZ,ZZZ-" "22" "73" "8" "DSP-6B" " "
             RETURNING RESU.
@@ -626,8 +626,7 @@
        CALL "SD_Init" USING 
             "01CLE-21" "X" "LIN2" "2" "7" " " "CLE-21" RETURNING RESU.
        CALL "SD_Init" USING 
-            "02CLE-21" "X" "LIN2" "9" "1" "01CLE-21" " "
-            RETURNING RESU.
+            "02CLE-21" "X" "LIN2" "9" "1" "01CLE-21" " " RETURNING RESU.
        CALL "SD_Init" USING 
             "03CLE-21" "X" "LIN2" "11" "24" "02CLE-21" " "
             RETURNING RESU.
@@ -683,8 +682,7 @@
        CALL "SD_Init" USING 
             "C-41" "X" "3" "24" "8" " " "CLE-04" RETURNING RESU.
        CALL "SD_Init" USING 
-            "C-42" "X" "LIN1 PLUS 1" "2" "7" "C-41" " "
-            RETURNING RESU.
+            "C-42" "X" "LIN1 PLUS 1" "2" "7" "C-41" " " RETURNING RESU.
       *DSP-REV-AREA
        CALL "SD_Init" USING 
             "DSP-REV-AREA" " " "0" "0" "488" " " " " RETURNING RESU.
@@ -712,8 +710,7 @@
             "DSP-RC-ALL" " " "0" "0" "244" "DSP-RR-ALL" " "
             RETURNING RESU.
        CALL "SD_Init" USING 
-            "DSP-RC1" "X" "6" "11" "61" " " "DSP-RC-ALL"
-            RETURNING RESU.
+            "DSP-RC1" "X" "6" "11" "61" " " "DSP-RC-ALL" RETURNING RESU.
        CALL "SD_Using" USING 
             "DSP-RC1" BY REFERENCE REV-1 "61" "0" RETURNING RESU.
        CALL "SD_Init" USING 
@@ -777,26 +774,21 @@
             "01DISP-BUZ-J" "X" "24" "40" "5" " " "DISP-BUZ-J"
             RETURNING RESU.
        CALL "SD_Init" USING 
-            "NOR-M01" " " "24" "0" "22" "DISP-BUZ-J" " "
-            RETURNING RESU.
+            "NOR-M01" " " "24" "0" "22" "DISP-BUZ-J" " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "01NOR-M01" "X" "24" "1" "22" " " "NOR-M01"
-            RETURNING RESU.
+            "01NOR-M01" "X" "24" "1" "22" " " "NOR-M01" RETURNING RESU.
        CALL "SD_Init" USING 
             "NOR-D01" " " "24" "0" "22" "NOR-M01" " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "01NOR-D01" "X" "24" "1" "22" " " "NOR-D01"
-            RETURNING RESU.
+            "01NOR-D01" "X" "24" "1" "22" " " "NOR-D01" RETURNING RESU.
        CALL "SD_Init" USING 
             "INV-M01" " " "24" "0" "22" "NOR-D01" " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "01INV-M01" "X" "24" "1" "22" " " "INV-M01"
-            RETURNING RESU.
+            "01INV-M01" "X" "24" "1" "22" " " "INV-M01" RETURNING RESU.
        CALL "SD_Init" USING 
             "INV-D01" " " "24" "0" "22" "INV-M01" " " RETURNING RESU.
        CALL "SD_Init" USING 
-            "01INV-D01" "X" "24" "1" "22" " " "INV-D01"
-            RETURNING RESU.
+            "01INV-D01" "X" "24" "1" "22" " " "INV-D01" RETURNING RESU.
        CALL "SD_Init" USING 
             "OK-01" " " "24" "0" "14" "INV-D01" " " RETURNING RESU.
        CALL "SD_Init" USING 
@@ -849,7 +841,6 @@
       *
            ACCEPT USER_ID FROM ARGUMENT-VALUE.
            ACCEPT COMPLETION_CODE FROM ARGUMENT-VALUE.
-      *
        MEIN.
            PERFORM  INI-RTN    THRU  INI-EX.
            PERFORM  ACT-RTN    THRU  ACT-EX.
@@ -892,6 +883,7 @@
             BY REFERENCE HI2-M_IDLST HI2-M_PNAME1.
            CALL "DB_F_Close" USING BY REFERENCE TC-M_IDLST TC-M_PNAME1.
            CALL "DB_F_Close" USING BY REFERENCE JCON_IDLST JCON_PNAME1.
+      *
            CALL "SD_Output" USING "DSP-CLR" DSP-CLR "p" RETURNING RESU.
        END-EX.
            EXIT.
@@ -915,13 +907,13 @@
                GO  TO  ACT-RTN
            END-IF
            IF  W-ACT      =  1
-               MOVE    "取消　　　"  TO  W-NAM
+               MOVE  "取消　　　"  TO  W-NAM
            END-IF
            IF  W-ACT      =  2
-               MOVE    "出荷日訂正"  TO  W-NAM
+               MOVE  "出荷日訂正"  TO  W-NAM
            END-IF
            IF  W-ACT      =  3
-               MOVE    "明細訂正　"  TO  W-NAM
+               MOVE  "明細訂正　"  TO  W-NAM
            END-IF
            CALL "SD_Output" USING "DSP-NAM" DSP-NAM "p" RETURNING RESU.
        ACT-005.
@@ -992,13 +984,13 @@
            MOVE     JSTR-03    TO    W-21.
            MOVE     JSTR-05    TO    W-3.
            IF  W-21       =  0
-               MOVE       "出荷"   TO    W-22
+               MOVE     "出荷"   TO    W-22
            END-IF
            IF  W-21       =  3
-               MOVE       "訂正"   TO    W-22
+               MOVE     "訂正"   TO    W-22
            END-IF
            IF  W-21       =  7
-               MOVE       "サ出"   TO    W-22
+               MOVE     "サ出"   TO    W-22
            END-IF
            MOVE     JSTR-061   TO    W-41  TC-TCD.
            MOVE     1          TO    TC-CCD.
@@ -1026,7 +1018,7 @@
       *           READ     JCON       UNLOCK  INVALID
       *///////////////
            CALL "DB_Read" USING
-            "INVALID" JCON_PNAME1 BY REFERENCE JCON-R "UNLOCK"
+            "INVALID" JCON_PNAME1 BY REFERENCE JCON3-R "UNLOCK"
             RETURNING RET.
            IF  RET = 1
                MOVE     SPACE      TO    JCON3-03
@@ -1044,16 +1036,14 @@
            CALL "SD_Output" USING "DSP-KOS" DSP-KOS "p" RETURNING RESU.
            MOVE  1     TO  DIS-SW.
        ACT-013.
-           IF  JSTR-158  =  0     OR   JSTR-17    =   1
-               CALL "SD_Output" USING
-                "ERR-01" ERR-01 "p" RETURNING RESU
+           IF  JSTR-158  =  0     OR     JSTR-17    =   1
+               CALL "SD_Output" USING "ERR-01" ERR-01 "p" RETURNING RESU
                CALL "SD_Output" USING
                 "DISP-BUZ-J" DISP-BUZ-J "p" RETURNING RESU
                GO  TO  ACT-010
            END-IF
            IF  JSTR-03  NOT =  0  AND  7
-               CALL "SD_Output" USING
-                "ERR-04" ERR-04 "p" RETURNING RESU
+               CALL "SD_Output" USING "ERR-04" ERR-04 "p" RETURNING RESU
                CALL "SD_Output" USING
                 "DISP-BUZ-J" DISP-BUZ-J "p" RETURNING RESU
                GO  TO  ACT-010
@@ -1109,8 +1099,7 @@
            GO  TO   ACT-012.
        ACT-014.
            IF  CNT        =  1
-               CALL "SD_Output" USING
-                "ERR-03" ERR-03 "p" RETURNING RESU
+               CALL "SD_Output" USING "ERR-03" ERR-03 "p" RETURNING RESU
                CALL "SD_Output" USING
                 "DISP-BUZ-J" DISP-BUZ-J "p" RETURNING RESU
                GO  TO   ACT-010
@@ -1243,7 +1232,7 @@
            END-IF
            IF  A             =    6
                GO  TO  ACT-110
-           ELSE
+           ELSE  
                ADD   2     TO   LIN1
                CALL "SD_Arg_Match_Line" USING
                 "LIN1" "2" LIN1 RETURNING RESU
@@ -1528,8 +1517,8 @@
                                W-65(4) + W-65(5) + W-65(6).
            CALL "SD_Output" USING "DSP-KEI" DSP-KEI "p" RETURNING RESU.
        ACT-130.
-           CALL "SD_Accept" USING BY REFERENCE ACP-KOS "ACP-KOS" "S9"
-            "3" BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Accept" USING BY REFERENCE ACP-KOS "ACP-KOS"
+            "S9" "3" BY REFERENCE ESTAT RETURNING RESU.
            CALL "SD_Output" USING
             "DISP-MSG-SPACE" DISP-MSG-SPACE "p" RETURNING RESU.
            IF  ESTAT  NOT =  "09"
@@ -1635,7 +1624,7 @@
                    GO  TO  UPD-EX
                END-IF
            END-IF
-           ADD      1          TO    C  B.
+           ADD 1          TO    C  B.
            IF  B   >      6
                GO  TO  UPD-EX
            END-IF
@@ -1732,6 +1721,7 @@
             "LIN2" "2" LIN2 RETURNING RESU.
        CR2-EX.
            EXIT.
+      **   ﾘﾊﾞｰｽ ﾋｮｳｼﾞ **
        REV-DSP-RTN.
            CALL "SD_Output" USING
             "DSP-RC-ALL" DSP-RC-ALL "p" RETURNING RESU.
@@ -1768,7 +1758,7 @@
       *
            MOVE    W-1             TO  JSTR-01.
            MOVE    1               TO  JSTR-02.
-      *           START   JSTR  KEY  NOT <    JSTR-KEY   INVALID
+      *           START   JSTR  KEY  NOT <    JSTR-KEY INVALID
       *///////////////
            CALL "DB_Start" USING
             JSTR_PNAME1 "JSTR-KEY" " NOT < " JSTR-KEY RETURNING RET.
@@ -1827,7 +1817,7 @@
            IF  RET = 1
                GO  TO  NXT-020
            END-IF
-           IF  JSTR-158  =  0     OR  JSTR-17    =   1
+           IF  JSTR-158  =  0     OR     JSTR-17    =   1
                GO  TO  NXT-010
            END-IF
            IF  JSTR-03  NOT =  0  AND  7
