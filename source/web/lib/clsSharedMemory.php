@@ -39,23 +39,30 @@ class SharedMemory
 	protected $is_error = false;
 
 	/**
+	 * 入力ファイルの書き込み時間を表す変数キー
+	 */
+	protected $inputfiletime_key = 0;
+
+	/**
 	 * 入力ファイルを表す変数キー
 	 */
-	protected $inputfile_key = 0;
+	protected $inputfile_key = 1;
+
+	/**
+	 * 出力ファイルの書き込み時間を表す変数キー
+	 */
+	protected $outputfiletime_key = 2;
 
 	/**
 	 * 出力ファイルを表す変数キー
 	 */
-	protected $outputfile_key = 1;
+	protected $outputfile_key = 3;
 
 	/**
 	 * コンストラクタ
 	 */
 	public function __construct()
-	{
-		// エラーログの記録先を指定
-		ini_set('error_log', '/home/nisshin/public_html/source/log/e.log');
-	}
+	{}
 
 	/**
 	 * 共有メモリを作成する。
@@ -161,7 +168,7 @@ class SharedMemory
 	 */
 	public function write_inputfile($data)
 	{
-		return $this->write($this->inputfile_key, $data);
+		return $this->write($this->inputfiletime_key, $this->inputfile_key, $data);
 	}
 
 	/**
@@ -169,11 +176,11 @@ class SharedMemory
 	 *
 	 * @param boolean $is_delete
 	 *        	データを読み込んだ後にメモリのデータを削除するか否か
-	 * @return データの書き込みがない場合はfalse、それ以外の場合は読み込んだデータ
+	 * @return array 配列[0, 1] = [データを書き込んだ時間, 読み込んだデータ]。書き込みがない場合は = [データを読み込んだ時間, false]
 	 */
 	public function read_inputfile($is_delete = false)
 	{
-		return $this->read($this->inputfile_key, $is_delete);
+		return $this->read($this->inputfiletime_key, $this->inputfile_key, $is_delete);
 	}
 
 	/**
@@ -181,7 +188,7 @@ class SharedMemory
 	 */
 	public function delete_inputfile()
 	{
-		return $this->delete($this->inputfile_key);
+		return $this->delete($this->inputfiletime_key, $this->inputfile_key);
 	}
 
 	/**
@@ -193,7 +200,7 @@ class SharedMemory
 	 */
 	public function write_outputfile($data)
 	{
-		return $this->write($this->outputfile_key, $data);
+		return $this->write($this->outputfiletime_key, $this->outputfile_key, $data);
 	}
 
 	/**
@@ -201,11 +208,11 @@ class SharedMemory
 	 *
 	 * @param boolean $is_delete
 	 *        	データを読み込んだ後にメモリのデータを削除するか否か
-	 * @return データの書き込みがない場合はfalse、それ以外の場合は読み込んだデータ
+	 * @return array 配列[0, 1] = [データを書き込んだ時間, 読み込んだデータ]。書き込みがない場合は = [データを読み込んだ時間, false]
 	 */
 	public function read_outputfile($is_delete = false)
 	{
-		return $this->read($this->outputfile_key, $is_delete);
+		return $this->read($this->outputfiletime_key, $this->outputfile_key, $is_delete);
 	}
 
 	/**
@@ -213,24 +220,29 @@ class SharedMemory
 	 */
 	public function delete_outputfile()
 	{
-		return $this->delete($this->outputfile_key);
+		return $this->delete($this->outputfiletime_key, $this->outputfile_key);
 	}
 
 	/**
 	 * 共有メモリにデータを書き込む。
 	 *
-	 * @param integer $key
-	 *        	キー
+	 * @param integer $timekey
+	 *        	データの書き込み時間を書き込むキー
+	 * @param integer $datakey
+	 *        	データを書き込むキー
 	 * @param string $data
 	 *        	データ
 	 * @return 書き込みに成功した場合はtrue、書き込みに失敗した場合はfalse
 	 */
-	private function write($key, $data)
+	private function write($timekey, $datakey, $data)
 	{
 		try {
 			sem_acquire($this->sem_shmid);
 
-			return shm_put_var($this->shmid, $key, $data);
+			if (shm_put_var($this->shmid, $timekey, microtime(true)) === false) {
+				return false;
+			}
+			return shm_put_var($this->shmid, $datakey, $data);
 		} finally {
 			sem_release($this->sem_shmid);
 		}
@@ -239,30 +251,40 @@ class SharedMemory
 	/**
 	 * 共有メモリからデータを読み込む。
 	 *
-	 * @param integer $key
-	 *        	キー
+	 * @param integer $timekey
+	 *        	データを書き込んだ時間を読み込むキー
+	 * @param integer $datekey
+	 *        	データを読み込むキー
 	 * @param boolean $is_delete
 	 *        	データを読み込んだ後にメモリのデータを削除するか否か
-	 * @return データの書き込みがない場合はfalse、それ以外の場合は読み込んだデータ
+	 * @return array 配列[0, 1] = [データを書き込んだ時間, 読み込んだデータ]。書き込みがない場合は = [データを読み込んだ時間, false]
 	 */
-	private function read($key, $is_delete = false)
+	private function read($timekey, $datakey, $is_delete = false)
 	{
 		try {
 			sem_acquire($this->sem_shmid);
 
 			// データなし
-			if (shm_has_var($this->shmid, $key) === false) {
-				return false;
+			if (shm_has_var($this->shmid, $timekey) === false || shm_has_var($this->shmid, $datakey) === false) {
+				return array(
+					microtime(true),
+					false
+				);
 			}
 
-			$data = shm_get_var($this->shmid, $key);
+			$time = shm_get_var($this->shmid, $timekey);
+			$data = shm_get_var($this->shmid, $datakey);
 
 			if ($is_delete) {
 				// データ削除
-				shm_remove_var($this->shmid, $key);
+				shm_remove_var($this->shmid, $timekey);
+				shm_remove_var($this->shmid, $datakey);
 			}
 
-			return $data;
+			return array(
+				$time,
+				$data
+			);
 		} finally {
 			sem_release($this->sem_shmid);
 		}
@@ -271,17 +293,24 @@ class SharedMemory
 	/**
 	 * 共有メモリの領域を削除する。
 	 *
-	 * @param integer $key
-	 *        	キー
+	 * @param integer $timekey
+	 *        	データを書き込んだ時間を書き込むキー
+	 * @param integer $datekey
+	 *        	データを書き込むキー
 	 */
-	private function delete($key)
+	private function delete($timekey, $datakey)
 	{
 		try {
 			sem_acquire($this->sem_shmid);
 
-			if (shm_has_var($this->shmid, $key) !== false) {
+			if (shm_has_var($this->shmid, $timekey) !== false) {
 				// データ削除
-				shm_remove_var($this->shmid, $key);
+				shm_remove_var($this->shmid, $timekey);
+			}
+
+			if (shm_has_var($this->shmid, $datakey) !== false) {
+				// データ削除
+				shm_remove_var($this->shmid, $datakey);
 			}
 		} finally {
 			sem_release($this->sem_shmid);

@@ -4,17 +4,25 @@
 //   戻り値 true :入力チェック成功時 または 入力チェックを行わないとき
 //          false:入力チェック失敗時
 function inpCheck(evt){
-	var targElem = evtToElement(evt);
+	return elementInpCheck(evtToElement(evt));
+}
+
+//インプットボックスのクラスによって入力チェックを分ける
+//「SNUMERC」の場合：sNumericCheckを呼び出す
+//「NUMERC」の場合：numericCheckを呼び出す
+//戻り値 true :入力チェック成功時 または 入力チェックを行わないとき
+//      false:入力チェック失敗時
+function elementInpCheck(targElem) {
 	tmp = $(targElem)[0].className;
-	if(tmp){
-		if (tmp.match(/SNUMERC/)){
-			if(!sNumericCheck(targElem.value)){
-				//入力チェックにエラーがあるとき
+	if (tmp) {
+		if (tmp.match(/SNUMERC/)) {
+			if (!sNumericCheck(targElem.value)) {
+				// 入力チェックにエラーがあるとき
 				return false;
 			}
-		}else if (tmp.match(/NUMERC/)) {
-			if(!numericCheck(targElem.value)){
-				//入力チェックにエラーがあるとき
+		} else if (tmp.match(/NUMERC/)) {
+			if (!numericCheck(targElem.value)) {
+				// 入力チェックにエラーがあるとき
 				return false;
 			}
 		}
@@ -55,7 +63,15 @@ function sNumericCheck(val){
 //  例）「SNUMERC5V2」-1 → -0.01
 //  例）「NUMERC5V2」 10 →  0.1
 function inpFormat(evt){
-	var targElem = evtToElement(evt);
+	return elementInpFormat(evtToElement(evt));
+}
+
+
+//インプットボックスのクラスがSNUMERCかNUMERCのとき
+//入力値のフォーマット変換をする（小数点を付加する）
+//例）「SNUMERC5V2」-1 → -0.01
+//例）「NUMERC5V2」 10 →  0.1
+function elementInpFormat(targElem){
 	var res = targElem.value;
 	var minusFlg = false;
 
