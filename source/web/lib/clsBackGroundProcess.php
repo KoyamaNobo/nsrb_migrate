@@ -92,12 +92,26 @@ class BackgroundProcess{
 
 	//対象からの読み込み
 	function pRead(){
-		$result = '';
+		$result =  '';
+
 		if ($this->createSharedMemory()) {
-			$result = $this->memory->read_outputfile();
+			list($time, $result) = $this->memory->read_outputfile();
 			$this->getline_index = substr_count($result, "\n");
 		}
+
 		return $result;
+	}
+
+	//対象からの読み込み
+	function pReadAndTime(){
+		if ($this->createSharedMemory()) {
+			list($time, $result) = $this->memory->read_outputfile();
+			$this->getline_index = substr_count($result, "\n");
+
+			return array($time, $result);
+		} else {
+			return array(microtime(true), '');
+		}
 	}
 
 	//対象への書き込み

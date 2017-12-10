@@ -1,786 +1,1263 @@
-//setTimeout用の変数
-var TimeoutID;
-//buzzer用の変数(ならしたら立てる)
-var BuzzerFlg=0;
-//buzzer用のtimeOutID
-var BuzzerTimeoutID;
-//一度文字入力したら帰ってくるまで送らない
-var sendFlag = false;
-//Error文字列の配列
-var ErrorStrArray = new Array();
-//エスケープボタンを押下フラグ（押下時true）
-var escKeyFlg = false;
-//タイムアウト時間 16以下はFireFoxは動かない
-var TimeoutTime = 16;
-//タイムアウト時間 16以下はFireFoxは動かない
-var ReplaceModeFlg = 0;
-//history.back()を一度以上しないため
+/**
+ * フォーカス設定を行う間隔(msec)
+ */
+var SET_FOCUS_INTERVAL = 100;
+/**
+ * Beep音を鳴らす間隔(msec)
+ */
+var BEEP_INTERVAL = 600;
+/**
+ * セッション継続用ポーリング間隔(msec)
+ */
+var SESSION_ALIVE_INTERVAL = 1000 * 60 * 5;
+
+/**
+ * 処理中を表すキュー。 キューにデータが存在する場合はキー入力をブロックしてバッファリングする。
+ * ただし、日本語入力をブロックすることはできないので、ローマ字入力と日本語入力とでは 動作が異なることになる。
+ */
+var processQueue = new Array();
+
+/**
+ * キー入力をバッファリングしたリスト
+ */
+var keyBuffer = new Array();
+
+/**
+ * history.backを1度以上しないため
+ */
 var historyBackFlg = false;
 
-//定期的に画面をとってくる
-function fncChangeScreen() {
-	var outfname = $('#outfname')[0];
-	var infname  = $('#infname')[0];
-	var pid      = $('#pid')[0];
-	//menu等の場合infnameがない
-	if( infname == void 0){
-		return ;
-	}
-	if(sendFlag == false){
-		$.ajax({
-			type: "GET",
-			url: "getOut.php",
-			data:{ infname:infname.value, outfname:outfname.value, pid:pid.value },
-			success: function(msg,txt){
-				screenReplace(msg);
-			},
-			error: function(jqXHR,textStatus,errorThrown ){
-				if(errorThrown){
-					alert("BackGround connect Error" + textStatus + ":" + errorThrown.message);
-					console.log("BackGround connect Error" + textStatus + ":" + errorThrown.message);
-					reStart();
-				}
-			}
-		});
-		outfname = null;
-		infname  = null;
-		pid = null;
-	}else{
-		outfname = null;
-		infname  = null;
-		pid = null;
-		reStart();
-	}
-};
+/**
+ * 現在発生中のエラー
+ */
+var currentErrors = new Array();
 
+/**
+ * 画面データのタイムスタンプ。 古いデータをスキップするための判定用
+ */
+var dataTimestamp = 0;
 
-//入力えんたー時パラメータを送信
-function nextInput(event){
-	//入力変換
-	//author : koyama 20170202
-	function change_input_send(event){
-		let inputValue='';
-		let statusValue='';
-		//入力チェック
-		if(inpCheck(event)){
-			//入力フォーマット（少数対応）
-			inputValue = inpFormat(event);
-		}else{
-			return false;
-		}
-		//入力値の設定
-		switch (event.key) {
-			case 'Enter' :
-				if(event.shiftKey == true){
-					statusValue = 'f';
-					break;
-				}
-				statusValue = 'h';
-				break;
-			case 'Tab' :
-				statusValue = 's';
-				break;
-			case 'Backspace' :
-				if(targElem.value != ""){
-					return true;
-				}
-				inputValue = '';
-				statusValue = 'b';
-				break;
-			case 'F10':
-			case 'Alt':
-				if(event.shiftKey == true){
-					statusValue = '10';
-				}else{
-					statusValue = 'a';
-				}
-				break;
-			case 'F1' :
-			case 'F2' :
-			case 'F3' :
-			case 'F4' :
-			case 'F5' :
-			case 'F6' :
-			case 'F7' :
-			case 'F8' :
-			case 'F9' :
-				if(event.key == 'F4' && event.shiftKey == true){
-					statusValue = '14';
-					break;
-				}
-				if(event.key == 'F8' && event.shiftKey == true){
-					statusValue = 'c1';
-					break;
-				}
-				if(event.key == 'F9' && event.shiftKey == true){
-					statusValue = 'c2';
-					break;
-				}
-				statusValue = event.key.substr(1);
-				break;
-				case 'Process' :
-					//2バイト入力
-					replaceModeExec(event);
-					// 全角半角キーを押されたらとりあえず送信はしない
-					return true;
-			default:
-				return true;
-		}
-		//sendFlagとTimeoutの処理
-		preProcess();
-		$.ajax({
-			type: "POST",
-			url: "param.php",
-			data:{ value:inputValue + '`'+ statusValue ,infname:infname[0].value, outfname:outfname[0].value, pid:pid[0].value },
-			success: function(msg){
-				screenReplace( msg );
-				sendFlag = false;
-			},
-			error: function(jqXHR,textStatus,errorThrown ){
-				alert("BackGround connect Error" + textStatus + ":" + errorThrown.message);
-				console.log("BackGround connect Error" + textStatus + ":" + errorThrown.message);
-			}
-		});
-		//途中でtrueとして抜けない限りfalse
-		//処理をここで止めるときはfalseを返す
-		return false;
-	}
+/**
+ * STOP中か否か 何かキーが入力されるまで入力を受け付けない
+ */
+var isStop = false;
 
-	//上書きモードの時,後ろの一文字を消す
-	function replaceModeExec(event){
-		//event.target.selectionStart ->これがキャレットの位置
-		event.target.value = event.target.value.substr(0,event.target.selectionStart);
-	}
-	let targElem = evtToElement(event);
-	let outfname = $('#outfname');
-	let infname  = $('#infname');
-	let pid  = $('#pid');
-	let input = '';
+/**
+ * Beep音を指定回数鳴らすために使うカウン。 マイナス値の場合はBeep音は停止中を表す。
+ */
+var beepCounter = -1;
 
-	//menu等の場合infnameがない
-	if( infname == void 0){
-		return ;
-	}
-	if(sendFlag == false){
-		//エラーメッセージが表示中　かつ
-		//ジョブ終了時はキー操作無効
-		let tmp = $("#status1").html();
-		tmp = jQuery.trim(tmp.replace(/<("[^"]*"|'[^']*'|[^'">])*>/g,''));
-		if(tmp.length > 0 && $('#parentStatus')[0].value == "end" ){
-			return false;
-		}
-		//CTL+ANYキーの処理(画面切離関係)
-		if(screenSwitch(event)){
-			//特殊キーの場合はこれ以上処理しない
-			event.stopImmediatePropagation();
-			// return false;
-		}
+/**
+ * Beep音を鳴らすためのタイムアウト関数のID
+ */
+var beepTimeoutId;
 
-		//CTL+ANYキーの処理
-		if(funcSpecialKey(event)){
-			//特殊キーの場合はこれ以上処理しない
-			event.stopImmediatePropagation();
-			// return false;
-		}
-		//入力に何かあれば下記関数で、何もなければtrueで帰ってくる
-		let retVal;
-		retVal = change_input_send(event);
-		if(retVal == false){
-			//入力があったときはバブリングキャンセル
-			// if(event.defaultPrevented != true){
-			// 	event.preventDefault();
-			// }
-			// event.stopImmediatePropagation();
-			// event.stopPropagation();
-		}
-		// return retVal;
-	}
-};
+/**
+ * ブラウザがFirefoxか否か
+ */
+var isFirefox = (function() {
+	var userAgent = window.navigator.userAgent.toLowerCase();
+	return userAgent.indexOf('firefox') != -1;
 
-//フォーカスがinputではないときのキーイベント
-var anyKeyEvent = function(evt){
-	var parentStatus  = $('#parentStatus');
+})();
 
-	//エラーメッセージが表示中　かつ
-	//ジョブ終了時はキー操作無効
-	let tmp = $("#status1").html();
-	tmp = jQuery.trim(tmp.replace(/<("[^"]*"|'[^']*'|[^'">])*>/g,''));
-	if(tmp.length > 0  && parentStatus[0].value == "end" ){
-		return false;
-	}
+/**
+ * 画面の書き換えが発生する処理の前処理を行う。
+ */
+var preProcess = function() {
+	processQueue.push('');
+}
 
-	if(sendFlag != false){
+/**
+ * 画面の書き換えが発生する処理の後処理を行う。
+ */
+var postProcess = function() {
+	processQueue.pop();
+
+	keyBufferSimulate();
+}
+
+/**
+ * FIXME specialKey.jsで使っているので定義
+ * 最終的には不要になるかも
+ */
+var sendFlag = false;
+
+/**
+ * メニュー画面か否か
+ */
+var isMenuScreen = function() {
+	var infname = $('#infname');
+	// menu等の場合infnameがない
+	if (infname.length == 0) {
 		return true;
 	}
-	//F5 + ctrl
-	if(evt.keyCode >= 112 && evt.keyCode <= 123){
-		let targElem = evtToElement(evt);
-		if(evt.ctrlKey == true){
-			//これとinputじゃないときに動く？
-			//CTL+ANYキーの処理(画面切離関係)
-			if(screenSwitch(evt)){
-				//特殊キーの場合はこれ以上処理しない
-				return false;
-			}
 
-			let menuCmb = $('#root')[0];
-			var forcusElem = (document.activeElement || window.getSelection().focusNode);
-			if(forcusElem == menuCmb || forcusElem.tagName.toLowerCase() == 'input'){
-				forcusElem=null;
-				menuCmb   =null;
-				return false;
-			}
+	return false;
+}
 
-			//CTL+ANYキーの処理
-			if(funcSpecialKey(evt)){
-				//特殊キーの場合はこれ以上処理しない
-				return false;
-			}
-
-			sendFlag = true;
-			//menu等の場合infnameがない
-			if($('#infname').length != 0){
-				var outfname = $('#outfname');
-				var infname  = $('#infname');
-				var pid      = $('#pid');
-				//sendFlagとTimeoutの処理
-				preProcess();
-				$.ajax({
-					type: "POST",
-					url: "param.php",
-					data:{ value:'F' + (evt.keyCode - 111),infname:infname[0].value, outfname:outfname[0].value, pid:pid[0].value },
-					success: function(msg){
-						screenReplace( msg );
-						sendFlag = false;
-					},
-					error: function(jqXHR,textStatus,errorThrown ){
-						alert("BackGround connect Error" + textStatus + ":" + errorThrown.message);
-						console.log("BackGround connect Error" + textStatus + ":" + errorThrown.message);
-					}
-				});
-				outfname=null;
-				infname =null;
-				pid     =null;
-			}
-		}
-		return false;
+/**
+ * 前画面に戻る。
+ */
+var historyBack = function() {
+	if (!historyBackFlg) {
+		history.back();
+		historyBackFlg = true;
 	}
 }
 
-//キーアップ時の処理（nextInput）
-var setInputColor = function(evt){
-	if($('input.nextinput:focus').length > 0){
-		if( $('input.nextinput:focus')[0].value != ''){
-			$('input.nextinput:focus').css('background-color',document.getElementById("sbgcolor").value);
-		}else{
-			$('input.nextinput:focus').css('background-color','');
+/**
+ * プロセスが終了しているか否か
+ */
+var isProcessEnd = function() {
+	$parentStatus = $('#parentStatus');
+
+	if (0 < $parentStatus.length) {
+		if ($parentStatus.val() == 'end') {
+			// プロセス終了
+			return true;
 		}
 	}
+
+	return false;
 }
 
-//キーアップ時の処理（キーダウンでは対応不可）
-var escCancel = function(evt){
-	//入力チェック
-	if(!inpCheck(evt)){
+/**
+ * エラーが発生しているか否か
+ */
+var hasError = function() {
+	let html = $('#status1').html();
+	return 0 < $.trim(html.replace(/<("[^"]*"|'[^']*'|[^'">])*>/g, '')).length;
+}
+
+/**
+ * 画面の要素を入れ替える。
+ */
+var screenReplace = function(resultTxt) {
+	var $tarScreen = $('.screen');
+	var $chgScreen = $('<div>');
+	$chgScreen.html(resultTxt);
+
+//	//FIXME うーん。。
+//	if (-1  == resultTxt.indexOf('nextinput')) {
+//		console.log(resultTxt);
+//	}
+
+	if (!checkTimestamp($chgScreen)) {
+		return;
+	}
+
+	if (!checkStatus($chgScreen)) {
+		return;
+	}
+
+	// 取得行のいれかえ
+	replaceScreenElement($tarScreen, $chgScreen);
+}
+
+/**
+ * 画面データのタイムスタンプをチェックする。
+ */
+var checkTimestamp = function($chgScreen) {
+	$dataTimestamp = $chgScreen.find('#dataTimestamp');
+	newDataTimestamp = parseFloat($dataTimestamp.val());
+
+	// 読み取り後に要素は削除
+	$dataTimestamp.remove();
+
+	if (dataTimestamp < newDataTimestamp) {
+		// データが新しくなっている場合
+		dataTimestamp = newDataTimestamp;
+		return true;
+	}
+
+	return false;
+}
+
+/**
+ * 処理のステータスに合わせてステータスを更新＆処理を終了する。
+ */
+var checkStatus = function($chgScreen) {
+	// $chgScreenの中からerror探して表示
+	$errors = $chgScreen.find('.error');
+	if (0 < $errors.length) {
+		// エラーあり
+		var errorValue = $errors[0].value;
+		var $status1 = $('#status1');
+		$status1.html('<span>' + errorValue + '</span>');
+	}
+
+	// parentStatusGetが存在している場合parentStatusに代入して
+	// $chgScreenの中からparentStatusGetを消す
+	let $parentStatusGet = $chgScreen.find('.parentStatusGet');
+	if (0 < $parentStatusGet.length) {
+		$('#parentStatus').val($parentStatusGet.val());
+		$parentStatusGet.remove();
+	}
+
+	// プロセスが終了した場合は画面更新のSSEを停止
+	if (isProcessEnd()) {
+		stopScreenUpdateListener();
+	}
+
+	// エラーが発生していなくてプロセスが終了している場合は前画面に戻る。(画面を終了する)
+	if (isProcessEnd() && !hasError()) {
+		historyBack();
 		return false;
 	}
 
-	if (evt.keyCode == 27 && sendFlag == false) { // Esc
-		var targElem = evtToElement(evt);
-		var outfname = $('#outfname');
-		var infname  = $('#infname');
-		var pid  = $('#pid');
-		try{
-		escKeyFlg = true;
-		//sendFlagとTimeoutの処理
-		preProcess();
-		$.ajax({
-			type: "POST",
-			url: "param.php",
-			data:{ value:'`esc' ,infname:infname[0].value, outfname:outfname[0].value, pid:pid[0].value },
-			success: function(msg){
-				screenReplace( msg );
-				sendFlag = false;
-			},
-			error: function(jqXHR,textStatus,errorThrown ){
-				alert("BackGround connect Error" + textStatus + ":" + errorThrown.message);
-				console.log("BackGround connect Error" + textStatus + ":" + errorThrown.message);
+	return true;
+}
+
+/**
+ * 画面内容を更新する
+ */
+var replaceScreenElement = function($tarScreen, $chgScreen) {
+	// lineクラスを持つ要素の子のinput要素を抽出
+	let $tarInputs = $tarScreen.find('.line > input[type="text"]');
+	let $chgInputs = $chgScreen.find('.line > input[type="text"]');
+
+	// STOP判定。画面を書き換える前に判定しておく。
+	let isTarStop = false;
+	let isChgStop = false;
+	if (0 < $tarInputs.length) {
+		let tarInput = $tarInputs[0];
+		isTarStop = tarInput.name == 'STOP';
+	}
+	if (0 < $chgInputs.length) {
+		let chgInput = $chgInputs[0];
+		isChgStop = chgInput.name == 'STOP';
+	}
+
+	// 要素の入れ替え方法を決定
+	// 現在と次の画面に同じ入力項目がある場合のみ行単位で要素の入れ替えを行う。
+	let isLineChange = false;
+	if (0 < $tarInputs.length && 0 < $chgInputs.length) {
+		let tarInput = $tarInputs[0];
+		let chgInput = $chgInputs[0];
+		if (tarInput.name == chgInput.name) {
+			var tarColumns = tarInput.className.match(/\s+f[0-9]+/i);
+			var chgColumns = chgInput.className.match(/\s+f[0-9]+/i);
+
+			if (tarColumns[0] == chgColumns[0]) {
+				// nameが同じでかつクラスのフィールド名が同じ
+				isLineChange = true;
 			}
-		});
-		}catch(e){
-			escKeyFlg = false;
-			sendFlag = false;
 		}
-		return false;
 	}
+
+	// 点滅表示の状態に合わせる
+	setBlinkToElement($chgScreen);
+
+	// 要素の入れ替えを行う
+	if (isLineChange) {
+		// 行置き換え
+		// 現在の画面から罫線要素の子を削除
+		$tarScreen.children(':not(.line)').remove();
+		// 同様に次の画面から罫線要素を削除。ただし、こちらは後でマージするので要素は残しておく。
+		let $chgNotLines = $chgScreen.children('div:not(.line)');
+		$chgNotLines.remove();
+
+		// 現在の画面をベースに行単位の入れ替え処理を行う
+		$tarLines = $tarScreen.children();
+		for (i = 0; i < $tarLines.length; i++) {
+			let tarLine = $tarLines[i];
+			// 次の画面から同じクラスを持つ要素を抽出
+			// クラス名はスペースで繋がれて複数取得できるので、セレクタでクラス名のAND検索になるように.に置換して抽出
+			let $chgLines = $chgScreen.children('.'
+					+ tarLine.className.replace(' ', '.'));
+
+			// 置き換え対象の要素が見つからない場合は何もせずにスキップ
+			if ($chgLines.length == 0) {
+				continue;
+			}
+
+			let $tarLine = $(tarLine);
+			let $chgLine = $($chgLines[0]);
+
+			// 入力要素がない行の場合は単純に内容を入れ替え
+			if ($tarLine.find('input[type="text"]').length == 0) {
+				$tarLine.html($chgLine.html());
+				$chgLine.remove();
+				continue;
+			}
+
+			// 入力要素のある行は入力要素以外を削除して入れ替えを行う。
+			$tarLine.children(':not(input[type="text"])').remove();
+			$tarLine.append($chgLine.children(':not(input[type="text"])'));
+			$chgLine.remove();
+		}
+
+		// 罫線要素をまとめて追加
+		let addHtml = '';
+		for (i = 0; i < $chgNotLines.length; i++) {
+			addHtml += $chgNotLines[i].outerHTML;
+		}
+		$tarScreen.append(addHtml);
+	} else {
+		// 丸ごと置き換え
+		$tarScreen.html($chgScreen.html());
+	}
+
+	// 画面を作り替えたら画面色再構成
+	userSetting();
+
+	// STOPを受信したときの処理
+	if (isTarStop && isChgStop) {
+		// STOP継続
+	} else if (isTarStop) {
+		// STOPが消えた
+		stopStop();
+	} else if (isChgStop) {
+		// STOPが現れた
+		startStop();
+	}
+
+	// モーダル
+	$errBuz = $chgScreen.find('#err-buz');
+	if (0 < $errBuz.length) {
+		startBeep(parseInt($errBuz.val()));
+	}
+	// 音のみ
+	$infoBuz = $chgScreen.find('#info-buz');
+	if (0 < $infoBuz.length) {
+		startBeep(parseInt($infoBuz.val()));
+	}
+
+	// フォーカスを合わせる
+	setNextInputFocus();
 }
 
-var setBlinkToElement = function(changeScreen){
-	targetArray = $(changeScreen).find('.blink');
+/**
+ * 点滅表示設定を行う処理。
+ */
+var setBlinkToElement = function($chgScreen) {
+	targetArray = $chgScreen.find('.blink');
 	var ii = 0;
-	if(typeof(blinkVisibleFlg) == "undefined" || blinkVisibleFlg == false){
-		for(ii=0;ii < targetArray.length;ii++ ){
-			targetArray[ii].style.visibility = "visible";
+	if (typeof (blinkVisibleFlg) == 'undefined' || blinkVisibleFlg == false) {
+		for (ii = 0; ii < targetArray.length; ii++) {
+			targetArray[ii].style.visibility = 'visible';
 		}
-	}else{
-		for(ii=0;ii < targetArray.length;ii++ ){
-			targetArray[ii].style.visibility = "hidden";
+	} else {
+		for (ii = 0; ii < targetArray.length; ii++) {
+			targetArray[ii].style.visibility = 'hidden';
 		}
 	}
 	targetArray = null;
-	return changeScreen;
 }
 
+/**
+ * 定期的に画面内容を更新する処理。
+ */
+let esScreen;
+var screenUpdate = function() {
+	let setFocusTimeoutId;
 
-//screenのエレメントを順に変更していく
-//inputはjQueryオブジェクトを
-var replaceScreenElement = function(targScreen,changeScreen){
+	if (!isMenuScreen()) {
+		// PIDが取得できない場合は前画面に戻り処理は何も行わない。
+		if ($('#pid').length == 0) {
+			historyBack();
+			return;
+		}
 
-	var stopFlg = -99;        //
-	var remElemArr =new Array();
-	//送信済みのinput削除?
-	remElemArr = removeSendedInput();
-	//プロセス終了時の戻る対応・ステータスバー対応（ジョブの実行状態も込み）
+		// 初期処理
+		init();
 
-	changeScreen = setBlinkToElement(changeScreen);
+		// SSE開始
+		startScreenUpdateListener();
 
-//	//画面の要素を順番に比較。違う要素は変更をかける
-	//どちらかにインプットが存在しなければ書き換える
-	if(targScreen.find('input').length > 0  && changeScreen.find('input').length > 0){
-		//最後のインプットを比較。名前が一緒ならとりあえず、OK
-		//実行ファイルが変わっても同じ名前でもう一度があったときは書き換え
-		(function(){
-			var origCount = 0;
-			var changCount = 0;
-			for(origCount =0;origCount < targScreen[0].children.length ;origCount++ ){
-				var curElem = targScreen[0].children[origCount];
-				//lineクラスを持っていたら行のテキスト系
-				if($(curElem).hasClass('line')){
-					//全く同じclassを持っているもので差し替え
-					//行のループ
-					for(changCount = 0;changCount < changeScreen[0].children.length ;changCount++){
-						if(curElem.getAttribute('class') == changeScreen[0].children[changCount].getAttribute('class')){
-							//inputが含まれる場合要素をさらに分解して変換
-							if($(curElem).find('input').length > 0){
-								//inputが入っているところ以外を削除
-								//１行中の要素の処理
-								for(var i=0;i < curElem.children.length;i++){
-									//いったんinputが含まれないところを削除
-									if(curElem.children[i].tagName.toLowerCase() != 'input'){
-										curElem.removeChild(curElem.children[i]);
-										//removeされると配列番号が変わるので
-										//ここをjQuery的にremoveしなければ
-										i--;
-									}else{
-										//inputの項目は次の画面含まれていないときだけ削除
-										//inputは画面に一つになるようにしなければいけない       みかｎ lastchildを正しい位置に置けばいい？
-										var nextViewExistFlg = 0;
-										for(var j=0;j < changeScreen[0].children[changCount].children.length;j++){
-											var curCoulumn = curElem.children[i].className.match(/\s+f[0-9]+/i);
-											var changeCoulumn = changeScreen[0].children[changCount].children[j].className.match(/\s+f[0-9]+/i);
+		// 入力欄にフォーカスを合わせる処理を開始
+		setFocusTimeoutId = setTimeout(setInputFocus, SET_FOCUS_INTERVAL);
 
-											//中身以外のinputが来た時に飛ばす
-											if(curCoulumn == null || changeCoulumn == null){
-												break;
-											}
+		/**
+		 * 画面遷移前にSSEの接続を切断する。
+		 */
+		$(window).on('beforeunload', function() {
+			stopScreenUpdateListener();
 
-											//inputを入れ替えるかどうか
-											if((curElem.children[i].name == changeScreen[0].children[changCount].children[j].name )
-											&& (curCoulumn[0] == changeCoulumn[0])
-											&& remElemArr.indexOf(curElem.children[i].name) == -1){
-												//curCoulumn[0] == changeCoulumn[0]で横に同じ名前が続く時の対応
-												nextViewExistFlg = 1;
+			// フォーカスタイマーも停止
+			clearTimeout(setFocusTimeoutId);
+		});
+	}
 
-												//エラーで止まっている時はSTOPのInputが来るので
-												//一度以上出していたら再び出さない
-												if(curElem.children[i].name == "STOP" && BuzzerFlg != 1){
-													stopFlg = 1;
-												}
-											}
-										}
-										if(nextViewExistFlg == 0)	{
-											curElem.removeChild(curElem.children[i]);
-											//removeされると配列番号が変わるので
-											i--;
-										}
-									}
-								}
-								//inputが入っていないところを追加
-								for(var j=0;j < changeScreen[0].children[changCount].children.length;j++){
-									//inputが含まれないところを追加
-									if(changeScreen[0].children[changCount].children[j].tagName.toLowerCase() != 'input'){
-										curElem.appendChild(changeScreen[0].children[changCount].children[j]);
-										//appendされると配列番号が変わるので
-										j--;
-									}else{
-										//inputの項目は前の画面含まれていないときだけ追加
-										var nextViewExistFlg = 0;
-										for(var i=0;i < curElem.children.length;i++){
-											if(changeScreen[0].children[changCount].children[j].name == curElem.children[i].name){
-												nextViewExistFlg = 1;
-											}
-										}
-										if(nextViewExistFlg == 0){
-											if(changeScreen[0].children[changCount].children[j].name != "STOP"){
-												BuzzerFlg=0;
-											}
-											curElem.appendChild(changeScreen[0].children[changCount].children[j]);
-											//appendされると配列番号が変わるので
-											j--;
-										}
-									}
-								}
-							}else{
-								//inputがないとことは単純に差し替え
-								curElem.innerHTML = changeScreen[0].children[changCount].innerHTML;
-							}
-							//変更候補のelementは削除しておく
-							//remove
-							changeScreen[0].removeChild(changeScreen[0].children[changCount]);
-							break;
-						}
-					}
-
-				}else{
-					//罫線は引き直されていることを考えて一度remove
-					targScreen[0].removeChild(curElem);
-					//removeされると配列番号が変わるので
-					origCount--;
+	/**
+	 * 初期処理を行う。 (SSEのイベントリスナーが開始されるまでに1、2秒程度のタイムラグがあるので初めはAjaxで値を取得する。)
+	 */
+	function init() {
+		$.ajax({
+			type : 'GET',
+			url : 'getOut.php',
+			data : getQueryParams(),
+			beforeSend : function(jqXHR) {
+				preProcess();
+			},
+			success : function(msg, txt) {
+				onmessage(msg);
+			},
+			error : function(jqXHR, textStatus, errorThrown) {
+				// イベントリスナーのほうで再処理が行わるのでここでは何もしない。
+				if (errorThrown) {
+					console.log('BackGround connect Error' + textStatus + ':'
+							+ errorThrown.message);
 				}
-				curElem = null;
+			},
+			complete : function() {
+				postProcess();
+				polling();
 			}
-			//罫線を引き直し
-			var i = 0;
-			while(i < changeScreen[0].children.length){
-				if(changeScreen[0].children[i].tagName.toLowerCase() == 'div'){
-					targScreen[0].appendChild(changeScreen[0].children[i]);
-					//appendされると要素が減っていくので
-					i--;
+		});
+	}
+
+	/**
+	 * セッションタイムアウト対策として定期的にリクエストを行う。
+	 */
+	function polling() {
+
+		// 通信結果は無視する
+		setTimeout(function() {
+			$.ajax({
+				type : 'GET',
+				url : 'getOut.php',
+				data : getQueryParams(),
+				complete : function() {
+					polling();
 				}
-				i++;
+			});
+		}, SESSION_ALIVE_INTERVAL);
+	}
+
+	/**
+	 * 画面内容を更新するSSEを開始する。
+	 */
+	function startScreenUpdateListener() {
+		let url = buildUrl('getOut.php', getQueryParams());
+
+		esScreen = new EventSource(url);
+		esScreen.onmessage = function(e) {
+			// メッセージ受信
+			preProcess();
+
+			try {
+				onmessage(e.data);
+			} finally {
+				postProcess();
 			}
-		})();
-	}else{
-		targScreen[0].innerHTML = changeScreen[0].innerHTML;
+		};
 	}
 
-	//画面を作り替えたら画面色再構成
-	//buzzuerより前に
-	userSetting();
+	/**
+	 * パラメータを取得する。
+	 */
+	function getQueryParams() {
+		let queryParams = {
+			pid : $('#pid').val(),
+			infname : $('#infname').val(),
+			outfname : $('#outfname').val(),
+		};
 
-	//初期値を-99としているので
-	if(stopFlg > -99 && sendFlag == false){
-		(function (){
-			buzzerStart("");
-			sendFlag = true;
-		})();
-		//送ったら初期化
-		stopFlg=-99;
+		return queryParams;
 	}
 
-	//モーダル
-	if($('#err-buz').length > 0){
-		var soundLength = document.getElementById('err-buz').value;
-		buzzerStart(soundLength);
-	}
-	//音のみ
-	if($('#info-buz').length > 0){
-		var soundLength = document.getElementById('info-buz').value;
-		buzzerStart(soundLength);
-	}
-}
+	/**
+	 * 入力欄にフォーカスを合わせる。
+	 */
+	function setInputFocus() {
+		clearTimeout(setFocusTimeoutId);
 
-//要素を入れ替える
-function screenReplace(resultTxt){
-	var screenObj = $(".screen");
-	var changeObj = document.createElement('div');
-	changeObj.innerHTML = resultTxt;
-//	var changeObj = $(resultTxt);
+		setNextInputFocus();
 
-	changeObj = changeStatus(changeObj);
-	if(changeObj == null){
-		return 1;
-	}
-	//取得行のいれかえ
-	changeObj = setLineIndex(changeObj);
-	replaceScreenElement(screenObj ,$(changeObj));
-
-//	$(changeObj).('*').remove();
-	lineTxt   = null;
-	screenObj = null;
-	changeObj = null;
-	//イベントの貼り直し
-	reStart();
-
-	return 0;
-}
-
-//入力時のエンターをキャンセル
-var enterCancel = function (evt){
-	switch(evt.Key){
-	case 'F10':
-	case 'Enter' :
-		return false;
-		break;
-	default :
-
-	}
-}
-
-var AnyKeyDownStopBuzzer = function(){
-	//sendFlagとTimeoutの処理
-	preProcess();
-	$.ajax({
-		type: "POST",
-		url: "param.php",
-		data:{ value: '`h' ,infname:$('#infname')[0].value, outfname:$('#outfname')[0].value, pid:$('#pid')[0].value },
-			success: function(msg){
-			screenReplace( msg );
-			sendFlag = false;
-			stopFlg = -99;
-		},
-		error: function(jqXHR,textStatus,errorThrown ){
-			alert("BackGround connect Error" + textStatus + ":" + errorThrown.message);
-			console.log("BackGround connect Error" + textStatus + ":" + errorThrown.message);
-		}
-	});
-	BuzzerFlg = 0
-	clearTimeout(BuzzerTimeoutID);
-}
-
-
-var buzzerUntilAnyKeyDown = function(soundLength){
-	BuzzerFlg = BuzzerFlg + 1
-	if(BuzzerFlg <= soundLength){
-	  // base64文字列を貼り付け(音の長さをここでコントロールする必要有り？
-	  var base64 = "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"
-	  // datauri scheme 形式にして Audio オブジェクトを生成します
-	  var sound = new Audio("data:audio/wav;base64," + base64);
-	  // 音を鳴らします
-	  sound.play();
-/*
-		var msg = 'エラーが発生しました。\n';
-		msg  +=  '管理者に連絡してください。\n';
-		msg  +=  soundLength + '';
-		alert(msg);
-		BuzzerFlg = 1;
-*/
-	}else{
-
-	}
-	if(!escKeyFlg){
-		clearTimeout(BuzzerTimeoutID);
-		BuzzerTimeoutID=setTimeout('buzzerUntilAnyKeyDown()',50);
+		setFocusTimeoutId = setTimeout(setInputFocus, SET_FOCUS_INTERVAL);
 	}
 
-}
-
-//beep音の処理
-var buzzerStart = function(soundLength){
-	var elemTargs = $('.screen input:last');
-	//escapeのフラグをりせっとして押されるまで
-	escKeyFlg = false;
-	addEvent('keydown' ,
-			elemTargs[0],
-			function evtAnyKeyDown( event ){
-				return AnyKeyDownStopBuzzer( event );
-			}
-	);
-	elemTargs = null;
-	buzzerUntilAnyKeyDown(soundLength);
-
-}
-//TODO:: 入力値をバッファする仕組み
-//20161117 add koyama
-var InputBuffer = function(event){
-	var targElem = evtToElement(event);
-//	if(targElem.tagName.toLowerCase().match('intput')){
-		// console.log('======'+'not input'+'==='+event.key+'=='+event.type+'==='+ targElem.tagName.toLowerCase() +'===========');
-		// console.timeStamp('not input');
-		// console.trace();
-//	}
-}
-
-var inputAddElement = function (){
-	var inputElements = $('.screen input');
-	for(var i = 0; i < inputElements.length ;i++){
-		//次のtab stopへ移動のイベント追加
-		if($(inputElements[i]).hasClass('nextinput')){
-			addEvent('keydown' ,
-					inputElements[i] ,
-					function evtNextInput( evt ){
-						return nextInput( evt );
-					}
-			);
-			addEvent('keyup' ,
-				inputElements[i] ,
-				function evtSetInputColor( evt ){
-					return setInputColor( evt );
-				}
-			);
-		}
-		addEvent('keyup' ,
-		inputElements[i] ,
-		function evtSetReplaceMode( evt ){
-			if(evt.keyCode == 45 && evt.code == "Insert"){
-				ReplaceModeFlg = (ReplaceModeFlg + 1) % 2;
-			}
-			return false;
-		}
-		);
-		addEvent('keypress' ,
-				inputElements[i] ,
-				function evtEnterCancel( evt ){
-					return enterCancel( evt );
-				}
-		);
-	}
-	inputElements = null;
-	addEvent('keydown' ,
-			window.document,
-			function evtAnyKeyEvent( evt ){
-				return anyKeyEvent( evt );
-			}
-	)
-	addEvent('keyup' ,
-			window.document,
-			function evtEscCancel( evt ){
-				return escCancel( evt );
-			}
-	)
-	//TODO:: 入力値をバッファする仕組みを作る ->出来たらそこから入力を行うように仕様変更
-	//20161117 add koyama
-	var screenElements = $('.screen');
-	addEvent('keypress' ,screenElements[0], InputBuffer )
-	screenElements = null;
-
-	//ファンクションキーの機能は使わせないように
-	$(window).keydown(function (event){
-		//F5 + ctrl
-		if((event.key.match(/F[0-9]{1,2}/)) || event.key == 'Alt' ){
-			return false;
-		}
-		return true;
-	});
-}
-
-//再スタート用
-function reStart(){
-//	sendFlag = false;
-	//イベントの貼り直し
-	inputAddElement();
-	if(document.activeElement.id != "skSelect"){
-		$('input.nextinput:last').focus();
+	/**
+	 * 受信したメッセージを処理する。
+	 */
+	function onmessage(data) {
+		// 画面内容の更新
+		screenReplace(data);
 	}
 
-	clearTimeout(TimeoutID);
-	TimeoutID = setTimeout('fncChangeScreen()',TimeoutTime);
-}
+	/**
+	 * URLを組み立てる
+	 */
+	function buildUrl(url, queryParams) {
+		let param = $.param(queryParams);
 
-//送信済みのinput削除
-//author:koyama
-var removeSendedInput = function(){
-	var retVal = new Array();
-	//入力終了したら、そのエレメントを削除
-	if(sendFlag == true){
-		var i=0;
-		while(0 < $('.screen input').length){
-			retVal[i] = $('.screen input:first')[0].name;
-			i++;
-			//TODO: ここはメモリリーク？
-			$('.screen input:first').remove();
+		if (-1 < url.indexOf('?')) {
+			return url + '&' + param;
+		} else {
+			return url + '?' + param;
 		}
 	}
-
-	return retVal;
-}
-
-//画面に今までに何行とったかを再設定
-//画面やresponceに設定がなければ何もせず終了
-//author:koyama
-//date  :20151005
-function setLineIndex(resObj){
-	var ii = 0;
-
-	if($(resObj).find('#line_index').length > 0){
-		//値は一つ目をwindowの全てのelementに入れる処理にしておく
-		$('#line_index')[0].value = $(resObj).find('#line_index')[0].value;
-		$(resObj).find('#line_index').remove();
-	}
-	return resObj;
-}
-
-//changeScreenの中からステータスに関連するものを取得して画面に表示
-//表示後は不要になるため消去
-function changeStatus(changeScreen){
-	//changeScreenの中からerror探して表示
-	if($(changeScreen).find('.error').length > 0){
-		for(var ii=0;ii < $(changeScreen).find('.error').length ;ii++ ){
-			//同じ文字列が見つからなかったら
-			if(ErrorStrArray.length == 0 || ($(changeScreen).find('.error').length > 0 && $.inArray($(changeScreen).find('.error')[ii].value,ErrorStrArray) == -1)){
-				escKeyFlg = false;
-				//ステータスバー対応
-				var status1 = $("#status1")[0];
-				status1.innerHTML = "<span>" + $(changeScreen).find('.error')[0].value + "</span>";
-				ErrorStrArray.push($(changeScreen).find('.error')[ii].value);
-				status1 = null;
-			}
-		}
-		//あとに影響をおよぼすので削除しておく
-		if($(changeScreen).find('#status1Get')[0]){
-//			var elemParent = $(changeScreen).find('#status1Get')[0].parentNode;
-			$(changeScreen).find('#status1Get').remove();
-		}
-	}
-
-	//プロセス終了時の戻る対応
-	//parentStatusGetが存在している場合parentStatusに代入して
-	//changeScreenの中からparentStatusGetを消す
-	if($(changeScreen).find('.parentStatusGet').length > 0){
-		$("#parentStatus").val($(changeScreen).find('.parentStatusGet')[0].value);
-		$(changeScreen).find('.parentStatusGet').remove();
-	}
-
-	//pidが取得出来なくても終了したということなので、戻る
-	if($('#pid') == void 0 && historyBackFlg == false){
-		// location.href = document.referrer;
-		historyBackFlg = true;
-		history.back();
-		return null;
-	}
-	//プロセス終了時の戻る対応
-	//一旦画面に書き出しそれを処理
-	//ただしエラーメッセージがあるときはEscキー押下時のみ戻る
-	if($('#parentStatus').length > 0 && $('#parentStatus')[0].value == "end"){
-		if(ErrorStrArray.length == 0 && historyBackFlg == false){
-			// location.href = document.referrer;
-			historyBackFlg = true;
-			history.back();
-			return null;
-		}else{
-			if(escKeyFlg == true && historyBackFlg == false){
-				escKeyFlg = false;
-				// location.href = document.referrer;
-				historyBackFlg = true;
-				history.back();
-				return null;
-			}
-		}
-	}
-
-	return changeScreen;
-}
-
-function preProcess(){
-	sendFlag = true;
-	clearTimeout(TimeoutID);
-}
-
-//load時に最初にする内容を
-var loadTime = function () {
-	inputAddElement();
-
-	TimeoutID = setTimeout('fncChangeScreen()',TimeoutTime);
 };
 
-addEvent('load',window,loadTime);
+/**
+ * 入力欄にフォーカスを合わせる。
+ */
+function setNextInputFocus() {
+	if (document.activeElement.id != 'skSelect') {
+		$('input.nextinput:last').focus();
+	}
+}
+
+/**
+ * 画面内容を更新するSSEを停止する。
+ */
+function stopScreenUpdateListener() {
+	if (esScreen) {
+		esScreen.close();
+		esScreen = null;
+	}
+}
+
+/**
+ * バッファリングしたキー入力を実行する
+ *
+ */
+function keyBufferSimulate() {
+	// エラーメッセージが表示中 かつプロセス終了時はキー操作無効なためバッファクリア
+	if (isProcessEnd() && hasError()) {
+		keyBufferClear();
+		return;
+	}
+
+	// 処理中の場合は何もせずに終了
+	if (0 < processQueue.length) {
+		return;
+	}
+
+	// バッファに何もない場合は何もしない。
+	if (keyBuffer.length == 0) {
+		return;
+	}
+
+	for (var i = 0; i < 1; i++) {
+		e = keyBuffer.shift();
+		// 画面ロック中の場合は解除キーを送信して先頭のバッファをクリア
+		if (isStoping()) {
+			sendStopReleaseKey();
+			break;
+		}
+
+		// CTL+ANYキーの処理(画面切離関係)
+		if (screenSwitch(e)) {
+			break;
+		}
+
+		// CTL+ANYキーの処理
+		if (funcSpecialKey(e)) {
+			break;
+		}
+
+		let $targets = $('input.nextinput');
+
+		if ($targets.length == 0) {
+			// FIXME 画面が切り替わる前なので項目がない場合がある。なので、入力項目が現れるまで再実行する必要あり。
+			// もしくは入力欄関係なくPOSTしていく？その場合は属性チェックとMAXLENGTHは無視することになる。
+			// FIXME 一旦再処理させる
+			keyBuffer.unshift(e);
+			if (true) break;
+			//
+
+			console.log('no input');
+			// 入力欄が存在しない場合
+			// F1～F12のキー (FIXME この処理必要？)
+			if (e.key.match(/F[0-9]{1,2}/)) {
+				if (e.ctrlKey == true) {
+					sendFunctionKey(e);
+				}
+			}
+			break;
+		}
+
+		// F11～F12、ESCは使用禁止
+		if (e.key == 'F11' || e.key == 'F12' || e.key == 'Escape') {
+			break;
+		}
+
+		let target = $targets[0];
+
+		let inputValue = '';
+		let isInputCheck = true;
+
+		// Backspaceの場合は入力値は不要なのでチェックしない。
+		if (e.key != 'Backspace') {
+			// 入力チェック
+			if (elementInpCheck(target)) {
+				// 入力フォーマット（少数対応）
+				inputValue = elementInpFormat(target);
+				isInputCheck = true;
+			} else {
+				isInputCheck = false;
+			}
+		}
+
+		// 通常の入力文字か否か
+		if (isInputCharValue(e)) {
+			if (insertCharValue(e, target)) {
+				break;
+			}
+
+			// 末尾に追加
+			appendCharValue(e, target);
+
+			//FIXME 背景色設定 一旦このタイミングで。
+			setInputColor();
+
+			break;
+		}
+
+		// DELETE
+		if (e.key == 'Delete') {
+			delKey(target);
+			break;
+		}
+
+		let sendParams = getSendParam(e, inputValue);
+
+		// サーバー送信不要なキーの場合は入力チェックだけして文字の入力は許可
+		if (sendParams[0] == false) {
+			// FIXME 上で入力しているからこの処理は不要かな？
+			break;
+		}
+
+		// 入力チェックNGの場合はデータをサーバーに送信しない
+		if (!isInputCheck) {
+			break;
+		}
+
+		ajaxSendParam({
+			data : getKeyParams(sendParams[1], sendParams[2]),
+			success : function(msg) {
+				screenReplace(msg);
+			}
+		});
+	}
+
+	// 再帰実行
+	setInterval(keyBufferSimulate, 100);
+}
+
+/**
+ * キーバッファリングをクリア
+ */
+function keyBufferClear() {
+	keyBuffer.length = 0;
+}
+
+/**
+ * キー入力制御
+ */
+var keyControl = function() {
+	// Firefoxの日本語入力確定判定のためのフラグ
+	// Firefoxの場合は日本語入力のキーイベントは日本語確定時のエンターキーがkeyup時にのみに発生する。
+	// そこから日本語入力されたか否かを判定する。
+	let isKeydown = false;
+
+	$(document).keydown(
+			function(e) {
+				console.log('keydown:' + e.key + ':' + e.keyCode);
+
+				// エラーメッセージが表示中 かつプロセス終了時はキー操作無効
+				if (isProcessEnd() && hasError()) {
+					return false;
+				}
+
+				if (isMenuScreen()) {
+					// メニュー画面
+
+					// CTL+ANYキーの処理(画面切離関係)
+					if (screenSwitch(e)) {
+						return false;
+					}
+
+					// F1～F12、ALT、ESCは使用禁止
+					if (e.key.match(/F[0-9]{1,2}/) || e.key == 'Alt'
+							|| e.key == 'Escape') {
+						return false;
+					}
+				} else {
+					// メニュー以外の画面
+
+					// 日本語入力判定用
+					if (isFirefox && e.key == 'Enter') {
+						isKeydown = true;
+					}
+
+					if (0 < processQueue.length) {
+						// 処理中
+						// キー入力をバッファリングする。
+						keyBuffer.push(e);
+						console.log("buffer push:" + e.key  + ":" + e.keyCode);
+
+						return false;
+					} else {
+						if (0 < keyBuffer.length) {
+							// バッファリングしたキー入力が残っている場合は入力されたキーをバッファの末尾に追加し、キー実行
+							keyBuffer.push(e);
+							keyBufferSimulate();
+
+							return false;
+						}
+
+						if (isStoping()) {
+							// 画面ロック中の場合は解除キーを送信
+							sendStopReleaseKey();
+							return false;
+						}
+
+						// CTL+ANYキーの処理(画面切離関係)
+						if (screenSwitch(e)) {
+							return false;
+						}
+
+						// CTL+ANYキーの処理
+						if (funcSpecialKey(e)) {
+							return false;
+						}
+
+						let $targets = $('input.nextinput');
+
+						if ($targets.length == 0) {
+							// 入力欄が存在しない場合
+							// FIXME 入力項目が存在しない場合はバッファに追加していったん終了
+							// FIXME 入力項目がない画面もある？
+							keyBuffer.push(e);
+							if (true) return false;
+							//
+
+							console.log('no input hon');
+							// F1～F12のキー (FIXME この処理必要？)
+							if (e.key.match(/F[0-9]{1,2}/)) {
+								if (e.ctrlKey == true) {
+									sendFunctionKey(e);
+								}
+							}
+							return false;
+						}
+
+						// F11～F12、ESCは使用禁止
+						if (e.key == 'F11' || e.key == 'F12'
+								|| e.key == 'Escape') {
+							return false;
+						}
+
+						let target = $targets[0];
+
+						let inputValue = '';
+						let isInputCheck = true;
+
+						// Backspaceの場合は入力値は不要なのでチェックしない。
+						if (e.key != 'Backspace') {
+							// 入力チェック
+							// FIXME 入力チェックのタイミングがおかしい。これだとエラーが表示されるタイミングがおかしくなる。
+							if (elementInpCheck(target)) {
+								// 入力フォーマット（少数対応）
+								inputValue = elementInpFormat(target);
+								isInputCheck = true;
+							} else {
+								isInputCheck = false;
+							}
+						}
+
+						// 通常の入力文字か否か
+						if (isInputCharValue(e)) {
+							if (insertCharValue(e, target)) {
+								return false;
+							}
+
+							return true;
+						}
+
+						// DELETE
+						if (e.key == 'Delete') {
+							delKey(target);
+							return false;
+						}
+
+						let sendParams = getSendParam(e, inputValue);
+
+						// サーバー送信不要なキーの場合は入力チェックだけして文字の入力は許可
+						if (sendParams[0] == false) {
+							return true;
+						}
+
+						// 入力チェックNGの場合はデータをサーバーに送信しない
+						if (!isInputCheck) {
+							return false;
+						}
+
+						ajaxSendParam({
+							data : getKeyParams(sendParams[1], sendParams[2]),
+							success : function(msg) {
+								screenReplace(msg);
+							}
+						});
+
+						return false;
+					}
+				}
+
+				return true;
+			});
+
+	if (!isMenuScreen()) {
+
+		/**
+		 * キーアップイベント
+		 */
+		$(document).keyup(function(e) {
+//			console.log('keyup:' + e.key + ':' + e.keyCode);
+			let isProcess = false;
+
+			if (isFirefox && e.key == 'Enter') {
+				if (!isKeydown) {
+					// 日本語入力確定のエンター
+					isProcess = true;
+				}
+				isKeydown = false;
+			}
+
+			// 日本語入力がされた場合は入力順序が逆転してしまうのでバッファはクリア
+			if (isProcess) {
+				keyBufferClear();
+			}
+
+			// 背景色設定
+			setInputColor();
+
+			if (e.key == 'Escape') {
+				// ESCキーはバッファリングせずにサーバーに送信
+				sendEscapeKey();
+			}
+
+			return true;
+		});
+	}
+};
+
+/**
+ * 入力文字か否か判定する
+ */
+var isInputCharValue = function(e) {
+	if (1 < e.key.length) {
+		// キーが2文字以上で表される場合
+		return false;
+	}
+
+	let code = e.key.charCodeAt(0);
+	// ASCIIコードのスペース～~までの範囲(制御コードを除く文字)
+	if (32 <= code && code <= 126) {
+		return true;
+	}
+
+	return false;
+}
+
+/**
+ * 文字を挿入する。 カーソル位置が末尾の場合は制御不要なので何もしない。(falseを返却)
+ */
+var insertCharValue = function(e, field) {
+	let startPos = field.selectionStart;
+	let fieldValue = field.value;
+
+	// 末尾にカーソルがある場合は追記になるので何もしない
+	if (fieldValue.length <= startPos) {
+		return false;
+	}
+
+	// maxLengthを超える部分は切り取る
+	let insertValue = e.key;
+	let newValue = fieldValue.slice(0, startPos) + insertValue
+			+ fieldValue.slice(startPos + insertValue.length);
+	if (field.maxLength < newValue.length) {
+		newValue = newValue.slice(0, field.maxLength);
+	}
+
+	// 新しい文字を設定してカーソル位置を再設定する
+	field.value = newValue;
+	field.selectionStart = startPos + insertValue.length;
+	field.selectionEnd = startPos + insertValue.length;
+
+	return true;
+}
+
+/**
+ * 文字を末尾に追加する。
+ */
+var appendCharValue = function(e, field) {
+	let fieldValue = field.value;
+
+	// maxLengthを超える場合は何もしない。
+	if (field.maxLength <= fieldValue.length) {
+		return false;
+	}
+	let newValue = fieldValue + e.key;
+
+	// 新しい文字を設定してカーソル位置を再設定する
+	field.value = newValue;
+	field.selectionStart = newValue.length;
+	field.selectionEnd = newValue.length;
+
+	return true;
+}
+
+/**
+ * DELETEキー
+ */
+var delKey = function(field) {
+	let startPos = field.selectionStart;
+	let fieldValue = field.value;
+
+	if (0 < startPos) {
+		let newValue = fieldValue.slice(0, startPos - 1)
+				+ fieldValue.slice(startPos);
+		field.value = newValue;
+		field.selectionStart = startPos - 1;
+		field.selectionEnd = startPos - 1;
+	}
+}
+
+/**
+ * サーバーに送信するパラメータを取得する。
+ */
+var getSendParam = function(e, inputValue) {
+
+	let statusValue = '';
+
+	// 入力値の設定
+	switch (e.key) {
+	case 'Enter':
+		if (e.shiftKey == true) {
+			statusValue = 'f';
+			break;
+		}
+		statusValue = 'h';
+		break;
+	case 'Tab':
+		statusValue = 's';
+		break;
+	case 'Backspace':
+		// if(targElem.value != ''){
+		// return true;
+		// }
+		inputValue = '';
+		statusValue = 'b';
+		break;
+	case 'F10':
+	case 'Alt':
+		if (e.shiftKey == true) {
+			statusValue = '10';
+		} else {
+			statusValue = 'a';
+		}
+		break;
+	case 'F1':
+	case 'F2':
+	case 'F3':
+	case 'F4':
+	case 'F5':
+	case 'F6':
+	case 'F7':
+	case 'F8':
+	case 'F9':
+		if (e.key == 'F4' && e.shiftKey == true) {
+			statusValue = '14';
+			break;
+		}
+		if (e.key == 'F8' && e.shiftKey == true) {
+			statusValue = 'c1';
+			break;
+		}
+		if (e.key == 'F9' && e.shiftKey == true) {
+			statusValue = 'c2';
+			break;
+		}
+		statusValue = e.key.substr(1);
+		break;
+	case 'Process':
+		// 2バイト入力
+		// Firefoxでは発生しない。
+		return [ false, '', '' ];
+	default:
+		return [ false, '', '' ];
+	}
+
+	return [ true, inputValue, statusValue ];
+}
+
+/**
+ * 背景色を設定する
+ */
+var setInputColor = function() {
+	let $input = $(document.activeElement);
+
+	if (!$input.hasClass('nextinput')) {
+		// アクティブな項目が入力欄でない場合はセレクタで入力欄を取得
+		// ほとんどの場合でactiveElementが入力欄のはずなので、セレクタのコストを考慮して違う場合のみ取得
+		$input = $('input.nextinput');
+	}
+
+	if (0 < $input.length) {
+		if (0 < $input.val().length) {
+			// 入力あり
+			$input.css('background-color', $('#sbgcolor').val());
+		} else {
+			$input.css('background-color', '');
+		}
+	}
+}
+
+/**
+ * ESCキーのコードを送信する。
+ */
+var sendEscapeKey = function() {
+	ajaxSendParam({
+		data : getKeyParams('', 'esc'),
+		success : function(msg) {
+			// Beep音を停止
+			stopBeep();
+
+			if (isProcessEnd() && hasError()) {
+				// プロセスが終了してエラーが表示されている場合は前画面へ
+				historyBack();
+			} else {
+				screenReplace(msg);
+			}
+		}
+	});
+}
+
+/**
+ * F1～F12のコードを送信する。
+ */
+var sendFunctionKey = function(e) {
+	ajaxSendParam({
+		data : getKeyParams('F' + (e.keyCode - 111), ''),
+		success : function(msg) {
+			screenReplace(msg);
+		}
+	});
+}
+
+/**
+ * STOP解除のコードを送信する。
+ */
+var sendStopReleaseKey = function() {
+	ajaxSendParam({
+		data : getKeyParams('', 'h'),
+		success : function(msg) {
+			screenReplace(msg);
+		}
+	});
+}
+
+/**
+ * キー入力のパラメータを取得する。
+ */
+var getKeyParams = function(value, statusValue) {
+	let sendValue = value;
+
+	if (0 < statusValue.length) {
+		sendValue += '`' + statusValue;
+	}
+
+	let keyParams = {
+		pid : $('#pid').val(),
+		infname : $('#infname').val(),
+		outfname : $('#outfname').val(),
+		value : sendValue,
+	};
+
+	return keyParams;
+}
+
+/**
+ * STOP開始
+ */
+var startStop = function() {
+	isStop = true;
+}
+
+/**
+ * STOP停止
+ */
+var stopStop = function() {
+	isStop = false;
+}
+
+/**
+ * STOP中か否か
+ */
+var isStoping = function() {
+	return isStop;
+}
+
+/**
+ * Beep音の再生を開始する
+ */
+var startBeep = function(soundLength) {
+	// 既に再生している場合は上書き再生はしない
+	if (!isBeeping()) {
+		beepCounter = 0;
+		beep(soundLength);
+	}
+}
+
+/**
+ * Beep音を止める
+ */
+var stopBeep = function() {
+	if (isBeeping()) {
+		clearTimeout(beepTimeoutId);
+		beepCounter = -1;
+	}
+}
+
+/**
+ * Beep音が再生中か否か
+ */
+var isBeeping = function() {
+	return -1 < beepCounter;
+}
+
+/**
+ * Beep音を再生する
+ */
+var beep = function(soundLength) {
+	clearTimeout(beepTimeoutId);
+
+	if (beepCounter++ < soundLength) {
+		// base64文字列を貼り付け(音の長さをここでコントロールする必要有り？
+		var base64 = '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'
+		// datauri scheme 形式にして Audio オブジェクトを生成します
+		var sound = new Audio('data:audio/wav;base64,' + base64);
+		// 音を鳴らします
+		sound.play();
+		/*
+		 * var msg = 'エラーが発生しました。\n'; msg += '管理者に連絡してください。\n'; msg +=
+		 * soundLength + ''; alert(msg); BuzzerFlg = 1;
+		 */
+
+		// 次のタイマーをセット
+		beepTimeoutId = setTimeout(function() {
+			beep(soundLength);
+		}, BEEP_INTERVAL);
+	}
+}
+
+// var Beep = function() {
+// let beepCounter = -1;
+// let beepTimeoutId = -1;
+//
+// function beep(soundLength) {
+// if (-1 < beepTimeoutId) {
+// clearTimeout(beepTimeoutId);
+// }
+//
+// if (beepCounter++ < soundLength) {
+// // base64文字列を貼り付け(音の長さをここでコントロールする必要有り？
+// var base64 =
+// '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'
+// // datauri scheme 形式にして Audio オブジェクトを生成します
+// var sound = new Audio('data:audio/wav;base64,' + base64);
+// // 音を鳴らします
+// sound.play();
+// /*
+// * var msg = 'エラーが発生しました。\n'; msg += '管理者に連絡してください。\n'; msg +=
+// * soundLength + ''; alert(msg); BuzzerFlg = 1;
+// */
+//
+// // 次のタイマーをセット
+// beepTimeoutId = setTimeout(function() {
+// beep(soundLength);
+// }, BEEP_INTERVAL);
+// }
+// };
+//
+// function isBeeping() {
+// return -1 < beepCounter;
+// }
+//
+// return {
+// stopBeep : function() {
+// if (isBeeping()) {
+// clearTimeout(beepTimeoutId);
+// beepCounter = -1;
+// }
+// },
+// startBeep : function(soundLength) {
+// // 既に再生している場合は上書き再生はしない
+// if (!isBeeping()) {
+// beepCounter = 0;
+// beep(soundLength);
+// }
+// },
+// isBeeping : isBeeping(),
+//
+// }
+// }
+//
+// var bee = new Beep();
+
+/**
+ * パラメータ送信用のAjax拡張
+ */
+var ajaxSendParam = function(arg) {
+	var opt = $.extend({}, $.ajaxSettings, arg);
+
+	opt.type = 'POST';
+	opt.url = 'param.php';
+
+	// 前処理
+	opt.beforeSend = (function(func) {
+		return function(jqXHR) {
+			// 前処理
+			preProcess();
+
+			if (func) {
+				func(jqXHR);
+			}
+		};
+	})(opt.beforeSend);
+
+	// 処理成功
+	opt.success = (function(func) {
+		return function(data, statusText, jqXHR) {
+			if (func) {
+				func(data, statusText, jqXHR);
+			}
+		};
+	})(opt.success);
+
+	// エラー
+	opt.error = (function(func) {
+		return function(jqXHR, statusText, errorThrown) {
+			alert('BackGround connect Error' + textStatus + ':'
+					+ errorThrown.message);
+			console.log('BackGround connect Error' + textStatus + ':'
+					+ errorThrown.message);
+
+			if (func) {
+				func(jqXHR, statusText, errorThrown);
+			}
+		};
+	})(opt.error);
+
+	// 完了
+	opt.complete = (function(func) {
+		return function(jqXHR, statusText) {
+			if (func) {
+				func(jqXHR, statusText);
+			}
+
+			// 後処理
+			postProcess();
+		};
+	})(opt.complete);
+
+	return $.ajax(opt);
+};
+
+addEvent('load', window, screenUpdate);
+addEvent('load', window, keyControl);
