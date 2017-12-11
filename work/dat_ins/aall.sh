@@ -161,7 +161,7 @@ PB3=EXCLUSIVE PB4=COMMA PB7=C,C,C,C,J,C,C,S,S,S,C,C PB8=CREATE PAA=MOD MN1=Q '
 #**----------------------------------------------------add koyama 20170227
 SORT 'IDE=MSD IFI=STRANYR KEY=((8,8,N),(1,6,N,D),(7,1,N)) OFI=STRANYR SUM= OUT= SEL='
 #**-------------------------------------------------------------------------
-NFCNV 'MN1=C MN2=DA PA1=MSD PA3=R-STRANYRK PA4=1 \
+NFCNV 'MN1=C MN2=DA PA1=MSD PA3=R-STRANYR PA4=1 \
 PA5=N6,N1,C8,C4,N6,N1,P4,P4,P4,P4,P4,P4,P4,P4,P4,P4,S5,S5,S8,N1,N1,N5,N3,N2\
 ,N2,N2,N1,N2,N2,N1,N3,N1,N4,C10,N8,N2,N1,N1,N1,N1 \
 PB1=./datadir/r-stranyr.csv \
@@ -547,7 +547,7 @@ PB7=C,S,S,C,S,S,C,S,S,C,S,S,C,S,S,C,S,S,S,S,S,S,C,C,C,C,C,C PB8=CREATE \
 MN1=Q '
 #**-------------------------------------------------------------------------
 NFCNV 'MN1=C MN2=DA PA1=MSD PA3=TCM PA4=1 PA5=C4,C3,J26,J20,J20,C8,C14,N2,N1,N1,N1\
-,N1,N1,C9,C5,C1,C1,C2,C6 \
+,N1,N1,C9,N5,N1,N1,N2,N6 \
 PB1=./datadir/tcm.csv PB2=CSV2 PB3=EXCLUSIVE PB4=COMMA \
 PB7=C,C,J,J,J,C,C,S,S,S,S,S,S,C,C,C,C,C,C PB8=CREATE MN1=Q '
 #**-------------------------------------------------------------------------
