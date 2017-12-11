@@ -86,16 +86,74 @@ class AsynchronousProcess{
 		return false;
 	}
 
+	//データを書き込み、対象データが処理されるまで待機する
+	function pWriteAndProcWait($inputData){
+		if ($this->createSharedMemory()) {
+			list ($beforeTime, $beforeData) = $this->pReadAndTime();
+
+			$this->pWrite($inputData);
+
+			// まずはデータが読み取られるまで待機(最大500回。200マイクロ秒のループでも最大500回で100ミリ秒)
+			for ($i = 0; $i < 500; $i++) {
+				list($time, $result) = $this->memory->read_inputfile();
+				if ($result === false) {
+					break;
+				}
+				usleep(EXEC_SLEEP);
+			}
+			// データが処理されるまで待機(最大2000回。200マイクロ秒のループでも最大2000回で400ミリ秒)
+			for ($i = 0; $i < 2000; $i++) {
+				list ($time, $data) = $this->pReadAndTime();
+
+				if (strcmp($beforeData, $data) !== 0) {
+					break;
+				}
+				usleep(EXEC_SLEEP);
+			}
+		}
+	}
+
+	//データを書き込み、対象データが読み込まれるまで待機する
+	function pWriteAndReadWait($inputData){
+		if ($this->createSharedMemory()) {
+			$this->pWrite($inputData);
+
+			// まずはデータが読み取られるまで待機(最大1000回。200マイクロ秒のループでも最大1000回で200ミリ秒)
+			for ($i = 0; $i < 1000; $i++) {
+				list($time, $result) = $this->memory->read_inputfile();
+				if ($result === false) {
+					break;
+				}
+				usleep(EXEC_SLEEP);
+			}
+		}
+	}
+
+
 	//対象への読み込み
 	//今なん行目まで読んでいるかを基準に一度読んだところは読み飛ばす
 	function pRead(){
 		$result = '';
+
 		if ($this->createSharedMemory()) {
-			$result = $this->memory->read_outputfile();
+			list($time, $result) = $this->memory->read_outputfile();
 			$this->getline_index = substr_count($result, "\n");
 		}
 
 		return $result;
+	}
+
+	//対象への読み込み
+	//今なん行目まで読んでいるかを基準に一度読んだところは読み飛ばす
+	function pReadAndTime(){
+		if ($this->createSharedMemory()) {
+			list($time, $result) = $this->memory->read_outputfile();
+			$this->getline_index = substr_count($result, "\n");
+
+			return array($time, $result);
+		} else {
+			return array(microtime(true), '');
+		}
 	}
 
 	// 共有メモリを作成する

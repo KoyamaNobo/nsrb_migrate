@@ -1,4 +1,7 @@
 <?php
+// FIXME デバッグ用ヘッダー。後で削除する。
+header('Access-Control-Allow-Origin: *');
+
 if(!empty($_POST)){
 	require_once('./lib/clsAsynchronousProcess.php');
 	require_once('./lib/config.php');
@@ -13,70 +16,34 @@ if(!empty($_POST)){
 	$oLog   = New Log('');
 	$screen = New clsScreen();
 
-	$clsAP->pWrite($sani['value']);
-	$statArray = getProcessIdStatus($sani['pid'],$oLog);
-	$screen->screenParse($clsAP->pRead());
-?>
-<?php
-	//プロセス終了時の戻る対応
+	// データ書き込み＆処理されるまで待機
+	if (is_array ($sani['value'])) {
+		// パラメータが複数指定されている場合
+		$count = count($sani['value']);
+		for ($i = 0 ; $i < $count - 1; $i++) {
+			$value = $sani['value'][$i];
+			$clsAP->pWriteAndReadWait($value);
+		}
+
+		// 最後は出力結果が得られるまで待機
+		$clsAP->pWriteAndProcWait($sani['value'][$count - 1]);
+	} else {
+		$clsAP->pWriteAndProcWait($sani['value']);
+	}
+
+	list($time, $data) =  $clsAP->pReadAndTime();
+
 	//プロセス終了時の戻る対応（指定のプロセスIDが実行中かチェック）
 	$state = Unix_IsPidExisted($sani['pid'],$sani['infname'],$sani['outfname'],$oLog);
 	//指定のプロセスIDが実行中かチェック
 	if($state==false){
-?>
-	<input id="line_index" type="hidden" name="line_index" value="<?php if(!empty($clsAP->getline_index)){ echo $clsAP->getline_index;}else{echo '0';} ?>" />
-	<input id="parentStatusGet" type="hidden" class="parentStatusGet" value="end">
-<?php
+		$data .= '<input id="parentStatusGet" type="hidden" class="parentStatusGet" value="end">';
 	}
+	// データのタイムスタンプを末尾に付与
+	$data .= '<input type="hidden" id="dataTimestamp" value="' . $time . '" />';
 
-	//ステータスバー対応
-	//・メッセージ
-	$errstr = "";
-	if(count($screen->execErrorArray) > 0){
-		foreach($screen->execErrorArray as $error){
-			//「 Error 」の文字列を消す
-			if (preg_match("/ Error /", $error)) {
-				$tmpstr = substr($error, 7);
-			}else{
-				$tmpstr = $error;
-			}
-			//40幅に収まる範囲まで文字列を取得
-			$tmpstr2 = "";
-			if(strlen($tmpstr) > 0){
-				$roopCount = 0;
-				for ($roopCount = 0; $roopCount < strlen($tmpstr); $roopCount++) {
-					$tmpstr2 = $tmpstr2 . substr($tmpstr, $roopCount, 1);
-					$len = mb_strwidth($tmpstr2);
-					if($len > 40){
-						break;
-					}
-				}
-			}
-?>
-<input id="status1Get" type="hidden" class="statusGet"  value="' . $tmpstr2 . '">
-<?php
-		}
-	}else{
-		//エラーがない時も出力すれば切り替わる
-?>
-<input id="status1Get" type="hidden" class="statusGet"  value="">
-<?php
-	}
+	$screen->screenParse($data);
 
-	//・プログラムの状態その１
-	if($statArray['stat'] != '' ){
-?>
-<input id="status2Get" type="hidden" class="statusGet" value="<?php echo $statArray['stat'];?>">
-<?php
-	}
-	//・実行中のプログラム名
-	if($statArray['jobname'] != '' ){
-?>
-<input id="status4Get" type="hidden" class="statusGet" value="<?php echo $statArray['jobname'];?>">
-<?php
-	}
-?>
-<?php
 	}
 }else{
 	echo "Bad Request";

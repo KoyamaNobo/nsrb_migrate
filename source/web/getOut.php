@@ -29,21 +29,28 @@ if (! empty($pid) && ! empty($infname) && ! empty($outfname)) {
 
 		$lastRes = '';
 
+// 		$i = 0;
 		while (1) {
-			list ($res, $is_break) = get_response($oLog, $clsAP, $pid, $infname, $outfname);
+			list ($time, $res, $is_break) = get_response($oLog, $clsAP, $pid, $infname, $outfname);
 
 			if (strcmp($res, $lastRes) === 0) {
 				// 前回と同じ内容の場合は何も送らない。(接続が切断されないようにポーリングデータだけ送る)
-				$lastRes = $res;
-
 				echo ":\n\n";
 			} else {
 				$lastRes = $res;
 
+				// データのタイムスタンプを末尾に付与
+				$res .= '<input type="hidden" id="dataTimestamp" value="' . $time . '" />';
+				// FIXME Beep音確認用
+// 				if ($i == 5) {
+// 					$res .= '<input type="hidden" id="err-buz" value="10" />';
+// 				}
 				$res = "data: " . $res . "\n\n";
 				$res = mb_convert_encoding($res, "UTF-8", "SJIS-WIN");
 
 				$screen->screenParse($res);
+
+// 				$i++;
 			}
 
 			ob_flush();
@@ -53,13 +60,18 @@ if (! empty($pid) && ! empty($infname) && ! empty($outfname)) {
 				break;
 			}
 
-			// 1秒周期(マイクロ秒指定)
+			// 100ミリ秒周期(マイクロ秒指定)
 			// FIXME 定数化
-			usleep(1 * 1000 * 1000);
+			usleep(1 * 1000 * 100);
 		}
 	} else {
 		// 通常のリクエスト
-		list ($res, $is_break) = get_response($oLog, $clsAP, $pid, $infname, $outfname);
+		// セッションは使わないがタイムアウトを防ぐために指定する
+		session_start();
+
+		list ($time, $res, $is_break) = get_response($oLog, $clsAP, $pid, $infname, $outfname);
+		// データのタイムスタンプを末尾に付与
+		$res .= '<input type="hidden" id="dataTimestamp" value="' . $time . '" />';
 		$screen->screenParse($res);
 	}
 }
@@ -70,7 +82,8 @@ function get_response($oLog, $clsAP, $pid, $infname, $outfname)
 
 	// $oLog->info('microtime(true) = '.microtime(true).__FILE__.__LINE__);
 	$res = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">';
-	$res .= $clsAP->pRead();
+	list ($time, $data) = $clsAP->pReadAndTime();
+	$res .= $data;
 
 	// プロセス終了時の戻る対応
 	// 指定のプロセスIDが実行中かチェック
@@ -79,8 +92,7 @@ function get_response($oLog, $clsAP, $pid, $infname, $outfname)
 	if ($state === false) {
 		// 終了している場合は以下のinputを出力
 		$res .= '<input id="parentStatusGet" type="hidden" class="parentStatusGet" value="end">';
-		// FIXME プロセスが終了した後も処理を継続する必要があるかどうか分からないので一旦処理を継続する。
-		$is_break = false;
+		$is_break = true;
 	} else {
 		$is_break = false;
 	}
@@ -89,6 +101,7 @@ function get_response($oLog, $clsAP, $pid, $infname, $outfname)
 	$res = preg_replace("/\r\n|\r|\n/", "", $res);
 
 	return array(
+		$time,
 		$res,
 		$is_break
 	);

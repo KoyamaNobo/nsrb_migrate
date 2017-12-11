@@ -19,7 +19,7 @@ $descriptorspec = array(
    2 => array("file", $efilename, "w") #エラーはファイルに書き込みます。
 );
 
-$startTime = 0;
+$endTime = 0;
 #unixタイムスタンプに変更(子プロセスができたときに開始時間+(EXEC_LIVE * 60)で初期化する)
 $oLog    = New Log('');
 
@@ -55,7 +55,8 @@ if(is_resource($t->process)){
 	$memory->create($id);
 
 	$oLog->info("success ::".$cmd."::".__FILE__.__LINE__);
-	$startTime = time() + (EXEC_LIVE * 60);
+	$startTime = time();
+	$endTime = time() + (EXEC_LIVE * 60);
 	$html = '';
 
 	while(1){
@@ -69,7 +70,7 @@ if(is_resource($t->process)){
 		// 実行系からの対しての出力
 		// 実行系の結果が残りどれくらいあるかのステータスを取得
 		// 残りの読み込みデータがなければ読み込まない
-		// $oLog->info(__FILE__.':'.__LINE__.'readed:'.$startTime);
+		// $oLog->info(__FILE__.':'.__LINE__.'readed:'.$endTime);
 		$ii = 0;
 		while(!empty($strRead = fgets($t->pipes[1],1024))){
 			#改行のみは出力しない
@@ -88,14 +89,14 @@ if(is_resource($t->process)){
 			}
 		}
 		#終了予定時間を過ぎたら強制終了
-		if($startTime < time()){
+		if($endTime < time()){
 			break;
 		}
 
 		$wRes = 0;
 		$strWrite = '' ;#入力データの格納
 		stream_set_blocking($t->pipes[0],1);
-		$strWrite = $memory->read_inputfile();
+		list($writeTime, $strWrite) = $memory->read_inputfile();
 		if(!empty($strWrite)){
 			fflush($t->pipes[0]);
 			// $oLog->info("write [".$strWrite."]".__FILE__.__LINE__);
@@ -111,7 +112,13 @@ if(is_resource($t->process)){
 		if(!$procStatus["running"]){
 				$exitWaitFlg = true;
 				#少し待ってやらないと外側がエラーメッセージを取り逃す
-				usleep(EXEC_SLEEP);
+				if (time() - $startTime <= 3) {
+					// ページを開いてすぐ(3秒以内)のエラーの場合はgetOut.phpでデータ取得が間に合わないので少し多めにスリープさせる
+					// FIXME 定数化 (3秒)
+					usleep(3 * 1000 *  1000);
+				} else {
+					usleep(EXEC_SLEEP);
+				}
 		}
 		#上のifを1回以上通っていたら
 		if($exitWaitFlg === true){
