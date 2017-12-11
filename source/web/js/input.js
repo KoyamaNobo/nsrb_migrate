@@ -533,11 +533,11 @@ function keyBufferSimulate() {
 
 	for (var i = 0; i < 1; i++) {
 		e = keyBuffer.shift();
-		// 画面ロック中の場合は解除キーを送信して先頭のバッファをクリア
-		if (isStoping()) {
-			sendStopReleaseKey();
-			break;
-		}
+//		// 画面ロック中の場合は解除キーを送信して先頭のバッファをクリア
+//		if (isStoping()) {
+//			sendStopReleaseKey();
+//			break;
+//		}
 
 		// CTL+ANYキーの処理(画面切離関係)
 		if (screenSwitch(e)) {
@@ -570,8 +570,8 @@ function keyBufferSimulate() {
 			break;
 		}
 
-		// F11～F12、ESCは使用禁止
-		if (e.key == 'F11' || e.key == 'F12' || e.key == 'Escape') {
+		// F11～F12は使用禁止
+		if (e.key == 'F11' || e.key == 'F12') {
 			break;
 		}
 
@@ -580,8 +580,8 @@ function keyBufferSimulate() {
 		let inputValue = '';
 		let isInputCheck = true;
 
-		// Backspaceの場合は入力値は不要なのでチェックしない。
-		if (e.key != 'Backspace') {
+		// Backspace、Escapeの場合は入力値は不要なのでチェックしない。
+		if (e.key != 'Backspace' && e.key != 'Escape') {
 			// 入力チェック
 			if (elementInpCheck(target)) {
 				// 入力フォーマット（少数対応）
@@ -629,7 +629,24 @@ function keyBufferSimulate() {
 		ajaxSendParam({
 			data : getKeyParams(sendParams[1], sendParams[2]),
 			success : function(msg) {
-				screenReplace(msg);
+				if (e.key == 'Enter') {
+					// Beep音を停止
+					stopBeep();
+
+					screenReplace(msg);
+				} else if (e.key == 'Escape') {
+					// Beep音を停止
+					stopBeep();
+
+					if (isProcessEnd() && hasError()) {
+						// プロセスが終了してエラーが表示されている場合は前画面へ
+						historyBack();
+					} else {
+						screenReplace(msg);
+					}
+				} else {
+					screenReplace(msg);
+				}
 			}
 		});
 	}
@@ -700,11 +717,11 @@ var keyControl = function() {
 							return false;
 						}
 
-						if (isStoping()) {
-							// 画面ロック中の場合は解除キーを送信
-							sendStopReleaseKey();
-							return false;
-						}
+//						if (isStoping()) {
+//							// 画面ロック中の場合は解除キーを送信
+//							sendStopReleaseKey();
+//							return false;
+//						}
 
 						// CTL+ANYキーの処理(画面切離関係)
 						if (screenSwitch(e)) {
@@ -736,9 +753,8 @@ var keyControl = function() {
 							return false;
 						}
 
-						// F11～F12、ESCは使用禁止
-						if (e.key == 'F11' || e.key == 'F12'
-								|| e.key == 'Escape') {
+						// F11～F12は使用禁止
+						if (e.key == 'F11' || e.key == 'F12') {
 							return false;
 						}
 
@@ -748,7 +764,7 @@ var keyControl = function() {
 						let isInputCheck = true;
 
 						// Backspaceの場合は入力値は不要なのでチェックしない。
-						if (e.key != 'Backspace') {
+						if (e.key != 'Backspace' && e.key != 'Escape') {
 							// 入力チェック
 							// FIXME 入力チェックのタイミングがおかしい。これだとエラーが表示されるタイミングがおかしくなる。
 							if (elementInpCheck(target)) {
@@ -790,7 +806,24 @@ var keyControl = function() {
 						ajaxSendParam({
 							data : getKeyParams(sendParams[1], sendParams[2]),
 							success : function(msg) {
-								screenReplace(msg);
+								if (e.key == 'Enter') {
+									// Beep音を停止
+									stopBeep();
+
+									screenReplace(msg);
+								} else if (e.key == 'Escape') {
+									// Beep音を停止
+									stopBeep();
+
+									if (isProcessEnd() && hasError()) {
+										// プロセスが終了してエラーが表示されている場合は前画面へ
+										historyBack();
+									} else {
+										screenReplace(msg);
+									}
+								} else {
+									screenReplace(msg);
+								}
 							}
 						});
 
@@ -826,10 +859,10 @@ var keyControl = function() {
 			// 背景色設定
 			setInputColor();
 
-			if (e.key == 'Escape') {
-				// ESCキーはバッファリングせずにサーバーに送信
-				sendEscapeKey();
-			}
+//			if (e.key == 'Escape') {
+//				// ESCキーはバッファリングせずにサーバーに送信
+//				sendEscapeKey();
+//			}
 
 			return true;
 		});
@@ -934,6 +967,10 @@ var getSendParam = function(e, inputValue) {
 		}
 		statusValue = 'h';
 		break;
+	case 'Escape':
+		inputValue = '';
+		statusValue = 'esc';
+		break;
 	case 'Tab':
 		statusValue = 's';
 		break;
@@ -1008,25 +1045,25 @@ var setInputColor = function() {
 	}
 }
 
-/**
- * ESCキーのコードを送信する。
- */
-var sendEscapeKey = function() {
-	ajaxSendParam({
-		data : getKeyParams('', 'esc'),
-		success : function(msg) {
-			// Beep音を停止
-			stopBeep();
-
-			if (isProcessEnd() && hasError()) {
-				// プロセスが終了してエラーが表示されている場合は前画面へ
-				historyBack();
-			} else {
-				screenReplace(msg);
-			}
-		}
-	});
-}
+///**
+// * ESCキーのコードを送信する。
+// */
+//var sendEscapeKey = function() {
+//	ajaxSendParam({
+//		data : getKeyParams('', 'esc'),
+//		success : function(msg) {
+//			// Beep音を停止
+//			stopBeep();
+//
+//			if (isProcessEnd() && hasError()) {
+//				// プロセスが終了してエラーが表示されている場合は前画面へ
+//				historyBack();
+//			} else {
+//				screenReplace(msg);
+//			}
+//		}
+//	});
+//}
 
 /**
  * F1～F12のコードを送信する。
@@ -1040,17 +1077,17 @@ var sendFunctionKey = function(e) {
 	});
 }
 
-/**
- * STOP解除のコードを送信する。
- */
-var sendStopReleaseKey = function() {
-	ajaxSendParam({
-		data : getKeyParams('', 'h'),
-		success : function(msg) {
-			screenReplace(msg);
-		}
-	});
-}
+///**
+// * STOP解除のコードを送信する。
+// */
+//var sendStopReleaseKey = function() {
+//	ajaxSendParam({
+//		data : getKeyParams('', 'h'),
+//		success : function(msg) {
+//			screenReplace(msg);
+//		}
+//	});
+//}
 
 /**
  * キー入力のパラメータを取得する。
