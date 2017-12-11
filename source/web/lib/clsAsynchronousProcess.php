@@ -89,7 +89,7 @@ class AsynchronousProcess{
 	//データを書き込み、対象データが処理されるまで待機する
 	function pWriteAndProcWait($inputData){
 		if ($this->createSharedMemory()) {
-			list ($beforeTime, $beforeData) = $this->pRead();
+			list ($beforeTime, $beforeData) = $this->pReadAndTime();
 
 			$this->pWrite($inputData);
 
@@ -102,8 +102,8 @@ class AsynchronousProcess{
 				usleep(EXEC_SLEEP);
 			}
 			// データが処理されるまで待機(最大2000回。200マイクロ秒のループでも最大2000回で400ミリ秒)
-			for ($i = 0; $i < 1000; $i++) {
-				list ($time, $data) = $this->pRead();
+			for ($i = 0; $i < 2000; $i++) {
+				list ($time, $data) = $this->pReadAndTime();
 
 				if (strcmp($beforeData, $data) !== 0) {
 					break;
