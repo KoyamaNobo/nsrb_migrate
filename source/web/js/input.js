@@ -78,12 +78,6 @@ var postProcess = function() {
 }
 
 /**
- * FIXME specialKey.jsで使っているので定義
- * 最終的には不要になるかも
- */
-var sendFlag = false;
-
-/**
  * メニュー画面か否か
  */
 var isMenuScreen = function() {
@@ -137,11 +131,6 @@ var screenReplace = function(resultTxt) {
 	var $tarScreen = $('.screen');
 	var $chgScreen = $('<div>');
 	$chgScreen.html(resultTxt);
-
-//	//FIXME うーん。。
-//	if (-1  == resultTxt.indexOf('nextinput')) {
-//		console.log(resultTxt);
-//	}
 
 	if (!checkTimestamp($chgScreen)) {
 		return;
@@ -531,13 +520,17 @@ function keyBufferSimulate() {
 		return;
 	}
 
+	let $targets = $('input.nextinput');
+
+	if (0 < $targets.length) {
+		// まとめて送れるものは送る
+		if (sendBatchParam($targets[0])) {
+			return;
+		}
+	}
+
 	for (var i = 0; i < 1; i++) {
 		e = keyBuffer.shift();
-//		// 画面ロック中の場合は解除キーを送信して先頭のバッファをクリア
-//		if (isStoping()) {
-//			sendStopReleaseKey();
-//			break;
-//		}
 
 		// CTL+ANYキーの処理(画面切離関係)
 		if (screenSwitch(e)) {
@@ -549,14 +542,13 @@ function keyBufferSimulate() {
 			break;
 		}
 
-		let $targets = $('input.nextinput');
-
 		if ($targets.length == 0) {
 			// FIXME 画面が切り替わる前なので項目がない場合がある。なので、入力項目が現れるまで再実行する必要あり。
 			// もしくは入力欄関係なくPOSTしていく？その場合は属性チェックとMAXLENGTHは無視することになる。
 			// FIXME 一旦再処理させる
 			keyBuffer.unshift(e);
-			if (true) break;
+			if (true)
+				break;
 			//
 
 			console.log('no input');
@@ -601,7 +593,7 @@ function keyBufferSimulate() {
 			// 末尾に追加
 			appendCharValue(e, target);
 
-			//FIXME 背景色設定 一旦このタイミングで。
+			// FIXME 背景色設定 一旦このタイミングで。
 			setInputColor();
 
 			break;
@@ -615,9 +607,8 @@ function keyBufferSimulate() {
 
 		let sendParams = getSendParam(e, inputValue);
 
-		// サーバー送信不要なキーの場合は入力チェックだけして文字の入力は許可
+		// サーバー送信不要なキーの場合はデータをサーバーに送信しない
 		if (sendParams[0] == false) {
-			// FIXME 上で入力しているからこの処理は不要かな？
 			break;
 		}
 
@@ -652,7 +643,110 @@ function keyBufferSimulate() {
 	}
 
 	// 再帰実行
-	setInterval(keyBufferSimulate, 100);
+	setTimeout(keyBufferSimulate, 100);
+}
+
+/**
+ * キーバッファリングした入力内容のうちサーバーに送信できるキーをまとめて送信する。
+ */
+function sendBatchParam(inputTarget) {
+	let sendKeyParam = new Array();
+	let isEnterKey = false;
+	let isEscKey = false;
+	// 入力値あり
+	let isInput = 0 < inputTarget.value.length;
+
+	// 入力チェックが不要なキーのみパラメータにセットして送る
+	for (var i = 0; i < keyBuffer.length; i++) {
+		let e = keyBuffer[i];
+
+		// CTL+ANYキーの処理(画面切離関係)
+		if (isScreenSwitch(e)) {
+			break;
+		}
+
+		// CTL+ANYキーの処理
+		if (isFuncSpecialKey(e)) {
+			break;
+		}
+
+		// F11～F12は使用禁止なのでスキップ
+		if (e.key == 'F11' || e.key == 'F12') {
+			keyBuffer.splice(i, 1);
+			i--;
+			continue;
+		}
+
+		// 通常の入力文字か否か
+		if (isInputCharValue(e)) {
+			break;
+		}
+
+		// DELETE
+		if (e.key == 'Delete') {
+			break;
+		}
+
+		let sendParams = getSendParam(e, '');
+
+		// 文字以外のサーバー送信不要なキーの場合は何もしないということなのでスキップする。
+		if (sendParams[0] == false) {
+			keyBuffer.splice(i, 1);
+			i--;
+			continue;
+		}
+
+		// 入力チェックが不要なキーのみパラメータにセット
+		if (!isInput || e.key == 'Backspace' || e.key == 'Escape') {
+			if (e.key == 'Escape') {
+				isEscKey = true;
+			} else if (e.key == 'Enter') {
+				isEnterKey = true;
+			}
+
+			sendKeyParam.push({
+				sendValue : sendParams[1],
+				statusValue : sendParams[2]
+			});
+
+			keyBuffer.splice(i, 1);
+			i--;
+			continue;
+		}
+
+		break;
+	}
+
+	// 送信
+	if (0 < sendKeyParam.length) {
+		ajaxSendParam({
+			data : getKeyBatchParams(sendKeyParam),
+			success : function(msg) {
+				if (isEscKey) {
+					// Beep音を停止
+					stopBeep();
+
+					if (isProcessEnd() && hasError()) {
+						// プロセスが終了してエラーが表示されている場合は前画面へ
+						historyBack();
+					} else {
+						screenReplace(msg);
+					}
+				} else if (isEnterKey) {
+					// Beep音を停止
+					stopBeep();
+
+					screenReplace(msg);
+				} else {
+					screenReplace(msg);
+				}
+			}
+		});
+
+		return true;
+	}
+
+	return false;
 }
 
 /**
@@ -705,7 +799,7 @@ var keyControl = function() {
 						// 処理中
 						// キー入力をバッファリングする。
 						keyBuffer.push(e);
-						console.log("buffer push:" + e.key  + ":" + e.keyCode);
+						console.log("buffer push:" + e.key + ":" + e.keyCode);
 
 						return false;
 					} else {
@@ -716,12 +810,6 @@ var keyControl = function() {
 
 							return false;
 						}
-
-//						if (isStoping()) {
-//							// 画面ロック中の場合は解除キーを送信
-//							sendStopReleaseKey();
-//							return false;
-//						}
 
 						// CTL+ANYキーの処理(画面切離関係)
 						if (screenSwitch(e)) {
@@ -740,7 +828,8 @@ var keyControl = function() {
 							// FIXME 入力項目が存在しない場合はバッファに追加していったん終了
 							// FIXME 入力項目がない画面もある？
 							keyBuffer.push(e);
-							if (true) return false;
+							if (true)
+								return false;
 							//
 
 							console.log('no input hon');
@@ -766,7 +855,8 @@ var keyControl = function() {
 						// Backspaceの場合は入力値は不要なのでチェックしない。
 						if (e.key != 'Backspace' && e.key != 'Escape') {
 							// 入力チェック
-							// FIXME 入力チェックのタイミングがおかしい。これだとエラーが表示されるタイミングがおかしくなる。
+							// FIXME
+							// 入力チェックのタイミングがおかしい。これだとエラーが表示されるタイミングがおかしくなる。
 							if (elementInpCheck(target)) {
 								// 入力フォーマット（少数対応）
 								inputValue = elementInpFormat(target);
@@ -840,7 +930,7 @@ var keyControl = function() {
 		 * キーアップイベント
 		 */
 		$(document).keyup(function(e) {
-//			console.log('keyup:' + e.key + ':' + e.keyCode);
+			// console.log('keyup:' + e.key + ':' + e.keyCode);
 			let isProcess = false;
 
 			if (isFirefox && e.key == 'Enter') {
@@ -859,11 +949,6 @@ var keyControl = function() {
 			// 背景色設定
 			setInputColor();
 
-//			if (e.key == 'Escape') {
-//				// ESCキーはバッファリングせずにサーバーに送信
-//				sendEscapeKey();
-//			}
-
 			return true;
 		});
 	}
@@ -873,6 +958,11 @@ var keyControl = function() {
  * 入力文字か否か判定する
  */
 var isInputCharValue = function(e) {
+	// CTL or ALTが押されている
+	if (e.ctrlKey == true || e.altKey == true) {
+		return false;
+	}
+
 	if (1 < e.key.length) {
 		// キーが2文字以上で表される場合
 		return false;
@@ -975,9 +1065,6 @@ var getSendParam = function(e, inputValue) {
 		statusValue = 's';
 		break;
 	case 'Backspace':
-		// if(targElem.value != ''){
-		// return true;
-		// }
 		inputValue = '';
 		statusValue = 'b';
 		break;
@@ -1045,26 +1132,6 @@ var setInputColor = function() {
 	}
 }
 
-///**
-// * ESCキーのコードを送信する。
-// */
-//var sendEscapeKey = function() {
-//	ajaxSendParam({
-//		data : getKeyParams('', 'esc'),
-//		success : function(msg) {
-//			// Beep音を停止
-//			stopBeep();
-//
-//			if (isProcessEnd() && hasError()) {
-//				// プロセスが終了してエラーが表示されている場合は前画面へ
-//				historyBack();
-//			} else {
-//				screenReplace(msg);
-//			}
-//		}
-//	});
-//}
-
 /**
  * F1～F12のコードを送信する。
  */
@@ -1076,18 +1143,6 @@ var sendFunctionKey = function(e) {
 		}
 	});
 }
-
-///**
-// * STOP解除のコードを送信する。
-// */
-//var sendStopReleaseKey = function() {
-//	ajaxSendParam({
-//		data : getKeyParams('', 'h'),
-//		success : function(msg) {
-//			screenReplace(msg);
-//		}
-//	});
-//}
 
 /**
  * キー入力のパラメータを取得する。
@@ -1104,6 +1159,32 @@ var getKeyParams = function(value, statusValue) {
 		infname : $('#infname').val(),
 		outfname : $('#outfname').val(),
 		value : sendValue,
+	};
+
+	return keyParams;
+}
+
+/**
+ * キー入力のパラメータを取得する。(バッチ用)
+ */
+var getKeyBatchParams = function(sendKeyParam) {
+	let valueParams = new Array();
+
+	for (let i = 0; i < sendKeyParam.length; i++) {
+		let sendValue = sendKeyParam[i].sendValue;
+		let statusValue = sendKeyParam[i].statusValue;
+
+		if (0 < statusValue.length) {
+			sendValue += '`' + statusValue;
+		}
+		valueParams.push(sendValue);
+	}
+
+	let keyParams = {
+		pid : $('#pid').val(),
+		infname : $('#infname').val(),
+		outfname : $('#outfname').val(),
+		value : valueParams,
 	};
 
 	return keyParams;

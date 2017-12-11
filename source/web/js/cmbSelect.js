@@ -81,7 +81,6 @@ var cmbSelect = function (){
 			success: function(ret){
 				cmbReset( ret );
 				document.forms.frm.ajax_flg.value = 0;
-				sendFlag = false;
 			},
 			error: function(jqXHR,textStatus,errorThrown ){
 				console.log("BackGround connect Error" + textStatus + ":" + errorThrown.message);

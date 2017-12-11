@@ -101,8 +101,8 @@ class AsynchronousProcess{
 				}
 				usleep(EXEC_SLEEP);
 			}
-			// データが処理されるまで待機(最大2000回。200マイクロ秒のループでも最大2000回で400ミリ秒)
-			for ($i = 0; $i < 2000; $i++) {
+			// データが処理されるまで待機(最大500回。200マイクロ秒のループでも最大500回で100ミリ秒)
+			for ($i = 0; $i < 500; $i++) {
 				list ($time, $data) = $this->pReadAndTime();
 
 				if (strcmp($beforeData, $data) !== 0) {
@@ -118,8 +118,8 @@ class AsynchronousProcess{
 		if ($this->createSharedMemory()) {
 			$this->pWrite($inputData);
 
-			// まずはデータが読み取られるまで待機(最大1000回。200マイクロ秒のループでも最大1000回で200ミリ秒)
-			for ($i = 0; $i < 1000; $i++) {
+			// まずはデータが読み取られるまで待機(最大500回。200マイクロ秒のループでも最大500回で100ミリ秒)
+			for ($i = 0; $i < 500; $i++) {
 				list($time, $result) = $this->memory->read_inputfile();
 				if ($result === false) {
 					break;
