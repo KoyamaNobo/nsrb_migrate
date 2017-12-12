@@ -482,7 +482,7 @@ class SharedMemory
 			shm_detach($shmid);
 		}
 		if (self::has_sem($id)) {
-			$sem_shmid = sem_get($this->id);
+			$sem_shmid = sem_get($id);
 			sem_remove($sem_shmid);
 		}
 	}
