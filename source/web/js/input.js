@@ -12,6 +12,11 @@ var BEEP_INTERVAL = 600;
 var SESSION_ALIVE_INTERVAL = 1000 * 60 * 5;
 
 /**
+ * キー入力を再現する際の再現間隔(msec)
+ */
+var KEY_BUFFER_SIMULATE_INTERVAL = 10;
+
+/**
  * 処理中を表すキュー。 キューにデータが存在する場合はキー入力をブロックしてバッファリングする。
  * ただし、日本語入力をブロックすることはできないので、ローマ字入力と日本語入力とでは 動作が異なることになる。
  */
@@ -627,7 +632,7 @@ function keyBufferSimulate() {
 	}
 
 	// 再帰実行
-	setTimeout(keyBufferSimulate, 100);
+	setTimeout(keyBufferSimulate, KEY_BUFFER_SIMULATE_INTERVAL);
 }
 
 /**
