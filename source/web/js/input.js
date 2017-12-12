@@ -341,6 +341,7 @@ var setBlinkToElement = function($chgScreen) {
 let esScreen;
 var screenUpdate = function() {
 	let setFocusTimeoutId;
+	let isOpen = false;
 
 	if (!isMenuScreen()) {
 		// PIDが取得できない場合は前画面に戻り処理は何も行わない。
@@ -370,49 +371,36 @@ var screenUpdate = function() {
 	}
 
 	/**
-	 * 初期処理を行う。 (SSEのイベントリスナーが開始されるまでに1、2秒程度のタイムラグがあるので初めはAjaxで値を取得する。)
+	 * 初期処理を行う。
 	 */
 	function init() {
-		$.ajax({
-			type : 'GET',
-			url : 'getOut.php',
-			data : getQueryParams(),
-			beforeSend : function(jqXHR) {
-				preProcess();
-			},
-			success : function(msg, txt) {
-				onmessage(msg);
-			},
-			error : function(jqXHR, textStatus, errorThrown) {
-				// イベントリスナーのほうで再処理が行わるのでここでは何もしない。
-				if (errorThrown) {
-					console.log('BackGround connect Error' + textStatus + ':'
-							+ errorThrown.message);
-				}
-			},
-			complete : function() {
-				postProcess();
-				polling();
-			}
-		});
+		// SSEの接続が確立されるまでタイムラグがあるので接続確立までAjaxで画面更新を行う。
+		polling();
 	}
 
 	/**
-	 * セッションタイムアウト対策として定期的にリクエストを行う。
+	 * セッションタイムアウト対策として定期的にリクエストを行う。 また、SSE接続確立までは短間隔で画面データの取得を行う。
 	 */
 	function polling() {
+		let timeout = isOpen ? SESSION_ALIVE_INTERVAL : 200;
 
-		// 通信結果は無視する
 		setTimeout(function() {
 			$.ajax({
 				type : 'GET',
 				url : 'getOut.php',
 				data : getQueryParams(),
+				beforeSend : function(jqXHR) {
+					preProcess();
+				},
+				success : function(msg, txt) {
+					onmessage(msg);
+				},
 				complete : function() {
+					postProcess();
 					polling();
-				}
+				},
 			});
-		}, SESSION_ALIVE_INTERVAL);
+		}, timeout);
 	}
 
 	/**
@@ -431,6 +419,9 @@ var screenUpdate = function() {
 			} finally {
 				postProcess();
 			}
+		};
+		esScreen.onopen = function(e) {
+			isOpen = true;
 		};
 	}
 
@@ -529,6 +520,11 @@ function keyBufferSimulate() {
 		}
 	}
 
+	// バッファに何もなくなった場合は何もしない。
+	if (keyBuffer.length == 0) {
+		return;
+	}
+
 	for (var i = 0; i < 1; i++) {
 		e = keyBuffer.shift();
 
@@ -620,24 +616,12 @@ function keyBufferSimulate() {
 		ajaxSendParam({
 			data : getKeyParams(sendParams[1], sendParams[2]),
 			success : function(msg) {
-				if (e.key == 'Enter') {
+				if (e.key == 'Enter' || e.key == 'Escape') {
 					// Beep音を停止
 					stopBeep();
-
-					screenReplace(msg);
-				} else if (e.key == 'Escape') {
-					// Beep音を停止
-					stopBeep();
-
-					if (isProcessEnd() && hasError()) {
-						// プロセスが終了してエラーが表示されている場合は前画面へ
-						historyBack();
-					} else {
-						screenReplace(msg);
-					}
-				} else {
-					screenReplace(msg);
 				}
+
+				screenReplace(msg);
 			}
 		});
 	}
@@ -722,24 +706,11 @@ function sendBatchParam(inputTarget) {
 		ajaxSendParam({
 			data : getKeyBatchParams(sendKeyParam),
 			success : function(msg) {
-				if (isEscKey) {
+				if (isEscKey || isEnterKey) {
 					// Beep音を停止
 					stopBeep();
-
-					if (isProcessEnd() && hasError()) {
-						// プロセスが終了してエラーが表示されている場合は前画面へ
-						historyBack();
-					} else {
-						screenReplace(msg);
-					}
-				} else if (isEnterKey) {
-					// Beep音を停止
-					stopBeep();
-
-					screenReplace(msg);
-				} else {
-					screenReplace(msg);
 				}
+				screenReplace(msg);
 			}
 		});
 
@@ -896,24 +867,11 @@ var keyControl = function() {
 						ajaxSendParam({
 							data : getKeyParams(sendParams[1], sendParams[2]),
 							success : function(msg) {
-								if (e.key == 'Enter') {
+								if (e.key == 'Enter' || e.key == 'Escape') {
 									// Beep音を停止
 									stopBeep();
-
-									screenReplace(msg);
-								} else if (e.key == 'Escape') {
-									// Beep音を停止
-									stopBeep();
-
-									if (isProcessEnd() && hasError()) {
-										// プロセスが終了してエラーが表示されている場合は前画面へ
-										historyBack();
-									} else {
-										screenReplace(msg);
-									}
-								} else {
-									screenReplace(msg);
 								}
+								screenReplace(msg);
 							}
 						});
 
@@ -939,6 +897,15 @@ var keyControl = function() {
 					isProcess = true;
 				}
 				isKeydown = false;
+			}
+
+			// プロセスが終了してエラーが表示されている場合は前画面へ
+			// サーバーに送ってもどうしようもできないのでバッファリングせずに即座に終了
+			if (e.key == 'Escape') {
+				if (isProcessEnd() && hasError()) {
+					historyBack();
+					return false;
+				}
 			}
 
 			// 日本語入力がされた場合は入力順序が逆転してしまうのでバッファはクリア
@@ -1341,32 +1308,32 @@ var ajaxSendParam = function(arg) {
 
 	// 処理成功
 	opt.success = (function(func) {
-		return function(data, statusText, jqXHR) {
+		return function(data, textStatus, jqXHR) {
 			if (func) {
-				func(data, statusText, jqXHR);
+				func(data, textStatus, jqXHR);
 			}
 		};
 	})(opt.success);
 
 	// エラー
 	opt.error = (function(func) {
-		return function(jqXHR, statusText, errorThrown) {
+		return function(jqXHR, textStatus, errorThrown) {
 			alert('BackGround connect Error' + textStatus + ':'
 					+ errorThrown.message);
 			console.log('BackGround connect Error' + textStatus + ':'
 					+ errorThrown.message);
 
 			if (func) {
-				func(jqXHR, statusText, errorThrown);
+				func(jqXHR, textStatus, errorThrown);
 			}
 		};
 	})(opt.error);
 
 	// 完了
 	opt.complete = (function(func) {
-		return function(jqXHR, statusText) {
+		return function(jqXHR, textStatus) {
 			if (func) {
-				func(jqXHR, statusText);
+				func(jqXHR, textStatus);
 			}
 
 			// 後処理

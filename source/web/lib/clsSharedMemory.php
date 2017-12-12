@@ -41,22 +41,32 @@ class SharedMemory
 	/**
 	 * 入力ファイルの書き込み時間を表す変数キー
 	 */
-	protected $inputfiletime_key = 0;
+	protected $inputfilewritetime_key = 0;
+
+	/**
+	 * 入力ファイルを読み取った時間を表す変数キー
+	 */
+	protected $inputfilereadtime_key = 1;
 
 	/**
 	 * 入力ファイルを表す変数キー
 	 */
-	protected $inputfile_key = 1;
+	protected $inputfile_key = 2;
 
 	/**
 	 * 出力ファイルの書き込み時間を表す変数キー
 	 */
-	protected $outputfiletime_key = 2;
+	protected $outputfilewritetime_key = 3;
+
+	/**
+	 * 出力ファイルを読み取った時間を表す変数キー
+	 */
+	protected $outputfilereadtime_key = 4;
 
 	/**
 	 * 出力ファイルを表す変数キー
 	 */
-	protected $outputfile_key = 3;
+	protected $outputfile_key = 5;
 
 	/**
 	 * コンストラクタ
@@ -168,7 +178,7 @@ class SharedMemory
 	 */
 	public function write_inputfile($data)
 	{
-		return $this->write($this->inputfiletime_key, $this->inputfile_key, $data);
+		return $this->write($this->inputfilewritetime_key, $this->inputfile_key, $data);
 	}
 
 	/**
@@ -180,7 +190,17 @@ class SharedMemory
 	 */
 	public function read_inputfile($is_delete = false)
 	{
-		return $this->read($this->inputfiletime_key, $this->inputfile_key, $is_delete);
+		return $this->read($this->inputfilewritetime_key, $this->inputfilereadtime_key, $this->inputfile_key, $is_delete);
+	}
+
+	/**
+	 * 入力ファイルのデータが読み取られたか否か
+	 *
+	 * @return 読み取り済みの場合はtrue、読みとられていない場合はfalse
+	 */
+	public function is_read_inputfile()
+	{
+		return $this->is_read($this->inputfilewritetime_key, $this->inputfilereadtime_key);
 	}
 
 	/**
@@ -188,7 +208,7 @@ class SharedMemory
 	 */
 	public function delete_inputfile()
 	{
-		return $this->delete($this->inputfiletime_key, $this->inputfile_key);
+		return $this->delete($this->inputfilewritetime_key, $this->inputfilereadtime_key, $this->inputfile_key);
 	}
 
 	/**
@@ -200,7 +220,7 @@ class SharedMemory
 	 */
 	public function write_outputfile($data)
 	{
-		return $this->write($this->outputfiletime_key, $this->outputfile_key, $data);
+		return $this->write($this->outputfilewritetime_key, $this->outputfile_key, $data);
 	}
 
 	/**
@@ -212,7 +232,17 @@ class SharedMemory
 	 */
 	public function read_outputfile($is_delete = false)
 	{
-		return $this->read($this->outputfiletime_key, $this->outputfile_key, $is_delete);
+		return $this->read($this->outputfilewritetime_key, $this->outputfilereadtime_key, $this->outputfile_key, $is_delete);
+	}
+
+	/**
+	 * 出力ファイルのデータが読み取られたか否か
+	 *
+	 * @return 読み取り済みの場合はtrue、読みとられていない場合はfalse
+	 */
+	public function is_read_outputfile()
+	{
+		return $this->is_read($this->outputfilewritetime_key, $this->outputfilereadtime_key);
 	}
 
 	/**
@@ -220,13 +250,13 @@ class SharedMemory
 	 */
 	public function delete_outputfile()
 	{
-		return $this->delete($this->outputfiletime_key, $this->outputfile_key);
+		return $this->delete($this->outputfilewritetime_key, $this->outputfilereadtime_key, $this->outputfile_key);
 	}
 
 	/**
 	 * 共有メモリにデータを書き込む。
 	 *
-	 * @param integer $timekey
+	 * @param integer $writetimekey
 	 *        	データの書き込み時間を書き込むキー
 	 * @param integer $datakey
 	 *        	データを書き込むキー
@@ -234,12 +264,12 @@ class SharedMemory
 	 *        	データ
 	 * @return 書き込みに成功した場合はtrue、書き込みに失敗した場合はfalse
 	 */
-	private function write($timekey, $datakey, $data)
+	private function write($writetimekey, $datakey, $data)
 	{
 		try {
 			sem_acquire($this->sem_shmid);
 
-			if (shm_put_var($this->shmid, $timekey, microtime(true)) === false) {
+			if (shm_put_var($this->shmid, $writetimekey, microtime(true)) === false) {
 				return false;
 			}
 			return shm_put_var($this->shmid, $datakey, $data);
@@ -251,35 +281,40 @@ class SharedMemory
 	/**
 	 * 共有メモリからデータを読み込む。
 	 *
-	 * @param integer $timekey
+	 * @param integer $writetimekey
 	 *        	データを書き込んだ時間を読み込むキー
+	 * @param integer $readtimekey
+	 *        	データを読み込んだ時間を書き込むキー
 	 * @param integer $datekey
 	 *        	データを読み込むキー
 	 * @param boolean $is_delete
 	 *        	データを読み込んだ後にメモリのデータを削除するか否か
 	 * @return array 配列[0, 1] = [データを書き込んだ時間, 読み込んだデータ]。書き込みがない場合は = [データを読み込んだ時間, false]
 	 */
-	private function read($timekey, $datakey, $is_delete = false)
+	private function read($writetimekey, $readtimekey, $datakey, $is_delete = false)
 	{
 		try {
 			sem_acquire($this->sem_shmid);
 
 			// データなし
-			if (shm_has_var($this->shmid, $timekey) === false || shm_has_var($this->shmid, $datakey) === false) {
+			if (shm_has_var($this->shmid, $writetimekey) === false || shm_has_var($this->shmid, $datakey) === false) {
 				return array(
 					microtime(true),
 					false
 				);
 			}
 
-			$time = shm_get_var($this->shmid, $timekey);
+			$time = shm_get_var($this->shmid, $writetimekey);
 			$data = shm_get_var($this->shmid, $datakey);
 
 			if ($is_delete) {
 				// データ削除
-				shm_remove_var($this->shmid, $timekey);
+				shm_remove_var($this->shmid, $writetimekey);
 				shm_remove_var($this->shmid, $datakey);
 			}
+
+			// 読み込み時間をセット
+			shm_put_var($this->shmid, $readtimekey, microtime(true));
 
 			return array(
 				$time,
@@ -293,25 +328,65 @@ class SharedMemory
 	/**
 	 * 共有メモリの領域を削除する。
 	 *
-	 * @param integer $timekey
+	 * @param integer $writetimekey
 	 *        	データを書き込んだ時間を書き込むキー
+	 * @param integer $readtimekey
+	 *        	データを読み込んだ時間を書き込むキー
 	 * @param integer $datekey
 	 *        	データを書き込むキー
 	 */
-	private function delete($timekey, $datakey)
+	private function delete($writetimekey, $readtimekey, $datakey)
 	{
 		try {
 			sem_acquire($this->sem_shmid);
 
-			if (shm_has_var($this->shmid, $timekey) !== false) {
+			if (shm_has_var($this->shmid, $writetimekey) !== false) {
 				// データ削除
-				shm_remove_var($this->shmid, $timekey);
+				shm_remove_var($this->shmid, $writetimekey);
+			}
+
+			if (shm_has_var($this->shmid, $readtimekey) !== false) {
+				// データ削除
+				shm_remove_var($this->shmid, $readtimekey);
 			}
 
 			if (shm_has_var($this->shmid, $datakey) !== false) {
 				// データ削除
 				shm_remove_var($this->shmid, $datakey);
 			}
+		} finally {
+			sem_release($this->sem_shmid);
+		}
+	}
+
+	/**
+	 * 書き込んだデータが読み取られたか否か
+	 * データ書き込み時間よりデータ読み込み時間の方が新しい場合は読み取られたものとして判断する。
+	 *
+	 * @param integer $writetimekey
+	 *        	データを書き込んだ時間を書き込むキー
+	 * @param integer $readtimekey
+	 *        	データを読み込んだ時間を書き込むキー
+	 */
+	private function is_read($writetimekey, $readtimekey)
+	{
+		try {
+			sem_acquire($this->sem_shmid);
+
+			// 読み取り時間がセットされていない場合は読み取りされていないと判断
+			if (shm_has_var($this->shmid, $readtimekey) === false) {
+				return false;
+			}
+
+			// 書込み時間はないが、読み取り時間がセットされている場合は読み取り済みと判断
+			if (shm_has_var($this->shmid, $writetimekey) === false && shm_has_var($this->shmid, $readtimekey) === true) {
+				return true;
+			}
+
+			$writetime = shm_get_var($this->shmid, $writetimekey);
+			$readtime = shm_get_var($this->shmid, $readtimekey);
+
+			return $writetime <= $readtime;
 		} finally {
 			sem_release($this->sem_shmid);
 		}
