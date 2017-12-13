@@ -58,6 +58,11 @@ var beepCounter = -1;
 var beepTimeoutId;
 
 /**
+ * 入力項目が存在する画面か否か。 存在しない画面の場合はキー入力をバッファリングしない。
+ */
+var hasInput = false;
+
+/**
  * ブラウザがFirefoxか否か
  */
 var isFirefox = (function() {
@@ -132,7 +137,7 @@ var hasError = function() {
 /**
  * 画面の要素を入れ替える。
  */
-var screenReplace = function(resultTxt) {
+var screenReplace = function(resultTxt, isChgInput) {
 	var $tarScreen = $('.screen');
 	var $chgScreen = $('<div>');
 	$chgScreen.html(resultTxt);
@@ -146,7 +151,7 @@ var screenReplace = function(resultTxt) {
 	}
 
 	// 取得行のいれかえ
-	replaceScreenElement($tarScreen, $chgScreen);
+	replaceScreenElement($tarScreen, $chgScreen, isChgInput);
 }
 
 /**
@@ -159,8 +164,10 @@ var checkTimestamp = function($chgScreen) {
 	// 読み取り後に要素は削除
 	$dataTimestamp.remove();
 
-	if (dataTimestamp < newDataTimestamp) {
+	if (dataTimestamp <= newDataTimestamp) {
 		// データが新しくなっている場合
+		// パラメータ送信後とSSEで同じ内容が戻ってくることがあり、パラメータ送信後は必ず入力欄の
+		// 書き換えも行う必要があるのでタイムスタンプの=(イコール)も許容してチェックする。
 		dataTimestamp = newDataTimestamp;
 		return true;
 	}
@@ -206,7 +213,7 @@ var checkStatus = function($chgScreen) {
 /**
  * 画面内容を更新する
  */
-var replaceScreenElement = function($tarScreen, $chgScreen) {
+var replaceScreenElement = function($tarScreen, $chgScreen, isChgInput) {
 	// lineクラスを持つ要素の子のinput要素を抽出
 	let $tarInputs = $tarScreen.find('.line > input[type="text"]');
 	let $chgInputs = $chgScreen.find('.line > input[type="text"]');
@@ -217,25 +224,32 @@ var replaceScreenElement = function($tarScreen, $chgScreen) {
 	if (0 < $tarInputs.length) {
 		let tarInput = $tarInputs[0];
 		isTarStop = tarInput.name == 'STOP';
+		hasInput = true;
 	}
 	if (0 < $chgInputs.length) {
 		let chgInput = $chgInputs[0];
 		isChgStop = chgInput.name == 'STOP';
+		hasInput = true;
 	}
 
 	// 要素の入れ替え方法を決定
-	// 現在と次の画面に同じ入力項目がある場合のみ行単位で要素の入れ替えを行う。
 	let isLineChange = false;
-	if (0 < $tarInputs.length && 0 < $chgInputs.length) {
-		let tarInput = $tarInputs[0];
-		let chgInput = $chgInputs[0];
-		if (tarInput.name == chgInput.name) {
-			var tarColumns = tarInput.className.match(/\s+f[0-9]+/i);
-			var chgColumns = chgInput.className.match(/\s+f[0-9]+/i);
+	if (isChgInput) {
+		// 入力内容送信後は必ずサーバーから返却された内容ですべて再表示する。
+		isLineChange = false;
+	} else {
+		// 現在と次の画面に同じ入力項目がある場合のみ行単位で要素の入れ替えを行う。
+		if (0 < $tarInputs.length && 0 < $chgInputs.length) {
+			let tarInput = $tarInputs[0];
+			let chgInput = $chgInputs[0];
+			if (tarInput.name == chgInput.name) {
+				var tarColumns = tarInput.className.match(/\s+f[0-9]+/i);
+				var chgColumns = chgInput.className.match(/\s+f[0-9]+/i);
 
-			if (tarColumns[0] == chgColumns[0]) {
-				// nameが同じでかつクラスのフィールド名が同じ
-				isLineChange = true;
+				if (tarColumns[0] == chgColumns[0]) {
+					// nameが同じでかつクラスのフィールド名が同じ
+					isLineChange = true;
+				}
 			}
 		}
 	}
@@ -459,7 +473,7 @@ var screenUpdate = function() {
 	 */
 	function onmessage(data) {
 		// 画面内容の更新
-		screenReplace(data);
+		screenReplace(data, false);
 	}
 
 	/**
@@ -500,12 +514,6 @@ function stopScreenUpdateListener() {
  *
  */
 function keyBufferSimulate() {
-	// エラーメッセージが表示中 かつプロセス終了時はキー操作無効なためバッファクリア
-	if (isProcessEnd() && hasError()) {
-		keyBufferClear();
-		return;
-	}
-
 	// 処理中の場合は何もせずに終了
 	if (0 < processQueue.length) {
 		return;
@@ -516,6 +524,12 @@ function keyBufferSimulate() {
 		return;
 	}
 
+	// エラーメッセージが表示中 かつプロセス終了時はキー操作無効なためバッファクリア
+	if (isProcessEnd() && hasError()) {
+		keyBufferClear();
+		return;
+	}
+
 	let $targets = $('input.nextinput');
 
 	if (0 < $targets.length) {
@@ -523,11 +537,11 @@ function keyBufferSimulate() {
 		if (sendBatchParam($targets[0])) {
 			return;
 		}
-	}
 
-	// バッファに何もなくなった場合は何もしない。
-	if (keyBuffer.length == 0) {
-		return;
+		// バッファに何もなくなった場合は何もしない。
+		if (keyBuffer.length == 0) {
+			return;
+		}
 	}
 
 	for (var i = 0; i < 1; i++) {
@@ -544,22 +558,8 @@ function keyBufferSimulate() {
 		}
 
 		if ($targets.length == 0) {
-			// FIXME 画面が切り替わる前なので項目がない場合がある。なので、入力項目が現れるまで再実行する必要あり。
-			// もしくは入力欄関係なくPOSTしていく？その場合は属性チェックとMAXLENGTHは無視することになる。
-			// FIXME 一旦再処理させる
+			// 入力欄が存在しない場合は画面書き換えのタイミングでまだ入力項目が存在しないだけなので入力をバッファに戻して再実行
 			keyBuffer.unshift(e);
-			if (true)
-				break;
-			//
-
-			console.log('no input');
-			// 入力欄が存在しない場合
-			// F1～F12のキー (FIXME この処理必要？)
-			if (e.key.match(/F[0-9]{1,2}/)) {
-				if (e.ctrlKey == true) {
-					sendFunctionKey(e);
-				}
-			}
 			break;
 		}
 
@@ -626,7 +626,7 @@ function keyBufferSimulate() {
 					stopBeep();
 				}
 
-				screenReplace(msg);
+				screenReplace(msg, true);
 			}
 		});
 	}
@@ -715,7 +715,7 @@ function sendBatchParam(inputTarget) {
 					// Beep音を停止
 					stopBeep();
 				}
-				screenReplace(msg);
+				screenReplace(msg, true);
 			}
 		});
 
@@ -750,8 +750,8 @@ var keyControl = function() {
 					return false;
 				}
 
-				if (isMenuScreen()) {
-					// メニュー画面
+				if (!hasInput || isMenuScreen()) {
+					// 入力項目が存在しない画面 or メニュー画面
 
 					// CTL+ANYキーの処理(画面切離関係)
 					if (screenSwitch(e)) {
@@ -771,7 +771,7 @@ var keyControl = function() {
 						isKeydown = true;
 					}
 
-					if (0 < processQueue.length) {
+					if (processQueue.length) {
 						// 処理中
 						// キー入力をバッファリングする。
 						keyBuffer.push(e);
@@ -799,22 +799,10 @@ var keyControl = function() {
 
 						let $targets = $('input.nextinput');
 
+						// 入力欄が存在しない場合は画面書き換えのタイミングでまだ入力項目が存在しないだけなのでキー入力をバッファして終了
 						if ($targets.length == 0) {
-							// 入力欄が存在しない場合
-							// FIXME 入力項目が存在しない場合はバッファに追加していったん終了
-							// FIXME 入力項目がない画面もある？
 							keyBuffer.push(e);
-							if (true)
-								return false;
-							//
 
-							console.log('no input hon');
-							// F1～F12のキー (FIXME この処理必要？)
-							if (e.key.match(/F[0-9]{1,2}/)) {
-								if (e.ctrlKey == true) {
-									sendFunctionKey(e);
-								}
-							}
 							return false;
 						}
 
@@ -876,7 +864,7 @@ var keyControl = function() {
 									// Beep音を停止
 									stopBeep();
 								}
-								screenReplace(msg);
+								screenReplace(msg, true);
 							}
 						});
 
@@ -1101,19 +1089,10 @@ var setInputColor = function() {
 		} else {
 			$input.css('background-color', '');
 		}
-	}
-}
 
-/**
- * F1～F12のコードを送信する。
- */
-var sendFunctionKey = function(e) {
-	ajaxSendParam({
-		data : getKeyParams('F' + (e.keyCode - 111), ''),
-		success : function(msg) {
-			screenReplace(msg);
-		}
-	});
+		// 入力チェック(ステータスの書き換え)を行う。
+		elementInpCheck($input[0]);
+	}
 }
 
 /**
