@@ -16,7 +16,7 @@
 <script type="text/javascript" src="./js/backButton.js?ver=20160613"></script>
 <script type="text/javascript" src="./js/tableWidthSetter.js?ver=20160613"></script>
 <script type="text/javascript" src="./js/scrollSync.js?ver=20160620"></script>
-<script type="text/javascript" src="./js/cmbSelect.js?ver=20170201" charset="UTF-8"></script>
+<script type="text/javascript" src="./js/cmbSelect.js?ver=20171213" charset="UTF-8"></script>
 <script type="text/javascript" src="./js/updateButton.js?ver=20160613" charset="UTF-8"></script>
 <script type="text/javascript" src="./js/menuShortcut.js?ver=20160613"></script>
 </head>
