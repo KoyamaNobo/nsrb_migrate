@@ -1742,7 +1742,8 @@ int stopExec(){
 	do{
 		SD_AcceptStdin(&temporaryObj,term_buff);
 		setStatusASplit(term_buff,eStatus);
-	}while(strncmp(eStatus,"01",strlen("01")));
+		//01=Enter‚Å‚àESC‚Å‚à‚È‚¢Žž
+	}while(strncmp(eStatus,"01",strlen("01")) && strncmp(eStatus,"ESC",strlen("ESC")));
 
 	free(eStatus);
 }
