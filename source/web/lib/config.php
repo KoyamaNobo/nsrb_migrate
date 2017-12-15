@@ -26,6 +26,9 @@ define('TEMP_FILE_PREFIX','nis');
 define('TEMP_PDF_PREFIX','FRT');
 
 //add env koyama 20150125
+// RDBの読み替え
+putenv('STRANYR-RDB=R-STRANYR');
+// その他実行時環境変数
 putenv('STN000=STN000');
 putenv('JRCODE_PATH=../tmp/JRCODE_');
 putenv('ERROR_PATH=../tmp/');

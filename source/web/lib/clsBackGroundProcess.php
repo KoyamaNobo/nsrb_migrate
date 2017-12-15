@@ -19,15 +19,17 @@ class BackgroundProcess{
 		$error_path = getenv('ERROR_PATH');
 		$this->tempnameOut = tempnam($error_path,TEMP_FILE_PREFIX);
 		$this->tempnameIn  = tempnam($error_path,TEMP_FILE_PREFIX);
+		$error_file = $error_path . $id .bin2hex(openssl_random_pseudo_bytes(4));
 // 		$this->oLog->info('ERROR_PATH:'.$error_path . $id);
-		touch($error_path . $id);
-		chmod( $error_path . $id,0777);
+		touch($error_file);
+		chmod($error_file,0777);
+		putenv('ERROR_EXEC_PATH='.$error_file);
 		//TODO:20170206 LMのときは個々のパターンを変更
 		shell_exec('logger -i " '.$cmd.' '.preg_match('/sh/',$cmd).' '.__LINE__.' "');
 		if(preg_match('/job/',$cmd) == TRUE){
-			$cmd = $cmd.' '.$id.' 2> '.$error_path . $id.' ';
+			$cmd = $cmd.' '.$id.' 2> '.$error_file.' ';
 		}else{
-			$cmd = $cmd.' '.$id.' 2>&1 |tee '.$error_path . $id.' ';
+			$cmd = $cmd.' '.$id.' 2>&1 |tee '.$error_file.' ';
 		}
 
 		//前のエラーが残っていたら消す。ファイルが開けないか丸めに失敗したらエラー
