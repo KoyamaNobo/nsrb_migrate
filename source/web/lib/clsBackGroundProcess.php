@@ -20,7 +20,7 @@ class BackgroundProcess{
 		$this->tempnameOut = tempnam($error_path,TEMP_FILE_PREFIX);
 		$this->tempnameIn  = tempnam($error_path,TEMP_FILE_PREFIX);
 		$error_file = $error_path . $id .bin2hex(openssl_random_pseudo_bytes(4));
-// 		$this->oLog->info('ERROR_PATH:'.$error_path . $id);
+		// $this->oLog->info('ERROR_PATH:'.$error_path . $id);
 		touch($error_file);
 		chmod($error_file,0777);
 		putenv('ERROR_EXEC_PATH='.$error_file);
