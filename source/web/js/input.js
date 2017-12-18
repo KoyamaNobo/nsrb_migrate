@@ -316,6 +316,22 @@ var ScreenControl = function(buzzer) {
 			$status1.html('<span>' + errorValue + '</span>');
 		}
 
+		// status2Get‚ª‘¶İ‚µ‚Ä‚¢‚éê‡status2‚É‘ã“ü‚µ‚Ä
+		// $chgScreen‚Ì’†‚©‚çstatus2Get‚ğÁ‚·
+		let status2 = $chgScreen.find('#status2');
+		if (0 < status2.length) {
+			$("#status2").html("<span>" + status2[0].value + "</span>");
+			status2.remove();
+		}
+
+		// status4Get‚ª‘¶İ‚µ‚Ä‚¢‚éê‡status4‚É‘ã“ü‚µ‚Ä
+		// $chgScreen‚Ì’†‚©‚çstatus4Get‚ğÁ‚·
+		let status4 = $chgScreen.find('#status4');
+		if (0 < status4.length) {
+			$("#status4").html("<span>" + status4[0].value + "</span>");
+			status4.remove();
+		}
+
 		// parentStatusGet‚ª‘¶İ‚µ‚Ä‚¢‚éê‡parentStatus‚É‘ã“ü‚µ‚Ä
 		// $chgScreen‚Ì’†‚©‚çparentStatusGet‚ğÁ‚·
 		let $parentStatusGet = $chgScreen.find('.parentStatusGet');

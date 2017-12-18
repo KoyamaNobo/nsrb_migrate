@@ -39,6 +39,8 @@ if(!empty($_POST)){
 	if($state==false){
 		$data .= '<input id="parentStatusGet" type="hidden" class="parentStatusGet" value="end">';
 	}
+	// getOut.phpではステータスバーの情報も取得しているが、param.phpでは取得しない。(重いため。)
+
 	// データのタイムスタンプを末尾に付与
 	$data .= '<input type="hidden" id="dataTimestamp" value="' . $time . '" />';
 

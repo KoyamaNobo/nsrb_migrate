@@ -94,6 +94,12 @@ function get_response($oLog, $clsAP, $pid, $infname, $outfname)
 		$res .= '<input id="parentStatusGet" type="hidden" class="parentStatusGet" value="end">';
 		$is_break = true;
 	} else {
+		// ステータスバーに表示する情報を取得する。
+		$statArray = getProcessIdStatus($pid, $oLog);
+
+		$res .= '<input id="status2" type="hidden" class="statusGet" value="' . $statArray['stat'] . '" />';
+		$res .= '<input id="status4" type="hidden" class="statusGet" value="' . $statArray['jobname'] . '" />';
+
 		$is_break = false;
 	}
 
