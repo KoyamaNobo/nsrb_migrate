@@ -1,6 +1,4 @@
 <?php
-// FIXME デバッグ用ヘッダー。後で削除する。
-header('Access-Control-Allow-Origin: *');
 
 // セッションを利用するとリクエストに排他ロックがかかるのでSSEではセッションは利用しない。
 // session_start();
@@ -29,7 +27,6 @@ if (! empty($pid) && ! empty($infname) && ! empty($outfname)) {
 
 		$lastRes = '';
 
-// 		$i = 0;
 		while (1) {
 			list ($time, $res, $is_break) = get_response($oLog, $clsAP, $pid, $infname, $outfname);
 
@@ -41,16 +38,10 @@ if (! empty($pid) && ! empty($infname) && ! empty($outfname)) {
 
 				// データのタイムスタンプを末尾に付与
 				$res .= '<input type="hidden" id="dataTimestamp" value="' . $time . '" />';
-				// FIXME Beep音確認用
-// 				if ($i == 5) {
-// 					$res .= '<input type="hidden" id="err-buz" value="10" />';
-// 				}
 				$res = "data: " . $res . "\n\n";
 				$res = mb_convert_encoding($res, "UTF-8", "SJIS-WIN");
 
 				$screen->screenParse($res);
-
-// 				$i++;
 			}
 
 			ob_flush();
@@ -60,9 +51,7 @@ if (! empty($pid) && ! empty($infname) && ! empty($outfname)) {
 				break;
 			}
 
-			// 100ミリ秒周期(マイクロ秒指定)
-			// FIXME 定数化
-			usleep(1 * 1000 * 100);
+			usleep(SSE_GETOUT_SLEEP);
 		}
 	} else {
 		// 通常のリクエスト

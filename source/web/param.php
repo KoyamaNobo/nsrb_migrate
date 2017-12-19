@@ -1,7 +1,4 @@
 <?php
-// FIXME デバッグ用ヘッダー。後で削除する。
-header('Access-Control-Allow-Origin: *');
-
 if(!empty($_POST)){
 	require_once('./lib/clsAsynchronousProcess.php');
 	require_once('./lib/config.php');

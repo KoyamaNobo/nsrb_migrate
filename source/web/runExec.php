@@ -112,13 +112,13 @@ if(is_resource($t->process)){
 		if(!$procStatus["running"]){
 				$exitWaitFlg = true;
 				#少し待ってやらないと外側がエラーメッセージを取り逃す
-				#書き込んだデータが読み取られるまで待機。ただし、最大3秒まで。
-				while (time() - $startTime <= 3) {
+				#書き込んだデータが読み取られるまで待機。
+				while (time() - $startTime <= EXEC_MAX_END_WAIT) {
 					if ($memory->is_read_outputfile()) {
 						break;
 					}
-					# FIXME 定数化 (100ミリ秒)
-					usleep(1 * 1000 * 100);
+					// getOut.phpで読みだされる周期でsleep
+					usleep(SSE_GETOUT_SLEEP);
 				}
 		}
 		#上のifを1回以上通っていたら

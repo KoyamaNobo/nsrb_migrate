@@ -101,8 +101,8 @@ class SharedMemory
 		try {
 			sem_acquire($this->sem_shmid);
 
-			// FIXME 定数化する必要あり 200KBメモリを確保
-			$this->shmid = shm_attach($this->id, 1024 * 200, 0644);
+			// メモリを確保
+			$this->shmid = shm_attach($this->id, PHP_IPC_MEMORY_SIZE, 0644);
 
 			if ($this->shmid === false) {
 				$this->is_error = true;

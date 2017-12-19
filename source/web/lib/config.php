@@ -16,14 +16,17 @@ define('LOGSETFILE' , false );
 define('CHARSET' , 'SJIS-win' );
 define('EXEC_LIVE',5760); //php parentにおいてループ開始から強制終了までの時間(分)
 define('EXEC_SLEEP',200);  //php parentにおいてループの際のusleepの秒数(milli sec)
-define('LOOP_COUNT',20);  //php parentにおいてループの際のusleepの秒数(milli sec)
-define('READ_COUNT',1);   //phpBackGroundProcessにおいて初期表示のループをスキップする数
+define('EXEC_MAX_END_WAIT', 3);	 // php runExecにおいてCOBOLの出力結果がgetOutに読み取られるまでプロセス終了を待機する最大秒数(秒)
 define('WRITE_WAIT',1000);   //param.phpにて書き込んだあとの待ち時間
 define('MIN_F_SIZE' , 16 );
 define('MAX_F_SIZE' , 28 );
 define('DATA_SAVE_PASS' , '../tmp/' );
 define('TEMP_FILE_PREFIX','nis');
 define('TEMP_PDF_PREFIX','FRT');
+define('PHP_IPC_MEMORY_SIZE', 1024 * 200); // php PHP間のデータ交換に使用する共有メモリのサイズ(byte)
+define('SSE_GETOUT_SLEEP', 1 * 1000 * 100); // php getOutにおいてSSEループの際のusleepの秒数(micro sec)
+define('INPUT_READ_WAIT', 100); // php clsAsynchronousProcessにおいてCOBOLへの入力パラメータがCOBOLに読み取られるまでの最大待機秒(milli sec)
+define('INPUT_PROC_WAIT', 100); // php clsAsynchronousProcessにおいてCOBOLへの入力パラメータがCOBOLで処理されるまでの最大待機秒(milli sec)
 
 //add env koyama 20150125
 // RDBの読み替え

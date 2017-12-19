@@ -10,7 +10,6 @@ class AsynchronousProcess{
 	public $pid           = 0;
 	public $fnameCtoP   = '';//起動した先の標準出力に
 	public $fnamePtoC    = '';//起動した先の標準入力に
-	public $max_count     = LOOP_COUNT; //readの時にループが限界に来たら
 	public $oLog;
 	public $charCode;
 	public $memory;
@@ -93,16 +92,18 @@ class AsynchronousProcess{
 
 			$this->pWrite($inputData);
 
-			// まずはデータが読み取られるまで待機(最大500回。200マイクロ秒のループでも最大500回で100ミリ秒)
-			for ($i = 0; $i < 500; $i++) {
+			// まずはデータが読み取られるまで待機
+			$startTime = microtime(true);
+			while ((microtime(true) - $startTime) * 1000.0 < INPUT_READ_WAIT) {
 				list($time, $result) = $this->memory->read_inputfile();
 				if ($result === false) {
 					break;
 				}
 				usleep(EXEC_SLEEP);
 			}
-			// データが処理されるまで待機(最大500回。200マイクロ秒のループでも最大500回で100ミリ秒)
-			for ($i = 0; $i < 500; $i++) {
+			// データが処理されるまで待機
+			$startTime = microtime(true);
+			while ((microtime(true) - $startTime) * 1000.0 < INPUT_PROC_WAIT) {
 				list ($time, $data) = $this->pReadAndTime();
 
 				if (strcmp($beforeData, $data) !== 0) {
@@ -118,8 +119,9 @@ class AsynchronousProcess{
 		if ($this->createSharedMemory()) {
 			$this->pWrite($inputData);
 
-			// まずはデータが読み取られるまで待機(最大500回。200マイクロ秒のループでも最大500回で100ミリ秒)
-			for ($i = 0; $i < 500; $i++) {
+			// データが読み取られるまで待機
+			$startTime = microtime(true);
+			while ((microtime(true) - $startTime) * 1000.0 < INPUT_READ_WAIT) {
 				list($time, $result) = $this->memory->read_inputfile();
 				if ($result === false) {
 					break;
