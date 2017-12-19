@@ -12,6 +12,13 @@ if(isset($argv[1])){
 	exit;
 }
 
+// runExec.phpのプロセスIDを取得
+$pid = getmypid();
+if ($pid === false) {
+	// 取得できない場合は何もしない。(基本的には起こらないはず。)
+	exit;
+}
+
 $efilename = DATA_SAVE_PASS.$argv[(count($argv) - 3)]."error.log";
 $descriptorspec = array(
    0 => array("pipe", "r"),  # stdin は、子プロセスが読み込むパイプです。
@@ -51,8 +58,7 @@ if(is_resource($t->process)){
 
 	$memory = new SharedMemory();
 	// 自プロセスIDをキーに共有メモリを作成(処理終了時にはメモリを破棄)
-	$id = getmypid();
-	$memory->create($id);
+	$memory->create($pid);
 
 	$oLog->info("success ::".$cmd."::".__FILE__.__LINE__);
 	$startTime = time();
