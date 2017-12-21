@@ -25,16 +25,16 @@ if (! empty($pid) && ! empty($infname) && ! empty($outfname)) {
 		header('Content-Type: text/event-stream;charset=UTF-8');
 		header('Cache-Control: no-cache');
 
-		$lastRes = '';
+		$lastTime = microtime(true);
 
 		while (1) {
 			list ($time, $res, $is_break) = get_response($oLog, $clsAP, $pid, $infname, $outfname);
 
-			if (strcmp($res, $lastRes) === 0) {
+			if ($time === $lastTime) {
 				// 前回と同じ内容の場合は何も送らない。(接続が切断されないようにポーリングデータだけ送る)
 				echo ":\n\n";
 			} else {
-				$lastRes = $res;
+				$lastTime = $time;
 
 				// データのタイムスタンプを末尾に付与
 				$res .= '<input type="hidden" id="dataTimestamp" value="' . $time . '" />';
