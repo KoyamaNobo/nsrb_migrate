@@ -85,7 +85,7 @@ var ScreenControl = function(buzzer) {
 	 * メニュー画面か否か判定する。
 	 */
 	this.isMenuScreen = function() {
-		var infname = $('#infname');
+		let infname = $('#infname');
 		// menu等の場合infnameがない
 		if (infname.length == 0) {
 			return true;
@@ -112,7 +112,7 @@ var ScreenControl = function(buzzer) {
 	 * サーバーのプロセスが終了しているか否か判定する。
 	 */
 	this.isProcessEnd = function() {
-		$parentStatus = $('#parentStatus');
+		let $parentStatus = $('#parentStatus');
 
 		if (0 < $parentStatus.length) {
 			if ($parentStatus.val() == 'end') {
@@ -266,8 +266,8 @@ var ScreenControl = function(buzzer) {
 	 * 画面の要素を入れ替える。
 	 */
 	this.screenReplace = function(resultTxt, isChgInput) {
-		var $tarScreen = $('.screen');
-		var $chgScreen = $('<div>');
+		let $tarScreen = $('.screen');
+		let $chgScreen = $('<div>');
 		$chgScreen.html(resultTxt);
 
 		if (!checkTimestamp($chgScreen)) {
@@ -286,8 +286,8 @@ var ScreenControl = function(buzzer) {
 	 * 画面データのタイムスタンプをチェックする。
 	 */
 	let checkTimestamp = function($chgScreen) {
-		$newDataTimestamp = $chgScreen.find('#dataTimestamp');
-		newDataTimestamp = parseFloat($newDataTimestamp.val());
+		let $newDataTimestamp = $chgScreen.find('#dataTimestamp');
+		let newDataTimestamp = parseFloat($newDataTimestamp.val());
 
 		// 読み取り後に要素は削除
 		$newDataTimestamp.remove();
@@ -308,11 +308,11 @@ var ScreenControl = function(buzzer) {
 	 */
 	let checkStatus = function($chgScreen) {
 		// $chgScreenの中からerror探して表示
-		$errors = $chgScreen.find('.error');
+		let $errors = $chgScreen.find('.error');
 		if (0 < $errors.length) {
 			// エラーあり
-			var errorValue = $errors[0].value;
-			var $status1 = $('#status1');
+			let errorValue = $errors[0].value;
+			let $status1 = $('#status1');
 			$status1.html('<span>' + errorValue + '</span>');
 		}
 
@@ -387,8 +387,8 @@ var ScreenControl = function(buzzer) {
 				let tarInput = $tarInputs[0];
 				let chgInput = $chgInputs[0];
 				if (tarInput.name == chgInput.name) {
-					var tarColumns = tarInput.className.match(/\s+f[0-9]+/i);
-					var chgColumns = chgInput.className.match(/\s+f[0-9]+/i);
+					let tarColumns = tarInput.className.match(/\s+f[0-9]+/i);
+					let chgColumns = chgInput.className.match(/\s+f[0-9]+/i);
 
 					if (tarColumns[0] == chgColumns[0]) {
 						// nameが同じでかつクラスのフィールド名が同じ
@@ -411,7 +411,7 @@ var ScreenControl = function(buzzer) {
 			$chgNotLines.remove();
 
 			// 現在の画面をベースに行単位の入れ替え処理を行う
-			$tarLines = $tarScreen.children();
+			let $tarLines = $tarScreen.children();
 			for (i = 0; i < $tarLines.length; i++) {
 				let tarLine = $tarLines[i];
 				// 次の画面から同じクラスを持つ要素を抽出
@@ -466,12 +466,12 @@ var ScreenControl = function(buzzer) {
 		}
 
 		// モーダル
-		$errBuz = $chgScreen.find('#err-buz');
+		let $errBuz = $chgScreen.find('#err-buz');
 		if (0 < $errBuz.length) {
 			_buzzer.start(parseInt($errBuz.val()));
 		}
 		// 音のみ
-		$infoBuz = $chgScreen.find('#info-buz');
+		let $infoBuz = $chgScreen.find('#info-buz');
 		if (0 < $infoBuz.length) {
 			_buzzer.start(parseInt($infoBuz.val()));
 		}
@@ -491,8 +491,8 @@ var ScreenControl = function(buzzer) {
 	 * 点滅表示設定を行う。
 	 */
 	let setBlinkToElement = function($chgScreen) {
-		targetArray = $chgScreen.find('.blink');
-		var ii = 0;
+		let targetArray = $chgScreen.find('.blink');
+		let ii = 0;
 		if (typeof (blinkVisibleFlg) == 'undefined' || blinkVisibleFlg == false) {
 			for (ii = 0; ii < targetArray.length; ii++) {
 				targetArray[ii].style.visibility = 'visible';
@@ -510,7 +510,7 @@ var ScreenControl = function(buzzer) {
 	 */
 	let setInputFocus = function() {
 		if (document.activeElement.id != 'skSelect') {
-			$active = $(document.activeElement);
+			let $active = $(document.activeElement);
 			if (!$active.hasClass('nextinput')) {
 				$('input.nextinput:last').focus();
 			}
@@ -576,7 +576,7 @@ var InputKeyControl = function(screen, buzzer) {
 	 * パラメータ送信用のAjax拡張
 	 */
 	let ajaxSendParam = function(arg) {
-		var opt = $.extend({}, $.ajaxSettings, arg);
+		let opt = $.extend({}, $.ajaxSettings, arg);
 
 		opt.type = 'POST';
 		opt.url = 'param.php';
@@ -841,7 +841,7 @@ var InputKeyControl = function(screen, buzzer) {
 		}
 
 		while (true) { // ダミーブロック
-			e = _keyBuffer.shift();
+			let e = _keyBuffer.shift();
 
 			// CTL+ANYキーの処理(画面切離関係)
 			if (screenSwitch(e)) {
@@ -938,7 +938,7 @@ var InputKeyControl = function(screen, buzzer) {
 		let isInput = 0 < inputTarget.value.length;
 
 		// 入力チェックが不要なキーのみパラメータにセットして送る
-		for (var i = 0; i < _keyBuffer.length; i++) {
+		for (let i = 0; i < _keyBuffer.length; i++) {
 			let e = _keyBuffer[i];
 
 			// CTL+ANYキーの処理(画面切離関係)
@@ -1184,7 +1184,7 @@ var InputKeyControl = function(screen, buzzer) {
 	/**
 	 * キー入力のパラメータを取得する。
 	 */
-	var getKeyParams = function(value, statusValue) {
+	let getKeyParams = function(value, statusValue) {
 		let sendValue = value;
 
 		if (0 < statusValue.length) {
@@ -1204,7 +1204,7 @@ var InputKeyControl = function(screen, buzzer) {
 	/**
 	 * キー入力のパラメータを取得する。(バッチ用)
 	 */
-	var getKeyBatchParams = function(sendKeyParam) {
+	let getKeyBatchParams = function(sendKeyParam) {
 		let valueParams = new Array();
 
 		for (let i = 0; i < sendKeyParam.length; i++) {
@@ -1242,9 +1242,9 @@ var BuzzerControl = function() {
 
 		if (_buzzerCounter++ < soundLength) {
 			// base64文字列を貼り付け(音の長さをここでコントロールする必要有り？
-			var base64 = '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'
+			let base64 = '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'
 			// datauri scheme 形式にして Audio オブジェクトを生成します
-			var sound = new Audio('data:audio/wav;base64,' + base64);
+			let sound = new Audio('data:audio/wav;base64,' + base64);
 			// 音を鳴らします
 			sound.play();
 			/*

@@ -11,7 +11,7 @@
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
 <script type="text/javascript" src="./js/common.js"></script>
 <script type="text/javascript" src="./js/backButton.js?ver=20160613"></script>
-<script type="text/javascript" src="./js/userSetting.js?ver=20160613"></script>
+<script type="text/javascript" src="./js/userSetting.js?ver=20171221_00"></script>
 <script type="text/javascript" src="./js/dataUtilExec.js?ver=20160613"></script>
 <script type="text/javascript" src="./js/specialKey.js?ver=20160613"></script>
 <script type="text/javascript" src="./js/inpCheckFromat.js?ver=20160613"></script>
