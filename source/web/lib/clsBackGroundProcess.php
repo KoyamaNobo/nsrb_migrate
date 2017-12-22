@@ -19,8 +19,12 @@ class BackgroundProcess{
 		$this->oLog = New Log('');
 		$this->getline_index = 0;
 		$error_path = getenv('ERROR_PATH');
-		$this->tempnameOut = tempnam($error_path,TEMP_FILE_PREFIX);
-		$this->tempnameIn  = tempnam($error_path,TEMP_FILE_PREFIX);
+// 		$this->tempnameOut = tempnam($error_path,TEMP_FILE_PREFIX);
+// 		$this->tempnameIn  = tempnam($error_path,TEMP_FILE_PREFIX);
+		// 元々はファイルを使ってプロセス間通信をしていたが共有メモリで行う仕組みに変更したためファイルは不要になった。
+		// ただ、プロセスを特定するのにファイルパスを利用しているためファイルパスのパラメータはそのまま残して、ファイルの実体だけを作らないようにしている。
+		$this->tempnameOut = realpath($error_path) . '/' . TEMP_FILE_PREFIX . bin2hex(openssl_random_pseudo_bytes(4));
+		$this->tempnameIn = realpath($error_path) . '/' . TEMP_FILE_PREFIX . bin2hex(openssl_random_pseudo_bytes(4));
 		$error_file = $error_path . $id .bin2hex(openssl_random_pseudo_bytes(4));
 		// $this->oLog->info('ERROR_PATH:'.$error_path . $id);
 		touch($error_file);
@@ -40,21 +44,22 @@ class BackgroundProcess{
 			$this->oLog->error(__FILE__.':'.__LINE__.':tempOut File cant Created');
 		}
 
-		if(!touch( $this->tempnameOut )){
-			$this->oLog->error(__FILE__.':'.__LINE__.':tempOut File cant Created');
-		}
-		if(!touch( $this->tempnameIn)){
-			$this->oLog->error(__FILE__.':'.__LINE__.':tempIN File cant Created');
-		}
-		if(!chmod( $this->tempnameOut,0777)){
-			$this->oLog->error(__FILE__.':'.__LINE__.':tempIN File cahnge Created');
-		}
-		if(!chmod( $this->tempnameIn,0777)){
-			$this->oLog->error(__FILE__.':'.__LINE__.':tempIN File cahnge Created');
-		}
+// 		if(!touch( $this->tempnameOut )){
+// 			$this->oLog->error(__FILE__.':'.__LINE__.':tempOut File cant Created');
+// 		}
+// 		if(!touch( $this->tempnameIn)){
+// 			$this->oLog->error(__FILE__.':'.__LINE__.':tempIN File cant Created');
+// 		}
+// 		if(!chmod( $this->tempnameOut,0777)){
+// 			$this->oLog->error(__FILE__.':'.__LINE__.':tempIN File cahnge Created');
+// 		}
+// 		if(!chmod( $this->tempnameIn,0777)){
+// 			$this->oLog->error(__FILE__.':'.__LINE__.':tempIN File cahnge Created');
+// 		}
 		//仕様変更のためrunExecに変更 20151006
 // 		$this->strCmd = "php parent.php '".$cmd."' '".$id."' '".$this->tempnameIn."' '".$this->tempnameOut."' > ".$this->tempnameOut." & echo $!";
-		$this->strCmd = "php runExec.php '".$cmd."' '".$id."' '".$this->tempnameIn."' '".$this->tempnameOut."' > ".$this->tempnameOut." & echo $!";
+//		$this->strCmd = "php runExec.php '".$cmd."' '".$id."' '".$this->tempnameIn."' '".$this->tempnameOut."' > ".$this->tempnameOut." & echo $!";
+		$this->strCmd = "php runExec.php '".$cmd."' '".$id."' '".$this->tempnameIn."' '".$this->tempnameOut."' > /dev/null & echo $!";
 // 		$this->oLog->info(__FILE__.':'.__LINE__.':'.$this->strCmd);
 	}
 
