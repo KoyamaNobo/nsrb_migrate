@@ -15,18 +15,20 @@ if(isset($_SESSION['user_id'])){
 		}
 		//業務放棄(CTRL + F9)
 		if(preg_match('/^C9$/',$_POST['value'])){
-			$pids = shell_exec('ps aux|grep ' . $_SESSION['user_id'] . "| grep -v grep |awk '{printf \"%s||\",$2 }' ") ;
-			$pidArray = explode("||",$pids);
+			$pid = $_POST['pid'];
+			if(is_numeric($pid)){
 
-			//kill -TERMコマンド発行
-			foreach($pidArray as $pid){
-				if(is_numeric($pid)){
-					//中断時でも業務放棄可能にさせるため　CONTとTERM発行
-					shell_exec('kill -CONT ' . $pid . ' ');
-					shell_exec('kill -USR1 ' . $pid . ' ');
-					//共有メモリを破棄
-					SharedMemory::destroy($pid);
+				$processTree = array();
+				getLastProcessIds($pid, $pid, $processTree, 'leaf');
+				// $oLog->info('pids: ' .print_r($processTree,true).__FILE__.':'.__LINE__);
+				if (is_numeric($processTree[max(array_keys($processTree))])) {
+					$oLog->info('pids: ' . $processTree[max(array_keys($processTree))] . __FILE__ . ':' . __LINE__);
+					// 中断時でも業務放棄可能にさせるため CONTとTERM発行
+					shell_exec('kill -CONT ' . $processTree[max(array_keys($processTree))] . ' ');
+					shell_exec('kill -USR1 ' . $processTree[max(array_keys($processTree))] . ' ');
 				}
+				//共有メモリを破棄
+				SharedMemory::destroy($pid);
 			}
 		}
 		//停止(CTRL + SHIFT + F4)
