@@ -10,6 +10,10 @@ const SESSION_ALIVE_INTERVAL = 1000 * 60 * 5;
  * キー入力を再現する際の再現間隔(msec)
  */
 const KEY_BUFFER_SIMULATE_INTERVAL = 10;
+/**
+ * 入力欄なしの画面と判定する時間(msec) 。ここで設定した時間、画面にnextinputの入力欄が表示されない場合は入力欄なしの画面として判断する。
+ */
+const NONE_INPUT_AREA_ELAPSED_TIME = 3000;
 
 /**
  * ブラウザがFirefoxか否か
@@ -67,9 +71,9 @@ var ScreenControl = function(buzzer) {
 	let _that = this;
 
 	/**
-	 * 入力項目が存在する画面か否か
+	 * 最後に入力欄が存在したときの時間 (入力欄が存在する画面か否かを判断するために使用する)
 	 */
-	let _hasInput = false;
+	let _lastHasInputTime;
 
 	/**
 	 * SSEでの接続が確立したか否か
@@ -133,10 +137,17 @@ var ScreenControl = function(buzzer) {
 	}
 
 	/**
-	 * 入力項目が存在する画面か判定する。
+	 * 最後に入力項目が存在した時間を取得する。
 	 */
-	this.hasInput = function() {
-		return _hasInput;
+	this.getLastHasInputTime = function() {
+		return _lastHasInputTime;
+	}
+
+	/**
+	 * 最後に入力項目が存在した時間を設定する。
+	 */
+	this.setLastHasInputTime = function(lastTime) {
+		_lastHasInputTime = lastTime;
 	}
 
 	/**
@@ -300,6 +311,12 @@ var ScreenControl = function(buzzer) {
 			return true;
 		}
 
+		// タイムスタンプが古いデータの場合でも入力欄が存在するか否かだけは判定しておく。
+		let $chgInputs = $chgScreen.find('.line > input[type="text"]');
+		if (0 < $chgInputs.length) {
+			_lastHasInputTime = new Date().getTime();
+		}
+
 		return false;
 	};
 
@@ -318,18 +335,18 @@ var ScreenControl = function(buzzer) {
 
 		// status2Getが存在している場合status2に代入して
 		// $chgScreenの中からstatus2Getを消す
-		let status2 = $chgScreen.find('#status2');
-		if (0 < status2.length) {
-			$("#status2").html("<span>" + status2[0].value + "</span>");
-			status2.remove();
+		let $status2 = $chgScreen.find('#status2');
+		if (0 < $status2.length) {
+			$("#status2").html("<span>" + $status2[0].value + "</span>");
+			$status2.remove();
 		}
 
 		// status4Getが存在している場合status4に代入して
 		// $chgScreenの中からstatus4Getを消す
-		let status4 = $chgScreen.find('#status4');
-		if (0 < status4.length) {
-			$("#status4").html("<span>" + status4[0].value + "</span>");
-			status4.remove();
+		let $status4 = $chgScreen.find('#status4');
+		if (0 < $status4.length) {
+			$("#status4").html("<span>" + $status4[0].value + "</span>");
+			$status4.remove();
 		}
 
 		// parentStatusGetが存在している場合parentStatusに代入して
@@ -368,12 +385,12 @@ var ScreenControl = function(buzzer) {
 		if (0 < $tarInputs.length) {
 			let tarInput = $tarInputs[0];
 			isTarStop = tarInput.name == 'STOP';
-			_hasInput = true;
 		}
 		if (0 < $chgInputs.length) {
 			let chgInput = $chgInputs[0];
 			isChgStop = chgInput.name == 'STOP';
-			_hasInput = true;
+			// 入力欄あり
+			_lastHasInputTime = new Date().getTime();
 		}
 
 		// 要素の入れ替え方法を決定
@@ -655,8 +672,8 @@ var InputKeyControl = function(screen, buzzer) {
 		}
 
 		// 画面の種類によって処理を分岐
-		if (!_screen.hasInput() || _screen.isMenuScreen()) {
-			// 入力項目が存在しない画面 or メニュー画面
+		if (_screen.isMenuScreen()) {
+			// メニュー画面
 
 			// CTL+ANYキーの処理(画面切離関係)
 			if (screenSwitch(e)) {
@@ -704,16 +721,18 @@ var InputKeyControl = function(screen, buzzer) {
 			}
 
 			// 入力欄が存在しない場合は画面書き換えのタイミングでまだ入力項目が存在しないだけなのでキー入力をバッファ
+			// (入力欄が存在しない画面でも入力を受け付ける画面はあるが、その場合も一度バッファに入れてから処理を行う。)
 			let $targets = $('input.nextinput');
 			if ($targets.length == 0) {
 				_keyBuffer.push(e);
+				_that.keyBufferSimulate();
 
 				return false;
 			}
 
 			// 以降は入力欄が存在するときだけ実行される処理
 
-			// F11～F12は使用禁止
+			// F11～F12は入力には使わない
 			if (e.key == 'F11' || e.key == 'F12') {
 				return false;
 			}
@@ -854,15 +873,73 @@ var InputKeyControl = function(screen, buzzer) {
 				break;
 			}
 
+			// 入力欄がない機能 or 画面の書き換えタイミングによって入力欄がない場合の処理
 			if ($targets.length == 0) {
-				// 入力欄が存在しない場合は画面書き換えのタイミングでまだ入力項目が存在しないだけなので入力をバッファに戻して再実行
-				_keyBuffer.unshift(e);
+
+				let elapsedTime = 0;
+				if (!_screen.getLastHasInputTime()) {
+					// 画面を開いて1度も入力欄が存在しない
+					elapsedTime = -1;
+				} else {
+					// 入力欄が存在しなくなってからの経過ミリ秒
+					elapsedTime = new Date().getTime()
+							- _screen.getLastHasInputTime();
+				}
+
+				// 一定時間入力欄が存在しない状態が続いている場合は入力欄なしの画面として判断
+				if (elapsedTime == -1
+						|| NONE_INPUT_AREA_ELAPSED_TIME < elapsedTime) {
+					// CTL+Functionキーの処理
+					if (isKeyFunction(e)) {
+						ajaxSendParam({
+							// F + Functionキーの値
+							data : getKeyParams('F' + (e.keyCode - 111), ''),
+							success : function(msg) {
+								_screen.screenReplace(msg, true);
+							}
+						});
+						break;
+					}
+
+					// サーバーに送信するステータス値を取得する
+					let statusValue = getStatusValue(e);
+
+					// サーバーに送信するキーじゃない場合は捨てる
+					if (statusValue == null) {
+						break;
+					}
+
+					ajaxSendParam({
+						data : getKeyParams('', statusValue),
+						success : function(msg) {
+							if (e.key == 'Enter' || e.key == 'Escape') {
+								// ブザーを停止
+								_buzzer.stop();
+							}
+							_screen.screenReplace(msg, true);
+						}
+					});
+
+					if (_screen.getLastHasInputTime()) {
+						// 連続でバッファが処理されると時間の更新のほうが遅くなり必ず上の処理に入ってしまうのでここで時間を更新しておく。
+						_screen.setLastHasInputTime(new Date().getTime());
+					}
+				} else {
+					// 入力欄はある画面だが、画面書き換えのタイミングでまだ入力欄が存在しないだけの場合は入力をバッファに戻して再実行
+					_keyBuffer.unshift(e);
+				}
+
 				break;
+			}
+
+			if (_screen.getLastHasInputTime()) {
+				// この時点では入力欄が存在するので時間を更新しておく。
+				_screen.setLastHasInputTime(new Date().getTime());
 			}
 
 			// 以降は入力欄が存在するときだけ実行される処理
 
-			// F11～F12は使用禁止
+			// F11～F12は入力には使わない
 			if (e.key == 'F11' || e.key == 'F12') {
 				break;
 			}
@@ -963,7 +1040,12 @@ var InputKeyControl = function(screen, buzzer) {
 				break;
 			}
 
-			// F11～F12は使用禁止なのでスキップ
+			// CTL+Functionキーの処理
+			if (isKeyFunction(e)) {
+				break;
+			}
+
+			// F11～F12は入力には使わないのでスキップ
 			if (e.key == 'F11' || e.key == 'F12') {
 				_keyBuffer.splice(i, 1);
 				i--;
@@ -1065,6 +1147,20 @@ var InputKeyControl = function(screen, buzzer) {
 		// ASCIIコードのスペース～~までの範囲(制御コードを除く文字)
 		if (32 <= code && code <= 126) {
 			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * 入力されたキーがFunctionキーか否か
+	 */
+	let isKeyFunction = function(e) {
+		// CTL + F1～F12
+		if (e.ctrlKey == true) {
+			if (e.key.match(/F[0-9]{1,2}/)) {
+				return true;
+			}
 		}
 
 		return false;
