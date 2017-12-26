@@ -749,11 +749,12 @@ var InputKeyControl = function(screen, buzzer) {
 			// バックスペース、エスケープは入力内容を送信しないのでチェックしない
 			if (e.key != 'Backspace' && e.key != 'Escape') {
 				// 入力項目のチェックを行う
-				if (!elementInpCheck(target)) {
+				let isTruncate = isTruncateValueKey(e);
+				if (!elementInpCheck(target, isTruncate)) {
 					return false;
 				}
 				// 入力フォーマット（少数対応）
-				inputValue = elementInpFormat(target);
+				inputValue = elementInpFormat(target, isTruncate);
 			}
 
 			ajaxSendParam({
@@ -890,6 +891,16 @@ var InputKeyControl = function(screen, buzzer) {
 				break;
 			}
 
+			// カーソル移動
+			if (e.key == 'ArrowRight') {
+				arrowRightKey(target);
+				break;
+			}
+			if (e.key == 'ArrowLeft') {
+				arrowLeftKey(target);
+				break;
+			}
+
 			// サーバーに送信するステータス値を取得する
 			let statusValue = getStatusValue(e);
 
@@ -902,11 +913,12 @@ var InputKeyControl = function(screen, buzzer) {
 			// バックスペース、エスケープは入力内容を送信しないのでチェックしない
 			if (e.key != 'Backspace' && e.key != 'Escape') {
 				// 入力項目のチェックを行う
-				if (!elementInpCheck(target)) {
+				let isTruncate = isTruncateValueKey(e);
+				if (!elementInpCheck(target, isTruncate)) {
 					break;
 				}
 				// 入力フォーマット（少数対応）
-				inputValue = elementInpFormat(target);
+				inputValue = elementInpFormat(target, isTruncate);
 			}
 
 			ajaxSendParam({
@@ -965,6 +977,14 @@ var InputKeyControl = function(screen, buzzer) {
 
 			// DELETE
 			if (e.key == 'Delete') {
+				break;
+			}
+
+			// カーソル移動
+			if (e.key == 'ArrowRight') {
+				break;
+			}
+			if (e.key == 'ArrowLeft') {
 				break;
 			}
 
@@ -1073,7 +1093,7 @@ var InputKeyControl = function(screen, buzzer) {
 		// 新しい文字を設定してカーソル位置を再設定する
 		field.value = newValue;
 		field.selectionStart = startPos + insertValue.length;
-		field.selectionEnd = startPos + insertValue.length;
+		field.selectionEnd = field.selectionStart;
 
 		return true;
 	}
@@ -1093,7 +1113,7 @@ var InputKeyControl = function(screen, buzzer) {
 		// 新しい文字を設定してカーソル位置を再設定する
 		field.value = newValue;
 		field.selectionStart = newValue.length;
-		field.selectionEnd = newValue.length;
+		field.selectionEnd = field.selectionStart;
 
 		return true;
 	}
@@ -1110,7 +1130,27 @@ var InputKeyControl = function(screen, buzzer) {
 					+ fieldValue.slice(startPos);
 			field.value = newValue;
 			field.selectionStart = startPos - 1;
-			field.selectionEnd = startPos - 1;
+			field.selectionEnd = field.selectionStart;
+		}
+	}
+
+	/**
+	 * 右矢印キーの動作を行う。
+	 */
+	let arrowRightKey = function(field) {
+		if (field.selectionStart < field.value.length) {
+			field.selectionStart = field.selectionStart + 1;
+			field.selectionEnd = field.selectionStart;
+		}
+	}
+
+	/**
+	 * 左矢印キーの動作を行う。
+	 */
+	let arrowLeftKey = function(field) {
+		if (0 < field.selectionStart) {
+			field.selectionStart = field.selectionStart - 1;
+			field.selectionEnd = field.selectionStart;
 		}
 	}
 
@@ -1179,6 +1219,21 @@ var InputKeyControl = function(screen, buzzer) {
 		}
 
 		return statusValue;
+	}
+
+	/**
+	 * 入力された文字をカーソル位置で切り捨てるキーか否かを判断する。
+	 */
+	let isTruncateValueKey = function(e) {
+		switch (e.key) {
+		case 'Enter':
+			if (e.shiftKey == true) {
+				break;
+			}
+			return true;
+		}
+
+		return false;
 	}
 
 	/**

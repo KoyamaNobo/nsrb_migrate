@@ -9,7 +9,7 @@ class clsLine{
 	public $arrLineElem;  //添え字配列:添え字はカラムに対応
 	public $echoElem    = '';       //shからのエコーで表示形に送るもの
 	public $attr;                   //属性情報を格納 中にはclsLineAttrクラスを格納
-	public $replaceFlg  =0;           //上書きモードの時1に(画面に値を反映させるかどうか)
+	public $replaceFlg  =1;           //上書きモードの時1に(画面に値を反映させるかどうか)
 	public $oLog;
 
 
