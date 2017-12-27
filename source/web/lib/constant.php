@@ -303,7 +303,7 @@ function getProcessIdStatus($pid,$log){
 	$processTree = array();
 // $log->info('microtime(true) = '.microtime(true).__FILE__.__LINE__);
 	//子のプロセスをすべて取得
-	getLastProcessIds($pid,$pid,$processTree,"children");
+	getChildProcessIds($pid,$pid,$processTree);
 // $log->info('microtime(true) = '.microtime(true).__FILE__.__LINE__);
 
 	//子のプロセスID（複数）子のプロセスIDのみにして取得
@@ -372,46 +372,19 @@ function getProcessIdStatus($pid,$log){
 
 //ステータスバー対応
 //再帰的に子プロセスのIDを取得
-//      $argがchildrenのとき
-//          戻り値はpidのみを返す
-//          例）processTree[0]⇒123,457
-//              processTree[1]⇒123,457,852
-//              processTree[2]⇒123,745
-//      $argがleafのとき
-//          戻り値は葉のpidとその親のpidをカンマ繋ぎで返す
-//          例）processTree[0]⇒123,457,852 ←葉の852
-//              processTree[1]⇒123,745 ←葉の745
-function getLastProcessIds($pid,$str,&$processTree,$arg){
+//  戻り値は$strで指定された文字列と子のpidをカンマ繋ぎで返す(123が$strに指定された文字列)
+//  例）processTree[0]⇒123,457
+//      processTree[1]⇒123,457,852
+//      processTree[2]⇒123,457,852,923
+function getChildProcessIds($pid,$str,&$processTree){
 	//子のプロセスID取得
 	// $tmppid = trim(shell_exec("ps alx|awk '$4==\"".$pid."\" { print $3 }'"));
 	$tmppid = trim(shell_exec("ps  --no-header --ppid " . $pid . " |awk '$4 !~ /tee/ {print $1}' "));
 	if(!empty($tmppid) && $tmppid != "" ){
-		if($arg=="children"){
-			array_push($processTree,$str.",".$tmppid);
-		}
-		getLastProcessIds($tmppid, $str.",".$tmppid,$processTree,$arg );
+		array_push($processTree,$str.",".$tmppid);
+		getChildProcessIds($tmppid, $str.",".$tmppid,$processTree );
 	}else{
 		//それ以上子が居ない時に通る
-		if($arg=="leaf"){
-			array_push($processTree, substr($str, (strrpos($str,',') + 1) ));
-		}
-	}
-}
-//TODO : 関数の書き換えが終わったら削除する
-function rem_getLastProcessIds($pid,$str,&$processTree,$arg){
-	//子のプロセスID取得
-	$tmppid = shell_exec("ps  --no-header --ppid " . $pid . " |awk '{printf \"%s\\n\",$1}' ");
-	$tmppid = explode("\n",$tmppid);
-	if(!empty($tmppid[0]) && $tmppid[0] != "" ){
-		if($arg=="children"){
-			array_push($processTree,$str.",".$tmppid[0]);
-		}
-		getLastProcessIds($tmppid[0], $str.",".$tmppid[0],$processTree,$arg );
-	}else{
-		//それ以上子が居ない時に通る
-		if($arg=="leaf"){
-			array_push($processTree, substr($str, (strrpos($str,',') + 1) ));
-		}
 	}
 }
 ?>

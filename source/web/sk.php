@@ -18,15 +18,22 @@ if(isset($_SESSION['user_id'])){
 			$pid = $_POST['pid'];
 			if(is_numeric($pid)){
 
+				// 親プロセスから順に関連するプロセスをすべて落とす
 				$processTree = array();
-				getLastProcessIds($pid, $pid, $processTree, 'leaf');
-				// $oLog->info('pids: ' .print_r($processTree,true).__FILE__.':'.__LINE__);
-				if (is_numeric($processTree[max(array_keys($processTree))])) {
-					$oLog->info('pids: ' . $processTree[max(array_keys($processTree))] . __FILE__ . ':' . __LINE__);
-					// 中断時でも業務放棄可能にさせるため CONTとTERM発行
-					shell_exec('kill -CONT ' . $processTree[max(array_keys($processTree))] . ' ');
-					shell_exec('kill -USR1 ' . $processTree[max(array_keys($processTree))] . ' ');
+				getChildProcessIds($pid,$pid,$processTree);
+				if(empty($processTree)){
+					// 子プロセスが取得できなくても必ず親プロセスは指定する。
+					array_push($processTree, $pid);
 				}
+
+				$killPids = explode(",",$processTree[count($processTree) - 1]);
+				for($i = 0; $i < count($killPids); $i++){
+					$oLog->info('pids: ' . $killPids[$i] . __FILE__ . ':' . __LINE__);
+					// 中断時でも業務放棄可能にさせるため CONTとTERM発行
+					shell_exec('kill -CONT ' . $killPids[$i] . ' ');
+					shell_exec('kill -USR1 ' . $killPids[$i] . ' ');
+				}
+
 				//共有メモリを破棄
 				SharedMemory::destroy($pid);
 			}
