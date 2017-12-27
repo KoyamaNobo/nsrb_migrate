@@ -14,7 +14,7 @@
 <script type="text/javascript" src="./js/userSetting.js?ver=20171221_00"></script>
 <script type="text/javascript" src="./js/dataUtilExec.js?ver=20160613"></script>
 <script type="text/javascript" src="./js/specialKey.js?ver=20160613"></script>
-<script type="text/javascript" src="./js/inpCheckFromat.js?ver=20160613"></script>
+<script type="text/javascript" src="./js/inpCheckFromat.js?ver=20171227"></script>
 </head>
 <body>
 <div class="contentbody">
