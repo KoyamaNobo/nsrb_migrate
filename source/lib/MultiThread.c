@@ -37,112 +37,46 @@ int checkScreenValue(SD_SCREEN_PARAM *chrCache,cob_field *cobTarg);
 // Author koyama
 int checkScreenValue(SD_SCREEN_PARAM *chrCache,cob_field *cobTarg){
 
-	// //値がうまく設定されていない時
-	// if(chrCache->statusFlg == 0){
-	// 	return 1;
-	// }
-	// //初期状態の時
-	// if(chrCache->statusFlg == 1){
-	// 	strncpy(chrCache->param,cobTarg->data,cobTarg->size);
-	// 	chrCache->statusFlg = 2;
-	// 	return 1;
-	// }
-	// //値が一致する時
-	// if(strncmp(chrCache->param,cobTarg->data,cobTarg->size) == 0){
-	// 	return 1;
-	// }
 	return 0;
 }
 
-// 変数変化検知 AND 出力
+// 定期的にDBアクセスをする
 // Author koyama
 void* outThread( void* args ){
 	int i = 0,lcnt=0;
 	struct timeval mt_db_now_time;
 	SD_SCREEN_PARAM curentScreen[SCR_OBJ_MAX];
 
-	for(i=0;i < SCR_OBJ_MAX;i++){
-		//それぞれの最初はNULL初期化
-		curentScreen[i].statusFlg = 0;
-		curentScreen[i].param = NULL;
-	}
 	//最初の実行時間を取得
 	gettimeofday(&mt_db_access_time, NULL);
 	gettimeofday(&mt_m_db_access_time, NULL);
 	while(1){
-//		fprintf(stderr," Error :cthread : %d\n", counter_out );
-		//個々の処理いらないかも無理やり 1回しか通らないように修正
-		for(i=SCR_OBJ_MAX;i < SCR_OBJ_MAX;i++){
-			if(strlen(SD_cobScreen[i].cobargname) > 0){
-				if(SD_cobScreen[i].fromVar.iVarSize != 0 && SD_cobScreen[i].fromVar.bodyPnt != NULL){
-					//初期状態なら
-					if(curentScreen[i].statusFlg == 0){
-						curentScreen[i].param =  (char *)malloc(sizeof( char ) * SD_cobScreen[i].fromVar.bodyPnt->size);
-						curentScreen[i].statusFlg = 1;
-					}
-					//fromの指定があるものはfromが変わったら出力(fromはいらない？)
-					if((SD_cobScreen[i].onViewFlg == 1) && (checkScreenValue(&curentScreen[i],SD_cobScreen[i].fromVar.bodyPnt) == 0)){
-//						SD_Output(SD_cobScreen[i].cobargname,SD_cobScreen[i].fromVar.bodyPnt->data,"p");
-						strncpy(curentScreen[i].param,SD_cobScreen[i].fromVar.bodyPnt->data,SD_cobScreen[i].fromVar.bodyPnt->size);
-					}
-				}else if(SD_cobScreen[i].usingVar.iVarSize != 0 && SD_cobScreen[i].usingVar.bodyPnt != NULL){
-					//初期状態なら
-					if(curentScreen[i].statusFlg == 0){
-						curentScreen[i].param =  (char *)malloc(sizeof( char ) * SD_cobScreen[i].usingVar.bodyPnt->size);
-						curentScreen[i].statusFlg = 1;
-					}
-					//inpuの指定があるものはfromが変わったら出力
-					if((SD_cobScreen[i].onViewFlg == 1) && (checkScreenValue(&curentScreen[i],SD_cobScreen[i].usingVar.bodyPnt) == 0)){
-//						SD_Output(SD_cobScreen[i].cobargname,SD_cobScreen[i].usingVar.bodyPnt->data,"p");
-						strncpy(curentScreen[i].param,SD_cobScreen[i].usingVar.bodyPnt->data,SD_cobScreen[i].usingVar.bodyPnt->size);
-					}
-				}else if(SD_cobScreen[i].bodyPnt != NULL){
-					//初期状態なら
-					if(curentScreen[i].statusFlg == 0){
-						curentScreen[i].param =  (char *)malloc(sizeof( char ) * SD_cobScreen[i].bodyPnt->size);
-						curentScreen[i].statusFlg = 1;
-					}
-					//
-					if((SD_cobScreen[i].onViewFlg == 1) && (checkScreenValue(&curentScreen[i],SD_cobScreen[i].bodyPnt) == 0)){
-//						SD_Output(SD_cobScreen[i].cobargname,SD_cobScreen[i].bodyPnt->data,"p");
-						strncpy(curentScreen[i].param,SD_cobScreen[i].bodyPnt->data,SD_cobScreen[i].bodyPnt->size);
-					}
-				}
-			}else{
-				break;
-			}
-		}
-		lcnt +=1;
-		//無限ループなので何度も通らない
-		lcnt = (lcnt % 1000000);
-		if(lcnt == 0){
-			//最初の実行時間を取得
-			gettimeofday(&mt_db_now_time, NULL);
-			//時間が一定以上経っていたら->DB_PING -> 成功したらその時間から再スタート
-			if((mt_m_db_access_time.tv_sec + (DB_PING_INTERVAL * 60) < mt_db_now_time.tv_sec) ){
-				//管理接続
-				if(getDBMReadWriteFlg() == 0){
-					if(DB_M_PING()==0){
-						mt_m_db_access_time = mt_db_now_time;
-					}
-				}else{
-					// DBのアクセスがあったということなので、アクセスしたことにする
+		//最初の実行時間を取得
+		gettimeofday(&mt_db_now_time, NULL);
+		//時間が一定以上経っていたら->DB_PING -> 成功したらその時間から再スタート
+		if((mt_m_db_access_time.tv_sec + (DB_PING_INTERVAL * 60) < mt_db_now_time.tv_sec) ){
+			//管理接続
+			if(getDBMReadWriteFlg() == 0){
+				if(DB_M_PING()==0){
 					mt_m_db_access_time = mt_db_now_time;
 				}
-			}
-			if((mt_db_access_time.tv_sec + (DB_PING_INTERVAL * 60) < mt_db_now_time.tv_sec) ){
-				//通常接続
-				if(strncmp(map_source_func,"DB_",3) != 0 && getDBReadWriteFlg() == 0){
-					if(DB_PING()==0){
-						mt_db_access_time = mt_db_now_time;
-					}
-				}else{
-					// DBのアクセスがあったということなので、アクセスしたことにする
-					mt_db_access_time = mt_db_now_time;
-				}
+			}else{
+				// DBのアクセスがあったということなので、アクセスしたことにする
+				mt_m_db_access_time = mt_db_now_time;
 			}
 		}
-//		sleep( 1 ); // スレッド 1 秒停止
+		if((mt_db_access_time.tv_sec + (DB_PING_INTERVAL * 60) < mt_db_now_time.tv_sec) ){
+			//通常接続
+			if(strncmp(map_source_func,"DB_",3) != 0 && getDBReadWriteFlg() == 0){
+				if(DB_PING()==0){
+					mt_db_access_time = mt_db_now_time;
+				}
+			}else{
+				// DBのアクセスがあったということなので、アクセスしたことにする
+				mt_db_access_time = mt_db_now_time;
+			}
+		}
+		sleep( 10 ); // スレッド 10 秒停止
 	}
 
 	return NULL;

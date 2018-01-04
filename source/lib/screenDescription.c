@@ -523,10 +523,6 @@ void SD_AcceptStdin(struct screenObject *temporaryObj,char *term_buff){
 		//”’l‚©•¶Žš‚©
 		usleep(WAIT_SLEEP);    //0.000001‚Ìsleep?
 		//
-//		counter++;
-//		if(counter > 100000000){
-//			break;
-//		}
 	}
 	printf("NIN (%02d,%02d)(,%02d) %s \"%s\"_\r\n",
 		getLineTargetObject(temporaryObj), getColTargetObject(temporaryObj),
