@@ -751,8 +751,7 @@ var InputKeyControl = function(screen, buzzer) {
 
 			// DELETE
 			if (e.key == 'Delete') {
-				// DELETEキーはバックスペースキーと同じ操作を行う
-				backspaceKey(target);
+				deleteKey(target);
 				return false;
 			}
 
@@ -963,8 +962,7 @@ var InputKeyControl = function(screen, buzzer) {
 
 			// DELETE
 			if (e.key == 'Delete') {
-				// DELETEキーはバックスペースキーと同じ操作を行う
-				backspaceKey(target);
+				deleteKey(target);
 				break;
 			}
 
@@ -1226,6 +1224,22 @@ var InputKeyControl = function(screen, buzzer) {
 					+ fieldValue.slice(startPos);
 			field.value = newValue;
 			field.selectionStart = startPos - 1;
+			field.selectionEnd = field.selectionStart;
+		}
+	}
+
+	/**
+	 * デリートキーの動作を行う。
+	 */
+	let deleteKey = function(field) {
+		let startPos = field.selectionStart;
+		let fieldValue = field.value;
+
+		if (startPos < fieldValue.length) {
+			let newValue = fieldValue.slice(0, startPos)
+					+ fieldValue.slice(startPos + 1);
+			field.value = newValue;
+			field.selectionStart = startPos;
 			field.selectionEnd = field.selectionStart;
 		}
 	}
