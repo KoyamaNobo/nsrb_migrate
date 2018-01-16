@@ -14,6 +14,7 @@
 #include "hpdf.h"
 #include "confheader.h"
 
+
 #ifndef MT_COMMON
 #define MT_COMMON 1
 #define MAP_SRC_FUNC_LEN 50
@@ -74,6 +75,7 @@ static char PR_basepath[128] = "";                  //背景となるpdfまで�
 static char PR_basename[128] = "";                  //背景となるpdfの名前
 static char PR_printername[31] = "";
 static float divCharSpace = 10;	//CharSpace分割値	//2016/01/05 kawada add
+static char *source_user_name = NULL;  //ユーザーID
 jmp_buf PR_env;    //エラー処理用
 
 //印字サイズ制御コード用変数 upd
@@ -88,6 +90,11 @@ float PR_charsize = 0;				//半角文字の横幅ポイント値
 
 //confから取得するdebug_flg.他と被らないようにoriginal name
 static int prMyConfDebugFlg;
+
+//印刷実行フラグ
+static int isPrintFlg;
+//印刷用紙サイズ
+static char PR_size[3] ="";
 
 //////////////////Function liet AND prototype Start
 //ID=01 帳票設定が複数ある時は変更するときにこの関数を用いる
@@ -163,6 +170,7 @@ int IsFileExisting(const char* pszFile){
 int PR_conf_read(){
 	int i;
 	char strConfPath[1024]; //20150828 add koyama ファイル名を受け取るためのポインタ
+	char *source_file_name = NULL;
 
 	//関数名を共有変数にセット
 	char strStack[MAP_SRC_FUNC_LEN];
@@ -170,9 +178,34 @@ int PR_conf_read(){
 	memset(map_source_func,'\0',MAP_SRC_FUNC_LEN + 1);
 	sprintf(map_source_func,"PR_conf_read :");
 
+	//ユーザID取得準備
+	if(source_file_name == NULL){
+		source_file_name = (char *)malloc(sizeof(char) * (PATHNAME_SIZE + 1));
+		if(source_file_name == NULL){
+			cob_runtime_error(" Error [%02d]: can't get source_file_name,%s ",02,map_source_func);
+			//共有変数を元に戻す
+			memcpy(map_source_func,strStack,MAP_SRC_FUNC_LEN);
+			return 1;
+		}
+		memset(source_file_name, '\0', (PATHNAME_SIZE + 1));
+
+		source_user_name = (char *)malloc(sizeof(char) * (PATHNAME_SIZE + 1));
+		if(source_user_name == NULL){
+			cob_runtime_error(" Error [%02d]: can't get source_user_name,%s ",02,map_source_func);
+			//共有変数を元に戻す
+			memcpy(map_source_func,strStack,MAP_SRC_FUNC_LEN);
+			return 1;
+		}
+		memset(source_user_name, '\0', (PATHNAME_SIZE + 1));
+		// ユーザID取得
+		getUserAndProcessName(source_file_name, source_user_name);
+	}
+
+
 	//下で値が設定されなかったらこれがdefault
 	prMyConfDebugFlg = 0;
-
+	isPrintFlg = 0;
+	
 	//ファイルネームを元にリーダポインタを作成   //ファイル名を関数に変更 20150828
 	xmlTextReaderPtr reader = xmlNewTextReaderFilename(getConfFilename(strConfPath));
 	//リーダをリードできる状態に
@@ -188,6 +221,7 @@ int PR_conf_read(){
 	//xpathで指定したノードリストを取得
 	xmlXPathObjectPtr xpobj = xmlXPathEvalExpression((xmlChar *)CONF_DEFPATH, ctx);
 	if (!xpobj) return 1;
+	
 	//ノードリストをノードの配列のようなものに
 	xmlNodeSetPtr nodes = xpobj->nodesetval;
 	//ノード数の取得(取得できないなら0)
@@ -225,7 +259,16 @@ int PR_conf_read(){
 				if(strcmp(node->parent->name,PR_TEMP_PATH) == 0){
 					//後で後ろにファイル名をつなぐ
 					strcpy(PR_temppath,node->content);
-					strcpy(PR_bindname,node->content);
+
+					//ユーザー名フォルダの追加
+					strcat(PR_temppath,source_user_name);
+					strcat(PR_temppath,"PDF/");
+
+					//ユーザー名フォルダの作成
+					umask(0000);
+					mkdir(PR_temppath,0777);
+
+					strcpy(PR_bindname,PR_temppath);
 				}
 				//設定ファイルからファイル数の最大を取得
 				if(strcmp(node->parent->name,PR_OBJ_MAX) == 0){
@@ -241,6 +284,10 @@ int PR_conf_read(){
 				if(strcmp(node->parent->name,DEBUG_FLGNAME) == 0){
 					//返還できない文字列は0になるはず
 					prMyConfDebugFlg = atoi(node->content);
+				}
+				//isprintフラグの取得
+				if(strcmp(node->parent->name,"isprint") == 0){
+					isPrintFlg = atoi(node->content);
 				}
 			} else {
 				xmlFreeDoc(doc);
@@ -335,13 +382,14 @@ int PR_Initialize(char *formatname){
 	//関数名を共有変数にセット
 	char strStack[MAP_SRC_FUNC_LEN];
 	memcpy(strStack,map_source_func,MAP_SRC_FUNC_LEN);
-	memset(map_source_func,'\0',MAP_SRC_FUNC_LEN + 1);	sprintf(map_source_func,"PR_Initialize :format %s ",formatname);
-
+	memset(map_source_func,'\0',MAP_SRC_FUNC_LEN + 1);	
+	sprintf(map_source_func,"PR_Initialize :format %s ",formatname);
+	
 	//後で値が入ったかどうか判断するため初期化
 	PR_font = NULL;
 	//下で値が設定されなかったらこれがdefault
 	prMyConfDebugFlg = 0;
-
+	isPrintFlg = 0;
 	//設定の読み込み(グローバル変数へ格納)
 	PR_conf_read();
 
@@ -415,10 +463,9 @@ int PR_setProperty(char *formatname){
 	MYSQL PR_conn,*PR_mysql = &PR_conn;
 	MYSQL_RES *res;
 	MYSQL_ROW row = NULL;
-	char query[512] = "";    //初期設定を読み込むSQLの格納
-	char temp[512] = "";    //sql用temporary
-	char *source_file_name = NULL;
-	char *source_user_name = NULL;
+	char query[1024] = "";    //初期設定を読み込むSQLの格納
+	char temp[1024] = "";    //sql用temporary
+	
 
 	//関数名を共有変数にセット
 	char strStack[MAP_SRC_FUNC_LEN];
@@ -436,35 +483,11 @@ int PR_setProperty(char *formatname){
 		return 1;
 	}
 
-
-	//	//ユーザID取得準備
-	if(source_file_name == NULL){
-		source_file_name = (char *)malloc(sizeof(char) * (PATHNAME_SIZE + 1));
-		if(source_file_name == NULL){
-			cob_runtime_error(" Error [%02d]: can't get source_file_name,%s ",02,map_source_func);
-			//共有変数を元に戻す
-			memcpy(map_source_func,strStack,MAP_SRC_FUNC_LEN);
-			return 1;
-		}
-		memset(source_file_name, '\0', (PATHNAME_SIZE + 1));
-
-		source_user_name = (char *)malloc(sizeof(char) * (PATHNAME_SIZE + 1));
-		if(source_user_name == NULL){
-			cob_runtime_error(" Error [%02d]: can't get source_user_name,%s ",02,map_source_func);
-			//共有変数を元に戻す
-			memcpy(map_source_func,strStack,MAP_SRC_FUNC_LEN);
-			return 1;
-		}
-		memset(source_user_name, '\0', (PATHNAME_SIZE + 1));
-		// ユーザID取得
-		getUserAndProcessName(source_file_name, source_user_name);
-	}
-	
-
 	strcpy(temp," SELECT mf.size, mf.page_style, mf.font ");
 	strcat(temp," ,mf.font_size, mf.base_pdf, mf.line_pitch,mf.char_pitch ");
 	strcat(temp," , mf.top_margin, mf.left_margin, mp.print_id, mp.print_name ");
-	strcat(temp," ,mpr.size, mp2.print_id, mp2.print_name ");
+	strcat(temp," ,mpr.size, mpr.page_style, mpr.line_pitch, mpr.char_pitch, mpr.base_pdf ");
+	strcat(temp," ,mpr.left_margin, mpr.top_margin, mp2.print_id, mp2.print_name ");
 	strcat(temp," FROM (M_FORM mf ");
 	strcat(temp," INNER JOIN M_PRINTER mp ");
 	strcat(temp," ON mp.print_id = mf.print_id) ");
@@ -475,7 +498,7 @@ int PR_setProperty(char *formatname){
 	strcat(temp," ON mp2.print_id = mpr.print_id ");
 	strcat(temp," WHERE mf.id='%s' ");
 	sprintf(query, temp, source_user_name, formatname);
-
+ 
 	//DB帳票データを抽出
 	if (mysql_query(PR_mysql, query)!=0) {
 		//エラー内容を出力
@@ -493,14 +516,19 @@ int PR_setProperty(char *formatname){
 		//ページサイズの取得
 		if(strcmp(row[0],"A4") == 0){
 			PR_pagesize = HPDF_PAGE_SIZE_A4;
+			strcpy(PR_size,"a4");
 		}else if(strcmp(row[0],"A5") == 0){
 			PR_pagesize = HPDF_PAGE_SIZE_A5;
+			strcpy(PR_size,"a5");
 		}else if(strcmp(row[0],"B4") == 0){
 			PR_pagesize = HPDF_PAGE_SIZE_B4;
+			strcpy(PR_size,"b4");
 		}else if(strcmp(row[0],"B5") == 0){
 			PR_pagesize = HPDF_PAGE_SIZE_B5;
+			strcpy(PR_size,"b5");
 		}else if(strcmp(row[0],"A3") == 0){
 			PR_pagesize = HPDF_PAGE_SIZE_A3;
+			strcpy(PR_size,"a3");
 		}
 
 		//ページのスタイルを取得(縦横)
@@ -551,26 +579,76 @@ int PR_setProperty(char *formatname){
 			//個人設定を取得した場合上書きする。
 			if(strcmp(row[11],"A4") == 0){
 				PR_pagesize = HPDF_PAGE_SIZE_A4;
+				strcpy(PR_size,"a4");
 			}else if(strcmp(row[11],"A5") == 0){
 				PR_pagesize = HPDF_PAGE_SIZE_A5;
+				strcpy(PR_size,"a5");
 			}else if(strcmp(row[11],"B4") == 0){
 				PR_pagesize = HPDF_PAGE_SIZE_B4;
+				strcpy(PR_size,"b4");
 			}else if(strcmp(row[11],"B5") == 0){
 				PR_pagesize = HPDF_PAGE_SIZE_B5;
+				strcpy(PR_size,"b5");
 			}else if(strcmp(row[11],"A3") == 0){
 				PR_pagesize = HPDF_PAGE_SIZE_A3;
+				strcpy(PR_size,"a3");
 			}
 		}
 
 		//NULLの場合エラーになるのを回避。
 		if(row[12] != '\0'){
+			//ページのスタイルを取得(縦横)
+			if (strcmp(row[12],"HPDF_PAGE_LANDSCAPE") == 0){
+				//横向き
+				PR_pagestyle=HPDF_PAGE_LANDSCAPE;
+			}else if(strcmp(row[12],"HPDF_PAGE_PORTRAIT") == 0){
+				//縦向き
+				PR_pagestyle=HPDF_PAGE_PORTRAIT;
+			}
+		}
+
+		//NULLの場合エラーになるのを回避。
+		if(row[13] != '\0'){
+			//ページの行数を格納
+			PR_linepitch = atof(row[13]);
+		}
+
+		//NULLの場合エラーになるのを回避。
+		if(row[14] != '\0'){
+			//行の文字数を格納 206 136
+			PR_charpitch = atof(row[14]);
+
+			//文字の水平方向倍率
+			PR_chartimes = atof(row[14]);
+		}
+
+		if(row[15] != '\0'){
+			//背景となるpdfのパスと名前を格納
+			strcpy(PR_basename,PR_basepath);
+			strcat(PR_basename,row[15]);
+		}
+
+		//NULLの場合エラーになるのを回避。
+		if(row[16] != '\0'){
+			//左右の余白を格納
+			PR_leftmargin = atof(row[16]);
+		}
+
+		//NULLの場合エラーになるのを回避。
+		if(row[17] != '\0'){
+			//上下の余白を格納
+			PR_topmargin = atof(row[17]);
+		}
+
+		//NULLの場合エラーになるのを回避。
+		if(row[18] != '\0'){
 			PR_Lineprint = 0;
 		//取得していた設定をクリア
 		memset(PR_printername,'\0',strlen(PR_printername));
 		//プリンタ名を取得
-			strcpy(PR_printername,row[13]);
+			strcpy(PR_printername,row[19]);
 		
-			if(row[12][0] == '9'){
+			if(row[18][0] == '9'){
 				PR_Lineprint = 1;
 			}
 		}
@@ -620,20 +698,7 @@ int fontSetting(){
 	//一行の高さの設定
 	pageheight = HPDF_Page_GetHeight(PR_page[PR_currentPage]);
 	//上下のマージンだが、調整のため1.8倍とする
-//	lineheight = ((pageheight - (PR_topmargin * (2 * MARGIN_CONDITION))) / PR_linepitch );
-
-	if(PR_Lineprint == 1){
-		lineheight = ((pageheight - (PR_topmargin * (2 * MARGIN_CONDITION))) / 66 * 1.39 );
-		if(PR_pagesize == HPDF_PAGE_SIZE_A3){
-			lineheight = ((pageheight - (PR_topmargin * (2 * MARGIN_CONDITION))) / 132 * 1.39 );
-		}
-	}else{
-		if(PR_pagesize == HPDF_PAGE_SIZE_A5){
-			lineheight = ((pageheight - (PR_topmargin * (2 * MARGIN_CONDITION))) / 33.7 );
-		}else{
-	lineheight = ((pageheight - (PR_topmargin * (2 * MARGIN_CONDITION))) / 66 );
-		}
-	}
+	lineheight = ((pageheight - (PR_topmargin * (2 * MARGIN_CONDITION))) / PR_linepitch );
 
 	//HPDF_Page_SetTextLeading行間隔を設定する
 	retCode = HPDF_Page_SetTextLeading(PR_page[PR_currentPage],(lineheight / 2));
@@ -714,6 +779,7 @@ int PR_Open_Assign(char *formatname){
 //結合したpdfを印刷
 int PR_Pdf_Print(){
 	char cmd[256]="";
+	char PR_filename[128]="";
 	int ret=1;
 	struct stat st;
 
@@ -723,22 +789,28 @@ int PR_Pdf_Print(){
 	memset(map_source_func,'\0',MAP_SRC_FUNC_LEN + 1);
 	sprintf(map_source_func,"PR_Pdf_Print : ");
 
-	ret=stat(PR_bindname,&st);
+	strcat(PR_filename,PR_bindname);
+	strcat(PR_filename,".pdf");
 
+	ret=stat(PR_filename,&st);
 	if(ret == 0){
-		if(PR_Lineprint == 1){
-			sprintf(cmd, "lpr -P %s %s", PR_printername,PR_bindname);
-			system(cmd);
-		}else{
-			//印刷コマンドとその実行
-//			sprintf(cmd, "lpr -P %s %s", PR_printername,PR_bindname);
-//			system(cmd);
+		if(isPrintFlg != 0){
+			if(PR_Lineprint == 1){
+				//sprintf(cmd, "lpr -P %s %s", PR_printername,PR_filename);
+				sprintf(cmd, "lp -d %s -o media=%s -o fitplot %s", PR_printername,PR_size,PR_filename);
+				system(cmd);
+			}else{
+				//印刷コマンドとその実行
+					//sprintf(cmd, "lpr -P %s %s", PR_printername,PR_filename);
+					sprintf(cmd, "lp -d %s -o media=%s -o fitplot %s", PR_printername,PR_size,PR_filename);
+					system(cmd);
 
-			//印刷したらファイルを削除できるはず
-//			sprintf(cmd, "rm %s ", PR_bindname);
-//			system(cmd);
+					//印刷したらファイルを削除できるはず
+			//		sprintf(cmd, "rm %s ", PR_bindname);
+			//		system(cmd);
+			}
+			ret=0;
 		}
-		ret=0;
 	}
 	//共有変数を元に戻す
 	memcpy(map_source_func,strStack,MAP_SRC_FUNC_LEN);
@@ -756,7 +828,7 @@ int PR_Save(int flg){
 	memcpy(strStack,map_source_func,MAP_SRC_FUNC_LEN);
 	memset(map_source_func,'\0',MAP_SRC_FUNC_LEN + 1);
 	sprintf(map_source_func,"PR_Save : flg= %d ",flg);
-
+	
 	if(flg == 0){
 		//PR_Closeから来たときは最後のページを閉じる
 		// HPDF_Page_EndText(PR_page[PR_currentPage]);
@@ -830,7 +902,7 @@ int PR_Close(){
 	memcpy(strStack,map_source_func,MAP_SRC_FUNC_LEN);
 	memset(map_source_func,'\0',MAP_SRC_FUNC_LEN + 1);
 	sprintf(map_source_func,"PR_Close :");
-
+	
 
 	if(PR_currentPage == 1 && PR_currentLine == 1){		//2015/08/21 kawada add
 		//OpenしてそのままCloseする場合が必要かどうか改めて判断する必要があるか add comment koyama
@@ -882,6 +954,7 @@ int PR_Close(){
 			PR_currentPage = 0;
 		//}
 	}
+
 	ret = PR_Pdf_Print();
 	if(ret == 1){
 	//共有変数を元に戻す
@@ -1851,19 +1924,8 @@ int PR_Write(char *linetext){
 			HPDF_REAL lineheight,pageheight;
 			pageheight = HPDF_Page_GetHeight(PR_page[PR_currentPage]);
 			//上下のマージンだが、調整のため1.8倍とする
-//			lineheight = ((pageheight - (PR_topmargin * (2 * MARGIN_CONDITION))) / PR_linepitch );
-			
-			if(PR_Lineprint == 1){
-				lineheight = ((pageheight - (PR_topmargin * (2 * MARGIN_CONDITION))) / 66 * 1.39 );
-			}
-
-			if(PR_Lineprint != 1 && PR_pagesize == HPDF_PAGE_SIZE_A5){
-				lineheight = ((pageheight - (PR_topmargin * (2 * MARGIN_CONDITION))) / 33.7 );
-			}else if(PR_Lineprint != 1){
-			lineheight = ((pageheight - (PR_topmargin * (2 * MARGIN_CONDITION))) / 66 );
-			}
-			
-			
+			lineheight = ((pageheight - (PR_topmargin * (2 * MARGIN_CONDITION))) / PR_linepitch );
+				
 			//半角だから/2
 			ret = HPDF_Page_SetTextLeading(PR_page[PR_currentPage],(lineheight / 2));
 		}

@@ -831,7 +831,8 @@
       *///////////////
            CALL "DB_Select" USING
             TDIF_PNAME1 "WHERE" 
-            "TDI-DATE" "=" W-TCD "AND"
+            "TDI-DATE" "=" W-NGPS "AND"
+            "TDI-TCD" "=" W-TCD "AND"
             "TDI-CCD" "=" W-CCD "AND"
             "TDI-SOK" "=" W-SOK "AND"
             "TDI-UNS" "=" W-UNS "AND"

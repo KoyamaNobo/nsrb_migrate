@@ -190,15 +190,15 @@
            02  BBS-TRAN_IDLST   PIC  X(100) VALUE SPACE.
            02  BBS-TRAN_RES     USAGE  POINTER.
        01  BBS-R.
-           02  BBS-DNO        PIC  9(006).
-           02  BBS-GNO        PIC  9(001).
-           02  BBS-CNG        PIC  9(006).
-           02  F              PIC  9(002).
-           02  BBS-TCD        PIC  9(004).
-           02  F              PIC  X(107).
-           02  BBS-DHC        PIC  9(001).
-           02  BBS-SNC        PIC  9(001).
-       77  F                  PIC  X(001).
+           02  BBS-DNO          PIC  9(006).
+           02  BBS-GNO          PIC  9(001).
+           02  BBS-CNG          PIC  9(006).
+           02  F                PIC  9(002).
+           02  BBS-TCD          PIC  9(004).
+           02  F                PIC  X(107).
+           02  BBS-DHC          PIC  9(001).
+           02  BBS-SNC          PIC  9(001).
+       77  F                    PIC  X(001).
       *
        77  ESTAT              PIC  X(002).
        77  RESU               PIC  9(001).
@@ -231,7 +231,6 @@
        01  C-ACP.
            02  A-SEN   PIC  9(001).
            02  A-UNC   PIC  9(001).
-      *
            02  FILLER.
              03  AU-NGP   PIC  9(006).
              03  AU-HMN   PIC  9(006).
@@ -259,7 +258,6 @@
              03  AU-FRC   PIC  9(001).
              03  AU-SDT   PIC  9(008).
              03  AU-DMM   PIC  9(001).
-      *
            02  AN-NGP   PIC  9(006).
            02  AN-TCD   PIC  9(004).
            02  AN-CSC   PIC  9(001).
@@ -272,8 +270,7 @@
            02  AN-HSC   PIC  9(001).
            02  AN-SDT   PIC  9(008).
            02  AN-DMM   PIC  9(001).
-      *
-           02  A-CHK   PIC  9(001).
+           02  A-CHK    PIC  9(001).
        01  C-DSP.
            02  DU-SNA   PIC  N(006).
            02  DU-TNA   PIC  N(026).
@@ -337,7 +334,6 @@
              03  DU-GSUT  PIC ZZZ,ZZZ- .
            02  FILLER.
              03  DU-KOSU  PIC ZZ9 .
-      *
            02  DN-TNA   PIC  N(026).
            02  FILLER.
              03  DN-HNA   PIC  N(024).
@@ -395,7 +391,6 @@
              03  SU-KOSU  PIC  X(003) VALUE "   ".
              03  SU-HSC   PIC  X(001) VALUE " ".
              03  SU-FRC   PIC  X(001) VALUE " ".
-      *
            02  SN-DS.
              03  FILLER  PIC  X(006) VALUE "      ".
              03  FILLER  PIC  X(048) VALUE
@@ -476,7 +471,7 @@
        PROCEDURE DIVISION.
       *Initialize
        CALL "SD_Initialize" RETURNING RESU.
-       CALL "DB_Initialize" USING BY REFERENCE ERR-STAT  RETURNING RET.
+       CALL "DB_Initialize" USING BY REFERENCE ERR-STAT RETURNING RET.
        CALL "DB_Open".
       *C-CLEAR
        CALL "SD_Init" USING
@@ -484,560 +479,574 @@
        CALL "SD_Init" USING
            "01C-CLEAR" "X" "1" "0" "12" " " "C-CLEAR" RETURNING RESU.
       *C-MID
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "C-MID" " " "0" "0" "330" " " " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01C-MID" "N" "3" "15" "44" " " "C-MID" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02C-MID" "N" "4" "15" "44" "01C-MID" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "03C-MID" "N" "5" "15" "44" "02C-MID" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "04C-MID" "N" "6" "15" "44" "03C-MID" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "05C-MID" "N" "7" "15" "44" "04C-MID" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "06C-MID" "N" "8" "15" "44" "05C-MID" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "07C-MID" "N" "9" "15" "44" "06C-MID" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "08C-MID" "X" "15" "26" "22" "07C-MID" " " RETURNING RESU.
       *C-MID1
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "C-MID1" " " "0" "0" "26" " " " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01C-MID1" "X" "12" "24" "26" " " "C-MID1" RETURNING RESU.
       *C-ACP
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "C-ACP" " " "0" "0" "220" " " " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "A-SEN" "9" "12" "45" "1" " " "C-ACP" RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "A-SEN" BY REFERENCE W-SEN "1" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "A-UNC" "9" "15" "43" "1" "A-SEN" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "A-UNC" BY REFERENCE W-UNCD "1" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "03C-ACP" " " "1" "0" "13" "A-UNC" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AU-NGP" "9" "1" "16" "6" " " "03C-ACP" RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AU-NGP" BY REFERENCE W-NGPS "6" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AU-HMN" "9" "1" "30" "6" "AU-NGP" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AU-HMN" BY REFERENCE W-HMN "6" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AU-SOK" "9" "1" "42" "1" "AU-HMN" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AU-SOK" BY REFERENCE W-SCD "1" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "04C-ACP" " " "2" "0" "4" "03C-ACP" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AU-TCD" "9" "2" "6" "4" " " "04C-ACP" RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AU-TCD" BY REFERENCE W-TCDD "4" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "05C-ACP" " " "3" "0" "4" "04C-ACP" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AU-CCD" "9" "3" "6" "3" " " "05C-ACP" RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AU-CCD" BY REFERENCE W-CCDD "3" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AU-CSC" "9" "3" "65" "1" "AU-CCD" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AU-CSC" BY REFERENCE W-CSCD "1" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "06C-ACP" " " "W-L1" "0" "17" "05C-ACP" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AU-DC" "9" "W-L1" "4" "1" " " "06C-ACP" RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AU-DC" BY REFERENCE W-DC "1" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AU-HCD" "9" "W-L1" "11" "6" "AU-DC" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AU-HCD" BY REFERENCE W-HCD "6" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AU-BIK" "X" "W-L1" "71" "10" "AU-HCD" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AU-BIK" BY REFERENCE W-BIK "10" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "07C-ACP" " " "W-L3" "0" "25" "06C-ACP" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AU-SIZ" "9" "W-L3" "1" "1" " " "07C-ACP" RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AU-SIZ" BY REFERENCE W-SIZ "1" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AU-SU" "S9" "W-L3" "W-C" "4" "AU-SIZ" " " RETURNING RESU.
-       CALL "SD_Using" USING 
-            "AU-SU" BY REFERENCE W-SU(1) "3" "1" BY REFERENCE W-SC 3
+       CALL "SD_Using" USING
+            "AU-SU" BY REFERENCE W-SU(1) "4" "1" BY REFERENCE W-SC 3
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AU-SU1" "S9" "W-L3" "W-C" "3" "AU-SU" " " RETURNING RESU.
-       CALL "SD_Using" USING 
-            "AU-SU1" BY REFERENCE W-SU(1) "3" "1" BY REFERENCE W-SC 3
+       CALL "SD_Using" USING
+            "AU-SU1" BY REFERENCE W-SU(1) "4" "1" BY REFERENCE W-SC 3
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AU-SUT" "S9" "W-L3" "60" "5" "AU-SU1" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AU-SUT" BY REFERENCE W-SUT "5" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AU-BT" "9" "W-L3" "67" "5" "AU-SUT" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AU-BT" BY REFERENCE W-BT "5" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AU-KIN" "S9" "W-L3" "73" "7" "AU-BT" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AU-KIN" BY REFERENCE W-KIN "8" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AU-BI" "N" "22" "6" "48" "07C-ACP" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AU-BI" BY REFERENCE W-BI "48" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "09C-ACP" " " "23" "0" "14" "AU-BI" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AU-KOSU" "9" "23" "6" "3" " " "09C-ACP" RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AU-KOSU" BY REFERENCE W-KOSUR "3" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AU-HSC" "9" "23" "17" "1" "AU-KOSU" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AU-HSC" BY REFERENCE W-HSCD "1" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AU-FRC" "9" "23" "24" "1" "AU-HSC" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AU-FRC" BY REFERENCE W-FRCD "1" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AU-SDT" "9" "23" "33" "8" "AU-FRC" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AU-SDT" BY REFERENCE W-SDTD "8" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AU-DMM" "9" "23" "63" "1" "AU-SDT" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AU-DMM" BY REFERENCE W-DMM "1" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AN-NGP" "9" "4" "8" "6" "09C-ACP" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AN-NGP" BY REFERENCE W-NGPS "6" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AN-TCD" "9" "5" "8" "4" "AN-NGP" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AN-TCD" BY REFERENCE W-TCDD "4" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AN-CSC" "9" "5" "75" "1" "AN-TCD" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AN-CSC" BY REFERENCE W-CSCD "1" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "13C-ACP" " " "W-L1" "0" "23" "AN-CSC" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AN-HCD" "9" "W-L1" "1" "6" " " "13C-ACP" RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AN-HCD" BY REFERENCE W-HCD "6" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AN-SUT" "S9" "W-L1" "58" "5" "AN-HCD" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AN-SUT" BY REFERENCE W-SUT "5" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AN-BT" "S9" "W-L1" "65" "4" "AN-SUT" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AN-BT" BY REFERENCE W-BT "5" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AN-KIN" "S9" "W-L1" "71" "8" "AN-BT" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AN-KIN" BY REFERENCE W-KIN "8" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AN-BI" "N" "15" "8" "48" "13C-ACP" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AN-BI" BY REFERENCE W-BI "48" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AN-HSC" "9" "16" "12" "1" "AN-BI" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AN-HSC" BY REFERENCE W-HSCD "1" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AN-SDT" "9" "17" "8" "8" "AN-HSC" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AN-SDT" BY REFERENCE W-SDTD "8" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "AN-DMM" "9" "20" "46" "1" "AN-SDT" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "AN-DMM" BY REFERENCE W-DMM "1" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "A-CHK" "9" "24" "55" "1" "AN-DMM" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "A-CHK" BY REFERENCE CHK "1" "0" RETURNING RESU.
       *C-DSP
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "C-DSP" " " "0" "0" "535" " " " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DU-SNA" "N" "1" "44" "12" " " "C-DSP" RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "DU-SNA" BY REFERENCE JCON3-03 "12" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DU-TNA" "N" "2" "11" "52" "DU-SNA" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "DU-TNA" BY REFERENCE T-NAME "52" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DU-CNA" "N" "3" "11" "52" "DU-TNA" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "DU-CNA" BY REFERENCE TC-NAME "52" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "04C-DSP" " " "W-L1" "0" "60" "DU-CNA" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DU-HNA" "N" "W-L1" "18" "48" " " "04C-DSP" RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "DU-HNA" BY REFERENCE HI-NAME "48" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DU-SZM" "N" "W-L1" "18" "12" "DU-HNA" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "05C-DSP" " " "W-L2" "0" "188" "04C-DSP" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DU-S1" " " "W-L2" "44" "47" " " "05C-DSP" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01DU-S1" "X" "W-L2" "3" "5" " " "DU-S1" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02DU-S1" "X" "W-L2" "9" "5" "01DU-S1" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "03DU-S1" "X" "W-L2" "15" "5" "02DU-S1" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "04DU-S1" "X" "W-L2" "21" "5" "03DU-S1" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "05DU-S1" "X" "W-L2" "27" "5" "04DU-S1" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "06DU-S1" "X" "W-L2" "33" "5" "05DU-S1" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "07DU-S1" "X" "W-L2" "39" "5" "06DU-S1" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "08DU-S1" "X" "W-L2" "45" "4" "07DU-S1" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "09DU-S1" "X" "W-L2" "50" "4" "08DU-S1" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "10DU-S1" "X" "W-L2" "55" "4" "09DU-S1" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DU-S2" " " "W-L2" "44" "47" "DU-S1" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01DU-S2" "X" "W-L2" "3" "5" " " "DU-S2" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02DU-S2" "X" "W-L2" "9" "5" "01DU-S2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "03DU-S2" "X" "W-L2" "15" "5" "02DU-S2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "04DU-S2" "X" "W-L2" "21" "5" "03DU-S2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "05DU-S2" "X" "W-L2" "27" "5" "04DU-S2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "06DU-S2" "X" "W-L2" "33" "5" "05DU-S2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "07DU-S2" "X" "W-L2" "39" "5" "06DU-S2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "08DU-S2" "X" "W-L2" "45" "4" "07DU-S2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "09DU-S2" "X" "W-L2" "50" "4" "08DU-S2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "10DU-S2" "X" "W-L2" "55" "4" "09DU-S2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DU-S3" " " "W-L2" "44" "47" "DU-S2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01DU-S3" "X" "W-L2" "3" "5" " " "DU-S3" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02DU-S3" "X" "W-L2" "9" "5" "01DU-S3" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "03DU-S3" "X" "W-L2" "15" "5" "02DU-S3" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "04DU-S3" "X" "W-L2" "21" "5" "03DU-S3" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "05DU-S3" "X" "W-L2" "27" "5" "04DU-S3" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "06DU-S3" "X" "W-L2" "33" "5" "05DU-S3" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "07DU-S3" "X" "W-L2" "39" "5" "06DU-S3" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "08DU-S3" "X" "W-L2" "45" "4" "07DU-S3" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "09DU-S3" "X" "W-L2" "50" "4" "08DU-S3" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "10DU-S3" "X" "W-L2" "55" "4" "09DU-S3" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DU-S4" " " "W-L2" "44" "47" "DU-S3" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01DU-S4" "X" "W-L2" "3" "5" " " "DU-S4" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02DU-S4" "X" "W-L2" "9" "5" "01DU-S4" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "03DU-S4" "X" "W-L2" "15" "5" "02DU-S4" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "04DU-S4" "X" "W-L2" "21" "5" "03DU-S4" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "05DU-S4" "X" "W-L2" "27" "5" "04DU-S4" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "06DU-S4" "X" "W-L2" "33" "5" "05DU-S4" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "07DU-S4" "X" "W-L2" "39" "5" "06DU-S4" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "08DU-S4" "X" "W-L2" "45" "4" "07DU-S4" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "09DU-S4" "X" "W-L2" "50" "4" "08DU-S4" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "10DU-S4" "X" "W-L2" "55" "4" "09DU-S4" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "06C-DSP" " " "W-L3" "0" "28" "05C-DSP" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DU-SU" "ZZZZ-" "W-L3" "W-C" "5" " " "06C-DSP"
             RETURNING RESU.
-       CALL "SD_From" USING 
-            "DU-SU" BY REFERENCE W-SU(1) "3" "1" BY REFERENCE W-SC 3
+       CALL "SD_From" USING
+            "DU-SU" BY REFERENCE W-SU(1) "4" "1" BY REFERENCE W-SC 3
             RETURNING RESU.
-       CALL "SD_Init" USING 
-            "DU-SU1" "ZZZ-" "W-L3" "W-C" "4" "DU-SU" " " RETURNING RESU.
-       CALL "SD_From" USING 
-            "DU-SU1" BY REFERENCE W-SU(1) "3" "1" BY REFERENCE W-SC 3
+       CALL "SD_Init" USING
+            "DU-SU1" "ZZZ-" "W-L3" "W-C" "4" "DU-SU" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_From" USING
+            "DU-SU1" BY REFERENCE W-SU(1) "4" "1" BY REFERENCE W-SC 3
+            RETURNING RESU.
+       CALL "SD_Init" USING
             "DU-SUT" "ZZZZZ-" "W-L3" "60" "6" "DU-SU1" " "
             RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "DU-SUT" BY REFERENCE W-SUT "5" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
-            "DU-BT" "ZZZZZ" "W-L3" "67" "5" "DU-SUT" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_Init" USING
+            "DU-BT" "ZZZZZ" "W-L3" "67" "5" "DU-SUT" " "
+            RETURNING RESU.
+       CALL "SD_From" USING
             "DU-BT" BY REFERENCE W-BT "5" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DU-KIN" "ZZZZZZZ-" "W-L3" "73" "8" "DU-BT" " "
             RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "DU-KIN" BY REFERENCE W-KIN "8" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "07C-DSP" " " "22" "0" "8" "06C-DSP" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DU-GSUT" "ZZZ,ZZZ-" "22" "58" "8" " " "07C-DSP"
             RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "DU-GSUT" BY REFERENCE W-GSUT "6" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "08C-DSP" " " "23" "0" "3" "07C-DSP" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DU-KOSU" "ZZ9" "23" "6" "3" " " "08C-DSP" RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "DU-KOSU" BY REFERENCE W-KOSUR "3" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DN-TNA" "N" "5" "13" "52" "08C-DSP" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "DN-TNA" BY REFERENCE T-NAME "52" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "10C-DSP" " " "W-L1" "0" "69" "DN-TNA" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DN-HNA" "N" "W-L1" "8" "48" " " "10C-DSP" RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "DN-HNA" BY REFERENCE HI-NAME "48" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DN-SUT" "ZZZZZZ-" "W-L1" "57" "7" "DN-HNA" " "
             RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "DN-SUT" BY REFERENCE W-SUT "5" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DN-BT" "ZZZZ-" "W-L1" "65" "5" "DN-SUT" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "DN-BT" BY REFERENCE W-BT "5" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DN-KIN" "ZZZZZZZZ-" "W-L1" "71" "9" "DN-BT" " "
             RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "DN-KIN" BY REFERENCE W-KIN "8" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DN-DKIN" " " "0" "0" "11" "10C-DSP" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01DN-DKIN" "ZZ,ZZZ,ZZ9-" "14" "69" "11" " " "DN-DKIN"
             RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "01DN-DKIN" BY REFERENCE W-DKIN "8" "0" RETURNING RESU.
       *C-SPC
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "C-SPC" " " "0" "0" "350" " " " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "SU-HNO" " " "0" "0" "36" " " "C-SPC" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01SU-HNO" " " "1" "0" "36" " " "SU-HNO" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "SU-DATE" "X" "1" "16" "6" " " "01SU-HNO" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "SU-HMN" "X" "1" "30" "6" "SU-DATE" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "SU-SOK" "X" "1" "42" "14" "SU-HMN" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "SU-HNM" "X" "1" "56" "10" "SU-SOK" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "SU-CNA" " " "3" "0" "55" "SU-HNO" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01SU-CNA" "X" "3" "6" "3" " " "SU-CNA" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02SU-CNA" "X" "3" "11" "52" "01SU-CNA" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "SU-D1" " " "W-L1" "0" "65" "SU-CNA" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01SU-D1" "X" "W-L1" "4" "1" " " "SU-D1" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02SU-D1" "X" "W-L1" "11" "6" "01SU-D1" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "03SU-D1" "X" "W-L1" "18" "48" "02SU-D1" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "SU-BIK" "X" "W-L1" "71" "10" "03SU-D1" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "SU-D2" " " "W-L2" "0" "47" "SU-D1" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01SU-D2" "X" "W-L2" "3" "5" " " "SU-D2" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02SU-D2" "X" "W-L2" "9" "5" "01SU-D2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "03SU-D2" "X" "W-L2" "15" "5" "02SU-D2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "04SU-D2" "X" "W-L2" "21" "5" "03SU-D2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "05SU-D2" "X" "W-L2" "27" "5" "04SU-D2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "06SU-D2" "X" "W-L2" "33" "5" "05SU-D2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "07SU-D2" "X" "W-L2" "39" "5" "06SU-D2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "08SU-D2" "X" "W-L2" "45" "4" "07SU-D2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "09SU-D2" "X" "W-L2" "50" "4" "08SU-D2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "10SU-D2" "X" "W-L2" "55" "4" "09SU-D2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "SU-D3" " " "W-L3" "0" "67" "SU-D2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "SU-D31" " " "W-L3" "0" "48" " " "SU-D3" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01SU-D31" "X" "W-L3" "1" "1" " " "SU-D31" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02SU-D31" "X" "W-L3" "3" "5" "01SU-D31" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "03SU-D31" "X" "W-L3" "9" "5" "02SU-D31" " " RETURNING RESU.
-       CALL "SD_Init" USING 
-            "04SU-D31" "X" "W-L3" "15" "5" "03SU-D31" " " RETURNING RESU.
-       CALL "SD_Init" USING 
-            "05SU-D31" "X" "W-L3" "21" "5" "04SU-D31" " " RETURNING RESU.
-       CALL "SD_Init" USING 
-            "06SU-D31" "X" "W-L3" "27" "5" "05SU-D31" " " RETURNING RESU.
-       CALL "SD_Init" USING 
-            "07SU-D31" "X" "W-L3" "33" "5" "06SU-D31" " " RETURNING RESU.
-       CALL "SD_Init" USING 
-            "08SU-D31" "X" "W-L3" "39" "5" "07SU-D31" " " RETURNING RESU.
-       CALL "SD_Init" USING 
-            "09SU-D31" "X" "W-L3" "45" "4" "08SU-D31" " " RETURNING RESU.
-       CALL "SD_Init" USING 
-            "10SU-D31" "X" "W-L3" "50" "4" "09SU-D31" " " RETURNING RESU.
-       CALL "SD_Init" USING 
-            "11SU-D31" "X" "W-L3" "55" "4" "10SU-D31" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
+            "04SU-D31" "X" "W-L3" "15" "5" "03SU-D31" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "05SU-D31" "X" "W-L3" "21" "5" "04SU-D31" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "06SU-D31" "X" "W-L3" "27" "5" "05SU-D31" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "07SU-D31" "X" "W-L3" "33" "5" "06SU-D31" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "08SU-D31" "X" "W-L3" "39" "5" "07SU-D31" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "09SU-D31" "X" "W-L3" "45" "4" "08SU-D31" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "10SU-D31" "X" "W-L3" "50" "4" "09SU-D31" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "11SU-D31" "X" "W-L3" "55" "4" "10SU-D31" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
             "02SU-D3" "X" "W-L3" "60" "6" "SU-D31" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "SU-BT" "X" "W-L3" "67" "5" "02SU-D3" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "SU-KIN" "X" "W-L3" "73" "8" "SU-BT" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "06C-SPC" " " "23" "0" "5" "SU-D3" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "SU-KOSU" "X" "23" "6" "3" " " "06C-SPC" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "SU-HSC" "X" "23" "17" "1" "SU-KOSU" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "SU-FRC" "X" "23" "24" "1" "SU-HSC" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "SN-DS" " " "W-L1" "0" "75" "06C-SPC" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01SN-DS" "X" "W-L1" "1" "6" " " "SN-DS" RETURNING RESU.
-       CALL "SD_Init" USING 
-            "02SN-DS" "X" "W-L1" "8" "48" "01SN-DS" " " RETURNING RESU.
-       CALL "SD_Init" USING 
-            "03SN-DS" "X" "W-L1" "57" "7" "02SN-DS" " " RETURNING RESU.
-       CALL "SD_Init" USING 
-            "04SN-DS" "X" "W-L1" "65" "5" "03SN-DS" " " RETURNING RESU.
-       CALL "SD_Init" USING 
-            "05SN-DS" "X" "W-L1" "71" "9" "04SN-DS" " " RETURNING RESU.
+       CALL "SD_Init" USING
+            "02SN-DS" "X" "W-L1" "8" "48" "01SN-DS" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "03SN-DS" "X" "W-L1" "57" "7" "02SN-DS" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "04SN-DS" "X" "W-L1" "65" "5" "03SN-DS" " "
+            RETURNING RESU.
+       CALL "SD_Init" USING
+            "05SN-DS" "X" "W-L1" "71" "9" "04SN-DS" " "
+            RETURNING RESU.
       *C-ERR
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "C-ERR" " " "0" "0" "713" " " " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01C-ERR" " " "24" "0" "713" " " "C-ERR" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME1" "X" "24" "15" "15" " " "01C-ERR" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME2" "X" "24" "15" "16" "E-ME1" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME3" "X" "24" "15" "21" "E-ME2" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME4" "X" "24" "15" "20" "E-ME3" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME5" "X" "24" "15" "20" "E-ME4" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME6" " " "24" "0" "22" "E-ME5" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01E-ME6" "X" "24" "15" "16" " " "E-ME6" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02E-ME6" "9" "24" "34" "6" "01E-ME6" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "02E-ME6" BY REFERENCE W-HCD "6" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME7" " " "24" "0" "28" "E-ME6" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01E-ME7" "X" "24" "15" "22" " " "E-ME7" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02E-ME7" "9" "24" "40" "6" "01E-ME7" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "02E-ME7" BY REFERENCE W-HCD "6" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME8" "X" "24" "15" "24" "E-ME7" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME9" "X" "24" "15" "20" "E-ME8" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME12" "X" "24" "15" "20" "E-ME9" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME14" "X" "24" "15" "25" "E-ME12" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME15" "X" "24" "15" "25" "E-ME14" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME16" "X" "24" "15" "25" "E-ME15" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME17" "X" "24" "15" "27" "E-ME16" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME19" "X" "24" "15" "28" "E-ME17" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME20" "X" "24" "15" "41" "E-ME19" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME21" "X" "24" "15" "17" "E-ME20" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME22" "X" "24" "15" "27" "E-ME21" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME23" "X" "24" "15" "17" "E-ME22" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME24" "X" "24" "15" "26" "E-ME23" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME25" " " "24" "0" "26" "E-ME24" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01E-ME25" "N" "24" "15" "16" " " "E-ME25" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02E-ME25" "9999/99/99" "24" "34" "10" "01E-ME25" " "
             RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "02E-ME25" BY REFERENCE W-SDATE "8" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME26" "X" "24" "15" "24" "E-ME25" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME27" "X" "24" "15" "26" "E-ME26" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME28" "X" "24" "15" "17" "E-ME27" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME29" "X" "24" "15" "30" "E-ME28" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME30" "X" "24" "15" "30" "E-ME29" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME31" "X" "24" "15" "29" "E-ME30" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "E-ME90" "X" "24" "15" "21" "E-ME31" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "MG-03" "X" "24" "15" "24" "E-ME90" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "MG-05" "X" "24" "15" "22" "MG-03" " " RETURNING RESU.
       *
            COPY LSSEM_P.
@@ -1057,7 +1066,7 @@
            END-IF
            ACCEPT JS-SIGN FROM ARGUMENT-VALUE.
            IF  JS-SIGN > 1
-               CALL "C3_Set_Jrcode" USING 
+               CALL "C3_Set_Jrcode" USING
                 USER_ID BY REFERENCE COMPLETION_CODE 255
                CALL "DB_Close"
                STOP RUN
@@ -1068,7 +1077,7 @@
                PERFORM NGC-RTN THRU NGC-EX
            END-IF
            IF  W-END NOT = 0
-               CALL "C3_Set_Jrcode" USING 
+               CALL "C3_Set_Jrcode" USING
                 USER_ID BY REFERENCE COMPLETION_CODE 255
                CALL "SD_Output" USING
                 "C-CLEAR" C-CLEAR "p" RETURNING RESU
@@ -1114,7 +1123,7 @@
            CALL "DB_F_Open" USING
             "INPUT" S-TRAN_PNAME1 " " BY REFERENCE S-TRAN_IDLST "0".
       *           READ S-TRAN AT END
-      *///////////////
+      *//////////////////////
            CALL "DB_Read" USING
             "AT END" S-TRAN_PNAME1 BY REFERENCE S-R " " RETURNING RET.
            IF  RET = 1
@@ -1122,23 +1131,19 @@
            END-IF.
        M-10.
            IF  S-DHC NOT = 0
-               CALL "SD_Output" USING
-                "E-ME19" E-ME19 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME99" E-ME99 "p" RETURNING RESU
-               CALL "C3_Set_Jrcode" USING 
+               CALL "SD_Output" USING "E-ME19" E-ME19 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
+               CALL "C3_Set_Jrcode" USING
                 USER_ID BY REFERENCE COMPLETION_CODE 255
                GO TO M-95
            END-IF
       *           READ S-TRAN AT END
-      *///////////////
+      *//////////////////////
            CALL "DB_Read" USING
             "AT END" S-TRAN_PNAME1 BY REFERENCE S-R " " RETURNING RET.
            IF  RET = 1
-               CALL "SD_Output" USING
-                "E-ME20" E-ME20 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME99" E-ME99 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME20" E-ME20 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
                GO TO M-15
            END-IF
            GO TO M-10.
@@ -1152,7 +1157,7 @@
                GO TO M-20
            END-IF
            IF  CHK = 5
-               CALL "C3_Set_Jrcode" USING 
+               CALL "C3_Set_Jrcode" USING
                 USER_ID BY REFERENCE COMPLETION_CODE 255
                GO TO M-95
            END-IF
@@ -1274,7 +1279,7 @@
            CALL "DB_F_Open" USING
             "INPUT" BBS-TRAN_PNAME1 " " BY REFERENCE BBS-TRAN_IDLST "0".
       *           READ BBS-TRAN AT END
-      *///////////////
+      *//////////////////////
            CALL "DB_Read" USING
             "AT END" BBS-TRAN_PNAME1 BY REFERENCE BBS-R " "
             RETURNING RET.
@@ -1284,10 +1289,8 @@
            IF  BBS-CNG NOT = W-CNG
                CALL "DB_F_Close" USING
                 BY REFERENCE BBS-TRAN_IDLST BBS-TRAN_PNAME1
-               CALL "SD_Output" USING
-                "E-ME31" E-ME31 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME99" E-ME99 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME31" E-ME31 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
                MOVE 1 TO W-END
                GO TO NGC-EX
            END-IF.
@@ -1335,10 +1338,8 @@
                ADD DATE-NC2 TO W-ND
            END-IF
            IF  W-NGD NOT = W-CNG
-               CALL "SD_Output" USING
-                "E-ME12" E-ME12 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME98" E-ME98 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME12" E-ME12 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO UAC-020
            END-IF
            IF  W-PD < 1 OR > 31
@@ -1366,10 +1367,8 @@
            CALL "DB_Start" USING
             HSMSF_PNAME1 "HSMS-KEY" " NOT < " HSMS-KEY RETURNING RET.
            IF  RET = 1
-               CALL "SD_Output" USING
-                "E-ME21" E-ME21 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME98" E-ME98 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME21" E-ME21 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                MOVE 1 TO W-HNC
                MOVE W-HMN TO W-HNOD
                GO TO UAC-080
@@ -1377,31 +1376,25 @@
       *           READ HSMSF NEXT RECORD AT END
       *///////////////
            CALL "DB_Read" USING
-            "NEXT RECORD AT END" HSMSF_PNAME1 BY REFERENCE HSMS-R " "
+            "NEXT RECORD AT END" HSMSF_PNAME1 BY REFERENCE HSMS-R1 " "
             RETURNING RET.
            IF  RET = 1
-               CALL "SD_Output" USING
-                "E-ME21" E-ME21 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME98" E-ME98 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME21" E-ME21 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                MOVE 1 TO W-HNC
                MOVE W-HMN TO W-HNOD
                GO TO UAC-080
            END-IF
            IF  W-HMN NOT = HSMS-01
-               CALL "SD_Output" USING
-                "E-ME21" E-ME21 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME98" E-ME98 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME21" E-ME21 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                MOVE 1 TO W-HNC
                MOVE W-HMN TO W-HNOD
                GO TO UAC-080
            END-IF
            IF  HSMS-02 = 7
-               CALL "SD_Output" USING
-                "E-ME21" E-ME21 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME98" E-ME98 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME21" E-ME21 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO UAC-060
            END-IF
            PERFORM HMN-RTN THRU HMN-EX.
@@ -1413,10 +1406,8 @@
                GO TO UAC-060
            END-IF
            IF  T-BC NOT = ZERO
-               CALL "SD_Output" USING
-                "E-ME1" E-ME1 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME98" E-ME98 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME1" E-ME1 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO UAC-060
            END-IF
            MOVE 1 TO W-DSPC.
@@ -1493,16 +1484,13 @@
       *           READ JCON UNLOCK INVALID
       *///////////////
            CALL "DB_Read" USING
-            "INVALID" JCON_PNAME1 BY REFERENCE JCON-R "UNLOCK"
+            "INVALID" JCON_PNAME1 BY REFERENCE JCON3-R "UNLOCK"
             RETURNING RET.
            IF  RET = 1
                MOVE  SPACE TO JCON3-03
-               CALL "SD_Output" USING
-                "DU-SNA" DU-SNA "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "MG-03" MG-03 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME98" E-ME98 "p" RETURNING RESU
+               CALL "SD_Output" USING "DU-SNA" DU-SNA "p" RETURNING RESU
+               CALL "SD_Output" USING "MG-03" MG-03 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO UAC-080
            END-IF
            MOVE W-SCD TO W-SOK.
@@ -1528,17 +1516,13 @@
            END-IF
            PERFORM TM-RTN THRU TM-EX.
            IF  W-INV = 1
-               CALL "SD_Output" USING
-                "E-ME1" E-ME1 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME98" E-ME98 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME1" E-ME1 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO UAC-120
            END-IF
            IF  T-BC NOT = ZERO
-               CALL "SD_Output" USING
-                "E-ME1" E-ME1 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME98" E-ME98 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME1" E-ME1 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO UAC-120
            END-IF.
        UAC-260.
@@ -1553,17 +1537,13 @@
            END-IF
            PERFORM TCM-RTN THRU TCM-EX.
            IF  W-INV = 1
-               CALL "SD_Output" USING
-                "E-ME2" E-ME2 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME98" E-ME98 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME2" E-ME2 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO UAC-260
            END-IF
            IF  W-INV = 9
-               CALL "SD_Output" USING
-                "E-ME3" E-ME3 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME99" E-ME99 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME3" E-ME3 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
                MOVE 1 TO W-END
                GO TO UAC-EX
            END-IF.
@@ -1819,13 +1799,11 @@
                MOVE ZERO TO W-DCC
            END-IF
            IF  W-DCD NOT = W-DCC
-               CALL "SD_Output" USING
-                "E-ME4" E-ME4 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME98" E-ME98 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME4" E-ME4 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO UAC-380
            END-IF
-           IF  W-DC = 8
+           IF W-DC = 8
                CALL "SD_Output" USING "SU-D2" SU-D2 "p" RETURNING RESU
                CALL "SD_Output" USING "SU-D3" SU-D3 "p" RETURNING RESU
                MOVE ZERO TO W-ZD1 W-ZD2 W-FT
@@ -1869,9 +1847,9 @@
            IF  W-DC = 3 OR 4 OR 9
                IF  HI-S4(10) NOT = 1
                    CALL "SD_Output" USING
-                     "E-ME8" E-ME8 "p" RETURNING RESU
-                    CALL "SD_Output" USING
-                     "E-ME98" E-ME98 "p" RETURNING RESU
+                    "E-ME8" E-ME8 "p" RETURNING RESU
+                   CALL "SD_Output" USING
+                    "E-ME98" E-ME98 "p" RETURNING RESU
                    MOVE 0 TO W-ADV
                    GO  TO    UAC-480
                END-IF
@@ -1951,10 +1929,8 @@
            END-IF
            IF  W-ASD = ZERO OR SPACE
                MOVE 0 TO W-ADV
-               CALL "SD_Output" USING
-                "E-ME9" E-ME9 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME98" E-ME98 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME9" E-ME9 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO UAC-560
            END-IF
            IF  W-SIZ = 4
@@ -2218,10 +2194,8 @@
                CALL "SD_Output" USING "AU-BI" AU-BI "p" RETURNING RESU
            END-IF
            IF  W-HNCD < W-HNC
-               CALL "SD_Output" USING
-                "E-ME14" E-ME14 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME98" E-ME98 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME14" E-ME14 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
            END-IF.
        UAC-800.
            MOVE 0 TO W-ADV.
@@ -2444,10 +2418,8 @@
                GO TO UAC-990
            END-IF
            IF  W-DMM = 9
-               CALL "SD_Output" USING
-                "E-ME90" E-ME90 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME98" E-ME98 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME90" E-ME90 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO UAC-040
            END-IF
            IF  W-DMM NOT = 1
@@ -2494,10 +2466,8 @@
                ADD DATE-NC2 TO W-ND
            END-IF
            IF  W-CNG NOT = W-NGD
-               CALL "SD_Output" USING
-                "E-ME12" E-ME12 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME98" E-ME98 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME12" E-ME12 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO NAC-020
            END-IF.
        NAC-040.
@@ -2517,17 +2487,13 @@
            END-IF
            PERFORM TM-RTN THRU TM-EX.
            IF  W-INV = 1
-               CALL "SD_Output" USING
-                "E-ME1" E-ME1 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME98" E-ME98 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME1" E-ME1 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO NAC-040
            END-IF
            IF  T-BC NOT = ZERO
-               CALL "SD_Output" USING
-                "E-ME1" E-ME1 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME98" E-ME98 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME1" E-ME1 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO NAC-040
            END-IF.
        NAC-060.
@@ -2924,7 +2890,7 @@
             "I-O" S-TRAN_PNAME1 " " BY REFERENCE S-TRAN_IDLST "0".
        SD-020.
       *           READ S-TRAN AT END
-      *///////////////
+      *//////////////////////
            CALL "DB_Read" USING
             "AT END" S-TRAN_PNAME1 BY REFERENCE S-R " " RETURNING RET.
            IF  RET = 1
@@ -2939,12 +2905,9 @@
            CALL "DB_Update" USING
             S-TRAN_PNAME1 S-TRAN_LNAME S-R RETURNING RET.
            IF  ERR-STAT NOT = "00"
-               CALL "SD_Output" USING
-                "E-STAT" E-STAT "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME17" E-ME17 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME99" E-ME99 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-STAT" E-STAT "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME17" E-ME17 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
            END-IF
            GO TO SD-020.
        SD-EX.
@@ -2958,10 +2921,8 @@
            MOVE HSMS-061 TO W-TCDD.
            PERFORM TM-RTN THRU TM-EX.
            IF  W-INV = 1
-               CALL "SD_Output" USING
-                "E-ME2" E-ME2 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME99" E-ME99 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME2" E-ME2 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
                GO TO HMN-EX
            END-IF.
        HMN-020.
@@ -3011,10 +2972,10 @@
            MOVE W-SR TO W-AS(HSMS-02).
        HMN-035.
       *           READ HSMSF NEXT RECORD AT END
-      *///////////////
+      *//////////////////////
            CALL "DB_Read" USING
-            "NEXT RECORD AT END" HSMSF_PNAME1 BY REFERENCE HSMS-R " "
-            RETURNING RET.
+            "NEXT RECORD AT END" HSMSF_PNAME1 BY REFERENCE HSMS-R1
+            " " RETURNING RET.
            IF  RET = 1
                GO TO HMN-040
            END-IF
@@ -3033,7 +2994,7 @@
       *           READ JCON UNLOCK INVALID
       *///////////////
            CALL "DB_Read" USING
-            "INVALID" JCON_PNAME1 BY REFERENCE JCON-R "UNLOCK"
+            "INVALID" JCON_PNAME1 BY REFERENCE JCON3-R "UNLOCK"
             RETURNING RET.
            IF  RET = 1
                MOVE  SPACE TO JCON3-03
@@ -3050,10 +3011,8 @@
            END-IF
            PERFORM TCM-RTN THRU TCM-EX.
            IF  W-INV = 1
-               CALL "SD_Output" USING
-                "E-ME1" E-ME1 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME99" E-ME99 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME1" E-ME1 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
                GO TO HMN-EX
            END-IF
            MOVE ZERO TO W-FRCD.
@@ -3366,15 +3325,13 @@
       *
            MOVE W-HCD TO HUH-KEY.
       *           READ HUH-M WITH UNLOCK INVALID KEY
-      *///////////////
+      *//////////////////////
            CALL "DB_Read" USING
             "INVALID KEY" HUH-M_PNAME1 BY REFERENCE HUH-R "UNLOCK"
             RETURNING RET.
            IF  RET = 1
-               CALL "SD_Output" USING
-                "E-ME28" E-ME28 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME99" E-ME99 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME28" E-ME28 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
                CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU
                GO TO HI-EX
            END-IF
@@ -3435,21 +3392,18 @@
            MOVE SPACE TO HKB-KEY.
            MOVE "05" TO HKB-NO.
       *           READ HKBM INVALID KEY
-      *///////////////
+      *//////////////////////
            CALL "DB_Read" USING
-            "INVALID KEY" HKBM_PNAME1 BY REFERENCE HKB-R "UNLOCK"
+            "INVALID KEY" HKBM_PNAME1 BY REFERENCE HKB-R " "
             RETURNING RET.
            IF  RET = 1
                CALL "DB_F_Close" USING
                 BY REFERENCE HKBM_IDLST HKBM_PNAME1
                MOVE 1 TO W-END
-               CALL "SD_Output" USING
-                "E-ME78" E-ME78 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME23" E-ME23 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME99" E-ME99 "p" RETURNING RESU
-               CALL "C3_Set_Jrcode" USING 
+               CALL "SD_Output" USING "E-ME78" E-ME78 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME23" E-ME23 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
+               CALL "C3_Set_Jrcode" USING
                 USER_ID BY REFERENCE COMPLETION_CODE 255
                GO TO UPD-EX
            END-IF
@@ -3462,18 +3416,16 @@
       *           REWRITE HKB-R INVALID KEY
       *///////////////
            CALL "DB_Update" USING
-            HKBM_PNAME1 HKBM_LNAME HKB-R RETURNING RET
+            HKBM_PNAME1 HKBM_LNAME HKB-R RETURNING RET.
            IF  RET = 1
                CALL "DB_F_Close" USING
                 BY REFERENCE HKBM_IDLST HKBM_PNAME1
                MOVE 1 TO W-END
-               CALL "SD_Output" USING
-                "E-ME78" E-ME78 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME24" E-ME24 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME99" E-ME99 "p" RETURNING RESU
-               CALL "C3_Set_Jrcode" USING 
+               CALL "SD_Output" USING "E-STAT" E-STAT "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME78" E-ME78 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME24" E-ME24 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
+               CALL "C3_Set_Jrcode" USING
                 USER_ID BY REFERENCE COMPLETION_CODE 255
                GO TO UPD-EX
            END-IF
@@ -3565,12 +3517,9 @@
            CALL "DB_Insert" USING
             THTM_PNAME1 THTM_LNAME THT-R RETURNING RET.
            IF  RET = 1
-               CALL "SD_Output" USING
-                "E-STAT" E-STAT "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME26" E-ME26 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME99" E-ME99 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-STAT" E-STAT "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME26" E-ME26 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
                CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU
                GO TO UPD-020
            END-IF
@@ -3614,7 +3563,6 @@
            CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU.
            GO TO UPD-900.
        UPD-200.
-      *
            IF (W-HMN = ZERO) OR (W-HNC = 1)
                GO TO UPD-EX
            END-IF.
@@ -3633,7 +3581,7 @@
       *           READ HSMSF NEXT RECORD AT END
       *///////////////
            CALL "DB_Read" USING
-            "NEXT RECORD AT END" HSMSF_PNAME1 BY REFERENCE HSMS-R " "
+            "NEXT RECORD AT END" HSMSF_PNAME1 BY REFERENCE HSMS-R1 " "
             RETURNING RET.
            IF  RET = 1
                GO TO UPD-EX
@@ -3650,12 +3598,9 @@
            CALL "DB_Update" USING
             HSMSF_PNAME1 HSMSF_LNAME HSMS-R1 RETURNING RET.
            IF  RET = 1
-               CALL "SD_Output" USING
-                "E-STAT" E-STAT "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME22" E-ME22 "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME99" E-ME99 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-STAT" E-STAT "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME22" E-ME22 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
                CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU
            END-IF
            GO TO UPD-240.

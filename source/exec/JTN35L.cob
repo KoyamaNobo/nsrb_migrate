@@ -333,7 +333,7 @@
        01  DSP-AREA.
            02  FILLER  PIC  X(20) VALUE
                "èoâ◊Å@Å@Å@ì¸óÕÉäÉXÉg".
-           02  FILLER  PIC N(02).
+           02  FILLER  PIC  N(02).
            02  FILLER.
              03  FILLER  PIC  X(15) VALUE  "ì¸óÕâÊñ áÇ     ".
              03  FILLER  PIC  X(09) VALUE  "(ALL=999)".
@@ -381,9 +381,9 @@
            02  FILLER  PIC  X(06) VALUE  "      ".
            02  FILLER  PIC  X(06) VALUE  "      ".
        01  DSP-ERR.
-           02  ERR-JS      PIC  X(30)
+           02  ERR-JS     PIC  X(30)
                VALUE "ÅñÅ@ÇiÇrÅ|ÇrÇhÇfÇmÅ@ÉGÉâÅ[Å@Åñ".
-           02  ERR-READ    PIC  X(32)
+           02  ERR-READ   PIC  X(32)
                VALUE "ÅñÅ@ÇiÇrÇsÇqÅ@ÇqÇdÇ`ÇcÉGÉâÅ[Å@Åñ".
        01  DISP-ERR-AREA.
            02  DISP-MSG-01.
@@ -423,225 +423,227 @@
        CALL "SD_Init" USING
            "01DSP-CLR" "X" "1" "0" "12" " " "DSP-CLR" RETURNING RESU.
       *DSP-AREA
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DSP-AREA" " " "0" "0" "159" " " " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01DSP-AREA" "RX" "1" "26" "20" " " "DSP-AREA"
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02DSP-AREA" "N" "1" "30" "4" "01DSP-AREA" " "
             RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "02DSP-AREA" BY REFERENCE W-M "4" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "03DSP-AREA" " " "5" "0" "24" "02DSP-AREA" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "0103DSP-AREA" "X" "5" "25" "15" " " "03DSP-AREA"
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "0203DSP-AREA" "X" "5" "44" "9" "0103DSP-AREA" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "04DSP-AREA" " " "7" "0" "36" "03DSP-AREA" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "0104DSP-AREA" "X" "7" "25" "22" " " "04DSP-AREA"
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "0204DSP-AREA" "X" "7" "47" "14" "0104DSP-AREA" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "05DSP-AREA" "X" "10" "25" "12" "04DSP-AREA" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "06DSP-AREA" " " "11" "0" "18" "05DSP-AREA" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "0106DSP-AREA" "X" "11" "25" "16" " " "06DSP-AREA"
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "0206DSP-AREA" "X" "11" "41" "1" "0106DSP-AREA" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "0306DSP-AREA" "X" "11" "43" "1" "0206DSP-AREA" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "07DSP-AREA" "X" "15" "31" "6" "06DSP-AREA" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "08DSP-AREA" "X" "16" "21" "8" "07DSP-AREA" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "09DSP-AREA" "X" "17" "21" "4" "08DSP-AREA" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "10DSP-AREA" " " "24" "0" "27" "09DSP-AREA" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "0110DSP-AREA" "X" "24" "41" "6" " " "10DSP-AREA"
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "0210DSP-AREA" "X" "24" "47" "9" "0110DSP-AREA" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "0310DSP-AREA" "X" "24" "56" "2" "0210DSP-AREA" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "0410DSP-AREA" "X" "24" "58" "10" "0310DSP-AREA" " "
             RETURNING RESU.
       *DSP-AREA1
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DSP-AREA1" " " "0" "0" "42" " " " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01DSP-AREA1" "X" "10" "48" "12" " " "DSP-AREA1"
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "02DSP-AREA1" "X" "11" "48" "12" "01DSP-AREA1" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "03DSP-AREA1" " " "12" "0" "18" "02DSP-AREA1" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "0103DSP-AREA1" "X" "12" "48" "16" " " "03DSP-AREA1"
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "0203DSP-AREA1" "X" "12" "64" "1" "0103DSP-AREA1" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "0303DSP-AREA1" "X" "12" "66" "1" "0203DSP-AREA1" " "
             RETURNING RESU.
       *DSP-AREA3
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DSP-AREA3" " " "0" "0" "34" " " " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01DSP-AREA3" "RX" "1" "12" "34" " " "DSP-AREA3"
             RETURNING RESU.
       *DSP-AREA4
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DSP-AREA4" " " "0" "0" "38" " " " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01DSP-AREA4" "RX" "1" "10" "38" " " "DSP-AREA4"
             RETURNING RESU.
       *DSP-AREA6
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DSP-AREA6" " " "0" "0" "36" " " " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01DSP-AREA6" "RX" "1" "10" "36" " " "DSP-AREA6"
             RETURNING RESU.
       *ACP-AREA
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "ACP-AREA" " " "0" "0" "19" " " " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "ACP-SNO" "9" "5" "37" "3" " " "ACP-AREA" RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "ACP-SNO" BY REFERENCE W-SNO "3" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "ACP-SIGN" "9" "7" "60" "1" "ACP-SNO" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "ACP-SIGN" BY REFERENCE JS-SIGN "1" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "ACP-SEN1" "9" "11" "42" "1" "ACP-SIGN" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "ACP-SEN1" BY REFERENCE W-SEN1 "1" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "ACP-SEN2" "9" "12" "65" "1" "ACP-SEN1" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "ACP-SEN2" BY REFERENCE W-SEN2 "1" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "ACP-FROM" "9" "16" "31" "6" "ACP-SEN2" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "ACP-FROM" BY REFERENCE W-FROM "6" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "ACP-TO" "9" "17" "31" "6" "ACP-FROM" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "ACP-TO" BY REFERENCE W-TO "6" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "ACP-DMM" "9" "24" "63" "1" "ACP-TO" " " RETURNING RESU.
-       CALL "SD_Using" USING 
+       CALL "SD_Using" USING
             "ACP-DMM" BY REFERENCE W-DMM "1" "0" RETURNING RESU.
       *DSP-CLE
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DSP-CLE" " " "0" "0" "12" " " " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01DSP-CLE" "X" "16" "31" "6" " " "DSP-CLE" RETURNING RESU.
-       CALL "SD_Init" USING 
-           "02DSP-CLE" "X" "17" "31" "6" "01DSP-CLE" " " RETURNING RESU.
+       CALL "SD_Init" USING
+            "02DSP-CLE" "X" "17" "31" "6" "01DSP-CLE" " "
+            RETURNING RESU.
       *DSP-ERR
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DSP-ERR" " " "0" "0" "62" " " " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "ERR-JS" "X" "24" "1" "30" " " "DSP-ERR" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "ERR-READ" "X" "24" "1" "32" "ERR-JS" " " RETURNING RESU.
       *DISP-ERR-AREA
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DISP-ERR-AREA" " " "24" "0" "203" " " " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DISP-MSG-01" " " "24" "0" "60" " " "DISP-ERR-AREA"
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01DISP-MSG-01" "X" "24" "1" "60" " " "DISP-MSG-01"
             RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "01DISP-MSG-01" BY REFERENCE ERR-MSGX "60" "0"
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DISP-MSG-SPACE" " " "24" "0" "40" "DISP-MSG-01" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01DISP-MSG-SPACE" "X" "24" "1" "40" " " "DISP-MSG-SPACE"
             RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "01DISP-MSG-SPACE" BY REFERENCE ERR-SPACE "60" "0"
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DISP-BUZ-B" " " "24" "0" "5" "DISP-MSG-SPACE" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01DISP-BUZ-B" "X" "24" "80" "5" " " "DISP-BUZ-B"
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "DISP-BUZ-J" " " "24" "0" "5" "DISP-BUZ-B" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01DISP-BUZ-J" "X" "24" "80" "5" " " "DISP-BUZ-J"
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "ERR-02" " " "24" "0" "22" "DISP-BUZ-J" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01ERR-02" "X" "24" "1" "22" " " "ERR-02" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "ERR-DIS" " " "24" "0" "71" "ERR-02" " " RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "01ERR-DIS" "X" "24" "2" "5" " " "ERR-DIS" RETURNING RESU.
-       CALL "SD_Init" USING 
-           "02ERR-DIS" "X" "24" "7" "12" "01ERR-DIS" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_Init" USING
+            "02ERR-DIS" "X" "24" "7" "12" "01ERR-DIS" " "
+            RETURNING RESU.
+       CALL "SD_From" USING
             "02ERR-DIS" BY REFERENCE ERR-F "12" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "03ERR-DIS" "X" "24" "19" "1" "02ERR-DIS" " "
             RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "03ERR-DIS" BY REFERENCE ERR-M "1" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "04ERR-DIS" "X" "24" "20" "11" "03ERR-DIS" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "05ERR-DIS" "X" "24" "31" "2" "04ERR-DIS" " "
             RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "05ERR-DIS" BY REFERENCE ERR-FLG "2" "0" RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "06ERR-DIS" "X" "24" "33" "5" "05ERR-DIS" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "07ERR-DIS" "X" "24" "38" "5" "06ERR-DIS" " "
             RETURNING RESU.
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "08ERR-DIS" "X" "24" "43" "30" "07ERR-DIS" " "
             RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "08ERR-DIS" BY REFERENCE ERR-K "30" "0" RETURNING RESU.
       *
            ACCEPT USER_ID FROM ARGUMENT-VALUE.
@@ -673,7 +675,7 @@
            CALL "PR_Open" RETURNING RESP.
            IF  W-JS         =  0
                CALL "DB_F_Open" USING
-                "I-O" OKJF_PNAME1 "SHARED" BY REFERENCE OKJF_IDLST "1"
+                "INPUT" OKJF_PNAME1 "SHARED" BY REFERENCE OKJF_IDLST "1"
                 "OKJF-KEY" BY REFERENCE OKJF-KEY
            END-IF.
        OPN-EX.
@@ -693,14 +695,13 @@
        END-EX.
            EXIT.
        GMN-RTN.
-           ACCEPT   W-JS FROM ARGUMENT-VALUE.
+           ACCEPT W-JS FROM ARGUMENT-VALUE.
            IF  W-JS     NOT =  0  AND  1  AND  3  AND  4  AND  6
-               CALL "SD_Output" USING
-                "ERR-JS" ERR-JS "p" RETURNING RESU
+               CALL "SD_Output" USING "ERR-JS" ERR-JS "p" RETURNING RESU
                CALL "SD_Output" USING
                 "DISP-BUZ-B" DISP-BUZ-B "p" RETURNING RESU
                CALL "DB_Close"
-               STOP  RUN
+               STOP RUN
            END-IF
            IF  W-JS         =  0
                MOVE  "éwê}"     TO  W-M
@@ -761,8 +762,8 @@
                 "DSP-AREA1" DSP-AREA1 "p" RETURNING RESU
            END-IF.
        GMN-005.
-           CALL "SD_Accept" USING BY REFERENCE ACP-SNO "ACP-SNO" "9" "3"
-            BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Accept" USING BY REFERENCE ACP-SNO "ACP-SNO"
+            "9" "3" BY REFERENCE ESTAT RETURNING RESU.
            CALL "SD_Output" USING
             "DISP-MSG-SPACE" DISP-MSG-SPACE "p" RETURNING RESU.
            IF  ESTAT      =  "P9"
@@ -909,7 +910,7 @@
                IF  W-FROM     <  100000
                    MOVE  100000    TO  JSTR-01
                END-IF
-           END-IF.
+           END-IF
       *           START    JSTR KEY   NOT <  JSTR-KEY  INVALID
       *///////////////
            CALL "DB_Start" USING
@@ -1043,7 +1044,7 @@
       *           READ     JCON       UNLOCK  INVALID
       *///////////////
            CALL "DB_Read" USING
-            "INVALID" JCON_PNAME1 BY REFERENCE JCON-R "UNLOCK"
+            "INVALID" JCON_PNAME1 BY REFERENCE JCON2-R "UNLOCK"
             RETURNING RET.
            IF  RET = 1
                MOVE     SPACE      TO    JCON2-03
@@ -1205,7 +1206,7 @@
                CALL "SD_Output" USING
                 "DISP-BUZ-B" DISP-BUZ-B "p" RETURNING RESU
                CALL "DB_Close"
-               STOP  RUN
+               STOP RUN
            END-IF
            IF  W-JS            =     0
                MOVE     1          TO    JSTR-4012
@@ -1300,7 +1301,7 @@
       *           READ     JCON       UNLOCK  INVALID
       *///////////////
            CALL "DB_Read" USING
-            "INVALID" JCON_PNAME1 BY REFERENCE JCON-R "UNLOCK"
+            "INVALID" JCON_PNAME1 BY REFERENCE JCON3-R "UNLOCK"
             RETURNING RET.
            IF  RET = 1
                MOVE     SPACE      TO    JCON3-03

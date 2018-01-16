@@ -119,23 +119,23 @@
       ***
        COPY    LWMSG.
       ***
-           COPY    L-JOS2.
-           COPY    L-JOSF.
-           COPY    L-JOJF.
-           COPY    L-JCON.
-      *
-      *-----------------------------------------------------------------
-      *----            << SCREEN  SECTION >>                        ----
-      *-----------------------------------------------------------------
-      *
+       COPY    L-JOS2.
+       COPY    L-JOSF.
+       COPY    L-JOJF.
+       COPY    L-JCON.
+      ***
        77  END-STS            PIC  X(002).
        77  RESU               PIC  9(001).
        77  RET                PIC  9(001) VALUE ZERO.
        77  USER_ID            PIC  X(006) VALUE SPACE.
        77  COMPLETION_CODE    PIC  X(003) VALUE ZERO.
-      *
+      ***
+      *-----------------------------------------------------------------
+      *----            << SCREEN  SECTION >>                        ----
+      *-----------------------------------------------------------------
        01  ACP-AREA.
            02  ACP-KAKU   PIC  X(01).
+      *----データ件数表示
            02  DSP-DKS.
                03  FILLER  PIC  X(22).
                03  FILLER  PIC  ZZZ,ZZ9 .
@@ -166,20 +166,20 @@
             "01DSP-DKS" "X" "LIN-W" "2" "22" " " "DSP-DKS"
             RETURNING RESU.
        CALL "SD_From" USING 
-            "01DSP-DKS" BY REFERENCE MSG-N(1) "22" "1" 
-            BY REFERENCE NN 46 RETURNING RESU.
+            "01DSP-DKS" BY REFERENCE MSG-N(1) "22" "1" BY REFERENCE
+             NN 46 RETURNING RESU.
        CALL "SD_Init" USING 
             "02DSP-DKS" "ZZZ,ZZ9" "LIN-W" "36" "7" "01DSP-DKS" " "
             RETURNING RESU.
        CALL "SD_From" USING 
-            "02DSP-DKS" BY REFERENCE DKS-T(1) "72" "1" BY REFERENCE NN 6
-            RETURNING RESU.
+            "02DSP-DKS" BY REFERENCE DKS-T(1) "6" "1" BY REFERENCE
+             NN 6 RETURNING RESU.
        CALL "SD_Init" USING 
             "03DSP-DKS" "N" "LIN-W" "44" "4" "02DSP-DKS" " "
             RETURNING RESU.
        CALL "SD_From" USING 
-            "03DSP-DKS" BY REFERENCE KEN-W(1) "2" "1" BY REFERENCE NN 46
-            RETURNING RESU.
+            "03DSP-DKS" BY REFERENCE KEN-W(1) "2" "1" BY REFERENCE
+             NN 46 RETURNING RESU.
        CALL "SD_Init" USING 
             "DSP-SNM" "N" "1" "59" "12" "DSP-DKS" " " RETURNING RESU.
        CALL "SD_From" USING 
@@ -189,8 +189,8 @@
        CALL "SD_Init" USING 
             "DSP-MSG1" "N" "23" "10" "40" " " "DSP-MSG" RETURNING RESU.
        CALL "SD_From" USING 
-            "DSP-MSG1" BY REFERENCE MSG-M(1) "98" "1" BY REFERENCE MM 14
-            RETURNING RESU.
+            "DSP-MSG1" BY REFERENCE MSG-M(1) "14" "1" BY REFERENCE
+             MM 14 RETURNING RESU.
        CALL "SD_Init" USING 
             "02DSP-MSG" "X" "23" "41" "3" "DSP-MSG1" " " RETURNING RESU.
        CALL "SD_Init" USING 
@@ -225,7 +225,7 @@
                CALL "SD_Output" USING
                 "DSP-MSG" DSP-MSG "p" RETURNING RESU
                CALL "C3_Set_Jrcode" USING 
-                USER_ID BY REFERENCE COMPLETION_CODE  255
+                USER_ID BY REFERENCE COMPLETION_CODE 255
                MOVE  1       TO  ERR-SW
                GO  TO  INI-EX
            END-IF
@@ -237,6 +237,7 @@
            END-IF
       *
            CALL "SD_Screen_Output" USING "SJXO22" RETURNING RESU.
+      *----ﾌｧｲﾙ  OPEN
            IF  JS-SIGN      =  0
                CALL "DB_F_Open" USING
                 "INPUT" JOLSF2_PNAME1 " " BY REFERENCE JOLSF2_IDLST "0"
@@ -260,7 +261,7 @@
                CALL "SD_Output" USING
                 "DSP-MSG" DSP-MSG "p" RETURNING RESU
                CALL "C3_Set_Jrcode" USING 
-                USER_ID BY REFERENCE COMPLETION_CODE  255
+                USER_ID BY REFERENCE COMPLETION_CODE 255
                MOVE  1       TO  ERR-SW
                GO  TO  INI-EX
            END-IF
@@ -271,7 +272,7 @@
                CALL "SD_Output" USING
                 "DSP-MSG" DSP-MSG "p" RETURNING RESU
                CALL "C3_Set_Jrcode" USING 
-                USER_ID BY REFERENCE COMPLETION_CODE  255
+                USER_ID BY REFERENCE COMPLETION_CODE 255
                MOVE  1       TO  ERR-SW
                GO  TO  INI-EX
            END-IF
@@ -287,7 +288,7 @@
                CALL "SD_Output" USING
                 "DSP-MSG" DSP-MSG "p" RETURNING RESU
                CALL "C3_Set_Jrcode" USING 
-                USER_ID BY REFERENCE COMPLETION_CODE  255
+                USER_ID BY REFERENCE COMPLETION_CODE 255
                MOVE  1       TO  ERR-SW
                GO  TO  INI-EX
            END-IF
@@ -304,7 +305,7 @@
                CALL "SD_Output" USING
                 "DSP-MSG" DSP-MSG "p" RETURNING RESU
                CALL "C3_Set_Jrcode" USING 
-                USER_ID BY REFERENCE COMPLETION_CODE  255
+                USER_ID BY REFERENCE COMPLETION_CODE 255
                MOVE  1       TO  ERR-SW
                GO  TO  INI-EX
            END-IF
@@ -431,7 +432,8 @@
            END-IF
            CALL "SD_Output" USING "DSP-DKS" DSP-DKS "p" RETURNING RESU.
        INI-050.
-           IF  NN  NOT  = 11  ADD   1       TO  NN
+           IF  NN  NOT  = 11
+               ADD   1       TO  NN
                GO  TO  INI-040
            END-IF
            MOVE  12           TO  NN.
@@ -452,13 +454,13 @@
            IF  JS-SIGN =  1
                IF  KAKU-W  =  9
                    CALL "C3_Set_Jrcode" USING 
-                    USER_ID BY REFERENCE COMPLETION_CODE  100
+                    USER_ID BY REFERENCE COMPLETION_CODE 100
                    GO  TO  INI-EX
                END-IF
            END-IF
-           IF  KAKU-W  =  9
+           IF  KAKU-W  =  9   
                CALL "C3_Set_Jrcode" USING 
-                USER_ID BY REFERENCE COMPLETION_CODE  255
+                USER_ID BY REFERENCE COMPLETION_CODE 255
                MOVE  1     TO  ERR-SW
            END-IF.
        INI-EX.
@@ -473,7 +475,8 @@
                END-IF
            END-IF
            MOVE  3            TO  MM.
-           CALL "SD_Output" USING "DSP-MSG" DSP-MSG "p" RETURNING RESU.
+           CALL "SD_Output" USING
+            "DSP-MSG1" DSP-MSG1 "p" RETURNING RESU.
       *
            MOVE  JOJF-RECW    TO  JOJF-REC.
            MOVE  JOJF-90      TO  JOJF-01.
@@ -508,14 +511,14 @@
                MOVE  "W"        TO  ERR-M
                MOVE  1          TO  ERR-SW
                CALL "C3_Set_Jrcode" USING 
-                USER_ID BY REFERENCE COMPLETION_CODE  255
+                USER_ID BY REFERENCE COMPLETION_CODE 255
                PERFORM  ERR-RTN  THRU  ERR-EX
                GO  TO  UPD-EX
            END-IF.
        UPD-020.
            MOVE  0001         TO  JOJF-01.
       *           READ  JOJF         INVALID
-      *///////////////
+      *//////////////////////
            CALL "DB_Read" USING
             "INVALID" JOJF_PNAME1 BY REFERENCE JOJF-REC " "
             RETURNING RET.
@@ -525,7 +528,7 @@
                MOVE  "A"        TO  ERR-M
                MOVE  1          TO  ERR-SW
                CALL "C3_Set_Jrcode" USING 
-                USER_ID BY REFERENCE COMPLETION_CODE  255
+                USER_ID BY REFERENCE COMPLETION_CODE 255
                PERFORM  ERR-RTN  THRU  ERR-EX
                GO  TO  UPD-EX
            END-IF
@@ -548,7 +551,7 @@
                MOVE  "R"        TO  ERR-M
                MOVE  1          TO  ERR-SW
                CALL "C3_Set_Jrcode" USING 
-                USER_ID BY REFERENCE COMPLETION_CODE  255
+                USER_ID BY REFERENCE COMPLETION_CODE 255
                PERFORM  ERR-RTN  THRU  ERR-EX
            END-IF
            IF  KAKU-W      =  9

@@ -12,9 +12,7 @@
        CONFIGURATION SECTION.
        SOURCE-COMPUTER. SYSTEM3100.
        OBJECT-COMPUTER. SYSTEM3100.
-       INPUT-OUTPUT SECTION.
        DATA DIVISION.
-       FILE SECTION.
        WORKING-STORAGE SECTION.
        77  JS-SIGN            PIC  9(001).
        01  HEAD1.
@@ -297,8 +295,8 @@
        01  W-CO               PIC  X(006) VALUE SPACE.
        01  W-FILE             PIC  X(013) VALUE SPACE.
        01  ERR-STAT           PIC  X(002).
-      *
            COPY LSTAT.
+      *
            COPY LIBFDD.
            COPY LIKBNO.
            COPY LISM.
@@ -318,94 +316,94 @@
        77  COMPLETION_CODE    PIC  X(003) VALUE ZERO.
       *
        01  C-CLEAR.
-           02  C-CL  PIC  X(12)  VALUE "CLEAR SCREEN".
+           02  C-CL    PIC  X(12) VALUE "CLEAR SCREEN".
        01  C-MID0.
-           02  FILLER   PIC  N(020) VALUE
+           02  FILLER  PIC  N(020) VALUE
                 "＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
-           02  FILLER   PIC  N(020) VALUE
+           02  FILLER  PIC  N(020) VALUE
                 "＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
-           02  FILLER   PIC  N(020) VALUE
+           02  FILLER  PIC  N(020) VALUE
                 "＊＊＊　　　　　　　　　　　　　　＊＊＊".
-           02  FILLER   PIC  N(020) VALUE
+           02  FILLER  PIC  N(020) VALUE
                 "＊＊＊　　製品仕入　入力リスト　　＊＊＊".
-           02  FILLER   PIC  N(020) VALUE
+           02  FILLER  PIC  N(020) VALUE
                 "＊＊＊　　　　　　　　　　　　　　＊＊＊".
-           02  FILLER   PIC  N(020) VALUE
+           02  FILLER  PIC  N(020) VALUE
                 "＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
-           02  FILLER   PIC  N(020) VALUE
+           02  FILLER  PIC  N(020) VALUE
                 "＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
-           02  FILLER   PIC  X(044) VALUE
+           02  FILLER  PIC  X(044) VALUE
                 "当月全件=1  未作表分=5  作表しない=9    ﾘﾀｰﾝ".
-           02  FILLER   PIC  X(022) VALUE
+           02  FILLER  PIC  X(022) VALUE
                 "確認  OK=1 NO=9   ﾘﾀｰﾝ".
        01  C-MID1.
-           02  FILLER   PIC  N(021) VALUE
+           02  FILLER  PIC  N(021) VALUE
                 "＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
-           02  FILLER   PIC  N(021) VALUE
+           02  FILLER  PIC  N(021) VALUE
                 "＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
-           02  FILLER   PIC  N(021) VALUE
+           02  FILLER  PIC  N(021) VALUE
                 "＊＊＊　　　　　　　　　　　　　　　＊＊＊".
-           02  FILLER   PIC  N(021) VALUE
+           02  FILLER  PIC  N(021) VALUE
                 "＊＊＊　　製品仕入　未変換リスト　　＊＊＊".
-           02  FILLER   PIC  N(021) VALUE
+           02  FILLER  PIC  N(021) VALUE
                 "＊＊＊　　　　　　　　　　　　　　　＊＊＊".
-           02  FILLER   PIC  N(021) VALUE
+           02  FILLER  PIC  N(021) VALUE
                 "＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
-           02  FILLER   PIC  N(021) VALUE
+           02  FILLER  PIC  N(021) VALUE
                 "＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊".
-           02  FILLER   PIC  X(022) VALUE
+           02  FILLER  PIC  X(022) VALUE
                 "確認  OK=1 NO=9   ﾘﾀｰﾝ".
        01  C-ACP.
-           02  A-ACT      PIC  9(001).
+           02  A-ACT   PIC  9(001).
            02  FILLER.
-             03  A-DATE     PIC  9(006).
-             03  A-CD       PIC  9(006).
-             03  A-DNO      PIC  9(006).
-           02  A-SCD      PIC  9(004).
-           02  A-JCD      PIC  9(006).
-           02  A-SUT      PIC S9(006).
-           02  A-SNO      PIC  9(001).
+             03  A-DATE  PIC  9(006).
+             03  A-CD    PIC  9(006).
+             03  A-DNO   PIC  9(006).
+           02  A-SCD   PIC  9(004).
+           02  A-JCD   PIC  9(006).
+           02  A-SUT   PIC S9(006).
+           02  A-SNO   PIC  9(001).
            02  FILLER.
-             03  A-RSN      PIC  9(002).
-             03  A-RNG      PIC  9(004).
-             03  A-RND      PIC  9(002).
-           02  A-SKC      PIC  9(001).
-           02  A-HCD      PIC  9(006).
+             03  A-RSN   PIC  9(002).
+             03  A-RNG   PIC  9(004).
+             03  A-RND   PIC  9(002).
+           02  A-SKC   PIC  9(001).
+           02  A-HCD   PIC  9(006).
            02  FILLER.
-             03  A-SU       PIC S9(004).
+             03  A-SU    PIC S9(004).
            02  FILLER.
-             03  A-HPC      PIC  9(001).
-             03  A-KRC      PIC  9(001).
-           02  A-LIST     PIC  9(001).
-           02  A-CHK      PIC  9(001).
-           02  A-DMM      PIC  9(001).
+             03  A-HPC   PIC  9(001).
+             03  A-KRC   PIC  9(001).
+           02  A-LIST  PIC  9(001).
+           02  A-CHK   PIC  9(001).
+           02  A-DMM   PIC  9(001).
        01  C-DSP.
-           02  D-SNA     PIC  N(024).
-           02  D-JNA     PIC  N(024).
-           02  D-SUT     PIC ZZZZZ9-.
-           02  D-SKN     PIC  N(006).
-           02  D-HNA     PIC  N(024).
-           02  D-SU      PIC ZZZZ-.
-           02  D-TSU     PIC ZZ,ZZ9-.
-           02  D-SUTD    PIC ZZZ,ZZ9-.
+           02  D-SNA   PIC  N(024).
+           02  D-JNA   PIC  N(024).
+           02  D-SUT   PIC ZZZZZ9- .
+           02  D-SKN   PIC  N(006).
+           02  D-HNA   PIC  N(024).
+           02  D-SU    PIC ZZZZ- .
+           02  D-TSU   PIC ZZ,ZZ9- .
+           02  D-SUTD  PIC ZZZ,ZZ9- .
            02  FILLER.
-             03  D-T       PIC ZZ,ZZ9.
-             03  D-KIN     PIC ---,---,--9.
+             03  D-T     PIC ZZ,ZZ9 .
+             03  D-KIN   PIC ---,---,--9 .
            02  D-CLEAR.
              03  FILLER.
-               04  S-CD      PIC  X(006) VALUE "      ".
-               04  S-DNO     PIC  X(006) VALUE "      ".
-             03  S-SCD     PIC  X(055).
-             03  S-JCD     PIC  X(055).
+               04  S-CD    PIC  X(006) VALUE "      ".
+               04  S-DNO   PIC  X(006) VALUE "      ".
+             03  S-SCD   PIC  X(055).
+             03  S-JCD   PIC  X(055).
              03  S-HD.
                04  S-RNO.
-                 05    PIC  X(002) VALUE "  ".
-                 05    PIC  X(004) VALUE "    ".
-                 05    PIC  X(002) VALUE "  ".
-               04  S-SKC     PIC  X(014) VALUE
+                 05  FILLER  PIC  X(002) VALUE "  ".
+                 05  FILLER  PIC  X(004) VALUE "    ".
+                 05  FILLER  PIC  X(002) VALUE "  ".
+               04  S-SKC   PIC  X(014) VALUE
                     "              ".
                04  S-HCD.
-                 05    PIC  X(055).
+                 05  FILLER  PIC  X(055).
                04  S-ASUD.
                  05  S-SIZ2.
                    06  FILLER  PIC  X(005) VALUE "     ".
@@ -448,33 +446,34 @@
                    06  FILLER  PIC  X(005) VALUE "     ".
                    06  FILLER  PIC  X(005) VALUE "     ".
                    06  FILLER  PIC  X(005) VALUE "     ".
-               04  S-SUT .
+               04  S-SUT.
                  05  FILLER  PIC  X(007) VALUE "       ".
                04  FILLER.
-                 05  S-T       PIC  X(006) VALUE "      ".
-                 05  S-KIN     PIC  X(011) VALUE
+                 05  S-T     PIC  X(006) VALUE "      ".
+                 05  S-KIN   PIC  X(011) VALUE
                       "           ".
                04  FILLER.
-                 05  S-HPC     PIC  X(001) VALUE " ".
-                 05  S-KRC     PIC  X(001) VALUE " ".
-               04  S-CHK      PIC  X(001) VALUE " ".
+                 05  S-HPC   PIC  X(001) VALUE " ".
+                 05  S-KRC   PIC  X(001) VALUE " ".
+               04  S-CHK   PIC  X(001) VALUE " ".
                04  S-SUTD.
                  05  FILLER  PIC  X(008) VALUE "        ".
        01  C-ERR.
            02  FILLER.
-             03  E-ME       PIC  X(030).
-             03  E-CO       PIC  X(006).
-             03  E-RNO      PIC  X(008).
-             03  E-ENGP     PIC 99/99/99.
+             03  E-ME    PIC  X(030).
+             03  E-CO    PIC  X(006).
+             03  E-RNO   PIC  X(008).
+             03  E-ENGP  PIC 99/99/99 .
            COPY LSSEM.
            COPY LIBSCR.
        PROCEDURE DIVISION.
+      *Initialize
+       CALL "SD_Initialize" RETURNING RESU.
+       CALL "PR_Initialize" USING "999" RETURNING RESP.
        CALL "DB_Initialize" USING BY REFERENCE ERR-STAT RETURNING RET.
        CALL "DB_Open".
-       CALL "PR_Initialize" USING "999" RETURNING RESP.
-       CALL "SD_Initialize" RETURNING RESU.
       *C-CLEAR
-       CALL "SD_Init" USING 
+       CALL "SD_Init" USING
             "C-CLEAR" " " "0" "0" "12" " " " " RETURNING RESU.
        CALL "SD_Init" USING
             "C-CL" "X" "1" "0" "12" " " "C-CLEAR" RETURNING RESU.
@@ -496,11 +495,9 @@
        CALL "SD_Init" USING
             "07C-MID0" "N" "9" "10" "40" "06C-MID0" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "08C-MID0" "X" "14" "10" "44" "07C-MID0" " " 
-            RETURNING RESU.
+            "08C-MID0" "X" "14" "10" "44" "07C-MID0" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "09C-MID0" "X" "23" "42" "22" "08C-MID0" " " 
-            RETURNING RESU.
+            "09C-MID0" "X" "23" "42" "22" "08C-MID0" " " RETURNING RESU.
       *C-MID1
        CALL "SD_Init" USING
             "C-MID1" " " "0" "0" "316" " " " " RETURNING RESU.
@@ -519,8 +516,7 @@
        CALL "SD_Init" USING
             "07C-MID1" "N" "9" "10" "42" "06C-MID1" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "08C-MID1" "X" "23" "42" "22" "07C-MID1" " " 
-            RETURNING RESU.
+            "08C-MID1" "X" "23" "42" "22" "07C-MID1" " " RETURNING RESU.
       *C-ACP
        CALL "SD_Init" USING
             "C-ACP" " " "0" "0" "60" " " " " RETURNING RESU.
@@ -529,9 +525,9 @@
        CALL "SD_Using" USING
             "A-ACT" BY REFERENCE W-ACT "1" "0" RETURNING RESU.
        CALL "SD_Init" USING
-            "01C-ACP" " " "3" "0" "18" "A-ACT" " " RETURNING RESU.
+            "02C-ACP" " " "3" "0" "18" "A-ACT" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "A-DATE" "9" "3" "13" "6" " " "01C-ACP" RETURNING RESU.
+            "A-DATE" "9" "3" "13" "6" " " "02C-ACP" RETURNING RESU.
        CALL "SD_Using" USING
             "A-DATE" BY REFERENCE W-NGPS "6" "0" RETURNING RESU.
        CALL "SD_Init" USING
@@ -539,11 +535,11 @@
        CALL "SD_Using" USING
             "A-CD" BY REFERENCE W-CDD "6" "0" RETURNING RESU.
        CALL "SD_Init" USING
-            "A-DNO" "9" "3" "62" "6" "A-DATE" " " RETURNING RESU.
+            "A-DNO" "9" "3" "62" "6" "A-CD" " " RETURNING RESU.
        CALL "SD_Using" USING
             "A-DNO" BY REFERENCE W-DNO "6" "0" RETURNING RESU.
        CALL "SD_Init" USING
-            "A-SCD" "9" "4" "13" "4" "01C-ACP" " " RETURNING RESU.
+            "A-SCD" "9" "4" "13" "4" "02C-ACP" " " RETURNING RESU.
        CALL "SD_Using" USING
             "A-SCD" BY REFERENCE W-SCDD "4" "0" RETURNING RESU.
        CALL "SD_Init" USING
@@ -559,54 +555,53 @@
        CALL "SD_Using" USING
             "A-SNO" BY REFERENCE W-SNO "2" "0" RETURNING RESU.
        CALL "SD_Init" USING
-            "02C-ACP" " " "8" "0" "8" "A-SNO" " " RETURNING RESU.
+            "07C-ACP" " " "8" "0" "8" "A-SNO" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "A-RSN" "9" "8" "45" "2" " " "02C-ACP" RETURNING RESU.
+            "A-RSN" "9" "8" "45" "2" " " "07C-ACP" RETURNING RESU.
        CALL "SD_Using" USING
             "A-RSN" BY REFERENCE W-RSN(1) "2" "1" BY REFERENCE W-SNO 337
-             RETURNING RESU.
+            RETURNING RESU.
        CALL "SD_Init" USING
-            "A-RNG" "9" "8" "48" "4" " " "A-RSN" RETURNING RESU.
+            "A-RNG" "9" "8" "48" "4" "A-RSN" " " RETURNING RESU.
        CALL "SD_Using" USING
             "A-RNG" BY REFERENCE W-RNG(1) "4" "1" BY REFERENCE W-SNO 337
-             RETURNING RESU.
+            RETURNING RESU.
        CALL "SD_Init" USING
-            "A-RND" "9" "8" "53" "2" " " "A-RNG" RETURNING RESU.
+            "A-RND" "9" "8" "53" "2" "A-RNG" " " RETURNING RESU.
        CALL "SD_Using" USING
             "A-RND" BY REFERENCE W-RND(1) "2" "1" BY REFERENCE W-SNO 337
-             RETURNING RESU.
+            RETURNING RESU.
        CALL "SD_Init" USING
-            "A-SKC" "9" "9" "13" "1" "02C-ACP" " " RETURNING RESU.
+            "A-SKC" "9" "9" "13" "1" "07C-ACP" " " RETURNING RESU.
        CALL "SD_Using" USING
             "A-SKC" BY REFERENCE W-SKC(1) "1" "1" BY REFERENCE W-SNO 337
-             RETURNING RESU.
+            RETURNING RESU.
        CALL "SD_Init" USING
             "A-HCD" "9" "10" "13" "6" "A-SKC" " " RETURNING RESU.
        CALL "SD_Using" USING
             "A-HCD" BY REFERENCE W-HCD(1) "6" "1" BY REFERENCE W-SNO 337
-             RETURNING RESU.
+            RETURNING RESU.
        CALL "SD_Init" USING
-            "03C-ACP" " " "W-L" "0" "4" "A-HCD" " " RETURNING RESU.
+            "10C-ACP" " " "W-L" "0" "4" "A-HCD" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "A-SU" "S9" "W-L" "W-C" "4" " " "03C-ACP" RETURNING RESU.
+            "A-SU" "S9" "W-L" "W-C" "4" " " "10C-ACP" RETURNING RESU.
        CALL "SD_Using" USING
-            "A-SU" BY REFERENCE W-SU(1,1,1) "4" "3" 
-            BY REFERENCE W-SNO 337 BY REFERENCE W-GC 40 
-            BY REFERENCE W-SC 4 RETURNING RESU.
+            "A-SU" BY REFERENCE W-SU(1,1,1) "4" "3" BY REFERENCE W-SNO
+            337 BY REFERENCE W-GC 40 BY REFERENCE W-SC 4 RETURNING RESU.
        CALL "SD_Init" USING
-            "04C-ACP" " " "22" "0" "2" "03C-ACP" " " RETURNING RESU.
+            "11C-ACP" " " "22" "0" "2" "10C-ACP" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "A-HPC" "9" "22" "15" "1" " " "04C-ACP" RETURNING RESU.
+            "A-HPC" "9" "22" "15" "1" " " "11C-ACP" RETURNING RESU.
        CALL "SD_Using" USING
             "A-HPC" BY REFERENCE W-HPC(1) "1" "1" BY REFERENCE W-SNO 337
-             RETURNING RESU.
+            RETURNING RESU.
        CALL "SD_Init" USING
             "A-KRC" "9" "22" "26" "1" "A-HPC" " " RETURNING RESU.
        CALL "SD_Using" USING
             "A-KRC" BY REFERENCE W-KRC(1) "1" "1" BY REFERENCE W-SNO 337
-             RETURNING RESU.
+            RETURNING RESU.
        CALL "SD_Init" USING
-            "A-LIST" "9" "14" "49" "1" "04C-ACP" " " RETURNING RESU.
+            "A-LIST" "9" "14" "49" "1" "11C-ACP" " " RETURNING RESU.
        CALL "SD_Using" USING
             "A-LIST" BY REFERENCE W-LIST "1" "0" RETURNING RESU.
        CALL "SD_Init" USING
@@ -622,51 +617,51 @@
             "C-DSP" " " "0" "0" "619" " " " " RETURNING RESU.
        CALL "SD_Init" USING
             "D-SNA" "N" "4" "18" "48" " " "C-DSP" RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "D-SNA" BY REFERENCE S-NAME "48" "0" RETURNING RESU.
        CALL "SD_Init" USING
             "D-JNA" "N" "5" "20" "48" "D-SNA" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "D-JNA" BY REFERENCE J-NAME "48" "0" RETURNING RESU.
        CALL "SD_Init" USING
             "D-SUT" "ZZZZZ9-" "6" "13" "7" "D-JNA" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "D-SUT" BY REFERENCE W-SUT "6" "0" RETURNING RESU.
        CALL "SD_Init" USING
             "D-SKN" "N" "9" "15" "12" "D-SUT" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "D-SKN" BY REFERENCE JCON3-03 "12" "0" RETURNING RESU.
        CALL "SD_Init" USING
             "D-HNA" "N" "10" "20" "48" "D-SKN" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "D-HNA" BY REFERENCE HI-NAME "48" "0" RETURNING RESU.
        CALL "SD_Init" USING
             "D-SU" "ZZZZ-" "W-L" "W-C" "5" "D-HNA" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "D-SU" BY REFERENCE W-SU(1,1,1) "4" "3" BY REFERENCE W-SNO
-             337 BY REFERENCE W-GC 40 BY REFERENCE W-SC 4 RETURNING RESU.
+            337 BY REFERENCE W-GC 40 BY REFERENCE W-SC 4 RETURNING RESU.
        CALL "SD_Init" USING
             "D-TSU" "ZZ,ZZ9-" "19" "66" "7" "D-SU" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "D-TSU" BY REFERENCE W-TSU "5" "0" RETURNING RESU.
        CALL "SD_Init" USING
-            "D-SUTD" "ZZZ,ZZ9-" "21" "65" "8" "D-TSU" " " 
+            "D-SUTD" "ZZZ,ZZ9-" "21" "65" "8" "D-TSU" " "
             RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "D-SUTD" BY REFERENCE W-SUTD "6" "0" RETURNING RESU.
        CALL "SD_Init" USING
-            "01C-DSP" " " "21" "0" "17" "D-SUTD" " " RETURNING RESU.
+            "09C-DSP" " " "21" "0" "17" "D-SUTD" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "D-T" "ZZ,ZZ9" "21" "11" "6" " " "01C-DSP" RETURNING RESU.
-       CALL "SD_From" USING 
+            "D-T" "ZZ,ZZ9" "21" "11" "6" " " "09C-DSP" RETURNING RESU.
+       CALL "SD_From" USING
             "D-T" BY REFERENCE HSH-T "5" "0" RETURNING RESU.
        CALL "SD_Init" USING
-            "D-KIN" "---,---,--9" "21" "23" "11" "D-T" " " 
+            "D-KIN" "---,---,--9" "21" "23" "11" "D-T" " "
             RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "D-KIN" BY REFERENCE W-KIN "8" "0" RETURNING RESU.
        CALL "SD_Init" USING
-            "D-CLEAR" " " "0" "0" "419" "01C-DSP" " " RETURNING RESU.
+            "D-CLEAR" " " "0" "0" "419" "09C-DSP" " " RETURNING RESU.
        CALL "SD_Init" USING
             "01D-CLEAR" " " "3" "0" "12" " " "D-CLEAR" RETURNING RESU.
        CALL "SD_Init" USING
@@ -675,11 +670,11 @@
             "S-DNO" "X" "3" "62" "6" "S-CD" " " RETURNING RESU.
        CALL "SD_Init" USING
             "S-SCD" "X" "4" "13" "55" "01D-CLEAR" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "S-SCD" BY REFERENCE W-SPC "55" "0" RETURNING RESU.
        CALL "SD_Init" USING
-            "S-JCD" "X" "5" "13" "55" "01D-CLEAR" " " RETURNING RESU.
-       CALL "SD_From" USING 
+            "S-JCD" "X" "5" "13" "55" "S-SCD" " " RETURNING RESU.
+       CALL "SD_From" USING
             "S-JCD" BY REFERENCE W-SPC "55" "0" RETURNING RESU.
        CALL "SD_Init" USING
             "S-HD" " " "0" "0" "297" "S-JCD" " " RETURNING RESU.
@@ -697,10 +692,10 @@
             "S-HCD" " " "10" "0" "55" "S-SKC" " " RETURNING RESU.
        CALL "SD_Init" USING
             "01S-HCD" "X" "10" "13" "55" " " "S-HCD" RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "01S-HCD" BY REFERENCE W-SPC "55" "0" RETURNING RESU.
        CALL "SD_Init" USING
-            "S-ASUD" " " "0" "0" "192" "S-HCD" " " RETURNING RESU.
+            "S-ASUD" " " "0" "0" "185" "S-HCD" " " RETURNING RESU.
        CALL "SD_Init" USING
             "S-SIZ2" " " "13" "0" "50" " " "S-ASUD" RETURNING RESU.
        CALL "SD_Init" USING
@@ -784,23 +779,23 @@
        CALL "SD_Init" USING
             "10S-SIZ1" "X" "19" "60" "5" "09S-SIZ1" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "S-SUT" " " "19" "0" "7" "S-SIZ1" " " RETURNING RESU.
+            "S-SUT" " " "19" "0" "7" "S-ASUD" " " RETURNING RESU.
        CALL "SD_Init" USING
             "01S-SUT" "X" "19" "66" "7" " " "S-SUT" RETURNING RESU.
        CALL "SD_Init" USING
-            "01S-HD" " " "21" "0" "17" "01S-SUT" " " RETURNING RESU.
+            "06S-HD" " " "21" "0" "17" "S-SUT" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "S-T" "X" "21" "11" "6" " " "01S-HD" RETURNING RESU.
+            "S-T" "X" "21" "11" "6" " " "06S-HD" RETURNING RESU.
        CALL "SD_Init" USING
             "S-KIN" "X" "21" "23" "11" "S-T" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "02S-HD" " " "22" "0" "2" "01S-HD" " " RETURNING RESU.
+            "07S-HD" " " "22" "0" "2" "06S-HD" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "S-HPC" "X" "22" "15" "1" " " "02S-HD" RETURNING RESU.
+            "S-HPC" "X" "22" "15" "1" " " "07S-HD" RETURNING RESU.
        CALL "SD_Init" USING
             "S-KRC" "X" "22" "26" "1" "S-HPC" " " RETURNING RESU.
        CALL "SD_Init" USING
-            "S-CHK" "X" "22" "38" "1" "02S-HD" " " RETURNING RESU.
+            "S-CHK" "X" "22" "38" "1" "07S-HD" " " RETURNING RESU.
        CALL "SD_Init" USING
             "S-SUTD" " " "21" "0" "8" "S-CHK" " " RETURNING RESU.
        CALL "SD_Init" USING
@@ -812,20 +807,20 @@
             "01C-ERR" " " "24" "0" "52" " " "C-ERR" RETURNING RESU.
        CALL "SD_Init" USING
             "E-ME" "X" "24" "15" "30" " " "01C-ERR" RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "E-ME" BY REFERENCE W-EM "30" "0" RETURNING RESU.
        CALL "SD_Init" USING
             "E-CO" "X" "24" "46" "6" "E-ME" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "E-CO" BY REFERENCE W-CO "6" "0" RETURNING RESU.
        CALL "SD_Init" USING
             "E-RNO" "X" "24" "46" "8" "E-CO" " " RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "E-RNO" BY REFERENCE HSS-RNO "8" "0" RETURNING RESU.
        CALL "SD_Init" USING
-            "E-ENGP" "99/99/99" "24" "46" "8" "E-CO" " " 
+            "E-ENGP" "99/99/99" "24" "46" "8" "E-RNO" " "
             RETURNING RESU.
-       CALL "SD_From" USING 
+       CALL "SD_From" USING
             "E-ENGP" BY REFERENCE HSH-ENGP "6" "0" RETURNING RESU.
       *
            COPY LSSEM_P.
@@ -833,53 +828,52 @@
       *
            ACCEPT USER_ID FROM ARGUMENT-VALUE.
            ACCEPT COMPLETION_CODE FROM ARGUMENT-VALUE.
-      *
        M-05.
            ACCEPT JS-SIGN FROM ARGUMENT-VALUE.
            IF  JS-SIGN > 2
                GO TO M-95
-           END-IF.
+           END-IF
            COPY LIBCPR.
            MOVE ZERO TO W-DATA.
            ACCEPT W-NGPS FROM DATE.
            IF  W-NEN2 >= DATE-NF1 AND <= DATE-NT1
                ADD DATE-NC1 TO W-NEN
-           END-IF.
+           END-IF
            IF  W-NEN2 >= DATE-NF2 AND <= DATE-NT2
                ADD DATE-NC2 TO W-NEN
-           END-IF.
+           END-IF
            MOVE W-NG TO W-SNG.
            MOVE ZERO TO W-NGP.
            MOVE D-NBNG TO W-NGS.
            IF  W-NEN2 >= DATE-NF1 AND <= DATE-NT1
                ADD DATE-NC1 TO W-NEN
-           END-IF.
+           END-IF
            IF  W-NEN2 >= DATE-NF2 AND <= DATE-NT2
                ADD DATE-NC2 TO W-NEN
-           END-IF.
+           END-IF
            MOVE W-NG TO W-BNG.
            ADD 1 TO W-GET.
            IF  W-GET = 13
                ADD 1 TO W-NEN
                MOVE 1 TO W-GET
-           END-IF.
+           END-IF
            MOVE 31 TO W-PEY.
            MOVE W-NGP TO W-ENGP.
            MOVE ZERO TO W-NGP.
            MOVE D-NHNG TO W-NGS.
            IF  W-NEN2 >= DATE-NF1 AND <= DATE-NT1
                ADD DATE-NC1 TO W-NEN
-           END-IF.
+           END-IF
            IF  W-NEN2 >= DATE-NF2 AND <= DATE-NT2
                ADD DATE-NC2 TO W-NEN
-           END-IF.
+           END-IF
            MOVE W-NG TO W-HNG.
            MOVE DATE-05R TO H-DATE.
            IF  JS-SIGN = 1 OR 2
                GO TO M-50
-           END-IF.
-           CALL "SD_Output" USING "C-CLEAR" C-CLEAR "p" 
-                                  RETURNING RESU.
+           END-IF
+      *
+           CALL "SD_Output" USING "C-CLEAR" C-CLEAR "p" RETURNING RESU.
            CALL "DB_F_Open" USING
             "I-O" KBNO-M_PNAME1 " " BY REFERENCE KBNO-M_IDLST "1"
             "BNO-KEY" BY REFERENCE BNO-KEY.
@@ -892,14 +886,12 @@
             RETURNING RET.
            IF  RET = 1
                MOVE "***  KBNOM ﾅｼ (01)  ***       " TO W-EM
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME99" E-ME99 "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
                CALL "DB_F_Close" USING
                 BY REFERENCE KBNO-M_IDLST KBNO-M_PNAME1
                GO TO M-95
-           END-IF.
+           END-IF
            MOVE BNO-DATE TO HIZUKE.
            MOVE SPACE TO BNO-KEY.
            MOVE "02" TO BNO-KEYD.
@@ -910,14 +902,13 @@
             RETURNING RET.
            IF  RET = 1
                MOVE "***  KBNOM ﾅｼ (02)  ***       " TO W-EM
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME99" E-ME99 "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
                CALL "DB_F_Close" USING
                 BY REFERENCE KBNO-M_IDLST KBNO-M_PNAME1
                GO TO M-95
-           END-IF.
+           END-IF
+      *
            CALL "DB_F_Open" USING
             "INPUT" S-M_PNAME1 "SHARED" BY REFERENCE S-M_IDLST "1"
             "S-KEY" BY REFERENCE S-KEY.
@@ -942,16 +933,17 @@
            PERFORM ACP-RTN THRU ACP-EX.
            IF  W-ACT = 9
                GO TO M-50
-           END-IF.
+           END-IF
+      *
            IF  W-ACT = 1
                GO TO M-25
-           END-IF.
+           END-IF
            MOVE SPACE TO HSS-KEY.
            MOVE W-DNO TO HSS-DNO.
       *           START HSS-F KEY NOT < HSS-KEY INVALID KEY
       *///////////////
            CALL "DB_Start" USING
-            HSS-F_PNAME1 "HSS-KEY" "NOT <" HSS-KEY RETURNING RET.
+            HSS-F_PNAME1 "HSS-KEY" " NOT < " HSS-KEY RETURNING RET.
            IF  RET = 1
                GO TO M-25
            END-IF.
@@ -963,13 +955,13 @@
             RETURNING RET.
            IF  RET = 1
                GO TO M-25
-           END-IF.
+           END-IF
            IF  HSS-DNO NOT = W-DNO
                GO TO M-25
-           END-IF.
+           END-IF
            IF  HSS-RNO = ZERO
                GO TO M-20
-           END-IF.
+           END-IF
            MOVE HSS-RNO TO HSH-KEY.
       *           READ HSHF INVALID KEY
       *///////////////
@@ -978,14 +970,11 @@
             RETURNING RET.
            IF  RET = 1
                MOVE "***  HSHF ﾛｯﾄNO ﾅｼ (SUB)  *** " TO W-EM
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-RNO" E-RNO "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME99" E-ME99 "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-RNO" E-RNO "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
                GO TO M-90
-           END-IF.
+           END-IF
            PERFORM SUB-RTN THRU SUB-EX.
       *           REWRITE HSH-R INVALID KEY
       *///////////////
@@ -993,12 +982,9 @@
             HSHF_PNAME1 HSHF_LNAME HSH-R RETURNING RET.
            IF  RET = 1
                MOVE "***  HSHF REWRITE ｴﾗｰ (SUB)  *" TO W-EM
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-RNO" E-RNO "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME99" E-ME99 "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-RNO" E-RNO "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
                GO TO M-90
            END-IF.
        M-20.
@@ -1007,48 +993,44 @@
            CALL "DB_Delete" USING HSS-F_PNAME1 RETURNING RET.
            IF  RET = 1
                MOVE "***  HSSF DELETE ｴﾗｰ  ***     " TO W-EM
-               CALL "SD_Output" USING "E-STAT" E-STAT "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME99" E-ME99 "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "E-STAT" E-STAT "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
                GO TO M-90
-           END-IF.
+           END-IF
            GO TO M-15.
        M-25.
            IF  W-ACT = 3
                GO TO M-10
-           END-IF.
+           END-IF
            IF  W-ACT = 1
                COMPUTE W-DNO = BNO-DNO1 + 1
                IF  W-DNO = ZERO
                    ADD 1 TO W-DNO
                END-IF
-           END-IF.
+           END-IF
            MOVE ZERO TO W-SNO.
        M-30.
            ADD 1 TO W-SNO.
            IF  W-SNO = 10
                GO TO M-35
-           END-IF.
+           END-IF
            IF (W-SKC(W-SNO) = ZERO) AND (W-HCD(W-SNO) = ZERO)
                GO TO M-30
-           END-IF.
+           END-IF
+      *
            MOVE "18" TO JCON5-KEY.
       *           READ JCON INVALID KEY
       *///////////////
            CALL "DB_Read" USING
-            "INVALID KEY" JCON_PNAME1 BY REFERENCE JCON-R " "
+            "INVALID KEY" JCON_PNAME1 BY REFERENCE JCON5-R " "
             RETURNING RET.
            IF  RET = 1
                MOVE "***  JCON ﾃﾞﾝﾋﾟｮｳNO ﾅｼ  ***   " TO W-EM
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                         RETURNING RESU
-               CALL "SD_Output" USING "C-CLEAR" C-CLEAR "p" 
-                                         RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
                GO TO M-90
-           END-IF.
+           END-IF
            ADD 1 TO JCON5-03.
            MOVE JCON5-03 TO W-UNO.
       *           REWRITE JCON5-R INVALID KEY
@@ -1057,14 +1039,12 @@
             JCON_PNAME1 JCON_LNAME JCON5-R RETURNING RET.
            IF  RET = 1
                MOVE "***  JCON REWRITE ｴﾗｰ  ***    " TO W-EM
-               CALL "SD_Output" USING "E-STAT" E-STAT "p" 
-                                         RETURNING RESU
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME99" E-ME99 "p" 
-                                         RETURNING RESU
+               CALL "SD_Output" USING "E-STAT" E-STAT "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
                GO TO M-90
-           END-IF.
+           END-IF
+      *
            MOVE ZERO TO HSS-R.
            MOVE W-DNO TO HSS-DNO.
            MOVE W-SNO TO HSS-SNO.
@@ -1085,25 +1065,22 @@
            MOVE W-UNO TO HSS-UNO.
            IF  W-ACT = 2
                MOVE W-NC TO HSS-BHC
-           END-IF.
+           END-IF
            MOVE 0 TO HSS-PRC.
       *           WRITE HSS-R INVALID KEY
-      *///////////////
+      *//////////////
            CALL "DB_Insert" USING
             HSS-F_PNAME1 HSS-F_LNAME HSS-R RETURNING RET.
-           IF  RET = 1 
+           IF  RET = 1
                MOVE "***  HSSF WRITE ｴﾗｰ  ***      " TO W-EM
-               CALL "SD_Output" USING "E-STAT" E-STAT "p" 
-                                         RETURNING RESU
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME99" E-ME99 "p" 
-                                         RETURNING RESU
+               CALL "SD_Output" USING "E-STAT" E-STAT "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
                GO TO M-90
-           END-IF.
+           END-IF
            IF  HSS-RNO = ZERO
                GO TO M-30
-           END-IF.
+           END-IF
            MOVE HSS-RNO TO HSH-KEY.
       *           READ HSHF INVALID KEY
       *///////////////
@@ -1112,14 +1089,11 @@
             RETURNING RET.
            IF  RET = 1
                MOVE "***  HSHF ﾛｯﾄNO ﾅｼ (ADD)  *** " TO W-EM
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-RNO" E-RNO "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME99" E-ME99 "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-RNO" E-RNO "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
                GO TO M-90
-           END-IF.
+           END-IF
            PERFORM ADD-RTN THRU ADD-EX.
       *           REWRITE HSH-R INVALID KEY
       *///////////////
@@ -1127,19 +1101,16 @@
             HSHF_PNAME1 HSHF_LNAME HSH-R RETURNING RET.
            IF  RET = 1
                MOVE "***  HSHF REWRITE ｴﾗｰ (ADD)  *" TO W-EM
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-RNO" E-RNO "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME99" E-ME99 "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-RNO" E-RNO "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
                GO TO M-90
-           END-IF.
+           END-IF
            GO TO M-30.
        M-35.
            IF  W-ACT = 2
                GO TO M-10
-           END-IF.
+           END-IF
            MOVE W-DNO TO BNO-DNO1.
       *           REWRITE KBNO-R INVALID KEY
       *///////////////
@@ -1147,24 +1118,18 @@
             KBNO-M_PNAME1 KBNO-M_LNAME KBNO-R RETURNING RET.
            IF  RET = 1
                MOVE "***  KBNOM REWRITE ｴﾗｰ  ***   " TO W-EM
-               CALL "SD_Output" USING "E-STAT" E-STAT "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME99" E-ME99 "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "E-STAT" E-STAT "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
                GO TO M-90
-           END-IF.
+           END-IF
            GO TO M-10.
        M-50.
-           CALL "SD_Output" USING "C-CLEAR" C-CLEAR "p" 
-                                  RETURNING RESU.
+           CALL "SD_Output" USING "C-CLEAR" C-CLEAR "p" RETURNING RESU.
            IF  JS-SIGN = 0
-               CALL "SD_Output" USING "C-MID0" C-MID0 "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "C-MID0" C-MID0 "p" RETURNING RESU
            ELSE
-               CALL "SD_Output" USING "C-MID1" C-MID1 "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "C-MID1" C-MID1 "p" RETURNING RESU
                IF  JS-SIGN = 2
                    GO TO M-65
                ELSE
@@ -1172,38 +1137,38 @@
                END-IF
            END-IF.
        M-55.
-           CALL "SD_Accept" USING BY REFERENCE A-LIST "A-LIST" "9" "1" 
-                 BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Accept" USING BY REFERENCE A-LIST "A-LIST" "9" "1"
+            BY REFERENCE ESTAT RETURNING RESU.
            IF  ESTAT NOT = HTB AND SKP
                GO TO M-55
-           END-IF.
+           END-IF
            IF  W-LIST NOT = 1 AND 5 AND 9
                GO TO M-55
            END-IF.
        M-60.
-           CALL "SD_Accept" USING BY REFERENCE A-DMM "A-DMM" "9" "1" 
-                 BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Accept" USING BY REFERENCE A-DMM "A-DMM" "9" "1"
+            BY REFERENCE ESTAT RETURNING RESU.
            IF  ESTAT = BTB
                IF  JS-SIGN = 0
                    GO TO M-55
                END-IF
-           END-IF.
+           END-IF
            IF  ESTAT NOT = HTB AND SKP
                GO TO M-60
-           END-IF.
+           END-IF
            IF  W-DMM = 9
                IF  JS-SIGN = 0
                    GO TO M-55
                ELSE
                    GO TO M-95
                END-IF
-           END-IF.
+           END-IF
            IF  W-DMM NOT = 1
                GO TO M-60
-           END-IF.
+           END-IF
            IF  W-LIST = 9
                GO TO M-95
-           END-IF.
+           END-IF
            IF  W-LIST = 1
                IF  W-BNG > W-HNG
                    MOVE W-HNG TO W-NG
@@ -1245,58 +1210,58 @@
             RETURNING RET.
            IF  RET = 1
                GO TO M-90
-           END-IF.
+           END-IF
            IF  W-LIST = 5
                IF  HSS-PRC NOT = 0
                    GO TO M-70
                END-IF
-           END-IF.
+           END-IF
            IF  W-LIST = 1
                IF  W-NG > HSS-NG
                    GO TO M-70
                END-IF
-           END-IF.
+           END-IF
            IF  JS-SIGN = 1
                IF  1 = HSS-BHC AND HSS-HHC
                    GO TO M-70
                END-IF
-           END-IF.
+           END-IF
            IF  JS-SIGN = 1
                IF  0 = HSS-HHC AND HSS-BHC
                    IF  HSS-NG NOT = W-BNG AND W-HNG
                        GO TO M-70
                    END-IF
                END-IF
-           END-IF.
+           END-IF
            IF  JS-SIGN = 1
                IF (HSS-HHC = 0) AND (HSS-BHC = 1)
                    IF  HSS-NG NOT = W-HNG
                        GO TO M-70
                    END-IF
                END-IF
-           END-IF.
+           END-IF
            IF  JS-SIGN = 1
                IF (HSS-HHC = 1) AND (HSS-BHC = 0)
                    IF  HSS-NG NOT = W-BNG
                        GO TO M-70
                    END-IF
                END-IF
-           END-IF.
+           END-IF
            IF  JS-SIGN = 2
                IF  HSS-HCD >= 999900
                    GO TO M-70
                END-IF
-           END-IF.
+           END-IF
            IF  JS-SIGN = 2
                IF  HSS-HHC = 1
                    GO TO M-70
                END-IF
-           END-IF.
+           END-IF
            IF  JS-SIGN = 2
                IF  HSS-NG NOT = W-HNG
                    GO TO M-70
                END-IF
-           END-IF.
+           END-IF
            MOVE 1 TO W-PC.
            CALL "PR_Open" RETURNING RESP.
            IF  JS-SIGN = 0
@@ -1305,17 +1270,17 @@
            ELSE
                MOVE  "＊＊＊　　製品仕入　未変換リスト　　＊＊＊"
                                                               TO H-MID
-           END-IF.
+           END-IF
            PERFORM MID-020 THRU MID-EX.
            MOVE ZERO TO W-DNO.
        M-75.
            PERFORM MEI-RTN THRU MEI-EX.
            IF  JS-SIGN = 1 OR 2
                GO TO M-80
-           END-IF.
+           END-IF
            IF  HSS-PRC = 1
                GO TO M-80
-           END-IF.
+           END-IF
            MOVE 1 TO HSS-PRC.
       *           REWRITE HSS-R INVALID KEY
       *///////////////
@@ -1323,12 +1288,9 @@
             HSS-F_PNAME1 HSS-F_LNAME HSS-R RETURNING RET.
            IF  RET = 1
                MOVE "***  HSSF REWRITE ｴﾗｰ  ***    " TO W-EM
-               CALL "SD_Output" USING "E-STAT" E-STAT "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME99" E-ME99 "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "E-STAT" E-STAT "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
                GO TO M-90
            END-IF.
        M-80.
@@ -1339,58 +1301,58 @@
             RETURNING RET.
            IF  RET = 1
                GO TO M-90
-           END-IF.
+           END-IF
            IF  W-LIST = 5
                IF  HSS-PRC NOT = 0
                    GO TO M-80
                END-IF
-           END-IF.
+           END-IF
            IF  W-LIST = 1
                IF  W-NG > HSS-NG
                    GO TO M-80
                END-IF
-           END-IF.
+           END-IF
            IF  JS-SIGN = 1
                IF  1 = HSS-BHC AND HSS-HHC
                    GO TO M-80
                END-IF
-           END-IF.
+           END-IF
            IF  JS-SIGN = 1
                IF  0 = HSS-HHC AND HSS-BHC
                    IF  HSS-NG NOT = W-BNG AND W-HNG
                        GO TO M-80
                    END-IF
                END-IF
-           END-IF.
+           END-IF
            IF  JS-SIGN = 1
                IF (HSS-HHC = 0) AND (HSS-BHC = 1)
                    IF  HSS-NG NOT = W-HNG
                        GO TO M-80
                    END-IF
                END-IF
-           END-IF.
+           END-IF
            IF  JS-SIGN = 1
                IF (HSS-HHC = 1) AND (HSS-BHC = 0)
                    IF  HSS-NG NOT = W-BNG
                        GO TO M-80
                    END-IF
                END-IF
-           END-IF.
+           END-IF
            IF  JS-SIGN = 2
                IF  HSS-HCD >= 999900
                    GO TO M-80
                END-IF
-           END-IF.
+           END-IF
            IF  JS-SIGN = 2
                IF  HSS-HHC = 1
                    GO TO M-80
                END-IF
-           END-IF.
+           END-IF
            IF  JS-SIGN = 2
                IF  HSS-NG NOT = W-HNG
                    GO TO M-80
                END-IF
-           END-IF.
+           END-IF
            GO TO M-75.
        M-90.
            IF  JS-SIGN = 0
@@ -1398,7 +1360,7 @@
                 BY REFERENCE JCON_IDLST JCON_PNAME1
                CALL "DB_F_Close" USING
                 BY REFERENCE KBNO-M_IDLST KBNO-M_PNAME1
-           END-IF.
+           END-IF
            CALL "DB_F_Close" USING BY REFERENCE S-M_IDLST S-M_PNAME1.
            CALL "DB_F_Close" USING BY REFERENCE J-M_IDLST J-M_PNAME1.
            CALL "DB_F_Close" USING BY REFERENCE HI-M_IDLST HI-M_PNAME1.
@@ -1409,76 +1371,65 @@
                CALL "PR_Close" RETURNING RESP
            END-IF.
        M-95.
-           CALL "SD_Output" USING "C-CLEAR" C-CLEAR "p" 
-                                         RETURNING RESU.
-	       CALL "DB_Close"
+           CALL "SD_Output" USING "C-CLEAR" C-CLEAR "p" RETURNING RESU.
+           CALL "DB_Close".
            STOP RUN.
        ACP-RTN.
            IF  W-ACT = 2 OR 3
                GO TO ACP-040
-           END-IF.
+           END-IF
            IF  W-ACT NOT = 1
                GO TO ACP-020
-           END-IF.
+           END-IF
            CALL "SD_Screen_Output" USING "SCBD11" RETURNING RESU.
            MOVE ZERO TO W-AID.
-           CALL "SD_Output" USING "A-ACT" A-ACT "p" 
-                                  RETURNING RESU.
-           CALL "SD_Output" USING "A-DATE" A-DATE "p" 
-                                  RETURNING RESU.
+           CALL "SD_Output" USING "A-ACT" A-ACT "p" RETURNING RESU.
+           CALL "SD_Output" USING "A-DATE" A-DATE "p" RETURNING RESU.
            IF  W-CD NOT = ZERO
-               CALL "SD_Output" USING "A-CD" A-CD "p" 
-                                         RETURNING RESU
-           END-IF.
-           CALL "SD_Output" USING "A-SCD" A-SCD "p" 
-                                  RETURNING RESU.
-           CALL "SD_Output" USING "D-SNA" D-SNA "p" 
-                                  RETURNING RESU.
+               CALL "SD_Output" USING "A-CD" A-CD "p" RETURNING RESU
+           END-IF
+           CALL "SD_Output" USING "A-SCD" A-SCD "p" RETURNING RESU.
+           CALL "SD_Output" USING "D-SNA" D-SNA "p" RETURNING RESU.
            GO TO ACP-120.
        ACP-020.
-           CALL "SD_Accept" USING BY REFERENCE A-ACT "A-ACT" "9" "1" 
-                 BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Accept" USING BY REFERENCE A-ACT "A-ACT" "9" "1"
+            BY REFERENCE ESTAT RETURNING RESU.
            IF  ESTAT NOT = HTB AND SKP
                GO TO ACP-020
-           END-IF.
+           END-IF
            IF  W-ACT = 9
                GO TO ACP-EX
-           END-IF.
+           END-IF
            IF  W-ACT < 1 OR > 3
                GO TO ACP-020
-           END-IF.
+           END-IF
            IF  W-ACT = 1
-               CALL "SD_Output" USING "S-DNO" S-DNO "p" 
-                                         RETURNING RESU
+               CALL "SD_Output" USING "S-DNO" S-DNO "p" RETURNING RESU
                GO TO ACP-080
            END-IF.
        ACP-040.
            CALL "SD_Screen_Output" USING "SCBD11" RETURNING RESU.
-           CALL "SD_Output" USING "A-ACT" A-ACT "p" 
-                                         RETURNING RESU.
+           CALL "SD_Output" USING "A-ACT" A-ACT "p" RETURNING RESU.
        ACP-060.
-           CALL "SD_Accept" USING BY REFERENCE A-DNO "A-DNO" "9" "6" 
-                 BY REFERENCE ESTAT RETURNING RESU.
-           CALL "SD_Output" USING "E-CL" E-CL "p" 
-                                         RETURNING RESU.
+           CALL "SD_Accept" USING BY REFERENCE A-DNO "A-DNO" "9" "6"
+            BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU.
            IF  ESTAT = BTB
                GO TO ACP-020
-           END-IF.
+           END-IF
            IF  ESTAT NOT = HTB AND SKP
                GO TO ACP-060
-           END-IF.
+           END-IF
            MOVE SPACE TO HSS-KEY.
            MOVE W-DNO TO HSS-DNO.
       *           START HSS-F KEY NOT < HSS-KEY INVALID KEY
       *///////////////
            CALL "DB_Start" USING
-            HSS-F_PNAME1 "HSS-KEY" "NOT <" HSS-KEY RETURNING RET.
+            HSS-F_PNAME1 "HSS-KEY" " NOT < " HSS-KEY RETURNING RET.
            IF  RET = 1
                MOVE "***  DATA ﾅｼ  ***             " TO W-EM
-               CALL "SD_Output" USING
-                "E-ME" E-ME "p" RETURNING RESU
-               CALL "SD_Output" USING
-                "E-ME98" E-ME98 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO ACP-060
            END-IF
       *           READ HSS-F NEXT RECORD AT END
@@ -1488,34 +1439,29 @@
             RETURNING RET.
            IF  RET = 1
                MOVE "***  DATA ﾅｼ  ***             " TO W-EM
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME98" E-ME98 "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO ACP-060
-           END-IF.
+           END-IF
            IF  W-DNO NOT = HSS-DNO
                MOVE "***  DATA ﾅｼ  ***             " TO W-EM
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME98" E-ME98 "p" 
-                                  RETURNING RESU
-               GO TO ACP-060.
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
+               GO TO ACP-060
+           END-IF
            IF  HSS-HKC NOT = 0
                MOVE "***  ｴｲｷﾞｮｳ ﾍﾝｶﾝ ｽﾞﾐ  ***     " TO W-EM
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME99" E-ME99 "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
                GO TO ACP-060
-           END-IF.
+           END-IF
            MOVE HSS-BHC TO W-NC.
            PERFORM SET-RTN THRU SET-EX.
            PERFORM DSP1-RTN THRU DSP1-EX.
            PERFORM DSP2-RTN THRU DSP2-EX.
            IF  W-ACT = 3
                GO TO ACP-780
-           END-IF.
+           END-IF
            IF  W-ACT = 2
                IF  W-NC = 1
                    GO TO ACP-200
@@ -1525,71 +1471,68 @@
            IF  W-ACT = 1
                MOVE ZERO TO W-AID
                CALL "SD_Screen_Output" USING "SCBD11" RETURNING RESU
-               CALL "SD_Output" USING "A-ACT" A-ACT "p" 
-                                  RETURNING RESU
-           END-IF.
-           CALL "SD_Accept" USING BY REFERENCE A-DATE "A-DATE" "9" "6" 
-                 BY REFERENCE ESTAT RETURNING RESU.
+               CALL "SD_Output" USING "A-ACT" A-ACT "p" RETURNING RESU
+           END-IF
+           CALL "SD_Accept" USING BY REFERENCE A-DATE "A-DATE" "9" "6"
+            BY REFERENCE ESTAT RETURNING RESU.
            IF  ESTAT = BTB
                IF  W-ACT = 1
                    GO TO ACP-020
                ELSE
                    GO TO ACP-060
                END-IF
-           END-IF.
+           END-IF
            IF  ESTAT NOT = HTB AND SKP
                GO TO ACP-080
-           END-IF.
+           END-IF
            IF (W-GET < 1 OR > 12) OR (W-PEY < 1 OR > 31)
                GO TO ACP-080
-           END-IF.
+           END-IF
            MOVE ZERO TO W-NEN1.
            IF  W-NEN2 >= DATE-NF1 AND <= DATE-NT1
                ADD DATE-NC1 TO W-NEN
-           END-IF.
+           END-IF
            IF  W-NEN2 >= DATE-NF2 AND <= DATE-NT2
                ADD DATE-NC2 TO W-NEN
-           END-IF.
+           END-IF
            IF  W-NG < W-BNG OR < W-HNG
                GO TO ACP-080
-           END-IF.
+           END-IF
            IF  W-NG = W-BNG
                IF  HIZUKE NOT < W-PEY
                    GO TO ACP-080
                END-IF
-           END-IF.
+           END-IF
            IF  W-NGP > W-ENGP
                GO TO ACP-080
-           END-IF.
+           END-IF
            MOVE W-NGP TO W-DATE.
        ACP-100.
-           CALL "SD_Accept" USING BY REFERENCE A-CD "A-CD" "9" "6" 
-                 BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Accept" USING BY REFERENCE A-CD "A-CD" "9" "6"
+            BY REFERENCE ESTAT RETURNING RESU.
            IF  ESTAT = BTB
                GO TO ACP-080
-           END-IF.
+           END-IF
            IF  ESTAT NOT = HTB AND SKP
                GO TO ACP-100
-           END-IF.
+           END-IF
            IF  W-CDD = ZERO
-               CALL "SD_Output" USING "S-CD" S-CD "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "S-CD" S-CD "p" RETURNING RESU
                GO TO ACP-120
-           END-IF.
+           END-IF
            IF (W-CGET < 1 OR > 12) OR (W-CPEY < 1 OR > 31)
                GO TO ACP-100
            END-IF.
        ACP-120.
-           CALL "SD_Accept" USING BY REFERENCE A-SCD "A-SCD" "9" "4" 
-                 BY REFERENCE ESTAT RETURNING RESU.
-           CALL "SD_Output" USING "E-CL" E-CL "p" 
-                                  RETURNING RESU.
+           CALL "SD_Accept" USING BY REFERENCE A-SCD "A-SCD" "9" "4"
+            BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU.
            IF  ESTAT = BTB
                GO TO ACP-080
-           END-IF.
+           END-IF
            IF  ESTAT NOT = HTB AND SKP
                GO TO ACP-120
-           END-IF.
+           END-IF
            MOVE W-SCDD TO S-KEY.
       *           READ S-M WITH UNLOCK INVALID KEY
       *///////////////
@@ -1598,31 +1541,27 @@
             RETURNING RET.
            IF  RET = 1
                MOVE "***  ｼｲﾚｻｷ ﾅｼ  ***            " TO W-EM
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME98" E-ME98 "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO ACP-120
-           END-IF.
-           CALL "SD_Output" USING "D-SNA" D-SNA "p" 
-                                  RETURNING RESU.
+           END-IF
+           CALL "SD_Output" USING "D-SNA" D-SNA "p" RETURNING RESU.
            IF  W-SCDD < 5000
                GO TO ACP-120
-           END-IF.
+           END-IF
            MOVE W-NGP TO W-DATE.
            MOVE W-CDD TO W-CD.
            MOVE W-SCDD TO W-SCD.
        ACP-160.
-           CALL "SD_Accept" USING BY REFERENCE A-JCD "A-JCD" "9" "6" 
-                 BY REFERENCE ESTAT RETURNING RESU.
-           CALL "SD_Output" USING "E-CL" E-CL "p" 
-                                  RETURNING RESU.
+           CALL "SD_Accept" USING BY REFERENCE A-JCD "A-JCD" "9" "6"
+            BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU.
            IF  ESTAT = BTB
                GO TO ACP-120
-           END-IF.
+           END-IF
            IF  ESTAT NOT = HTB AND SKP
                GO TO ACP-160
-           END-IF.
+           END-IF
            MOVE W-JCD TO J-KEY.
       *           READ J-M WITH UNLOCK INVALID KEY
       *///////////////
@@ -1631,75 +1570,67 @@
             RETURNING RET.
            IF  RET = 1
                MOVE "***  ｻﾞｲﾘｮｳ ﾅｼ  ***           " TO W-EM
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME98" E-ME98 "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO ACP-160
-           END-IF.
-           CALL "SD_Output" USING "D-JNA" D-JNA "p" 
-                                  RETURNING RESU.
+           END-IF
+           CALL "SD_Output" USING "D-JNA" D-JNA "p" RETURNING RESU.
            IF  W-JCD < 790000 OR > 794999
                GO TO ACP-160
-           END-IF.
+           END-IF
            IF  J-YC NOT = 4
                GO TO ACP-160
-           END-IF.
+           END-IF
            IF  J-SC NOT = 1 AND 2
                GO TO ACP-160
-           END-IF.
+           END-IF
            IF  J-BKC NOT = 22 AND 23 AND 24 AND 26 AND 29
                GO TO ACP-160
            END-IF.
        ACP-180.
-           CALL "SD_Accept" USING BY REFERENCE A-SUT "A-SUT" "S9" "6" 
-                 BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Accept" USING BY REFERENCE A-SUT "A-SUT" "S9" "6"
+            BY REFERENCE ESTAT RETURNING RESU.
            IF  ESTAT = BTB
                GO TO ACP-160
-           END-IF.
+           END-IF
            IF  ESTAT NOT = HTB AND SKP
                GO TO ACP-180
-           END-IF.
-           CALL "SD_Output" USING "D-SUT" D-SUT "p" 
-                                  RETURNING RESU.
+           END-IF
+           CALL "SD_Output" USING "D-SUT" D-SUT "p" RETURNING RESU.
        ACP-200.
            MOVE 0 TO W-SNO.
        ACP-220.
            ADD 1 TO W-SNO.
            IF  W-SNO = 10
                GO TO ACP-720
-           END-IF.
-           CALL "SD_Output" USING "A-SNO" A-SNO "p" 
-                                  RETURNING RESU.
+           END-IF
+           CALL "SD_Output" USING "A-SNO" A-SNO "p" RETURNING RESU.
            GO TO ACP-300.
        ACP-240.
-           CALL "SD_Accept" USING BY REFERENCE A-SNO "A-SNO" "9" "1" 
-                 BY REFERENCE ESTAT RETURNING RESU.
-           CALL "SD_Output" USING "E-CL" E-CL "p" 
-                                  RETURNING RESU.
+           CALL "SD_Accept" USING BY REFERENCE A-SNO "A-SNO" "9" "1"
+            BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU.
            IF  ESTAT NOT = PF1
                GO TO ACP-260
-           END-IF.
+           END-IF
            PERFORM DEL-RTN THRU DEL-EX.
            GO TO ACP-300.
        ACP-260.
            IF  ESTAT NOT = PF2
                GO TO ACP-280
-           END-IF.
+           END-IF
            IF (W-SKC(9) NOT = ZERO) OR (W-HCD(9) NOT = ZERO)
                MOVE "***  ｿｳﾆｭｳ ﾌｶ  ***            " TO W-EM
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME98" E-ME98 "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO ACP-240
-           END-IF.
+           END-IF
            PERFORM INS-RTN THRU INS-EX.
            GO TO ACP-300.
        ACP-280.
            IF  ESTAT = ADV
                GO TO ACP-720
-           END-IF.
+           END-IF
            IF  ESTAT = BTB
                SUBTRACT 1 FROM W-SNO
                IF  W-SNO NOT = ZERO
@@ -1715,7 +1646,7 @@
                        END-IF
                    END-IF
                END-IF
-           END-IF.
+           END-IF
            IF  ESTAT NOT = HTB AND SKP
                GO TO ACP-240
            END-IF.
@@ -1724,73 +1655,68 @@
            IF  W-SNO NOT = 1
                IF  W-SKC(W-SNO) = 0
                    MOVE W-SKCD TO W-SKC(W-SNO)
-                   CALL "SD_Output" USING "A-SKC" A-SKC "p" 
-                                  RETURNING RESU
+                   CALL "SD_Output" USING
+                    "A-SKC" A-SKC "p" RETURNING RESU
                END-IF
            END-IF.
        ACP-320.
-           CALL "SD_Accept" USING BY REFERENCE A-RSN "A-RSN" "9" "2" 
-                 BY REFERENCE ESTAT RETURNING RESU.
-           CALL "SD_Output" USING "E-CL" E-CL "p" 
-                                  RETURNING RESU.
+           CALL "SD_Accept" USING BY REFERENCE A-RSN "A-RSN" "9" "2"
+            BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU.
            IF  ESTAT = ADV
                GO TO ACP-720
-           END-IF.
+           END-IF
            IF  ESTAT = BTB
                GO TO ACP-240
-           END-IF.
+           END-IF
            IF  ESTAT NOT = NOC AND HTB AND SKP
                GO TO ACP-320
-           END-IF.
+           END-IF
            IF  W-RSN(W-SNO) = ZERO
                MOVE ZERO TO W-RNO(W-SNO) W-AZSUD(W-SNO)
-               CALL "SD_Output" USING "S-RNO" S-RNO "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "S-RNO" S-RNO "p" RETURNING RESU
                GO TO ACP-380
            END-IF.
        ACP-340.
-           CALL "SD_Accept" USING BY REFERENCE A-RNG "A-RNG" "9" "4" 
-                 BY REFERENCE ESTAT RETURNING RESU.
-           CALL "SD_Output" USING "E-CL" E-CL "p" 
-                                  RETURNING RESU.
+           CALL "SD_Accept" USING BY REFERENCE A-RNG "A-RNG" "9" "4"
+            BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU.
            IF  ESTAT = ADV
                GO TO ACP-720
-           END-IF.
+           END-IF
            IF  ESTAT = BTB
                GO TO ACP-320
-           END-IF.
+           END-IF
            IF  ESTAT NOT = NOC AND HTB AND SKP
                GO TO ACP-340
-           END-IF.
+           END-IF
            IF  W-RNG(W-SNO) = ZERO
                GO TO ACP-340
            END-IF.
        ACP-360.
-           CALL "SD_Accept" USING BY REFERENCE A-RND "A-RND" "9" "2" 
-                 BY REFERENCE ESTAT RETURNING RESU.
-           CALL "SD_Output" USING "E-CL" E-CL "p" 
-                                  RETURNING RESU.
+           CALL "SD_Accept" USING BY REFERENCE A-RND "A-RND" "9" "2"
+            BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU.
            IF  ESTAT = ADV
                GO TO ACP-720
-           END-IF.
+           END-IF
            IF  ESTAT = BTB
                GO TO ACP-340
-           END-IF.
+           END-IF
            IF  ESTAT NOT = HTB AND SKP
                GO TO ACP-360
-           END-IF.
+           END-IF
            IF  W-RND(W-SNO) = ZERO
                GO TO ACP-360
-           END-IF.
+           END-IF
            PERFORM RTC-RTN THRU RTC-EX.
            IF  W-NO NOT = 10
                MOVE "***  ﾆｼﾞｭｳ ﾛｯﾄNO  ***         " TO W-EM
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME98" E-ME98 "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO ACP-320
-           END-IF.
+           END-IF
+      *
            MOVE W-RNO(W-SNO) TO HSH-KEY.
       *           READ HSHF WITH UNLOCK INVALID KEY
       *///////////////
@@ -1799,34 +1725,25 @@
             RETURNING RET.
            IF  RET = 1
                MOVE "***  ﾊｯﾁｭｳNO ﾅｼ  ***          " TO W-EM
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME98" E-ME98 "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO ACP-320
-           END-IF.
+           END-IF
            IF  W-SCDD NOT = HSH-SCD
                MOVE "***  ｼｲﾚｻｷ ｴﾗｰ  ***           " TO W-EM
                MOVE SPACE TO W-CO
                MOVE HSH-SCD TO W-CO
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-CO" E-CO "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME98" E-ME98 "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-CO" E-CO "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO ACP-320
-           END-IF.
+           END-IF
            IF  HSH-ENGP NOT = ZERO
                MOVE "***  ｶﾝﾘｮｳ ｽﾞﾐ  ***           " TO W-EM
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ENGP" E-ENGP "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME99" E-ME99 "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-CL" E-CL "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ENGP" E-ENGP "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU
            END-IF
            MOVE HSH-HCD TO W-HCD(W-SNO).
            PERFORM ZAN-RTN THRU ZAN-EX.
@@ -1835,65 +1752,59 @@
                GO TO ACP-320
            END-IF.
        ACP-380.
-           CALL "SD_Accept" USING BY REFERENCE A-SKC "A-SKC" "9" "1" 
-                 BY REFERENCE ESTAT RETURNING RESU.
-           CALL "SD_Output" USING "E-CL" E-CL "p" 
-                                  RETURNING RESU.
+           CALL "SD_Accept" USING BY REFERENCE A-SKC "A-SKC" "9" "1"
+            BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU.
            IF  ESTAT = ADV
                GO TO ACP-720
-           END-IF.
+           END-IF
            IF  ESTAT = BTB
                GO TO ACP-320
-           END-IF.
+           END-IF
            IF  ESTAT NOT = HTB AND SKP
                GO TO ACP-380
            END-IF.
        ACP-400.
-           IF W-SKC(W-SNO) = 9
+           IF  W-SKC(W-SNO) = 9
                GO TO ACP-380
-           END-IF.
+           END-IF
            MOVE 3 TO JCON3-01.
            MOVE W-SKC(W-SNO) TO JCON3-02.
       *           READ JCON WITH UNLOCK INVALID KEY
       *///////////////
            CALL "DB_Read" USING
-            "INVALID KEY" JCON_PNAME1 BY REFERENCE JCON-R "UNLOCK"
+            "INVALID KEY" JCON_PNAME1 BY REFERENCE JCON3-R "UNLOCK"
             RETURNING RET.
            IF  RET = 1
                MOVE "***  ｿｳｺ ﾅｼ  ***              " TO W-EM
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME98" E-ME98 "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO ACP-380
-           END-IF.
-           CALL "SD_Output" USING "A-SKC" A-SKC "p" 
-                                  RETURNING RESU.
-           CALL "SD_Output" USING "D-SKN" D-SKN "p" 
-                                  RETURNING RESU.
+           END-IF
+           CALL "SD_Output" USING "A-SKC" A-SKC "p" RETURNING RESU.
+           CALL "SD_Output" USING "D-SKN" D-SKN "p" RETURNING RESU.
            IF  W-SNO = 1
                MOVE W-SKC(W-SNO) TO W-SKCD
-           END-IF.
+           END-IF
            IF  W-RNO(W-SNO) NOT = ZERO
                GO TO ACP-440
            END-IF.
        ACP-420.
-           CALL "SD_Accept" USING BY REFERENCE A-HCD "A-HCD" "9" "6" 
-                 BY REFERENCE ESTAT RETURNING RESU.
-           CALL "SD_Output" USING "E-CL" E-CL "p" 
-                                  RETURNING RESU.
+           CALL "SD_Accept" USING BY REFERENCE A-HCD "A-HCD" "9" "6"
+            BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU.
            IF  ESTAT = ADV
                GO TO ACP-720
-           END-IF.
+           END-IF
            IF  ESTAT = BTB
                GO TO ACP-380
-           END-IF.
+           END-IF
            IF  ESTAT NOT = HTB AND SKP
                GO TO ACP-420
-           END-IF.
+           END-IF
            IF  W-HCD(W-SNO) > 999899
                GO TO ACP-420
-           END-IF.
+           END-IF
            MOVE W-HCD(W-SNO) TO HI-KEY.
       *           READ HI-M WITH UNLOCK INVALID KEY
       *///////////////
@@ -1902,51 +1813,41 @@
             RETURNING RET.
            IF  RET = 1
                MOVE "***  ﾋﾝﾒｲ ﾅｼ  ***             " TO W-EM
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME98" E-ME98 "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME98" E-ME98 "p" RETURNING RESU
                GO TO ACP-420
-           END-IF.
-           CALL "SD_Output" USING "D-HNA" D-HNA "p" 
-                                  RETURNING RESU.
+           END-IF
+           CALL "SD_Output" USING "D-HNA" D-HNA "p" RETURNING RESU.
            IF  HI-BC3 = 30
                IF  HI-HCD NOT = HI-MHCD
                    GO TO ACP-420
                END-IF
-           END-IF.
+           END-IF
            IF  HI-BC22 = 1
                MOVE "***  ﾆｭｳｺｸﾌﾞﾝ ｴﾗｰ  ***        " TO W-EM
-               CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-ME99" E-ME99 "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "E-CL" E-CL "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+               CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU
+               CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU
            END-IF.
        ACP-440.
            IF  HI-BC1 = 26
                IF  W-RNO(W-SNO) = ZERO
                    MOVE "***  ｾｲｷｮｳ ﾛｯﾄNO ﾅｼ  ***      " TO W-EM
-                   CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                      RETURNING RESU
-                   CALL "SD_Output" USING "E-ME99" E-ME99 "p" 
-                                      RETURNING RESU
-                   CALL "SD_Output" USING "E-CL" E-CL "p" 
-                                      RETURNING RESU
+                   CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+                   CALL "SD_Output" USING
+                    "E-ME99" E-ME99 "p" RETURNING RESU
+                   CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU
                END-IF
-           END-IF.
+           END-IF
            IF  HI-BC1 NOT = 26
                IF  W-RNO(W-SNO) NOT = ZERO
                    MOVE "***  ﾛｯﾄNO ｴﾗｰ  ***           " TO W-EM
-                   CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                      RETURNING RESU
-                   CALL "SD_Output" USING "E-ME99" E-ME99 "p" 
-                                      RETURNING RESU
-                   CALL "SD_Output" USING "E-CL" E-CL "p" 
-                                      RETURNING RESU
+                   CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU
+                   CALL "SD_Output" USING
+                    "E-ME99" E-ME99 "p" RETURNING RESU
+                   CALL "SD_Output" USING "E-CL" E-CL "p" RETURNING RESU
                END-IF
-           END-IF.
+           END-IF
            MOVE 0 TO HI-S4(10).
        ACP-460.
            MOVE 11 TO W-L.
@@ -1958,23 +1859,23 @@
            CALL "SD_Arg_Match_Line" USING "W-L" "2" W-L RETURNING RESU.
            IF  W-GC = 5
                GO TO ACP-580
-           END-IF.
+           END-IF
            MOVE ZERO TO W-ASSD.
            IF  W-GC = 1
                MOVE HI-SS(2) TO W-ASSD
-           END-IF.
+           END-IF
            IF  W-GC = 2
                MOVE HI-SS(3) TO W-ASSD
-           END-IF.
+           END-IF
            IF  W-GC = 3
                MOVE HI-SS(4) TO W-ASSD
-           END-IF.
+           END-IF
            IF  W-GC = 4
                MOVE HI-SS(1) TO W-ASSD
-           END-IF.
+           END-IF
            IF  W-ASSD = ZERO
                GO TO ACP-480
-           END-IF.
+           END-IF
            MOVE ZERO TO W-SC W-C.
            CALL "SD_Arg_Match_Col" USING "W-C" "2" W-C RETURNING RESU.
        ACP-500.
@@ -1983,55 +1884,52 @@
            CALL "SD_Arg_Match_Col" USING "W-C" "2" W-C RETURNING RESU.
            IF  W-SC > 10
                GO TO ACP-480
-           END-IF.
+           END-IF
            IF  W-SS(W-SC) = 0
                MOVE ZERO TO W-SU(W-SNO,W-GC,W-SC)
-               CALL "SD_Output" USING "D-SU" D-SU "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "D-SU" D-SU "p" RETURNING RESU
                GO TO ACP-500
-           END-IF.
+           END-IF
            IF  W-SKP NOT = 0
                GO TO ACP-500
            END-IF.
        ACP-520.
            MOVE W-SU(W-SNO,W-GC,W-SC) TO W-BSU.
-           CALL "SD_Accept" USING BY REFERENCE A-SU "A-SU" "S9" "4" 
-                 BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Accept" USING BY REFERENCE A-SU "A-SU" "S9" "4"
+            BY REFERENCE ESTAT RETURNING RESU.
            IF  ESTAT = PF6
                MOVE 1 TO W-SKP
                MOVE W-BSU TO W-SU(W-SNO,W-GC,W-SC)
-               CALL "SD_Output" USING "D-SU" D-SU "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "D-SU" D-SU "p" RETURNING RESU
                GO TO ACP-500
-           END-IF.
+           END-IF
            IF  ESTAT = ADV
                MOVE 2 TO W-SKP
                MOVE W-BSU TO W-SU(W-SNO,W-GC,W-SC)
-               CALL "SD_Output" USING "D-SU" D-SU "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "D-SU" D-SU "p" RETURNING RESU
                GO TO ACP-500
-           END-IF.
+           END-IF
            IF  ESTAT = BTB
                GO TO ACP-540
-           END-IF.
+           END-IF
            IF  ESTAT NOT = HTB AND SKP
-               GO TO ACP-520.
-           CALL "SD_Output" USING "D-SU" D-SU "p" 
-                                  RETURNING RESU.
+               GO TO ACP-520
+           END-IF
+           CALL "SD_Output" USING "D-SU" D-SU "p" RETURNING RESU.
            IF  W-RNO(W-SNO) NOT = ZERO
                IF  HSH-ENGP NOT = ZERO
                    IF  W-SU(W-SNO,W-GC,W-SC) > 0
                        MOVE "***  ｶﾝﾘｮｳ ｽﾞﾐ  ***           " TO W-EM
-                       CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                          RETURNING RESU
-                       CALL "SD_Output" USING "E-ENGP" E-ENGP "p" 
-                                          RETURNING RESU
-                       CALL "SD_Output" USING "E-ME98" E-ME98 "p" 
-                                  RETURNING RESU
+                       CALL "SD_Output" USING
+                        "E-ME" E-ME "p" RETURNING RESU
+                       CALL "SD_Output" USING
+                        "E-ENGP" E-ENGP "p" RETURNING RESU
+                       CALL "SD_Output" USING
+                        "E-ME98" E-ME98 "p" RETURNING RESU
                        GO TO ACP-520
-                    END-IF
+                   END-IF
                END-IF
-           END-IF.
+           END-IF
            GO TO ACP-500.
        ACP-540.
            SUBTRACT 1 FROM W-SC.
@@ -2047,29 +1945,30 @@
        ACP-560.
            SUBTRACT 1 FROM W-GC.
            SUBTRACT 2 FROM W-L.
+           CALL "SD_Arg_Match_Line" USING "W-L" "2" W-L RETURNING RESU.
            IF  W-GC = 0
                IF  W-RNO(W-SNO) NOT = ZERO
                    GO TO ACP-380
                ELSE
                    GO TO ACP-420
                END-IF
-           END-IF.
+           END-IF
            MOVE ZERO TO W-ASSD.
            IF  W-GC = 1
                MOVE HI-SS(2) TO W-ASSD
-           END-IF.
+           END-IF
            IF  W-GC = 2
                MOVE HI-SS(3) TO W-ASSD
-           END-IF.
+           END-IF
            IF  W-GC = 3
                MOVE HI-SS(4) TO W-ASSD
-           END-IF.
+           END-IF
            IF  W-GC = 4
                MOVE HI-SS(1) TO W-ASSD
-           END-IF.
+           END-IF
            IF  W-ASSD = ZERO
                GO TO ACP-560
-           END-IF.
+           END-IF
            MOVE 11 TO W-SC.
            MOVE 66 TO W-C.
            CALL "SD_Arg_Match_Col" USING "W-C" "2" W-C RETURNING RESU.
@@ -2080,120 +1979,110 @@
            ADD 1 TO W-GC.
            IF  W-GC = 5
                GO TO ACP-640
-           END-IF.
+           END-IF
            MOVE ZERO TO W-SC.
        ACP-620.
            ADD 1 TO W-SC.
            IF  W-SC = 11
                GO TO ACP-600
-           END-IF.
+           END-IF
            ADD W-SU(W-SNO,W-GC,W-SC) TO W-TSU.
            IF  W-ZC = 0
                IF  W-SU(W-SNO,W-GC,W-SC) NOT = ZERO
                    MOVE 1 TO W-ZC
                END-IF
-           END-IF.
+           END-IF
            GO TO ACP-620.
        ACP-640.
-           CALL "SD_Output" USING "D-TSU" D-TSU "p" 
-                                  RETURNING RESU.
+           CALL "SD_Output" USING "D-TSU" D-TSU "p" RETURNING RESU.
            IF  W-RNO(W-SNO) NOT = ZERO
                COMPUTE W-KIN = W-TSU * HSH-T
-           END-IF.
-           CALL "SD_Output" USING "D-KIN" D-KIN "p" 
-                                  RETURNING RESU.
+           END-IF
+           CALL "SD_Output" USING "D-KIN" D-KIN "p" RETURNING RESU.
            IF  W-ZC = 0
                GO TO ACP-460
-           END-IF.
+           END-IF
            PERFORM SUM-RTN THRU SUM-EX.
-           CALL "SD_Output" USING "D-SUTD" D-SUTD "p" 
-                                  RETURNING RESU.
+           CALL "SD_Output" USING "D-SUTD" D-SUTD "p" RETURNING RESU.
            IF  W-SKP = 2
                GO TO ACP-720
-           END-IF.
+           END-IF
            IF  W-RNO(W-SNO) = ZERO
                MOVE 0 TO W-HPC(W-SNO) W-KRC(W-SNO)
-               CALL "SD_Output" USING "S-HPC" S-HPC "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "S-KRC" S-KRC "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "S-HPC" S-HPC "p" RETURNING RESU
+               CALL "SD_Output" USING "S-KRC" S-KRC "p" RETURNING RESU
                GO TO ACP-700
-           END-IF.
+           END-IF
            IF  W-ACT NOT = 1
                GO TO ACP-660
-           END-IF.
+           END-IF
            IF  W-KRC(W-SNO) = 0
                IF  W-ASUD(W-SNO) = W-AZSUD(W-SNO)
                    MOVE 1 TO W-KRC(W-SNO)
                END-IF
-           END-IF.
+           END-IF
            IF  W-KRC(W-SNO) = 1
                IF  W-ASUD(W-SNO) NOT = W-AZSUD(W-SNO)
                    MOVE 0 TO W-KRC(W-SNO)
                END-IF
-           END-IF.
-           CALL "SD_Output" USING "A-KRC" A-KRC "p" 
-                                  RETURNING RESU.
+           END-IF
+           CALL "SD_Output" USING "A-KRC" A-KRC "p" RETURNING RESU.
        ACP-660.
-           CALL "SD_Accept" USING BY REFERENCE A-HPC "A-HPC" "9" "1" 
-                 BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Accept" USING BY REFERENCE A-HPC "A-HPC" "9" "1"
+            BY REFERENCE ESTAT RETURNING RESU.
            IF  ESTAT = BTB
                GO TO ACP-560
-           END-IF.
+           END-IF
            IF  ESTAT NOT = HTB AND SKP
                GO TO ACP-660
-           END-IF.
+           END-IF
            IF  W-HPC(W-SNO) > 1
                GO TO ACP-660
            END-IF.
        ACP-680.
-           CALL "SD_Accept" USING BY REFERENCE A-KRC "A-KRC" "9" "1" 
-                 BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Accept" USING BY REFERENCE A-KRC "A-KRC" "9" "1"
+            BY REFERENCE ESTAT RETURNING RESU.
            IF  ESTAT = BTB
                GO TO ACP-660
-           END-IF.
+           END-IF
            IF  ESTAT NOT = HTB AND SKP
                GO TO ACP-680
-           END-IF.
+           END-IF
            IF  W-KRC(W-SNO) > 1
                GO TO ACP-680
            END-IF.
        ACP-700.
-           CALL "SD_Accept" USING BY REFERENCE A-CHK "A-CHK" "9" "1" 
-                 BY REFERENCE ESTAT RETURNING RESU.
-           CALL "SD_Output" USING "S-CHK" S-CHK "p" 
-                                  RETURNING RESU.
+           CALL "SD_Accept" USING BY REFERENCE A-CHK "A-CHK" "9" "1"
+            BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Output" USING "S-CHK" S-CHK "p" RETURNING RESU.
            IF  ESTAT = ADV
                GO TO ACP-720
-           END-IF.
+           END-IF
            IF  ESTAT = BTB
                IF  W-RNO(W-SNO) NOT = ZERO
                    GO TO ACP-680
                ELSE
                    GO TO ACP-560
                END-IF
-           END-IF.
+           END-IF
            IF  ESTAT NOT = HTB AND SKP
                GO TO ACP-700
-           END-IF.
+           END-IF
            IF  W-ACT = 1
                IF  W-SUT = W-SUTD
                    GO TO ACP-780
                END-IF
-           END-IF.
+           END-IF
            GO TO ACP-220.
        ACP-720.
            PERFORM SUM-RTN THRU SUM-EX.
-           CALL "SD_Output" USING "D-SUTD" D-SUTD "p" 
-                                  RETURNING RESU.
+           CALL "SD_Output" USING "D-SUTD" D-SUTD "p" RETURNING RESU.
            IF  W-SUT = W-SUTD
                GO TO ACP-780
-           END-IF.
+           END-IF
            MOVE "***  ｽｳﾘｮｳ ｺﾞｳｹｲ ｴﾗｰ  ***     " TO W-EM.
-           CALL "SD_Output" USING "E-ME" E-ME "p" 
-                                  RETURNING RESU.
-           CALL "SD_Output" USING "E-ME99" E-ME99 "p" 
-                                  RETURNING RESU.
+           CALL "SD_Output" USING "E-ME" E-ME "p" RETURNING RESU.
+           CALL "SD_Output" USING "E-ME99" E-ME99 "p" RETURNING RESU.
        ACP-740.
            MOVE 10 TO W-SNO.
        ACP-760.
@@ -2208,24 +2097,24 @@
                        GO TO ACP-060
                    END-IF
                END-IF
-           END-IF.
+           END-IF
            IF (W-SKC(W-SNO) = ZERO) AND (W-HCD(W-SNO) = ZERO)
                GO TO ACP-760
-           END-IF.
+           END-IF
            GO TO ACP-300.
        ACP-780.
-           CALL "SD_Accept" USING BY REFERENCE A-DMM "A-DMM" "9" "1" 
-                 BY REFERENCE ESTAT RETURNING RESU.
+           CALL "SD_Accept" USING BY REFERENCE A-DMM "A-DMM" "9" "1"
+            BY REFERENCE ESTAT RETURNING RESU.
            IF  ESTAT = BTB
                IF  W-ACT = 3
                    GO TO ACP-060
                ELSE
                    GO TO ACP-740
                END-IF
-           END-IF.
+           END-IF
            IF  ESTAT NOT = HTB AND SKP
                GO TO ACP-780
-           END-IF.
+           END-IF
            IF  W-DMM = 9
                IF  W-ACT = 3
                    GO TO ACP-060
@@ -2240,7 +2129,7 @@
                        END-IF
                    END-IF
                END-IF
-           END-IF.
+           END-IF
            IF  W-DMM NOT = 1
                GO TO ACP-780
            END-IF.
@@ -2248,6 +2137,7 @@
            EXIT.
        SET-RTN.
            MOVE ZERO TO W-AID W-PRC.
+      *
            MOVE HSS-DATE TO W-DATE W-NGP.
            MOVE HSS-CD TO W-CD W-CDD.
            MOVE HSS-SCD TO W-SCD W-SCDD.
@@ -2267,7 +2157,8 @@
                IF  HSS-PRC = 0
                    MOVE 1 TO W-PRC
                END-IF
-           END-IF.
+           END-IF
+      *
       *           READ HSS-F NEXT RECORD AT END
       *///////////////
            CALL "DB_Read" USING
@@ -2275,7 +2166,7 @@
             RETURNING RET.
            IF  RET = 1
                GO TO SET-EX
-           END-IF.
+           END-IF
            IF  W-DNO = HSS-DNO
                GO TO SET-020
            END-IF.
@@ -2291,7 +2182,8 @@
            IF  RET = 1
                MOVE SPACE TO S-NAME
                MOVE "＊＊＊　仕入先　なし　　＊＊＊" TO S-NAME
-           END-IF.
+           END-IF
+      *
            MOVE W-JCD TO J-KEY.
       *           READ J-M WITH UNLOCK INVALID KEY
       *///////////////
@@ -2301,45 +2193,38 @@
            IF  RET = 1
                MOVE SPACE TO J-NAME
                MOVE "＊＊＊　材料　なし　　＊＊＊　" TO J-NAME
-           END-IF.
-           CALL "SD_Output" USING "A-DATE" A-DATE "p" 
-                                  RETURNING RESU.
-           CALL "SD_Output" USING "A-SCD" A-SCD "p" 
-                                  RETURNING RESU.
-           CALL "SD_Output" USING "D-SNA" D-SNA "p" 
-                                  RETURNING RESU.
-           CALL "SD_Output" USING "A-JCD" A-JCD "p" 
-                                  RETURNING RESU.
-           CALL "SD_Output" USING "D-JNA" D-JNA "p" 
-                                  RETURNING RESU.
-           CALL "SD_Output" USING "D-SUT" D-SUT "p" 
-                                  RETURNING RESU.
+           END-IF
+      *
+           CALL "SD_Output" USING "A-DATE" A-DATE "p" RETURNING RESU.
+           CALL "SD_Output" USING "A-SCD" A-SCD "p" RETURNING RESU.
+           CALL "SD_Output" USING "D-SNA" D-SNA "p" RETURNING RESU.
+           CALL "SD_Output" USING "A-JCD" A-JCD "p" RETURNING RESU.
+           CALL "SD_Output" USING "D-JNA" D-JNA "p" RETURNING RESU.
+           CALL "SD_Output" USING "D-SUT" D-SUT "p" RETURNING RESU.
            IF  W-CD NOT = ZERO
-               CALL "SD_Output" USING "A-CD" A-CD "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "A-CD" A-CD "p" RETURNING RESU
            ELSE
-               CALL "SD_Output" USING "S-CD" S-CD "p" 
-                                  RETURNING RESU
-           END-IF.
+               CALL "SD_Output" USING "S-CD" S-CD "p" RETURNING RESU
+           END-IF
            MOVE 1 TO W-SNO.
        DSP1-EX.
            EXIT.
        DSP2-RTN.
            IF  ZERO = W-SKC(W-SNO) AND W-HCD(W-SNO)
-               CALL "SD_Output" USING "S-HD" S-HD "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "S-HD" S-HD "p" RETURNING RESU
                GO TO DSP2-EX
-           END-IF.
+           END-IF
            MOVE 3 TO JCON3-01.
            MOVE W-SKC(W-SNO) TO JCON3-02.
       *           READ JCON WITH UNLOCK INVALID KEY
       *///////////////
            CALL "DB_Read" USING
-            "INVALID KEY" JCON_PNAME1 BY REFERENCE JCON-R "UNLOCK"
+            "INVALID KEY" JCON_PNAME1 BY REFERENCE JCON3-R "UNLOCK"
             RETURNING RET.
            IF  RET = 1
                MOVE "倉庫　なし　" TO JCON3-03
-           END-IF.
+           END-IF
+      *
            MOVE 0 TO W-INV.
            MOVE W-HCD(W-SNO) TO HI-KEY.
       *           READ HI-M WITH UNLOCK INVALID KEY
@@ -2351,34 +2236,24 @@
                MOVE 1 TO W-INV
                MOVE SPACE TO HI-NAME
                MOVE "＊＊＊　品名　なし　　＊＊＊　" TO HI-NAME
-           END-IF.
-           CALL "SD_Output" USING "A-SNO" A-SNO "p" 
-                                  RETURNING RESU.
-           CALL "SD_Output" USING "A-SKC" A-SKC "p" 
-                                  RETURNING RESU.
-           CALL "SD_Output" USING "D-SNA" D-SNA "p" 
-                                  RETURNING RESU.
-           CALL "SD_Output" USING "A-HCD" A-HCD "p" 
-                                  RETURNING RESU.
-           CALL "SD_Output" USING "D-HNA" D-HNA "p" 
-                                  RETURNING RESU.
-           IF  W-RNO(W-SNO) = ZERO
-               CALL "SD_Output" USING "S-RNO" S-RNO "p" 
-                                  RETURNING RESU
-           ELSE
-               CALL "SD_Output" USING "A-RSN" A-RSN "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "A-RNG" A-RNG "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "A-RND" A-RND "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "D-T" D-T "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "A-HPC" A-HPC "p" 
-                                  RETURNING RESU
-               CALL "SD_Output" USING "A-KRC" A-KRC "p" 
-                                  RETURNING RESU
            END-IF
+      *
+           CALL "SD_Output" USING "A-SNO" A-SNO "p" RETURNING RESU.
+           CALL "SD_Output" USING "A-SKC" A-SKC "p" RETURNING RESU.
+           CALL "SD_Output" USING "D-SNA" D-SNA "p" RETURNING RESU.
+           CALL "SD_Output" USING "A-HCD" A-HCD "p" RETURNING RESU.
+           CALL "SD_Output" USING "D-HNA" D-HNA "p" RETURNING RESU.
+           IF  W-RNO(W-SNO) = ZERO
+               CALL "SD_Output" USING "S-RNO" S-RNO "p" RETURNING RESU
+           ELSE
+               CALL "SD_Output" USING "A-RSN" A-RSN "p" RETURNING RESU
+               CALL "SD_Output" USING "A-RNG" A-RNG "p" RETURNING RESU
+               CALL "SD_Output" USING "A-RND" A-RND "p" RETURNING RESU
+               CALL "SD_Output" USING "D-T" D-T "p" RETURNING RESU
+               CALL "SD_Output" USING "A-HPC" A-HPC "p" RETURNING RESU
+               CALL "SD_Output" USING "A-KRC" A-KRC "p" RETURNING RESU
+           END-IF
+      *
            MOVE ZERO TO W-GC W-TSU.
            MOVE 11 TO W-L.
            CALL "SD_Arg_Match_Line" USING "W-L" "2" W-L RETURNING RESU.
@@ -2391,14 +2266,12 @@
                CALL "SD_Arg_Match_Col" USING
                 "W-C" "2" W-C RETURNING RESU
                GO TO DSP2-040
-           END-IF.
-           CALL "SD_Output" USING "D-TSU" D-TSU "p" 
-                                  RETURNING RESU.
+           END-IF
+           CALL "SD_Output" USING "D-TSU" D-TSU "p" RETURNING RESU.
            IF  W-RNO(W-SNO) NOT = ZERO
                COMPUTE W-KIN = W-TSU * HSH-T
-           END-IF.
-           CALL "SD_Output" USING "D-KIN" D-KIN "p" 
-                                  RETURNING RESU.
+           END-IF
+           CALL "SD_Output" USING "D-KIN" D-KIN "p" RETURNING RESU.
            GO TO DSP2-EX.
        DSP2-040.
            ADD 1 TO W-SC.
@@ -2406,10 +2279,9 @@
            CALL "SD_Arg_Match_Col" USING "W-C" "2" W-C RETURNING RESU.
            IF  W-SC < 11
                ADD W-SU(W-SNO,W-GC,W-SC) TO W-TSU
-               CALL "SD_Output" USING "D-SU" D-SU "p" 
-                                  RETURNING RESU
+               CALL "SD_Output" USING "D-SU" D-SU "p" RETURNING RESU
                GO TO DSP2-040
-           END-IF.
+           END-IF
            GO TO DSP2-020.
        DSP2-EX.
            EXIT.
@@ -2419,10 +2291,10 @@
            ADD 1 TO W-NO.
            IF  W-NO = 10
                GO TO RTC-EX
-           END-IF.
+           END-IF
            IF  W-NO = W-SNO
                GO TO RTC-020
-           END-IF.
+           END-IF
            IF  W-RNO(W-NO) NOT = W-RNO(W-SNO)
                GO TO RTC-020
            END-IF.
@@ -2431,34 +2303,34 @@
        ZAN-RTN.
            IF  HSH-ENGP NOT = ZERO
                MOVE 1 TO W-KRC(W-SNO)
-           END-IF.
+           END-IF
            IF  W-ASUD(W-SNO) NOT = ZERO
                GO TO ZAN-EX
-           END-IF.
+           END-IF
            MOVE ZERO TO W-SD.
        ZAN-020.
            ADD 1 TO W-SD.
            IF  W-SD > 4
                GO TO ZAN-EX
-           END-IF.
+           END-IF
            IF  W-SD = 1
                MOVE 4 TO W-S
-           END-IF.
+           END-IF
            IF  W-SD = 2
                MOVE 1 TO W-S
-           END-IF.
+           END-IF
            IF  W-SD = 3
                MOVE 2 TO W-S
-           END-IF.
+           END-IF
            IF  W-SD = 4
                MOVE 3 TO W-S
-           END-IF.
+           END-IF
            MOVE ZERO TO CNT.
        ZAN-040.
            ADD 1 TO CNT.
            IF  CNT > 10
                GO TO ZAN-020
-           END-IF.
+           END-IF
            COMPUTE W-SU(W-SNO,W-S,CNT) = HSH-HSU(W-SD,CNT) -
                               HSH-NSU(W-SD,CNT) - HSH-ISU(W-SD,CNT).
            MOVE W-SU(W-SNO,W-S,CNT) TO W-ZSU(W-SNO,W-S,CNT).
@@ -2473,7 +2345,7 @@
                MOVE W-ID(W-SNOF) TO W-ID(W-SNOR)
                ADD 1 TO W-SNOF W-SNOR
                GO TO DEL-020
-           END-IF.
+           END-IF
            MOVE ZERO TO W-ID(W-SNOR).
        DEL-EX.
            EXIT.
@@ -2485,7 +2357,7 @@
                MOVE W-ID(W-SNOR) TO W-ID(W-SNOF)
                ADD 1 TO W-SNOF W-SNOR
                GO TO INS-020
-           END-IF.
+           END-IF
            MOVE ZERO TO W-ID(W-SNO).
        INS-EX.
            EXIT.
@@ -2495,25 +2367,25 @@
            ADD 1 TO W-SNOD.
            IF  W-SNOD = 10
                GO TO SUM-EX
-           END-IF.
+           END-IF
            MOVE ZERO TO W-GC W-ZC.
        SUM-040.
            ADD 1 TO W-GC.
            IF  W-GC = 5
                GO TO SUM-080
-           END-IF.
+           END-IF
            MOVE ZERO TO W-SC.
        SUM-060.
            ADD 1 TO W-SC.
            IF  W-SC = 11
                GO TO SUM-040
-           END-IF.
+           END-IF
            ADD W-SU(W-SNOD,W-GC,W-SC) TO W-SUTD.
            IF  W-ZC = 0
                IF  W-SU(W-SNOD,W-GC,W-SC) NOT = ZERO
                    MOVE 1 TO W-ZC
                END-IF
-           END-IF.
+           END-IF
            GO TO SUM-060.
        SUM-080.
            IF  W-ZC = 0
@@ -2521,66 +2393,66 @@
                                   (W-HCD(W-SNOD) NOT = ZERO)
                    MOVE ZERO TO W-ID(W-SNOD)
                END-IF
-           END-IF.
+           END-IF
            IF  W-ZC = 1
                IF (W-SKC(W-SNOD) = ZERO) OR (W-HCD(W-SNOD) = ZERO)
                    MOVE ZERO TO W-ID(W-SNOD)
                END-IF
-           END-IF.
+           END-IF
            GO TO SUM-020.
        SUM-EX.
            EXIT.
        SUB-RTN.
            IF  HSS-KRC = 1
                MOVE ZERO TO HSH-ENGP
-           END-IF.
+           END-IF
            MOVE ZERO TO W-SD HSH-ICHK.
        SUB-020.
            ADD 1 TO W-SD.
            IF  W-SD > 4
                GO TO SUB-EX
-           END-IF.
+           END-IF
            MOVE ZERO TO CNT.
        SUB-040.
            ADD 1 TO CNT.
            IF  CNT > 10
                GO TO SUB-020
-           END-IF.
+           END-IF
            IF  HSS-SU(W-SD,CNT) NOT = ZERO
                SUBTRACT HSS-SU(W-SD,CNT) FROM HSH-ISU(W-SD,CNT)
-           END-IF.
+           END-IF
            IF  HSH-ICHK = 0
                IF  HSH-ISU(W-SD,CNT) NOT = ZERO
                    MOVE 1 TO HSH-ICHK
                END-IF
-           END-IF.
+           END-IF
            GO TO SUB-040.
        SUB-EX.
            EXIT.
        ADD-RTN.
            IF  HSS-KRC = 1
                MOVE HSS-NGPS TO HSH-ENGP
-           END-IF.
+           END-IF
            MOVE ZERO TO W-SD HSH-ICHK.
        ADD-020.
            ADD 1 TO W-SD.
            IF  W-SD > 4
                GO TO ADD-EX
-           END-IF.
+           END-IF
            MOVE ZERO TO CNT.
        ADD-040.
            ADD 1 TO CNT.
            IF  CNT > 10
                GO TO ADD-020
-           END-IF.
+           END-IF
            IF  HSS-SU(W-SD,CNT) NOT = ZERO
                ADD HSS-SU(W-SD,CNT) TO HSH-ISU(W-SD,CNT)
-           END-IF.
+           END-IF
            IF  HSH-ICHK = 0
                IF  HSH-ISU(W-SD,CNT) NOT = ZERO
                    MOVE 1 TO HSH-ICHK
                END-IF
-           END-IF.
+           END-IF
            GO TO ADD-040.
        ADD-EX.
            EXIT.
@@ -2616,7 +2488,7 @@
            CALL "PR_Get_Linage" RETURNING LINAGECOUNTER.
            IF  LINAGECOUNTER > 58
                PERFORM MID-RTN THRU MID-EX
-           END-IF.
+           END-IF
            MOVE SPACE TO SP-R.
            MOVE W-P1 TO SP-R.
            CALL "PR_Write" USING SP-R RETURNING RESP.
@@ -2627,14 +2499,14 @@
            CALL "PR_Get_Linage" RETURNING LINAGECOUNTER.
            IF  LINAGECOUNTER NOT > 59
                GO TO PRI2-020
-           END-IF.
+           END-IF
            MOVE HSS-SNO TO P-SNO.
            IF  HSS-RNO NOT = ZERO
                MOVE "-" TO P-V1 P-V2
                MOVE HSS-RSN TO P-RSN
                MOVE HSS-RNG TO P-RNG
                MOVE HSS-RND TO P-RND
-           END-IF.
+           END-IF
            MOVE HSS-HPC TO P-HPC.
            MOVE HSS-KRC TO P-KRC.
            MOVE HSS-SKC TO P-SKC.
@@ -2652,8 +2524,9 @@
        MEI-RTN.
            IF  HSS-DNO = W-DNO
                GO TO MEI-020
-           END-IF.
+           END-IF
            MOVE HSS-DNO TO W-DNO.
+      *
            MOVE HSS-SCD TO S-KEY.
       *           READ S-M WITH UNLOCK INVALID KEY
       *///////////////
@@ -2663,7 +2536,8 @@
            IF  RET = 1
                MOVE SPACE TO S-NAME
                MOVE "　＊＊　仕入先マスター　なし　＊＊" TO S-NAME
-           END-IF.
+           END-IF
+      *
            MOVE HSS-JCD TO J-KEY.
       *           READ J-M WITH UNLOCK INVALID KEY
       *///////////////
@@ -2673,7 +2547,8 @@
            IF  RET = 1
                MOVE SPACE TO J-NAME
                MOVE "＊＊＊　材料　なし　　＊＊＊　" TO J-NAME
-           END-IF.
+           END-IF
+      *
            MOVE SPACE TO W-P1.
            MOVE SPACE TO P-BH P-HH P-HK.
            MOVE HSS-DATE TO W-DATE.
@@ -2688,22 +2563,22 @@
            MOVE ")" TO P-R.
            IF  HSS-CD NOT = ZERO
                MOVE HSS-CD TO P-CD
-           END-IF.
+           END-IF
            IF  HSS-BHC = 0
                MOVE "　未" TO P-BH
            ELSE
                MOVE "　済" TO P-BH
-           END-IF.
+           END-IF
            IF  HSS-HHC = 0
                MOVE "　未" TO P-HH
            ELSE
                MOVE "　済" TO P-HH
-           END-IF.
+           END-IF
            IF  HSS-HKC = 0
                MOVE "　未" TO P-HK
            ELSE
                MOVE "　済" TO P-HK
-           END-IF.
+           END-IF
            PERFORM PRI1-RTN THRU PRI1-EX.
        MEI-020.
            MOVE HSS-HCD TO HI-KEY.
@@ -2715,10 +2590,11 @@
            IF  RET = 1
                MOVE SPACE TO HI-NAME
                MOVE "＊＊＊　品名　なし　　＊＊＊　" TO HI-NAME
-           END-IF.
+           END-IF
+      *
            IF  HSS-RNO = ZERO
                GO TO MEI-030
-           END-IF.
+           END-IF
            MOVE HSS-RNO TO HSH-KEY.
       *           READ HSHF WITH UNLOCK INVALID KEY
       *///////////////
@@ -2735,31 +2611,31 @@
            ADD 1 TO W-GC.
            IF  W-GC = 5
                MOVE 1 TO W-GC
-           END-IF.
+           END-IF
            IF  ZERO = HSS-SU(W-GC,01) AND HSS-SU(W-GC,02) AND
-                     HSS-SU(W-GC,03) AND HSS-SU(W-GC,04) AND
-                     HSS-SU(W-GC,05) AND HSS-SU(W-GC,06) AND
-                     HSS-SU(W-GC,07) AND HSS-SU(W-GC,08) AND
-                     HSS-SU(W-GC,09) AND HSS-SU(W-GC,10)
+                      HSS-SU(W-GC,03) AND HSS-SU(W-GC,04) AND
+                      HSS-SU(W-GC,05) AND HSS-SU(W-GC,06) AND
+                      HSS-SU(W-GC,07) AND HSS-SU(W-GC,08) AND
+                      HSS-SU(W-GC,09) AND HSS-SU(W-GC,10)
                IF  W-GC = 1
                    GO TO MEI-060
                ELSE
                    GO TO MEI-040
                END-IF
-           END-IF.
+           END-IF
            IF  W-GC = 2
                MOVE 1 TO W-ZCF W-ZCR
                MOVE 1 TO W-DC(W-ZCR)
                MOVE HSS-ASU(2) TO W-ASU(HSS-SNO,1)
-           END-IF.
-           IF W-GC = 3
+           END-IF
+           IF  W-GC = 3
                MOVE 2 TO W-ZCR
                MOVE 1 TO W-DC(W-ZCR)
                MOVE HSS-ASU(3) TO W-ASU(HSS-SNO,2)
                IF  W-ZCF = 0
                    MOVE W-ZCR TO W-ZCF
                END-IF
-           END-IF.
+           END-IF
            IF  W-GC = 4
                MOVE 3 TO W-ZCR
                MOVE 1 TO W-DC(W-ZCR)
@@ -2767,7 +2643,7 @@
                IF  W-ZCF = 0
                    MOVE W-ZCR TO W-ZCF
                END-IF
-           END-IF.
+           END-IF
            IF  W-GC = 1
                MOVE 4 TO W-ZCR
                MOVE 1 TO W-DC(W-ZCR)
@@ -2775,7 +2651,7 @@
                IF  W-ZCF = 0
                    MOVE W-ZCR TO W-ZCF
                END-IF
-           END-IF.
+           END-IF
            IF  W-GC NOT = 1
                GO TO MEI-040
            END-IF.
@@ -2785,10 +2661,11 @@
            ADD 1 TO W-GC.
            IF  W-GC = 5
                GO TO MEI-EX
-           END-IF.
+           END-IF
            IF  W-DC(W-GC) = 0
                GO TO MEI-080
-           END-IF.
+           END-IF
+      *
            MOVE SPACE TO W-P2.
            MOVE SPACE TO P-HNA.
            IF  W-GC = W-ZCF
@@ -2804,19 +2681,21 @@
                    MOVE HSS-RNG TO P-RNG
                    MOVE HSS-RND TO P-RND
                END-IF
-           END-IF.
+           END-IF
+      *
            IF  W-GC = 1
                MOVE 2 TO P-SIZ
-           END-IF.
+           END-IF
            IF  W-GC = 2
                MOVE 3 TO P-SIZ
-           END-IF.
+           END-IF
            IF  W-GC = 3
                MOVE 4 TO P-SIZ
-           END-IF.
+           END-IF
            IF  W-GC = 4
                MOVE 1 TO P-SIZ
-           END-IF.
+           END-IF
+      *
            MOVE ZERO TO W-SC.
        MEI-100.
            ADD 1 TO W-SC.
@@ -2824,13 +2703,15 @@
                MOVE W-SU(HSS-SNO,W-GC,W-SC) TO P-SU(W-SC)
                ADD W-SU(HSS-SNO,W-GC,W-SC) TO W-TSU
                GO TO MEI-100
-           END-IF.
+           END-IF
+      *
            IF  W-GC = W-ZCR
                MOVE W-TSU TO P-TSU
                IF  HSS-RNO NOT = ZERO
                    MOVE HSH-T TO P-T
                END-IF
-           END-IF.
+           END-IF
+      *
            PERFORM PRI2-RTN THRU PRI2-EX.
            GO TO MEI-080.
        MEI-EX.

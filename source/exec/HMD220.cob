@@ -1186,6 +1186,8 @@
            END-IF.
        M-920.
            IF  W-DZC = 0
+               CALL "C3_Set_Jrcode" USING
+                USER_ID BY REFERENCE COMPLETION_CODE  255
                CALL "SD_Output" USING
                 "E-ME11" E-ME11 "p" RETURNING RESU
                CALL "SD_Output" USING

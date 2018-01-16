@@ -12,90 +12,103 @@ char map_source_func[MAP_SRC_FUNC_LEN]="";
 int MT_Initialize();
 #endif
 
-
 #define min(a,b) ((a) < (b) ? (a) : (b))
-#define MAX_STRINGS 20		//“ü—Íƒtƒ@ƒCƒ‹“ÇžÅ‘å•¶Žš”
+#define MAX_STRINGS 20		//å…¥åŠ›ãƒ•ã‚¡ã‚¤ãƒ«èª­è¾¼æœ€å¤§æ–‡å­—æ•°
 
-/* •¶Žš—ñ‚ðcobol‚É“]ŽÊ‚·‚éŠÖ” */
-void C3_move_to_cob(char *cob_dat, const char *dat)
-{
+//Randomæ–‡å­—åˆ—ã‚’ç”Ÿæˆ
+void setRandomStr(char *setString, int n){
+	int i;
+	const char c[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxya23456789";
+
+	for(i = 0; i < n; i ++) setString[i] = c[(int)(rand() % strlen(c))];
+	setString[(n+1)] = '\0';
+}
+
+/* æ–‡å­—åˆ—ã‚’cobolã«è»¢å†™ã™ã‚‹é–¢æ•° */
+void C3_move_to_cob(char *cob_dat, const char *dat){
     int len = strlen(cob_dat);                      // data length in cob
     memset(cob_dat, ' ', min(len, strlen(dat)));    // clear with spaces
     memcpy(cob_dat, dat, min(len, strlen(dat)));    // data copy
     return;
 }
 
-//‘æ“ñˆø”‚É“n‚³‚ê‚½•Ï”‚É,JRCODE‚Ìpath‚ð“ü‚ê‚Ä•Ô‚·
-//Return‚ÍŠÂ‹«•Ï”‚©‚çŽæ‚ê‚½0,path‚ÍŽæ‚ê‚½‚Ì‚Åì‚Á‚½1,pathŽæ‚ê‚È‚©‚Á‚½3
+//ç¬¬äºŒå¼•æ•°ã«æ¸¡ã•ã‚ŒãŸå¤‰æ•°ã«,JRCODEã®pathã‚’å…¥ã‚Œã¦è¿”ã™
+//Returnã¯ç’°å¢ƒå¤‰æ•°ã‹ã‚‰å–ã‚ŒãŸ0,pathã¯å–ã‚ŒãŸã®ã§ä½œã£ãŸ1,pathå–ã‚Œãªã‹ã£ãŸ3
 int getJrcodeFilePath(char *iId,char *filePathPointer){
   char *tmpFilePathPointer=NULL;
   int returnStatus=0;
   tmpFilePathPointer = getenv("MAP_JRCODE_FILE");
   if(tmpFilePathPointer == NULL){
-  	//ƒtƒ@ƒCƒ‹–¼uFILE_NAME + iIdvì¬
+  	//ãƒ•ã‚¡ã‚¤ãƒ«åã€ŒFILE_NAME + iIdã€ä½œæˆ
   	tmpFilePathPointer = getenv( "JRCODE_PATH" );
     returnStatus = 1;
   }
-  //Žæ‚ê‚½ƒ|ƒCƒ“ƒ^‚Å
+  //å–ã‚ŒãŸãƒã‚¤ãƒ³ã‚¿ã§
 	if(tmpFilePathPointer != NULL){
 		strcat(filePathPointer, tmpFilePathPointer);
 	}else{
 		strcat(filePathPointer, "");
     returnStatus = 3;
 	}
-	strcat(filePathPointer,iId);
-  fprintf(stderr," Error C [%02d]:  [%s] : \n",99,filePathPointer);
+  if(returnStatus != 0){
+    char putenvStr[128]="";
+	  strcat(filePathPointer,iId);
+    setRandomStr(filePathPointer + strlen(filePathPointer),8);
+    sprintf(putenvStr,"MAP_JRCODE_FILE=%s",filePathPointer);
+    putenv(putenvStr);
+  }
+  // fprintf(stderr," Error C [%02d]:  [%s] : \n",99,filePathPointer);
   return returnStatus;
 }
 
-/* JRCODE“Çž‚Ý */
-/* ˆø”F
-		iId		:ƒƒOƒCƒ“ID,
-		oValue	:JRCODE‚Ì’l
+/* JRCODEèª­è¾¼ã¿ */
+/* å¼•æ•°ï¼š
+		iId		:ãƒ­ã‚°ã‚¤ãƒ³ID,
+		oValue	:JRCODEã®å€¤
 */
 int C3_Get_Jrcode(char *iId,char *oValue){
 	int ret = 0;
-	int cnt = 0;	//ƒ‹[ƒvƒJƒEƒ“ƒ^
+	int cnt = 0;	//ãƒ«ãƒ¼ãƒ—ã‚«ã‚¦ãƒ³ã‚¿
 	char *chrDefPath;
 	char fName[100];
-	char data[MAX_STRINGS];		//“Çž•¶Žš—ñ
-	FILE *fp;			//ƒtƒ@ƒCƒ‹ƒ|ƒCƒ“ƒ^[
+	char data[MAX_STRINGS];		//èª­è¾¼æ–‡å­—åˆ—
+	FILE *fp;			//ãƒ•ã‚¡ã‚¤ãƒ«ãƒã‚¤ãƒ³ã‚¿ãƒ¼
 
-	//•¶Žš—ñ‰Šú‰»
+	//æ–‡å­—åˆ—åˆæœŸåŒ–
 	fName[0] ='\0';
 
   getJrcodeFilePath(iId,fName);
 
 	if((fp = fopen(fName,"w")) != NULL ){
-		// ƒtƒ@ƒCƒ‹‚ª‘¶Ý‚·‚éê‡
+		// ãƒ•ã‚¡ã‚¤ãƒ«ãŒå­˜åœ¨ã™ã‚‹å ´åˆ
 
-		/* ƒtƒ@ƒCƒ‹ƒf[ƒ^ˆ— */
+		/* ãƒ•ã‚¡ã‚¤ãƒ«ãƒ‡ãƒ¼ã‚¿å‡¦ç† */
 		while(fgets(data, MAX_STRINGS, fp) != NULL){
 			if(cnt == 0){
-				//1•¶Žš–Ú‚Ì‚Ýƒf[ƒ^Žæ“¾
+				//1æ–‡å­—ç›®ã®ã¿ãƒ‡ãƒ¼ã‚¿å–å¾—
 				cnt += 1;
 				C3_move_to_cob(oValue, data);
 			}else{
-				//2•¶Žš–ÚˆÚs‚ª‘¶Ý‚·‚ê‚ÎƒGƒ‰[
+				//2æ–‡å­—ç›®ç§»è¡ŒãŒå­˜åœ¨ã™ã‚Œã°ã‚¨ãƒ©ãƒ¼
 				ret = 1;
 				break;
 			}
 		}
 
-		/* ƒtƒ@ƒCƒ‹EƒNƒ[ƒY */
+		/* ãƒ•ã‚¡ã‚¤ãƒ«ãƒ»ã‚¯ãƒ­ãƒ¼ã‚º */
 		fclose(fp);
 	}else{
-		// ƒtƒ@ƒCƒ‹‚ª‘¶Ý‚µ‚È‚¢ê‡(fopen‚Åƒtƒ@ƒCƒ‹‚ªì¬‚Å‚«‚È‚©‚Á‚½ê‡)
+		// ãƒ•ã‚¡ã‚¤ãƒ«ãŒå­˜åœ¨ã—ãªã„å ´åˆ(fopenã§ãƒ•ã‚¡ã‚¤ãƒ«ãŒä½œæˆã§ããªã‹ã£ãŸå ´åˆ)
 		ret = 1;
 	}
 
 	return ret;
 }
 
-/* JRCODE‘ž‚Ý */
-/* ˆø”F
-		iId		:ƒƒOƒCƒ“ID,
-		iValue	:JRCODE‚Ì’l
+/* JRCODEæ›¸è¾¼ã¿ */
+/* å¼•æ•°ï¼š
+		iId		:ãƒ­ã‚°ã‚¤ãƒ³ID,
+		iValue	:JRCODEã®å€¤
 */
 int C3_Set_Jrcode(char *iId,char *code,int *iValue){
 	int ret = 0;
@@ -104,7 +117,7 @@ int C3_Set_Jrcode(char *iId,char *code,int *iValue){
 	char chrCode[4]="";
 	FILE *fp;
 
-	//•¶Žš—ñ‰Šú‰»
+	//æ–‡å­—åˆ—åˆæœŸåŒ–
 	fName[0] ='\0';
 
 	if(cob_call_params != 3){
@@ -112,27 +125,27 @@ int C3_Set_Jrcode(char *iId,char *code,int *iValue){
 		exit(1);
 	}
 
-	//ˆø”‚ð•¶Žš‚É•ÏŠ·
+	//å¼•æ•°ã‚’æ–‡å­—ã«å¤‰æ›
 	sprintf(chrCode,"%03d",*iValue);
 
   getJrcodeFilePath(iId,fName);
 
-	/* ƒtƒ@ƒCƒ‹EƒI[ƒvƒ“ */
+	/* ãƒ•ã‚¡ã‚¤ãƒ«ãƒ»ã‚ªãƒ¼ãƒ—ãƒ³ */
 	if((fp = fopen(fName, "w")) != NULL){
 
-		/* ƒtƒ@ƒCƒ‹ƒf[ƒ^ˆ— */
+		/* ãƒ•ã‚¡ã‚¤ãƒ«ãƒ‡ãƒ¼ã‚¿å‡¦ç† */
 		if(fputs(chrCode, fp) == EOF){
 			ret = 1;
 		}
 
-		//ƒtƒ@ƒCƒ‹‚Ö‚Ì‘‚«ž‚Ý‚ª‚Å‚«‚½‚çŒ³‚ÌCODE‚Ö‚à•Ô‚·
+		//ãƒ•ã‚¡ã‚¤ãƒ«ã¸ã®æ›¸ãè¾¼ã¿ãŒã§ããŸã‚‰å…ƒã®CODEã¸ã‚‚è¿”ã™
 		memcpy(code,chrCode,strlen(chrCode));
 
-		/* ƒtƒ@ƒCƒ‹EƒNƒ[ƒY */
+		/* ãƒ•ã‚¡ã‚¤ãƒ«ãƒ»ã‚¯ãƒ­ãƒ¼ã‚º */
 		fclose(fp);
 
 	}else{
-		// ƒtƒ@ƒCƒ‹‚ª‘¶Ý‚µ‚È‚¢ê‡
+		// ãƒ•ã‚¡ã‚¤ãƒ«ãŒå­˜åœ¨ã—ãªã„å ´åˆ
 		ret = 1;
 	}
 
