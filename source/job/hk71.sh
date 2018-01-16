@@ -1,12 +1,5 @@
 #!/bin/tcsh
-if (${#argv} >= 1) then
-	set USER_ID = ${argv[1]};
-else
-	set USER_ID = STN000;
-endif
-set JRCODE=000;
-set FN1 = ${JRCODE_PATH}${USER_ID};
-set FN2 = ${ERROR_PATH}${USER_ID};
+source ../job/RC_INIT.sh
 echo '                 ＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊＊   '
 echo '                 ＊                                            ＊   '
 echo '                 ＊　　　　履物・工品他　データセーブ　　　　　＊   '
@@ -23,7 +16,7 @@ source ../job/db_bkup.sh "hk71.sh" \
               "CALNF"    "HUHM"     "HHTF1"     "HKBM"       "SNTRF" \
               "UTRF"     "SKDF"     "SKDKF"     "TSKF"       "TAZM" \
               "SSRYF"    "SUSRYF"   "HPYRF"     "HIYF"       "HIMYR" \
-              "HKSRF"    "HKSRYF"   "HKKYF"     "STRANYR"    "R-STRANYRK" \
+              "HKSRF"    "HKSRYF"   "HKKYF"     "STRANYR"    "R-STRANYR" \
               "STRAN-3"  "UTRYR"    "HHTYR"     "HTIM"       "KHM" \
               "KHTM1"    "KKBM"     "URIRF" \
               "KNHRF"    "URIRYR"   "KNHRYR" \

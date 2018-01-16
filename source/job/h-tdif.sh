@@ -1,13 +1,5 @@
 #!/bin/tcsh
-if (${#argv} >= 1) then
-	set USER_ID = ${argv[1]};
-else
-	set USER_ID = STN000;
-endif
-set JRCODE=000;
-set FN1 = ${JRCODE_PATH}${USER_ID};
-set FN2 = ${ERROR_PATH}${USER_ID};
-
+source ../job/RC_INIT.sh
 #**                                                                         00010
 set ABORT=0;
 FLCNV 'IDE=MSD ICI= IFI=TDIF IGN= IFO=PROTECT ODE=MSD OCI= OFI=O-TDIF OGN= LST=NO ERR=ABORT MOD=CREATE AMD=LOGICAL UMD=NO GTR= DEL=NO CLR=NO OUT= RNG= SEL= SAV= NXT= '

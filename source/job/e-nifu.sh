@@ -1,12 +1,5 @@
 #!/bin/tcsh
-if (${#argv} >= 1) then
-	set USER_ID = ${argv[1]};
-else
-	set USER_ID = STN000;
-endif
-set JRCODE=000;
-set FN1 = ${JRCODE_PATH}${USER_ID};
-set FN2 = ${ERROR_PATH}${USER_ID};
+source ../job/RC_INIT.sh
 NFCNV 'MN1=C MN2=AD PA1=MSD PA2= PA3=NIFUDA PA4=1 \
 PA5=C6,C7,C8,C40,C40,C52,C14,C8,C3,C3,C3,C4,C4,C6,C1,C12,C6,C8,C40,C40,C52,\
 C14,C1,C12,C48,C6,C4,C4,C4,C13,C64,C8,C6,C8,C1 PB1=../tmp/NIFUDA.CSV \
