@@ -21,7 +21,7 @@ class SharedMemory
 	/**
 	 * セマフォにアクセスすするために使用するリソースID
 	 */
-	protected $sem_shmid;
+	protected $sem_shmid = false;
 
 	/**
 	 * デフォルトのアクセス権限
@@ -232,6 +232,16 @@ class SharedMemory
 	 */
 	public function read_outputfile($is_delete = false)
 	{
+		// 既にセマフォ or 共有メモリが解放済みの場合に再取得を行うとエラーが発生するので解放済みの場合はデータなしとして返却する。
+		// また、本来はセマフォ or 共有メモリにアクセスする全ての処理にこの判定処理を入れるべきだが、処理が重いので必要な個所にだけ入れている。
+		// (処理が非同期に実行され箇所で解放済みのセマフォ or 共有メモリにアクセスする可能性がある箇所だけ。getOut.php、param.php)
+		if (!self::has_sem($this->id)) {
+			return array(
+				microtime(true),
+				false
+			);
+		}
+
 		return $this->read($this->outputfilewritetime_key, $this->outputfilereadtime_key, $this->outputfile_key, $is_delete);
 	}
 
@@ -408,21 +418,24 @@ class SharedMemory
 	public function __destruct()
 	{
 		if ($this->sem_shmid !== false) {
-			try {
-				sem_acquire($this->sem_shmid);
+			if (self::has_sem($this->id)) {
+				try {
 
-				if ($this->shmid !== false) {
-					// 共有メモリを削除して解放
-					if ($this->is_destroy_delete) {
-						shm_remove($this->shmid);
+					sem_acquire($this->sem_shmid);
+
+					if ($this->shmid !== false) {
+						// 共有メモリを削除して解放
+						if ($this->is_destroy_delete) {
+							shm_remove($this->shmid);
+						}
+						shm_detach($this->shmid);
 					}
-					shm_detach($this->shmid);
-				}
-			} finally {
-				// セマフォを解放して削除
-				sem_release($this->sem_shmid);
-				if ($this->is_destroy_delete) {
-					sem_remove($this->sem_shmid);
+				} finally {
+					// セマフォを解放して削除
+					sem_release($this->sem_shmid);
+					if ($this->is_destroy_delete) {
+						sem_remove($this->sem_shmid);
+					}
 				}
 			}
 		}
