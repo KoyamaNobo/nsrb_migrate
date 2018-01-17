@@ -27,7 +27,9 @@ if (! empty($pid) && ! empty($infname) && ! empty($outfname)) {
 
 		$lastTime = microtime(true);
 
-		while (1) {
+		// クライアントが接続を切断するまでループ or 接続最大時間までループ
+		$endTime = time() + (SSE_GETOUT_LIVE * 60);
+		while (time() < $endTime) {
 			list ($time, $res, $is_break) = get_response($oLog, $clsAP, $pid, $infname, $outfname);
 
 			if ($time === $lastTime) {
