@@ -302,7 +302,32 @@ class clsLine{
 				//今回指定のinputを包含していれば処理する
 				//完全一致のものがあることを考えてbrakeしない
 				if($startcol >= $tLineElem->sCol && $endcol <= ($tLineElem->eCol + 1)  ){
-					$values = substr($tLineElem->origText,($startcol - $tLineElem->sCol),($endcol - $startcol));
+					$startCutPos = $startcol - $tLineElem->sCol;
+					$cutLength = $endcol - $startcol;
+					$prefixValue = '';
+					$postifxValue = '';
+
+					// ファイルの文字コードからCHARSETの文字コードに変換して全角1文字のバイト数を取得
+					$multibyteLength = strlen(mb_convert_encoding("あ", CHARSET, "UTF-8"));
+
+					// 切り出し開始位置の文字がマルチバイト文字で、半バイト分だけ切り出しの対象になる場合
+					if (mb_strcut($tLineElem->origText, $startCutPos, 1, CHARSET) == ""
+							&& mb_strcut($tLineElem->origText, $startCutPos, $multibyteLength, CHARSET) != substr($tLineElem->origText, $startCutPos, $multibyteLength)) {
+						// 切り出し位置をずらす。ずらした分は半角スペースで埋める
+						$startCutPos += 1;
+						$cutLength -= 1;
+						$prefixValue = ' ';
+					}
+
+					// 切り出し終了位置の文字がマルチバイト文字で、半バイト分だけ切り出しの対象になる場合
+					if (mb_strcut($tLineElem->origText, $startCutPos + $cutLength, 1, CHARSET) == ""
+							&& mb_strcut($tLineElem->origText, $startCutPos + $cutLength, $multibyteLength, CHARSET) != substr($tLineElem->origText, $startCutPos + $cutLength, $multibyteLength)) {
+						// 切り出し文字を減らす。減らした分は半角スペースで埋める
+						$cutLength -= 1;
+						$postifxValue = ' ';
+					}
+
+					$values = $prefixValue . substr($tLineElem->origText, $startCutPos, $cutLength) . $postifxValue;
 					// $this->oLog->info("values         :".$values.__FILE__.':'.__LINE__);
 				}
 			}
