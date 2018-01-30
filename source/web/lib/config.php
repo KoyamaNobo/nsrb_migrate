@@ -23,7 +23,6 @@ define('MAX_F_SIZE' , 28 );
 define('DATA_SAVE_PASS' , '../tmp/' );
 define('TEMP_FILE_PREFIX','nis');
 define('TEMP_PDF_PREFIX','FRT');
-define('PHP_IPC_MEMORY_SIZE', 1024 * 200); // php PHP間のデータ交換に使用する共有メモリのサイズ(byte)
 define('SSE_GETOUT_SLEEP', 1 * 1000 * 100); // php getOutにおいてSSEループの際のusleepの秒数(micro sec)
 define('SSE_GETOUT_LIVE', 10); // php getOutにおいてSSEループ開始から切断までの時間(分) - 時間が長すぎると「104: Connection reset by peer」のエラーになりphp-fpmのプロセスが残る可能性がある。
 define('INPUT_READ_WAIT', 100); // php clsAsynchronousProcessにおいてCOBOLへの入力パラメータがCOBOLに読み取られるまでの最大待機秒(milli sec)

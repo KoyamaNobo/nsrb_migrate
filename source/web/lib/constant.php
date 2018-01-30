@@ -6,6 +6,7 @@ define('HTML_CLASS_REVERSE','reverse');       //classとしてのreverseの指定
 define('PHP_CLASS_REVERSE','REV');            //PHPでの区分としてのreverseの指定
 define('HTML_CLASS_BLINK','blink');           //classとしてのblinkの指定
 define('PHP_CLASS_BLINK','BLI');            //PHPでの区分としてのreverseの指定
+define('PHP_IPC_MEMORY_SIZE', 1024 * 200); // php PHP間のデータ交換に使用する共有メモリのサイズ(byte)
 
 require_once('./lib/log.php');
 class initConf{
