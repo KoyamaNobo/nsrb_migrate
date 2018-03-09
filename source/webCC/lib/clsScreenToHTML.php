@@ -10,6 +10,7 @@ class clsScreenToHTML{
 	function __construct(){
 		require_once('./lib/log.php');
 		require_once('./lib/clsScreen.php');
+		require_once('./lib/clsSharedMemory.php');
 		$this->oLog = New Log('');
 		$this->screen = New clsScreen();
 		$this->lineIndex = 0;
@@ -80,6 +81,70 @@ class clsScreenToHTML{
 		}
 // 		$this->oLog->INFO(__FILE__.':'.__LINE__.':fclose');
 		fclose($fp);
+	}
+
+
+	function getHtml() {
+		$ErrorMax = 2;
+		$html = '';
+		// 		$this->oLog->INFO(__FILE__.':'.__LINE__.':fopen');
+		$html .= " ".PHP_EOL;
+		foreach($this->screen->arrScreenStr as $key=>$view){
+			//HTMLの仕様なはずだがFILEが正しく書けないので最初スペース
+			$html .= " ".$view->strStartTag.PHP_EOL;
+			//echo表示がなければ中身の表示を試す
+			if(empty($view->echoElem)){
+				if(count($view->arrLineElem) > 0){
+					foreach($view->arrLineElem as $key=>$elem){
+						//行を削除した時に削除されている可能性ありｂ
+						if(isset($elem)){
+							//文字列の表示
+							if($elem->type == 'TEX'){
+								$html .= $elem->getText().PHP_EOL;
+							}
+							//入力項目の表示
+							if($elem->type == 'INP'){
+								$html .= $elem->getText().PHP_EOL;
+							}
+						}
+					}
+				}
+			}else{
+				$html .= $view->echoElem.PHP_EOL;
+			}
+			$html .= $view->strEndTag.PHP_EOL;
+			if(count($view->arrLineElem) > 0){
+				foreach($view->arrLineElem as $key=>$elem){
+					//行を削除した時に削除されている可能性ありｂ
+					if(isset($elem)){
+						//罫線(下線)
+						if($elem->type == 'UND'){
+							$html .= $elem->getText().PHP_EOL;
+						}
+						//罫線(箱)
+						if($elem->type == 'BOX'){
+							$html .= $elem->getText().PHP_EOL;
+						}
+						//罫線(縦線)
+						if($elem->type == 'VER'){
+							$html .= $elem->getText().PHP_EOL;
+						}
+						//罫線(上線)
+						if($elem->type == 'OVE'){
+							$html .= $elem->getText().PHP_EOL;
+						}
+					}
+				}
+			}
+		}
+		if(count($this->screen->execErrorArray) > 0){
+			$count = 0;
+			//エラー文字列を変換して出力形式に
+			$html .= '<input type="hidden" class="error"  value="'. $this->screen->exchengeFormatStringFromArray() .'">';
+		}
+		// 		$this->oLog->INFO(__FILE__.':'.__LINE__.':fclose');
+
+		return $html;
 	}
 }
 

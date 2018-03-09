@@ -1,4 +1,4 @@
-<?php 
+<?php
 ///
 ///設定ファイル
 ///(定義やdefineをまとめておく)
@@ -16,8 +16,7 @@ define('LOGSETFILE' , false );
 define('CHARSET' , 'SJIS-win' );
 define('EXEC_LIVE',5760); //php parentにおいてループ開始から強制終了までの時間(分)
 define('EXEC_SLEEP',200);  //php parentにおいてループの際のusleepの秒数(milli sec)
-define('LOOP_COUNT',20);  //php parentにおいてループの際のusleepの秒数(milli sec)
-define('READ_COUNT',1);   //phpBackGroundProcessにおいて初期表示のループをスキップする数
+define('EXEC_MAX_END_WAIT', 3);	 // php runExecにおいてCOBOLの出力結果がgetOutに読み取られるまでプロセス終了を待機する最大秒数(秒)
 define('WRITE_WAIT',1000);   //param.phpにて書き込んだあとの待ち時間
 define('MIN_F_SIZE' , 16 );
 define('MAX_F_SIZE' , 28 );
@@ -26,6 +25,9 @@ define('TEMP_FILE_PREFIX','nis');
 define('TEMP_PDF_PREFIX','FRT');
 
 //add env koyama 20150125
+// RDBの読み替え
+putenv('STRANYR-RDB=R-STRANYR');
+// その他実行時環境変数
 putenv('STN000=STN000');
 putenv('JRCODE_PATH=../tmp/JRCODE_');
 putenv('ERROR_PATH=../tmp/');

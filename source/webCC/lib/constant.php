@@ -5,7 +5,12 @@
 define('HTML_CLASS_REVERSE','reverse');       //classとしてのreverseの指定
 define('PHP_CLASS_REVERSE','REV');            //PHPでの区分としてのreverseの指定
 define('HTML_CLASS_BLINK','blink');           //classとしてのblinkの指定
+define('SSE_GETOUT_SLEEP', 1 * 1000 * 100); // php getOutにおいてSSEループの際のusleepの秒数(micro sec)
+define('SSE_GETOUT_LIVE', 10); // php getOutにおいてSSEループ開始から切断までの時間(分) - 時間が長すぎると「104: Connection reset by peer」のエラーになりphp-fpmのプロセスが残る可能性がある。
+define('INPUT_READ_WAIT', 100); // php clsAsynchronousProcessにおいてCOBOLへの入力パラメータがCOBOLに読み取られるまでの最大待機秒(milli sec)
+define('INPUT_PROC_WAIT', 100); // php clsAsynchronousProcessにおいてCOBOLへの入力パラメータがCOBOLで処理されるまでの最大待機秒(milli sec)
 define('PHP_CLASS_BLINK','BLI');            //PHPでの区分としてのreverseの指定
+define('PHP_IPC_MEMORY_SIZE', 1024 * 200); // php PHP間のデータ交換に使用する共有メモリのサイズ(byte)
 
 require_once('./lib/log.php');
 class initConf{
@@ -18,7 +23,7 @@ class initConf{
 
 	function __construct(){
 		$this->arrTopMenu  = array('imnu00','kmnu00','gmenu','hak00','koh00','kob00','mitu01','mitu03'
-		                    ,'zai000','teg000','tama01','ryob01','ryob02');
+		                    ,'teg000','ban000','zai000','tama01','tama03','ryob01','ryob02');
 		$this->arrKind     = array('PM','JS','LM','SM');
 		$this->arrColorMap = array(
 		                            '#131313'  => '黒',
@@ -165,11 +170,11 @@ class initConf{
 		//SELECT * FROM M_USER MU join M_PG MP on MU.permission NOT like REPLACE(REPLACE(rpad(MP.permission,14,'0'),'0','_'),'1','0') order by user_id;
 		$sql  = ' SELECT user_id,user_name,password,DEF_PG.pg_name as def_name,MP.permission as permission,print_id, MP.pg_name as pg_name ';
 		$sql .= ' ,font_size,font_color,bg_color,reverse_font_color,reverse_bg_color ';
-		$sql .= ' FROM M_USER MU ';
+		$sql .= ' FROM (SELECT *,LENGTH(permission)as permlen FROM M_USER) MU ';
 		$sql .= ' INNER JOIN M_PG DEF_PG ';
 		$sql .= ' ON MU.pg_id = DEF_PG.pg_id ';
 		$sql .= ' INNER JOIN M_PG MP ';
-		$sql .= ' ON MU.permission NOT like REPLACE(REPLACE(rpad(MP.permission,CHAR_LENGTH(MP.permission),"0"),"0","_"),"1","0") ';
+		$sql .= ' ON MU.permission NOT like REPLACE(REPLACE(rpad(MP.permission,MU.permlen,"0"),"0","_"),"1","0") ';
 		$sql .= ' WHERE user_name=:user_name AND password=:password';
 		$sth = $dbh->prepare($sql);
 		$sth->bindParam('user_name',$acc);
@@ -303,7 +308,7 @@ function getProcessIdStatus($pid,$log){
 	$processTree = array();
 // $log->info('microtime(true) = '.microtime(true).__FILE__.__LINE__);
 	//子のプロセスをすべて取得
-	getLastProcessIds($pid,$pid,$processTree,"children");
+	getChildProcessIds($pid,$pid,$processTree);
 // $log->info('microtime(true) = '.microtime(true).__FILE__.__LINE__);
 
 	//子のプロセスID（複数）子のプロセスIDのみにして取得
@@ -372,46 +377,19 @@ function getProcessIdStatus($pid,$log){
 
 //ステータスバー対応
 //再帰的に子プロセスのIDを取得
-//      $argがchildrenのとき
-//          戻り値はpidのみを返す
-//          例）processTree[0]⇒123,457
-//              processTree[1]⇒123,457,852
-//              processTree[2]⇒123,745
-//      $argがleafのとき
-//          戻り値は葉のpidとその親のpidをカンマ繋ぎで返す
-//          例）processTree[0]⇒123,457,852 ←葉の852
-//              processTree[1]⇒123,745 ←葉の745
-function getLastProcessIds($pid,$str,&$processTree,$arg){
+//  戻り値は$strで指定された文字列と子のpidをカンマ繋ぎで返す(123が$strに指定された文字列)
+//  例）processTree[0]⇒123,457
+//      processTree[1]⇒123,457,852
+//      processTree[2]⇒123,457,852,923
+function getChildProcessIds($pid,$str,&$processTree){
 	//子のプロセスID取得
 	// $tmppid = trim(shell_exec("ps alx|awk '$4==\"".$pid."\" { print $3 }'"));
 	$tmppid = trim(shell_exec("ps  --no-header --ppid " . $pid . " |awk '$4 !~ /tee/ {print $1}' "));
 	if(!empty($tmppid) && $tmppid != "" ){
-		if($arg=="children"){
-			array_push($processTree,$str.",".$tmppid);
-		}
-		getLastProcessIds($tmppid, $str.",".$tmppid,$processTree,$arg );
+		array_push($processTree,$str.",".$tmppid);
+		getChildProcessIds($tmppid, $str.",".$tmppid,$processTree );
 	}else{
 		//それ以上子が居ない時に通る
-		if($arg=="leaf"){
-			array_push($processTree, substr($str, (strrpos($str,',') + 1) ));
-		}
-	}
-}
-//TODO : 関数の書き換えが終わったら削除する
-function rem_getLastProcessIds($pid,$str,&$processTree,$arg){
-	//子のプロセスID取得
-	$tmppid = shell_exec("ps  --no-header --ppid " . $pid . " |awk '{printf \"%s\\n\",$1}' ");
-	$tmppid = explode("\n",$tmppid);
-	if(!empty($tmppid[0]) && $tmppid[0] != "" ){
-		if($arg=="children"){
-			array_push($processTree,$str.",".$tmppid[0]);
-		}
-		getLastProcessIds($tmppid[0], $str.",".$tmppid[0],$processTree,$arg );
-	}else{
-		//それ以上子が居ない時に通る
-		if($arg=="leaf"){
-			array_push($processTree, substr($str, (strrpos($str,',') + 1) ));
-		}
 	}
 }
 ?>

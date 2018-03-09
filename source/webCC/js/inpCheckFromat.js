@@ -3,18 +3,26 @@
 //  「NUMERC」の場合：numericCheckを呼び出す
 //   戻り値 true :入力チェック成功時 または 入力チェックを行わないとき
 //          false:入力チェック失敗時
-function inpCheck(evt){
-	var targElem = evtToElement(evt);
+function inpCheck(evt, isTruncate){
+	return elementInpCheck(evtToElement(evt), isTruncate);
+}
+
+//インプットボックスのクラスによって入力チェックを分ける
+//「SNUMERC」の場合：sNumericCheckを呼び出す
+//「NUMERC」の場合：numericCheckを呼び出す
+//戻り値 true :入力チェック成功時 または 入力チェックを行わないとき
+//      false:入力チェック失敗時
+function elementInpCheck(targElem, isTruncate) {
 	tmp = $(targElem)[0].className;
-	if(tmp){
-		if (tmp.match(/SNUMERC/)){
-			if(!sNumericCheck(targElem.value)){
-				//入力チェックにエラーがあるとき
+	if (tmp) {
+		if (tmp.match(/SNUMERC/)) {
+			if (!sNumericCheck(getInputValue(targElem, isTruncate))) {
+				// 入力チェックにエラーがあるとき
 				return false;
 			}
-		}else if (tmp.match(/NUMERC/)) {
-			if(!numericCheck(targElem.value)){
-				//入力チェックにエラーがあるとき
+		} else if (tmp.match(/NUMERC/)) {
+			if (!numericCheck(getInputValue(targElem, isTruncate))) {
+				// 入力チェックにエラーがあるとき
 				return false;
 			}
 		}
@@ -54,9 +62,17 @@ function sNumericCheck(val){
 //入力値のフォーマット変換をする（小数点を付加する）
 //  例）「SNUMERC5V2」-1 → -0.01
 //  例）「NUMERC5V2」 10 →  0.1
-function inpFormat(evt){
-	var targElem = evtToElement(evt);
-	var res = targElem.value;
+function inpFormat(evt, isTruncate){
+	return elementInpFormat(evtToElement(evt), isTruncate);
+}
+
+
+//インプットボックスのクラスがSNUMERCかNUMERCのとき
+//入力値のフォーマット変換をする（小数点を付加する）
+//例）「SNUMERC5V2」-1 → -0.01
+//例）「NUMERC5V2」 10 →  0.1
+function elementInpFormat(targElem, isTruncate){
+	var res = getInputValue(targElem, isTruncate);
 	var minusFlg = false;
 
 	formatFlg = false;
@@ -84,4 +100,16 @@ function inpFormat(evt){
 		return res;
 	}
 	return res;
+}
+
+// 指定されたインプットボックスに入力された値を取得する。
+// isTruncate=trueが指定された場合はカーソル位置以降の文字を切り捨てた文字を取得する。
+function getInputValue(targElem, isTruncate) {
+	var val = targElem.value;
+
+	if (!isTruncate) {
+		return val;
+	}
+
+	return val.slice(0, targElem.selectionStart);
 }

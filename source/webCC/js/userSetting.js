@@ -50,28 +50,29 @@ var prevblinkTime = new Date().getTime();
 var blinkVisibleFlg = true;
 	//ここのNameSpace内だけでいいはず
 var blinkCon =function (){
-		//IE対応だったものをJQueryで書き直す
-		var targetArray = new Array();
-		// var visibleFlg = true;
-		targetArray = $('.blink');
-		if(targetArray.length > 0){
-			if(blinkVisibleFlg != false){
-				if(prevblinkTime + 700 <  new Date().getTime()){
-					for(var i = 0;i < targetArray.length;i++){
-						targetArray[i].style.visibility = "hidden";
-						// visibleFlg = false;
-						prevblinkTime = new Date().getTime();
-						blinkVisibleFlg = false;
-					}
+		if(blinkVisibleFlg != false){
+			if(prevblinkTime + 700 <  new Date().getTime()){
+				var targetArray = $('.blink');
+				for(var i = 0;i < targetArray.length;i++){
+					targetArray[i].style.visibility = "hidden";
+					//prevblinkTime = new Date().getTime();
+					blinkVisibleFlg = false;
 				}
-			}else{
-				if(prevblinkTime + 300 < new Date().getTime()){
-					for(var i = 0;i < targetArray.length;i++){
-						targetArray[i].style.visibility = "visible";
-						prevblinkTime = new Date().getTime();
-						blinkVisibleFlg = true;
-					}
+				// 点滅表示の設定はinput.jsでも行っているので、ここでは項目の有無に関わらず必ず時間をリセットする。(blink項目が現れてからすぐにはここの処理は実行されなくなる。)
+				// リセットしないとblinkTimeごとにDOMにアクセスすることになる。
+				prevblinkTime = new Date().getTime();
+			}
+		}else{
+			if(prevblinkTime + 300 < new Date().getTime()){
+				var targetArray = $('.blink');
+				for(var i = 0;i < targetArray.length;i++){
+					targetArray[i].style.visibility = "visible";
+					//prevblinkTime = new Date().getTime();
+					blinkVisibleFlg = true;
 				}
+				// 点滅表示の設定はinput.jsでも行っているので、ここでは項目の有無に関わらず必ず時間をリセットする。(blink項目が現れてからすぐにはここの処理は実行されなくなる。)
+				// リセットしないとblinkTimeごとにDOMにアクセスすることになる。
+				prevblinkTime = new Date().getTime();
 			}
 		}
 		setTimeout(blinkCon,blinkTime);

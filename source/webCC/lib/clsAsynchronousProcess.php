@@ -10,12 +10,13 @@ class AsynchronousProcess{
 	public $pid           = 0;
 	public $fnameCtoP   = '';//起動した先の標準出力に
 	public $fnamePtoC    = '';//起動した先の標準入力に
-	public $max_count     = LOOP_COUNT; //readの時にループが限界に来たら
 	public $oLog;
 	public $charCode;
+	public $memory;
 
 	function __construct($infname,$outfname){
 		require_once('./lib/log.php');
+		require_once('./lib/clsSharedMemory.php');
 		$this->oLog = New Log('');
 		// $this->oLog->info('microtime(true) = '.microtime(true).__FILE__.__LINE__);
 		$this->getline_index = 0;
@@ -70,74 +71,108 @@ class AsynchronousProcess{
 	}
 	//対象への書き込み
 	function pWrite($inputData){
-		$result = true;
-		if(!empty($inputData)){
-			if(mb_detect_encoding($inputData,$this->charCode) !== CHARSET){
-				$encode = mb_detect_encoding($inputData,$this->charCode);
-				$inputData = mb_convert_encoding($inputData,CHARSET,$encode);
-			}
-			$fp = fopen($this->fnamePtoC,'w');
-			if($fp){
-				stream_set_blocking($fp,0);
-				$result = fwrite($fp,$inputData.PHP_EOL);
-				if($result > 0){
+		if ($this->createSharedMemory()){
+			if(!empty($inputData)){
+				if (mb_detect_encoding($inputData, $this->charCode) !== CHARSET) {
+					$encode = mb_detect_encoding($inputData, $this->charCode);
+					$inputData = mb_convert_encoding($inputData, CHARSET, $encode);
 				}
-				fclose($fp);
+				return $this->memory->write_inputfile($inputData.PHP_EOL);
+			}
+
+			return true;
+		}
+		$this->oLog->info('not created sheard memory !!'.__FILE__.__LINE__);
+		return false;
+	}
+
+	//データを書き込み、対象データが処理されるまで待機する
+	function pWriteAndProcWait($inputData){
+		if ($this->createSharedMemory()){
+			list ($beforeTime, $beforeData) = $this->pReadAndTime();
+
+			$this->pWrite($inputData);
+
+			// まずはデータが読み取られるまで待機
+			$startTime = microtime(true);
+			while ((microtime(true) - $startTime) * 1000.0 < INPUT_READ_WAIT) {
+				list($time, $result) = $this->memory->read_inputfile();
+				if ($result === false) {
+					break;
+				}
+				usleep(EXEC_SLEEP);
+			}
+			// データが処理されるまで待機
+			$startTime = microtime(true);
+			while ((microtime(true) - $startTime) * 1000.0 < INPUT_PROC_WAIT) {
+				list ($time, $data) = $this->pReadAndTime();
+
+				if (strcmp($beforeData, $data) !== 0) {
+					break;
+				}
+				usleep(EXEC_SLEEP);
 			}
 		}
-		return $result;
 	}
+
+	//データを書き込み、対象データが読み込まれるまで待機する
+	function pWriteAndReadWait($inputData){
+		if ($this->createSharedMemory()){
+			$this->pWrite($inputData);
+
+			// データが読み取られるまで待機
+			$startTime = microtime(true);
+			while ((microtime(true) - $startTime) * 1000.0 < INPUT_READ_WAIT) {
+				list($time, $result) = $this->memory->read_inputfile();
+				if ($result === false){
+					break;
+				}
+				usleep(EXEC_SLEEP);
+			}
+		}
+	}
+
 
 	//対象への読み込み
 	//今なん行目まで読んでいるかを基準に一度読んだところは読み飛ばす
 	function pRead(){
 		$result = '';
-		$filesize = 0;  //
-		$counter = 0;
-		$iPreFileSize = 0;
-		$readCount = READ_COUNT;    //何度読み込みをスキップするか(スキップだけをして処理中かどうかを判定しない)
-		$ii = 0;
-		// $this->oLog->info('microtime(true) = '.microtime(true).__FILE__.__LINE__);
 
-		while(1){
-			if(file_exists($this->fnameCtoP) == false){
-				break;
-			}
-			clearstatcache(true,$this->fnameCtoP);
-			if( filesize($this->fnameCtoP) !== 0 ){
-				$readCount--;
-			}else {
-// 				$iPreFileSize = filesize($this->fnameCtoP);
-				//書き込み中
-// 				usleep(1);
-			}
-
-			if( $readCount == 0){
-				$fp = fopen($this->fnameCtoP,'r');
-				if($fp == false|| !flock($fp, LOCK_EX)){
-					break;
-				}
-				stream_set_blocking($fp,0);
-				$temp = '';
-				while($temp = fgets($fp,2048)){
-					//0行目にしないために先にインクリメント
-					$ii++;
-					$result .= $temp."\n";
-					$this->getline_index = $ii;
-				}
-				fclose($fp);
-				break;
-			}
-			$filesize = filesize($this->fnameCtoP);
-			$counter++;
-			//まわりすぎたら終了
-			if($counter > $this->max_count){
-				break;
-			}
+		if ($this->createSharedMemory()) {
+			list($time, $result) = $this->memory->read_outputfile();
+			$this->getline_index = substr_count($result, "\n");
 		}
 
-		// $this->oLog->info('microtime(true) = '.microtime(true).__FILE__.__LINE__);
 		return $result;
+	}
+
+	//対象への読み込み
+	//今なん行目まで読んでいるかを基準に一度読んだところは読み飛ばす
+	function pReadAndTime(){
+		if ($this->createSharedMemory()) {
+			list($time, $result) = $this->memory->read_outputfile();
+			$this->getline_index = substr_count($result, "\n");
+
+			return array($time, $result);
+		} else {
+			$this->oLog->info(' '.$this->memory->get_error_msg().__FILE__.__LINE__);
+			return array(microtime(true), '');
+		}
+	}
+
+	// 共有メモリを作成する
+	function createSharedMemory()
+	{
+		if (empty($this->memory)) {
+			if ($this->getPid() === - 1) {
+				$this->setPid();
+			}
+			// PIDをキーに共有メモリを作成する。
+			$this->memory = new SharedMemory();
+			$this->memory->open($this->getPid());
+		}
+
+		return !$this->memory->is_error();
 	}
 
 

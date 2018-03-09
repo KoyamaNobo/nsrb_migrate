@@ -12,13 +12,13 @@
 <title><?php echo SITE_TITLE ?>-Å@ÉÜÅ[ÉUê›íË</title>
 <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
 <script type="text/javascript" src="./js/common.js"></script>
-<script type="text/javascript" src="./js/userSetting.js?ver=20160613"></script>
-<script type="text/javascript" src="./js/backButton.js?ver=20160613"></script>
-<script type="text/javascript" src="./js/tableWidthSetter.js?ver=20160613"></script>
-<script type="text/javascript" src="./js/scrollSync.js?ver=20160620"></script>
-<script type="text/javascript" src="./js/cmbSelect.js?ver=20170201" charset="UTF-8"></script>
-<script type="text/javascript" src="./js/updateButton.js?ver=20160613" charset="UTF-8"></script>
-<script type="text/javascript" src="./js/menuShortcut.js?ver=20160613"></script>
+<script type="text/javascript" src="./js/userSetting.js?ver=<?php echo filemtime('./js/userSetting.js'); ?>"></script>
+<script type="text/javascript" src="./js/backButton.js?ver=<?php echo filemtime('./js/backButton.js'); ?>"></script>
+<script type="text/javascript" src="./js/tableWidthSetter.js?ver=<?php echo filemtime('./js/tableWidthSetter.js'); ?>"></script>
+<script type="text/javascript" src="./js/scrollSync.js?ver=<?php echo filemtime('./js/scrollSync.js'); ?>"></script>
+<script type="text/javascript" src="./js/cmbSelect.js?ver=<?php echo filemtime('./js/cmbSelect.js'); ?>" charset="UTF-8"></script>
+<script type="text/javascript" src="./js/updateButton.js?ver=<?php echo filemtime('./js/updateButton.js'); ?>" charset="UTF-8"></script>
+<script type="text/javascript" src="./js/menuShortcut.js?ver=<?php echo filemtime('./js/menuShortcut.js'); ?>"></script>
 </head>
 <body>
 <div class="contentbody">

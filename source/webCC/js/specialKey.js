@@ -13,29 +13,27 @@ var specialKeyLoad = function () {
 //        :特殊キーではない場合false
 function funcSpecialKey(evt){
 	var targElem = evtToElement(evt);
-	if(sendFlag == false){
-		if(evt.keyCode == 115 && evt.ctrlKey == true && evt.shiftKey == true){
-			//停止(CTRL + SHIFT + F4)
-			funcSkExec("CS4",evt);
-			return true;
-		}else if(evt.keyCode == 116 && evt.ctrlKey == true && evt.shiftKey == true){
-			//再開(CTRL + SHIFT + F5)
-			funcSkExec("CS5",evt);
-			return true;
-		}else if(evt.keyCode == 119 && evt.ctrlKey == true){
-			//プロ放棄(CTRL + F8)
-			funcSkExec("C8",evt);
-			return true;
-		}else if(evt.keyCode == 120 && evt.ctrlKey == true){
-			//業務放棄(CTRL + F9)
-			funcSkExec("C9",evt);
-			return true;
-		}else{
-			return false;
-		}
+
+	if(evt.keyCode == 115 && evt.ctrlKey == true && evt.shiftKey == true){
+		//停止(CTRL + SHIFT + F4)
+		funcSkExec("CS4",evt);
+		return true;
+	}else if(evt.keyCode == 116 && evt.ctrlKey == true && evt.shiftKey == true){
+		//再開(CTRL + SHIFT + F5)
+		funcSkExec("CS5",evt);
+		return true;
+	}else if(evt.keyCode == 119 && evt.ctrlKey == true){
+		//プロ放棄(CTRL + F8)
+		funcSkExec("C8",evt);
+		return true;
+	}else if(evt.keyCode == 120 && evt.ctrlKey == true){
+		//業務放棄(CTRL + F9)
+		funcSkExec("C9",evt);
+		return true;
 	}else{
 		return false;
 	}
+	return false;
 };
 
 //画面切り離し系
@@ -44,9 +42,11 @@ function screenSwitch(evt){
 	//画面切り離し系の処理はその他と切り分け
 	if(evt.keyCode == 112 && evt.ctrlKey == true){
 		funcF1Button();
+		return true;
 	}else if(evt.keyCode == 113 && evt.ctrlKey == true){
 		//F2+Ctrl(画面切離)
 		funcF2Button();
+		return true;
 	}
 	return false;
 }
@@ -114,17 +114,14 @@ function funcSkExec(key,evt){
 	//プロ放棄(CTRL + F8)
 	//再開(CTRL + SHIFT + F5)
 	//停止(CTRL + SHIFT + F4)
-	sendFlag = true;
 	$.ajax({
 		type: "POST",
 		url: "sk.php",
 		data:{ value:key , pid:pid[0].value },
 		success: function(msg){
 			//$("#status1").html("");
-			sendFlag = false;
 		},
 		error: function(){
-			sendFlag = false;
 			alert("BackGround connect Error" + textStatus + ":" + errorThrown.message);
 			console.log("BackGround connect Error" + textStatus + ":" + errorThrown.message);
 		}
@@ -132,5 +129,43 @@ function funcSkExec(key,evt){
 
 	return true;
 }
+
+//入力キーが画面切り離し系のキーか否かを判定
+//戻り値:画面切り離し系のキーの場合true
+//:画面切り離し系のキーではない場合false
+function isScreenSwitch(evt){
+	//画面切り離し系の処理はその他と切り分け
+	if(evt.keyCode == 112 && evt.ctrlKey == true){
+		return true;
+	}else if(evt.keyCode == 113 && evt.ctrlKey == true){
+		//F2+Ctrl(画面切離)
+		return true;
+	}
+
+	return false;
+}
+
+//入力キーが特殊キーか否かを判定
+//戻り値:特殊キーの場合true
+//      :特殊キーではない場合false
+function isFuncSpecialKey(evt){
+	if (evt.keyCode == 115 && evt.ctrlKey == true && evt.shiftKey == true) {
+		// 停止(CTRL + SHIFT + F4)
+		return true;
+	} else if (evt.keyCode == 116 && evt.ctrlKey == true
+			&& evt.shiftKey == true) {
+		//再開(CTRL + SHIFT + F5)
+		return true;
+	} else if (evt.keyCode == 119 && evt.ctrlKey == true) {
+		// プロ放棄(CTRL + F8)
+		return true;
+	} else if (evt.keyCode == 120 && evt.ctrlKey == true) {
+		// 業務放棄(CTRL + F9)
+		return true;
+	} else {
+		return false;
+	}
+};
+
 
 addEvent('load',window,specialKeyLoad);

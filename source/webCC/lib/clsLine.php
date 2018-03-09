@@ -9,7 +9,7 @@ class clsLine{
 	public $arrLineElem;  //添え字配列:添え字はカラムに対応
 	public $echoElem    = '';       //shからのエコーで表示形に送るもの
 	public $attr;                   //属性情報を格納 中にはclsLineAttrクラスを格納
-	public $replaceFlg  = 1;        //上書きモードの時1に(画面に値を反映させるかどうか)
+	public $replaceFlg  =1;           //上書きモードの時1に(画面に値を反映させるかどうか)
 	public $oLog;
 
 
@@ -288,9 +288,9 @@ class clsLine{
 		//20170713 VALUEを探す処理追加
 		if($this->replaceFlg == 1){
 			foreach($this->arrLineElem as $tLineElem){
-				//TEXT系以外のノードは関係なし
+			//TEXT系以外のノードは関係なし
 				if( !( $tLineElem->dataType == $tLineElem->arrKind[0] || $tLineElem->dataType == $tLineElem->arrKind[1] )){
-					continue;
+				continue;
 				}
 				//一致するものがあればそれを代入
 				if($startcol == $tLineElem->sCol && $endcol == ($tLineElem->eCol + 1)  ){
@@ -302,12 +302,37 @@ class clsLine{
 				//今回指定のinputを包含していれば処理する
 				//完全一致のものがあることを考えてbrakeしない
 				if($startcol >= $tLineElem->sCol && $endcol <= ($tLineElem->eCol + 1)  ){
-					$values = substr($tLineElem->origText,($startcol - $tLineElem->sCol),($endcol - $startcol));
+					$startCutPos = $startcol - $tLineElem->sCol;
+					$cutLength = $endcol - $startcol;
+					$prefixValue = '';
+					$postifxValue = '';
+
+					// ファイルの文字コードからCHARSETの文字コードに変換して全角1文字のバイト数を取得
+					$multibyteLength = strlen(mb_convert_encoding("あ", CHARSET, "UTF-8"));
+
+					// 切り出し開始位置の文字がマルチバイト文字で、半バイト分だけ切り出しの対象になる場合
+					if (mb_strcut($tLineElem->origText, $startCutPos, 1, CHARSET) == ""
+							&& mb_strcut($tLineElem->origText, $startCutPos, $multibyteLength, CHARSET) != substr($tLineElem->origText, $startCutPos, $multibyteLength)) {
+						// 切り出し位置をずらす。ずらした分は半角スペースで埋める
+						$startCutPos += 1;
+						$cutLength -= 1;
+						$prefixValue = ' ';
+					}
+
+					// 切り出し終了位置の文字がマルチバイト文字で、半バイト分だけ切り出しの対象になる場合
+					if (mb_strcut($tLineElem->origText, $startCutPos + $cutLength, 1, CHARSET) == ""
+							&& mb_strcut($tLineElem->origText, $startCutPos + $cutLength, $multibyteLength, CHARSET) != substr($tLineElem->origText, $startCutPos + $cutLength, $multibyteLength)) {
+						// 切り出し文字を減らす。減らした分は半角スペースで埋める
+						$cutLength -= 1;
+						$postifxValue = ' ';
+					}
+
+					$values = $prefixValue . substr($tLineElem->origText, $startCutPos, $cutLength) . $postifxValue;
 					// $this->oLog->info("values         :".$values.__FILE__.':'.__LINE__);
 				}
 			}
 		}
-		$this->oLog->info(":".$values.__FILE__.':'.__LINE__);
+		// $this->oLog->info(":".$values.__FILE__.':'.__LINE__);
 		//classを変更する必要がないので書き換え
 		$element .= '<input class="nextinput f'.($startcol).' '.$addclass.'" type="text" name="'.$argname.'" maxlength="'.$length.'" size="'.$length.'" value="'.$values.'" style="width:'.($length / 2).'em;" />';
 

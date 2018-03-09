@@ -4,10 +4,18 @@ define('CSCREEN','/clear\s+screen/i');
 require_once('./lib/config.php');
 require_once('./lib/log.php');
 require_once('./lib/clsScreenToHTML.php');
+require_once('./lib/clsSharedMemory.php');
 
 if(isset($argv[1])){
 	$cmd = $argv[1];
 }else{
+	exit;
+}
+
+// runExec.phpのプロセスIDを取得
+$pid = getmypid();
+if ($pid === false) {
+	// 取得できない場合は何もしない。(基本的には起こらないはず。)
 	exit;
 }
 
@@ -18,7 +26,7 @@ $descriptorspec = array(
    2 => array("file", $efilename, "w") #エラーはファイルに書き込みます。
 );
 
-$startTime = 0;
+$endTime = 0;
 #unixタイムスタンプに変更(子プロセスができたときに開始時間+(EXEC_LIVE * 60)で初期化する)
 $oLog    = New Log('');
 
@@ -39,7 +47,7 @@ $t->process = proc_open($cmd,$descriptorspec,$t->pipes);
 stream_set_blocking($t->pipes[0],0);
 stream_set_blocking($t->pipes[1],0);
 if(is_resource($t->process)){
-	// stream_set_blocking($t->pipes[0],0);
+	// stream_set_block1ing($t->pipes[0],0);
 	// stream_set_blocking($t->pipes[1],0);
 	#file削除のために両方必要
 	$fnameCtoP = $argv[(count($argv) - 1)];
@@ -48,8 +56,15 @@ if(is_resource($t->process)){
 	$toHTML  = New clsScreenToHTML();
 	$strRead = '' ;#output用データの格納
 
+	$memory = new SharedMemory();
+	// 自プロセスIDをキーに共有メモリを作成(処理終了時にはメモリを破棄)
+	$memory->create($pid);
+
 	$oLog->info("success ::".$cmd."::".__FILE__.__LINE__);
-	$startTime = time() + (EXEC_LIVE * 60);
+	$startTime = time();
+	$endTime = time() + (EXEC_LIVE * 60);
+	$html = '';
+
 	while(1){
 		$exitWaitFlg = false;
 		#最初に少し処理を待ってからスタート
@@ -61,65 +76,56 @@ if(is_resource($t->process)){
 		// 実行系からの対しての出力
 		// 実行系の結果が残りどれくらいあるかのステータスを取得
 		// 残りの読み込みデータがなければ読み込まない
-		// $oLog->info(__FILE__.':'.__LINE__.'readed:'.$startTime);
+		// $oLog->info(__FILE__.':'.__LINE__.'readed:'.$endTime);
 		$ii = 0;
 		while(!empty($strRead = fgets($t->pipes[1],1024))){
 			#改行のみは出力しない
 			if(strlen($strRead) > 0){
-//  $oLog->info('readed:'.$strRead.__FILE__.':'.__LINE__,0);
+				//  $oLog->info('readed:'.$strRead.__FILE__.':'.__LINE__,0);
 				$toHTML->screen->elemParse($strRead);
 			}
 			$ii++;
 		}
 		if($ii > 0){
 			$toHTML->lineIndex += $ii;
-			$toHTML->htmlEcho($fnameCtoP);
+			$newHtml = $toHTML->getHtml();
+			if (strcmp($html, $newHtml) !== 0) {
+				$memory->write_outputfile($newHtml);
+				$html = $newHtml;
+			}
 		}
 		#終了予定時間を過ぎたら強制終了
-		if($startTime < time()){
+		if($endTime < time()){
 			break;
 		}
 
-		// 実行系への入力 読み込みを次のループで行うためにあとで書き込む
-		if(!file_exists($fnamePtoC)){
-			// 入力用のtmpファイルが存在しなければ作る
-			touch($fnamePtoC);
-			//touchの結果でファイルステータスは変わっているはず
-			clearstatcache(true,$fnamePtoC);
-			if(!file_exists($fnamePtoC)){
-				// 入力用のtmpファイルが作成出来なければ強制終了
-				// $oLog->info('resource1:'.__FILE__.':'.__LINE__);
-				break;
-			}
-		}
-		$fp = fopen($fnamePtoC,'r+');
 		$wRes = 0;
-		if($fp){
-			$strWrite = '' ;#入力データの格納
-			stream_set_blocking($t->pipes[0],1);
-			$strWrite = fgets($fp,1024);
-			if(!empty($strWrite)){
-				fflush($t->pipes[0]);
-				// $oLog->info("write [".$strWrite."]".__FILE__.__LINE__);
-				$wRes = fwrite($t->pipes[0],$strWrite);
-			}
-			if($wRes != 0){
-				ftruncate($fp,0);
-			}
-			unset($wRes);
-			fclose($fp);
-		}else{
-			#ファイルが正常に開けないときは強制終了
-			$oLog->info(' file:open error'.__FILE__.':'.__LINE__);
-			break;
+		$strWrite = '' ;#入力データの格納
+		stream_set_blocking($t->pipes[0],1);
+		list($writeTime, $strWrite) = $memory->read_inputfile();
+		if(!empty($strWrite)){
+			fflush($t->pipes[0]);
+			// $oLog->info("write [".$strWrite."]".__FILE__.__LINE__);
+			$wRes = fwrite($t->pipes[0],$strWrite);
 		}
+		if($wRes != 0){
+			$memory->delete_inputfile();
+		}
+		unset($wRes);
 
 		#プロセス終了時の戻る対応
 		#プロセスの状態がfalseの場合終了
 		if(!$procStatus["running"]){
 				$exitWaitFlg = true;
 				#少し待ってやらないと外側がエラーメッセージを取り逃す
-				usleep(EXEC_SLEEP);
+				#書き込んだデータが読み取られるまで待機。
+				while (time() - $startTime <= EXEC_MAX_END_WAIT) {
+					if ($memory->is_read_outputfile()) {
+						break;
+					}
+					// getOut.phpで読みだされる周期でsleep
+					usleep(SSE_GETOUT_SLEEP);
+				}
 		}
 		#上のifを1回以上通っていたら
 		if($exitWaitFlg === true){

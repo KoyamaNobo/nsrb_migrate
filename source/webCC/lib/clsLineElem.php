@@ -35,10 +35,10 @@ class clsLineElem{
 		}else{
 			$this->dataType = '';
 		}
-		//全角SP(コードの文字コードから対象の文字コードに変更)を半角SPに
-		if(preg_match('/TEX/',$this->type) == TRUE){
-			$this->origText = preg_replace('/'.mb_convert_encoding('　',CHARSET,'UTF-8').'/','  ',$text);
-		}
+		// 画面の同じ位置(行-列)に全角SPと半角SPが書き出される場合の文字化け対策として、全て半角SPに変換していたが、実際に書き出すタイミングで文字化け対策を行うように対応
+		// (clsLineElem+reSetPartTextとclsLine+setInputのタイミング)
+		$this->origText = $text;
+
 		$this->attr     = $attr;
 		$this->partAttr = Array();
 		$this->oLog     = New Log('');
@@ -163,7 +163,24 @@ class clsLineElem{
 	function reSetPartText($replacement,$start,$diff){
 		//sameが-の場合は後ろから,+の場合は前から
 		if(strlen(bin2hex(mb_strcut($this->origText,$start,$diff,CHARSET))) != strlen(bin2hex(substr($this->origText,$start,$diff))) ){
-			$diff = $diff + 1;
+			// ファイルの文字コードからCHARSETの文字コードに変換して全角1文字のバイト数を取得
+			$multibyteLength = strlen(mb_convert_encoding("あ", CHARSET, "UTF-8"));
+
+			// 切り出し開始位置の文字がマルチバイト文字で、半バイト分だけ切り出しの対象になる場合
+			if (mb_strcut($this->origText, $start, 1, CHARSET) == ""
+					&& mb_strcut($this->origText, $start, $multibyteLength, CHARSET) != substr($this->origText, $start, $multibyteLength)) {
+				// 切り出し位置をずらす。
+				$start = $start - 1;
+				$diff = $diff + 1;
+			}
+
+			// 切り出し終了位置の文字がマルチバイト文字で、半バイト分だけ切り出しの対象になる場合
+			if (mb_strcut($this->origText, $start + $diff, 1, CHARSET) == ""
+					&& mb_strcut($this->origText, $start + $diff, $multibyteLength, CHARSET) != substr($this->origText, $start + $diff, $multibyteLength)) {
+				// 切り出し位置をずらす。
+				$diff = $diff + 1;
+			}
+
 			//置換対象の文字列を作成
 			$replacement = str_repeat(" ",$diff);
 		}

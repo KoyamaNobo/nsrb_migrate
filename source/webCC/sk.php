@@ -2,6 +2,7 @@
 session_start();
 require_once('./lib/config.php');
 require_once('./lib/log.php');
+require_once('./lib/clsSharedMemory.php');
 $oLog = New Log('');
 if(isset($_SESSION['user_id'])){
 	if(!empty($_POST['value'])){
@@ -14,16 +15,27 @@ if(isset($_SESSION['user_id'])){
 		}
 		//業務放棄(CTRL + F9)
 		if(preg_match('/^C9$/',$_POST['value'])){
-			$pids = shell_exec('ps aux|grep ' . $_SESSION['user_id'] . "| grep -v grep |awk '{printf \"%s||\",$2 }' ") ;
-			$pidArray = explode("||",$pids);
+			$pid = $_POST['pid'];
+			if(is_numeric($pid)){
 
-			//kill -TERMコマンド発行
-			foreach($pidArray as $pid){
-				if(is_numeric($pid)){
-					//中断時でも業務放棄可能にさせるため　CONTとTERM発行
-					shell_exec('kill -CONT ' . $pid . ' ');
-					shell_exec('kill -USR1 ' . $pid . ' ');
+				// 親プロセスから順に関連するプロセスをすべて落とす
+				$processTree = array();
+				getChildProcessIds($pid,$pid,$processTree);
+				if(empty($processTree)){
+					// 子プロセスが取得できなくても必ず親プロセスは指定する。
+					array_push($processTree, $pid);
 				}
+
+				$killPids = explode(",",$processTree[count($processTree) - 1]);
+				for($i = 0; $i < count($killPids); $i++){
+					$oLog->info('pids: ' . $killPids[$i] . __FILE__ . ':' . __LINE__);
+					// 中断時でも業務放棄可能にさせるため CONTとTERM発行
+					shell_exec('kill -CONT ' . $killPids[$i] . ' ');
+					shell_exec('kill -USR1 ' . $killPids[$i] . ' ');
+				}
+
+				//共有メモリを破棄
+				SharedMemory::destroy($pid);
 			}
 		}
 		//停止(CTRL + SHIFT + F4)
@@ -53,7 +65,6 @@ function getDescendantPid($pid){
 //子供のpidがなくなったら終了
 function getRecursiveChildPid($pid){
 	$pidres = shell_exec("ps --ppid " . $pid . " |grep -v PID |grep -v tee |awk '{printf $1}'");
-
 	if(!empty($pidres)){
 		return getRecursiveChildPid($pidres);
 	}else{
