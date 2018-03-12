@@ -142,7 +142,7 @@ class SharedMemory
 
 		// 共有メモリが作成されていない場合は処理失敗
 		if (self::has_shared_memory($this->id) === false) {
-			$this->is_error_msg = 'can not create shm! '.$this->id . ' ';
+			$this->is_error_msg = 'can not create shm! '.$this->id . ' ' . sprintf("0x%'08x",$this->id);
 			$this->is_error = true;
 			return false;
 		}
@@ -464,14 +464,14 @@ class SharedMemory
 	 */
 	public static function has_shared_memory($id)
 	{
-		$key = sprintf("0x%'08x", $id);
-		$output = shell_exec("ipcs -m | grep -i " . $key);
+		// $key = sprintf("0x%'08x", $id);
+		//0xが頭についている文字列がバイナリとして認識されて数値に自動変換されるので直接書く
+		$output = shell_exec("ipcs -m | grep -i " . sprintf("0x%'08x", $id));
 		$output_array = explode("\n", $output);
-
+		//TODO::存在するのに読み込みに失敗する現象を確認　要修正 -> 要テスト
 		if (! empty($output_array[0]) && $output_array[0] != "") {
 			return true;
 		}
-
 		return false;
 	}
 
