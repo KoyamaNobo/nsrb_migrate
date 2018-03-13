@@ -762,6 +762,14 @@ var InputKeyControl = function(screen, buzzer) {
 			if (statusValue == null) {
 				return true;
 			}
+			//バックスペースでキャレットが先頭にいなかった時
+			//キャレットを先頭にして値は送らない
+			if (e.key == 'Backspace' && target.selectionStart != 0){
+				console.log('selection start:' + target.selectionStart)
+				target.selectionStart = 0;
+				target.selectionEnd   = 0;
+				return false;
+			}
 
 			let inputValue = '';
 			// バックスペース、エスケープは入力内容を送信しないのでチェックしない
